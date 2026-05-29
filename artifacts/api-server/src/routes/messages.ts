@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, conversationsTable, conversationParticipantsTable, messagesTable } from "@workspace/db";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, ne, desc } from "drizzle-orm";
 
 const router = Router();
 const SESSION_USER_ID = 1;
@@ -59,7 +59,13 @@ router.get("/conversations", async (_req, res) => {
       const unreadCount = await db
         .select()
         .from(messagesTable)
-        .where(and(eq(messagesTable.conversationId, conv.id), eq(messagesTable.read, false)));
+        .where(
+          and(
+            eq(messagesTable.conversationId, conv.id),
+            eq(messagesTable.read, false),
+            ne(messagesTable.senderId, SESSION_USER_ID)
+          )
+        );
 
       let formattedLastMessage = null;
       if (lastMessage) {
@@ -79,6 +85,8 @@ router.get("/conversations", async (_req, res) => {
 
       return {
         id: conv.id,
+        name: conv.name,
+        isGroup: conv.isGroup,
         participants: participantUsers.filter(Boolean).map((u) => formatUser(u!)),
         lastMessage: formattedLastMessage,
         unreadCount: unreadCount.length,
@@ -103,6 +111,46 @@ router.post("/conversations", async (req, res) => {
   ]);
   res.status(201).json({
     id: conv.id,
+    name: conv.name,
+    isGroup: conv.isGroup,
+    participants: participantUsers.filter(Boolean).map((u) => formatUser(u!)),
+    lastMessage: null,
+    unreadCount: 0,
+    createdAt: conv.createdAt.toISOString(),
+  });
+});
+
+router.post("/conversations/group", async (req, res) => {
+  const { name, participantIds } = req.body;
+  if (!name || !String(name).trim()) {
+    return res.status(400).json({ error: "Group name is required" });
+  }
+  if (!Array.isArray(participantIds) || participantIds.length === 0) {
+    return res.status(400).json({ error: "At least one participant is required" });
+  }
+  const uniqueIds = Array.from(
+    new Set(
+      participantIds
+        .map((id: unknown) => parseInt(String(id)))
+        .filter((id: number) => !isNaN(id) && id !== SESSION_USER_ID)
+    )
+  );
+  const [conv] = await db
+    .insert(conversationsTable)
+    .values({ name: String(name).trim(), isGroup: true })
+    .returning();
+  await db.insert(conversationParticipantsTable).values([
+    { conversationId: conv.id, userId: SESSION_USER_ID },
+    ...uniqueIds.map((id) => ({ conversationId: conv.id, userId: id })),
+  ]);
+  const allIds = [SESSION_USER_ID, ...uniqueIds];
+  const participantUsers = await Promise.all(
+    allIds.map((id) => db.query.usersTable.findFirst({ where: eq(usersTable.id, id) }))
+  );
+  res.status(201).json({
+    id: conv.id,
+    name: conv.name,
+    isGroup: conv.isGroup,
     participants: participantUsers.filter(Boolean).map((u) => formatUser(u!)),
     lastMessage: null,
     unreadCount: 0,
@@ -135,6 +183,20 @@ router.get("/conversations/:conversationId", async (req, res) => {
     })
   );
   res.json(formatted);
+});
+
+router.post("/conversations/:conversationId/read", async (req, res) => {
+  const conversationId = parseInt(req.params.conversationId);
+  await db
+    .update(messagesTable)
+    .set({ read: true })
+    .where(
+      and(
+        eq(messagesTable.conversationId, conversationId),
+        ne(messagesTable.senderId, SESSION_USER_ID)
+      )
+    );
+  res.json({ success: true });
 });
 
 router.post("/conversations/:conversationId", async (req, res) => {

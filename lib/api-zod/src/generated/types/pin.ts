@@ -29,5 +29,6 @@ export interface Pin {
   endTime?: string | null;
   likeCount?: number;
   likedByMe?: boolean;
+  favoritedByMe?: boolean;
   createdAt: string;
 }

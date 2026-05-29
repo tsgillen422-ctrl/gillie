@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, postsTable, postLikesTable, pinsTable } from "@workspace/db";
+import { usersTable, postsTable, postLikesTable, postCommentsTable, pinsTable } from "@workspace/db";
 import { eq, and, sql, desc, count } from "drizzle-orm";
 
 const router = Router();
@@ -153,6 +153,63 @@ router.post("/:postId/like", async (req, res) => {
   }
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   res.json(await formatPost(post!));
+});
+
+router.get("/:postId/comments", async (req, res) => {
+  const postId = parseInt(req.params.postId);
+  const comments = await db
+    .select()
+    .from(postCommentsTable)
+    .where(eq(postCommentsTable.postId, postId))
+    .orderBy(postCommentsTable.createdAt);
+  const formatted = await Promise.all(
+    comments.map(async (c) => {
+      const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, c.userId) });
+      return {
+        id: c.id,
+        postId: c.postId,
+        userId: c.userId,
+        user: user ? formatUser(user) : null,
+        content: c.content,
+        createdAt: c.createdAt.toISOString(),
+      };
+    })
+  );
+  res.json(formatted);
+});
+
+router.post("/:postId/comments", async (req, res) => {
+  const postId = parseInt(req.params.postId);
+  const { content } = req.body;
+  if (!content || !String(content).trim()) {
+    return res.status(400).json({ error: "Comment content is required" });
+  }
+  const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
+  if (!post) return res.status(404).json({ error: "Post not found" });
+  const [comment] = await db
+    .insert(postCommentsTable)
+    .values({ postId, userId: SESSION_USER_ID, content: String(content).trim() })
+    .returning();
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, comment.userId) });
+  res.status(201).json({
+    id: comment.id,
+    postId: comment.postId,
+    userId: comment.userId,
+    user: user ? formatUser(user) : null,
+    content: comment.content,
+    createdAt: comment.createdAt.toISOString(),
+  });
+});
+
+router.delete("/:postId/comments/:commentId", async (req, res) => {
+  const commentId = parseInt(req.params.commentId);
+  const comment = await db.query.postCommentsTable.findFirst({ where: eq(postCommentsTable.id, commentId) });
+  if (!comment) return res.status(404).json({ error: "Comment not found" });
+  if (comment.userId !== SESSION_USER_ID) {
+    return res.status(403).json({ error: "You can only delete your own comments" });
+  }
+  await db.delete(postCommentsTable).where(eq(postCommentsTable.id, commentId));
+  res.json({ success: true });
 });
 
 export default router;

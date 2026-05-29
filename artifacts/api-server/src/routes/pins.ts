@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, pinsTable, pinLikesTable, friendRequestsTable } from "@workspace/db";
+import { usersTable, pinsTable, pinLikesTable, pinFavoritesTable, friendRequestsTable } from "@workspace/db";
 import { eq, and, or, sql, inArray } from "drizzle-orm";
 
 const router = Router();
@@ -60,6 +60,9 @@ async function formatPin(pin: typeof pinsTable.$inferSelect) {
   const like = await db.query.pinLikesTable.findFirst({
     where: and(eq(pinLikesTable.pinId, pin.id), eq(pinLikesTable.userId, SESSION_USER_ID)),
   });
+  const favorite = await db.query.pinFavoritesTable.findFirst({
+    where: and(eq(pinFavoritesTable.pinId, pin.id), eq(pinFavoritesTable.userId, SESSION_USER_ID)),
+  });
   return {
     id: pin.id,
     userId: pin.userId,
@@ -76,6 +79,7 @@ async function formatPin(pin: typeof pinsTable.$inferSelect) {
     endTime: pin.endTime ? pin.endTime.toISOString() : null,
     likeCount: pin.likeCount,
     likedByMe: !!like,
+    favoritedByMe: !!favorite,
     createdAt: pin.createdAt.toISOString(),
   };
 }
@@ -172,6 +176,22 @@ router.get("/pending/approval", async (_req, res) => {
   res.json(await Promise.all(pending.map(formatPin)));
 });
 
+router.get("/favorites", async (_req, res) => {
+  const favorites = await db
+    .select()
+    .from(pinFavoritesTable)
+    .where(eq(pinFavoritesTable.userId, SESSION_USER_ID));
+  const friendIds = await getFriendIds(SESSION_USER_ID);
+  const pins = await Promise.all(
+    favorites.map((f) => db.query.pinsTable.findFirst({ where: eq(pinsTable.id, f.pinId) }))
+  );
+  const visible = pins.filter(
+    (pin): pin is typeof pinsTable.$inferSelect =>
+      !!pin && canViewPin(pin, SESSION_USER_ID, friendIds)
+  );
+  res.json(await Promise.all(visible.map(formatPin)));
+});
+
 router.get("/:pinId", async (req, res) => {
   const pinId = parseInt(req.params.pinId);
   const pin = await db.query.pinsTable.findFirst({ where: eq(pinsTable.id, pinId) });
@@ -191,6 +211,7 @@ router.delete("/:pinId", async (req, res) => {
     return res.status(403).json({ error: "You can only delete your own pins" });
   }
   await db.delete(pinLikesTable).where(eq(pinLikesTable.pinId, pinId));
+  await db.delete(pinFavoritesTable).where(eq(pinFavoritesTable.pinId, pinId));
   await db.delete(pinsTable).where(eq(pinsTable.id, pinId));
   res.json({ success: true });
 });
@@ -233,6 +254,25 @@ router.post("/:pinId/like", async (req, res) => {
   }
   const updated = await db.query.pinsTable.findFirst({ where: eq(pinsTable.id, pinId) });
   res.json(await formatPin(updated!));
+});
+
+router.post("/:pinId/favorite", async (req, res) => {
+  const pinId = parseInt(req.params.pinId);
+  const pin = await db.query.pinsTable.findFirst({ where: eq(pinsTable.id, pinId) });
+  if (!pin) return res.status(404).json({ error: "Pin not found" });
+  const friendIds = await getFriendIds(SESSION_USER_ID);
+  if (!canViewPin(pin, SESSION_USER_ID, friendIds)) {
+    return res.status(404).json({ error: "Pin not found" });
+  }
+  const existing = await db.query.pinFavoritesTable.findFirst({
+    where: and(eq(pinFavoritesTable.pinId, pinId), eq(pinFavoritesTable.userId, SESSION_USER_ID)),
+  });
+  if (existing) {
+    await db.delete(pinFavoritesTable).where(eq(pinFavoritesTable.id, existing.id));
+  } else {
+    await db.insert(pinFavoritesTable).values({ pinId, userId: SESSION_USER_ID });
+  }
+  res.json(await formatPin(pin));
 });
 
 export default router;

@@ -1098,8 +1098,16 @@ export function MapPage() {
 
 // --- Slide-up social-style detail card ---
 function DetailCard({ selected, onClose }: { selected: NonNullable<Selected>; onClose: () => void }) {
+  const queryClient = useQueryClient();
+  const likePin = useLikePin();
+  const favoritePin = useToggleFavoritePin();
+
   if (selected.kind === "pin") {
     const pin = selected.data;
+    const refreshPins = () => {
+      queryClient.invalidateQueries({ queryKey: getGetPinsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetFavoritePinsQueryKey() });
+    };
     return (
       <div className="mx-auto w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
         <div className="flex items-start gap-3 p-4">
@@ -1123,6 +1131,28 @@ function DetailCard({ selected, onClose }: { selected: NonNullable<Selected>; on
         {(pin.startTime || pin.endTime) && (
           <p className="px-4 mt-2 text-xs text-primary font-medium">{formatPinWindow(pin.startTime, pin.endTime)}</p>
         )}
+        <div className="flex items-center gap-2 px-4 pt-3">
+          <Button
+            variant={pin.likedByMe ? "default" : "outline"}
+            size="sm"
+            className={pin.likedByMe ? "bg-destructive hover:bg-destructive/90" : ""}
+            onClick={() => {
+              likePin.mutate({ pinId: pin.id }, { onSuccess: refreshPins, onError: () => toast.error("Couldn't like that pin.") });
+            }}
+          >
+            <Heart className={`w-4 h-4 mr-1.5 ${pin.likedByMe ? "fill-current" : ""}`} /> {pin.likeCount ?? 0}
+          </Button>
+          <Button
+            variant={pin.favoritedByMe ? "default" : "outline"}
+            size="sm"
+            className={pin.favoritedByMe ? "bg-amber-500 hover:bg-amber-500/90 text-white" : ""}
+            onClick={() => {
+              favoritePin.mutate({ pinId: pin.id }, { onSuccess: refreshPins, onError: () => toast.error("Couldn't update favorites.") });
+            }}
+          >
+            <Star className={`w-4 h-4 mr-1.5 ${pin.favoritedByMe ? "fill-current" : ""}`} /> {pin.favoritedByMe ? "Saved" : "Save"}
+          </Button>
+        </div>
         <div className="p-4 pt-3">
           <Button className="w-full bg-primary hover:bg-primary/90" asChild>
             <a href={`https://www.google.com/maps/dir/?api=1&destination=${pin.lat},${pin.lng}`} target="_blank" rel="noreferrer">

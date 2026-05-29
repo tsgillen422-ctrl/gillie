@@ -139,6 +139,9 @@ export interface Message {
 
 export interface Conversation {
   id: number;
+  /** @nullable */
+  name?: string | null;
+  isGroup?: boolean;
   participants?: User[];
   lastMessage?: Message;
   unreadCount?: number;
@@ -147,6 +150,11 @@ export interface Conversation {
 
 export interface ConversationInput {
   participantId: number;
+}
+
+export interface GroupConversationInput {
+  name: string;
+  participantIds: number[];
 }
 
 export type MessageInputMediaType = typeof MessageInputMediaType[keyof typeof MessageInputMediaType];
@@ -206,6 +214,7 @@ export interface Pin {
   endTime?: string | null;
   likeCount?: number;
   likedByMe?: boolean;
+  favoritedByMe?: boolean;
   createdAt: string;
 }
 
@@ -331,6 +340,45 @@ export interface UploadUrlResponse {
 
 export interface ErrorEnvelope {
   error: string;
+}
+
+export interface Comment {
+  id: number;
+  postId: number;
+  userId: number;
+  user?: User;
+  content: string;
+  createdAt: string;
+}
+
+export interface CommentInput {
+  content: string;
+}
+
+export interface Conditions {
+  /** Air temperature in Fahrenheit. */
+  temperature: number;
+  /** @nullable */
+  apparentTemperature?: number | null;
+  /**
+     * Estimated surface water temperature in Fahrenheit.
+     * @nullable
+     */
+  waterTemperature?: number | null;
+  /** Wind speed in mph. */
+  windSpeed: number;
+  /** @nullable */
+  windGust?: number | null;
+  /** @nullable */
+  windDirection?: number | null;
+  /** @nullable */
+  humidity?: number | null;
+  /** @nullable */
+  precipitation?: number | null;
+  weatherCode: number;
+  weatherLabel: string;
+  isDay?: boolean;
+  updatedAt: string;
 }
 
 export type NotificationType = typeof NotificationType[keyof typeof NotificationType];

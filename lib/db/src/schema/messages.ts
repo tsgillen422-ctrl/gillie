@@ -5,6 +5,8 @@ import { usersTable } from "./users";
 
 export const conversationsTable = pgTable("conversations", {
   id: serial("id").primaryKey(),
+  name: text("name"),
+  isGroup: boolean("is_group").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

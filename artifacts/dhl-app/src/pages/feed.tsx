@@ -1,11 +1,12 @@
 import React from "react";
-import { useGetPosts, useGetPostsSummary, useLikePost, useGetMe, useDeletePost, useCreatePost, getGetPostsQueryKey, getGetPostsSummaryQueryKey } from "@workspace/api-client-react";
+import { useGetPosts, useGetPostsSummary, useLikePost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useCreatePostComment, useDeletePostComment, getGetPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey } from "@workspace/api-client-react";
 import { PostInputPostType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { UserAvatar } from "@/components/UserAvatar";
+import { ConditionsWidget } from "@/components/ConditionsWidget";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X } from "lucide-react";
+import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -153,6 +154,7 @@ export function FeedPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <ConditionsWidget />
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <Card key={i} className="border-border/50">
@@ -176,11 +178,18 @@ export function FeedPage() {
               onLike={() => likePost.mutate({ postId: post.id })}
               canDelete={me != null && post.userId === me.id}
               onDelete={() => handleDeletePost(post.id)}
+              currentUserId={me?.id}
             />
           ))
         ) : (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>No posts in this category yet.</p>
+          <div className="text-center py-16 px-6 flex flex-col items-center">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <MessageCircle className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="font-semibold text-lg mb-1">Nothing here yet</h3>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Be the first to share what's happening on the lake. Tap the + button to post.
+            </p>
           </div>
         )}
       </div>
@@ -272,9 +281,39 @@ export function FeedPage() {
   );
 }
 
-function PostCard({ post, onLike, canDelete, onDelete }: { post: any, onLike: () => void, canDelete?: boolean, onDelete?: () => void }) {
+function PostCard({ post, onLike, canDelete, onDelete, currentUserId }: { post: any, onLike: () => void, canDelete?: boolean, onDelete?: () => void, currentUserId?: number }) {
   const isEvent = post.postType === "event";
-  
+  const [showComments, setShowComments] = React.useState(false);
+  const { data: comments } = useGetPostComments(post.id, { query: { enabled: showComments } });
+  const createComment = useCreatePostComment();
+  const deleteComment = useDeletePostComment();
+  const queryClient = useQueryClient();
+  const [commentText, setCommentText] = React.useState("");
+
+  const refreshComments = () => {
+    queryClient.invalidateQueries({ queryKey: getGetPostCommentsQueryKey(post.id) });
+  };
+
+  const submitComment = () => {
+    if (!commentText.trim()) return;
+    createComment.mutate(
+      { postId: post.id, data: { content: commentText.trim() } },
+      {
+        onSuccess: () => { setCommentText(""); refreshComments(); },
+        onError: () => toast.error("Couldn't post your comment."),
+      }
+    );
+  };
+
+  const removeComment = (commentId: number) => {
+    deleteComment.mutate(
+      { postId: post.id, commentId },
+      { onSuccess: refreshComments, onError: () => toast.error("Couldn't delete that comment.") }
+    );
+  };
+
+  const commentCount = comments?.length ?? 0;
+
   return (
     <Card className="border-border/60 hover-elevate overflow-hidden bg-card">
       <CardHeader className="flex flex-row items-start gap-3 p-4 pb-2">
@@ -337,8 +376,8 @@ function PostCard({ post, onLike, canDelete, onDelete }: { post: any, onLike: ()
           <Heart className={`w-4 h-4 mr-2 ${post.likedByMe ? 'fill-destructive text-destructive' : ''}`} /> 
           {post.likeCount || 0}
         </Button>
-        <Button variant="ghost" size="sm" className="flex-1 text-muted-foreground">
-          <MessageCircle className="w-4 h-4 mr-2" /> Comment
+        <Button variant="ghost" size="sm" className={`flex-1 text-muted-foreground ${showComments ? 'text-primary' : ''}`} onClick={() => setShowComments(v => !v)}>
+          <MessageCircle className="w-4 h-4 mr-2" /> {commentCount > 0 ? commentCount : "Comment"}
         </Button>
         {post.pinLat && post.pinLng && (
           <Button variant="ghost" size="sm" className="flex-1 text-primary">
@@ -346,6 +385,47 @@ function PostCard({ post, onLike, canDelete, onDelete }: { post: any, onLike: ()
           </Button>
         )}
       </CardFooter>
+
+      {showComments && (
+        <div className="border-t border-border/40 bg-muted/5 p-4 space-y-3">
+          {comments && comments.length > 0 ? (
+            comments.map((c) => (
+              <div key={c.id} className="flex items-start gap-2.5 group">
+                <UserAvatar name={c.user?.displayName || "User"} username={c.user?.username || ""} avatarUrl={c.user?.avatarUrl} className="w-7 h-7 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <div className="bg-muted rounded-2xl px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-xs">{c.user?.displayName || "User"}</span>
+                      <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}</span>
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap break-words">{c.content}</p>
+                  </div>
+                </div>
+                {currentUserId != null && c.userId === currentUserId && (
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100" onClick={() => removeComment(c.id)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="text-xs text-muted-foreground text-center py-2">No comments yet. Be the first to say something.</p>
+          )}
+
+          <div className="flex items-center gap-2 pt-1">
+            <Input
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submitComment(); } }}
+              placeholder="Add a comment..."
+              className="rounded-full"
+            />
+            <Button size="icon" className="rounded-full shrink-0" onClick={submitComment} disabled={!commentText.trim() || createComment.isPending}>
+              <Send className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

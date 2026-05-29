@@ -27,6 +27,13 @@ export const pinLikesTable = pgTable("pin_likes", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const pinFavoritesTable = pgTable("pin_favorites", {
+  id: serial("id").primaryKey(),
+  pinId: integer("pin_id").notNull().references(() => pinsTable.id),
+  userId: integer("user_id").notNull().references(() => usersTable.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertPinSchema = createInsertSchema(pinsTable).omit({ id: true, createdAt: true, likeCount: true });
 export type InsertPin = z.infer<typeof insertPinSchema>;
 export type Pin = typeof pinsTable.$inferSelect;

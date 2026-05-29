@@ -308,6 +308,53 @@ paths:
               schema:
                 $ref: "#/components/schemas/Message"
 
+  /messages/conversations/{conversationId}/read:
+    post:
+      operationId: markConversationRead
+      tags: [messages]
+      summary: Mark all messages in a conversation as read
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked as read
+
+  /messages/conversations/group:
+    post:
+      operationId: createGroupConversation
+      tags: [messages]
+      summary: Start a group conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupConversationInput"
+      responses:
+        "201":
+          description: Group conversation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+
+  /conditions:
+    get:
+      operationId: getConditions
+      tags: [conditions]
+      summary: Get current weather and water conditions for the lake
+      responses:
+        "200":
+          description: Current conditions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conditions"
+
   /pins:
     get:
       operationId: getPins
@@ -401,6 +448,40 @@ paths:
       responses:
         "200":
           description: Liked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pin"
+
+  /pins/favorites:
+    get:
+      operationId: getFavoritePins
+      tags: [pins]
+      summary: Get the current user's favorited pins
+      responses:
+        "200":
+          description: List of favorited pins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pin"
+
+  /pins/{pinId}/favorite:
+    post:
+      operationId: toggleFavoritePin
+      tags: [pins]
+      summary: Toggle favorite on a pin
+      parameters:
+        - name: pinId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated pin
           content:
             application/json:
               schema:
@@ -543,6 +624,70 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Post"
+
+  /posts/{postId}/comments:
+    get:
+      operationId: getPostComments
+      tags: [posts]
+      summary: Get comments on a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Comment"
+    post:
+      operationId: createPostComment
+      tags: [posts]
+      summary: Add a comment to a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommentInput"
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+
+  /posts/{postId}/comments/{commentId}:
+    delete:
+      operationId: deletePostComment
+      tags: [posts]
+      summary: Delete a comment
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
 
   /posts/summary:
     get:
@@ -859,6 +1004,10 @@ components:
       properties:
         id:
           type: integer
+        name:
+          type: ["string", "null"]
+        isGroup:
+          type: boolean
         participants:
           type: array
           items:
@@ -876,6 +1025,17 @@ components:
       properties:
         participantId:
           type: integer
+
+    GroupConversationInput:
+      type: object
+      required: [name, participantIds]
+      properties:
+        name:
+          type: string
+        participantIds:
+          type: array
+          items:
+            type: integer
 
     Message:
       type: object
@@ -947,6 +1107,8 @@ components:
         likeCount:
           type: integer
         likedByMe:
+          type: boolean
+        favoritedByMe:
           type: boolean
         createdAt:
           type: string
@@ -1083,6 +1245,62 @@ components:
       required: [error]
       properties:
         error:
+          type: string
+
+    Comment:
+      type: object
+      required: [id, postId, userId, content, createdAt]
+      properties:
+        id:
+          type: integer
+        postId:
+          type: integer
+        userId:
+          type: integer
+        user:
+          $ref: "#/components/schemas/User"
+        content:
+          type: string
+        createdAt:
+          type: string
+
+    CommentInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+
+    Conditions:
+      type: object
+      required: [temperature, windSpeed, weatherCode, weatherLabel, updatedAt]
+      properties:
+        temperature:
+          type: number
+          description: Air temperature in Fahrenheit.
+        apparentTemperature:
+          type: ["number", "null"]
+        waterTemperature:
+          type: ["number", "null"]
+          description: Estimated surface water temperature in Fahrenheit.
+        windSpeed:
+          type: number
+          description: Wind speed in mph.
+        windGust:
+          type: ["number", "null"]
+        windDirection:
+          type: ["number", "null"]
+        humidity:
+          type: ["number", "null"]
+        precipitation:
+          type: ["number", "null"]
+        weatherCode:
+          type: integer
+        weatherLabel:
+          type: string
+        isDay:
+          type: boolean
+        updatedAt:
           type: string
 
     Notification:

@@ -432,6 +432,8 @@ export const AcceptFriendRequestResponse = zod.object({
  */
 export const GetConversationsResponseItem = zod.object({
   "id": zod.number(),
+  "name": zod.string().nullish(),
+  "isGroup": zod.boolean().optional(),
   "participants": zod.array(zod.object({
   "id": zod.number(),
   "username": zod.string(),
@@ -560,6 +562,42 @@ export const SendMessageBody = zod.object({
 
 
 /**
+ * @summary Mark all messages in a conversation as read
+ */
+export const MarkConversationReadParams = zod.object({
+  "conversationId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Start a group conversation
+ */
+export const CreateGroupConversationBody = zod.object({
+  "name": zod.string(),
+  "participantIds": zod.array(zod.number())
+})
+
+
+/**
+ * @summary Get current weather and water conditions for the lake
+ */
+export const GetConditionsResponse = zod.object({
+  "temperature": zod.number().describe('Air temperature in Fahrenheit.'),
+  "apparentTemperature": zod.number().nullish(),
+  "waterTemperature": zod.number().nullish().describe('Estimated surface water temperature in Fahrenheit.'),
+  "windSpeed": zod.number().describe('Wind speed in mph.'),
+  "windGust": zod.number().nullish(),
+  "windDirection": zod.number().nullish(),
+  "humidity": zod.number().nullish(),
+  "precipitation": zod.number().nullish(),
+  "weatherCode": zod.number(),
+  "weatherLabel": zod.string(),
+  "isDay": zod.boolean().optional(),
+  "updatedAt": zod.string()
+})
+
+
+/**
  * @summary Get all pins on the lake
  */
 export const GetPinsQueryParams = zod.object({
@@ -605,6 +643,7 @@ export const GetPinsResponseItem = zod.object({
   "endTime": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "favoritedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 export const GetPinsResponse = zod.array(GetPinsResponseItem)
@@ -671,6 +710,7 @@ export const GetPinResponse = zod.object({
   "endTime": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "favoritedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -728,6 +768,104 @@ export const LikePinResponse = zod.object({
   "endTime": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "favoritedByMe": zod.boolean().optional(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Get the current user's favorited pins
+ */
+export const GetFavoritePinsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "createdAt": zod.string()
+}).optional(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "visibility": zod.enum(['friends', 'public', 'community']).optional(),
+  "imageUrl": zod.string().nullish(),
+  "approved": zod.boolean().optional(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "likeCount": zod.number().optional(),
+  "likedByMe": zod.boolean().optional(),
+  "favoritedByMe": zod.boolean().optional(),
+  "createdAt": zod.string()
+})
+export const GetFavoritePinsResponse = zod.array(GetFavoritePinsResponseItem)
+
+
+/**
+ * @summary Toggle favorite on a pin
+ */
+export const ToggleFavoritePinParams = zod.object({
+  "pinId": zod.coerce.number()
+})
+
+export const ToggleFavoritePinResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "createdAt": zod.string()
+}).optional(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "visibility": zod.enum(['friends', 'public', 'community']).optional(),
+  "imageUrl": zod.string().nullish(),
+  "approved": zod.boolean().optional(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "likeCount": zod.number().optional(),
+  "likedByMe": zod.boolean().optional(),
+  "favoritedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -773,6 +911,7 @@ export const GetPendingPinsResponseItem = zod.object({
   "endTime": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "favoritedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 export const GetPendingPinsResponse = zod.array(GetPendingPinsResponseItem)
@@ -823,6 +962,7 @@ export const ApprovePinResponse = zod.object({
   "endTime": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "favoritedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -989,6 +1129,67 @@ export const LikePostResponse = zod.object({
 
 
 /**
+ * @summary Get comments on a post
+ */
+export const GetPostCommentsParams = zod.object({
+  "postId": zod.coerce.number()
+})
+
+export const GetPostCommentsResponseItem = zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "createdAt": zod.string()
+}).optional(),
+  "content": zod.string(),
+  "createdAt": zod.string()
+})
+export const GetPostCommentsResponse = zod.array(GetPostCommentsResponseItem)
+
+
+/**
+ * @summary Add a comment to a post
+ */
+export const CreatePostCommentParams = zod.object({
+  "postId": zod.coerce.number()
+})
+
+export const CreatePostCommentBody = zod.object({
+  "content": zod.string()
+})
+
+
+/**
+ * @summary Delete a comment
+ */
+export const DeletePostCommentParams = zod.object({
+  "postId": zod.coerce.number(),
+  "commentId": zod.coerce.number()
+})
+
+
+/**
  * @summary Get a quick summary of community activity
  */
 export const GetPostsSummaryResponse = zod.object({
@@ -1071,6 +1272,7 @@ export const GetPostsSummaryResponse = zod.object({
   "endTime": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "favoritedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })).optional()
 })

@@ -10,6 +10,9 @@ import type { User } from './user';
 
 export interface Conversation {
   id: number;
+  /** @nullable */
+  name?: string | null;
+  isGroup?: boolean;
   participants?: User[];
   lastMessage?: Message;
   unreadCount?: number;

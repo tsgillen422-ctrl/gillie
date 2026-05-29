@@ -6,6 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './comment';
+export * from './commentInput';
+export * from './conditions';
 export * from './conversation';
 export * from './conversationInput';
 export * from './errorEnvelope';
@@ -16,6 +19,7 @@ export * from './getPinsParams';
 export * from './getPinsType';
 export * from './getPostsParams';
 export * from './getPostsType';
+export * from './groupConversationInput';
 export * from './healthStatus';
 export * from './locationUpdate';
 export * from './message';

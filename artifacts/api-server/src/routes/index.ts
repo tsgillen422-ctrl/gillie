@@ -7,6 +7,7 @@ import pinsRouter from "./pins";
 import postsRouter from "./posts";
 import notificationsRouter from "./notifications";
 import storageRouter from "./storage";
+import conditionsRouter from "./conditions";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use("/messages", messagesRouter);
 router.use("/pins", pinsRouter);
 router.use("/posts", postsRouter);
 router.use("/notifications", notificationsRouter);
+router.use("/conditions", conditionsRouter);
 
 export default router;
