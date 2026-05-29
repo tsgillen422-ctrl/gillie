@@ -277,18 +277,42 @@ function buildPinEl(opts: { emoji: string; title: string; delay: number; tier: "
 }
 
 // --- Cluster bubble marker element (aggregates nearby low-priority pins) ---
-function buildClusterEl(count: number): { root: HTMLDivElement; scale: HTMLDivElement } {
+// Shows a representative emoji for the group; the bubble grows with the count.
+function buildClusterEl(count: number, emoji: string): { root: HTMLDivElement; scale: HTMLDivElement } {
   const root = el("div", "lake-pin") as HTMLDivElement;
   const scale = el("div", "lake-pin-scale") as HTMLDivElement;
   // larger bubble for denser clusters
   const sizeClass = count >= 25 ? "cluster-lg" : count >= 10 ? "cluster-md" : "cluster-sm";
   const bubble = el("div", `pin-cluster ${sizeClass}`);
-  const num = el("span", "pin-cluster-count");
-  num.textContent = String(count);
-  bubble.appendChild(num);
+  const emojiEl = el("span", "pin-cluster-emoji");
+  emojiEl.textContent = emoji;
+  bubble.appendChild(emojiEl);
   scale.appendChild(bubble);
   root.appendChild(scale);
   return { root, scale };
+}
+
+// Pick the most common pin-type emoji among a cluster's leaves.
+function dominantClusterEmoji(index: Supercluster, clusterId: number): string {
+  try {
+    const leaves = index.getLeaves(clusterId, Infinity) as any[];
+    const counts: Record<string, number> = {};
+    for (const leaf of leaves) {
+      const t = leaf.properties?.pin?.type;
+      if (t) counts[t] = (counts[t] || 0) + 1;
+    }
+    let best = "";
+    let bestN = -1;
+    for (const [t, n] of Object.entries(counts)) {
+      if (n > bestN) {
+        bestN = n;
+        best = t;
+      }
+    }
+    return getPinEmoji(best);
+  } catch {
+    return getPinEmoji("");
+  }
 }
 
 export function MapPage() {
@@ -555,9 +579,10 @@ export function MapPage() {
       clusters.forEach((c: any) => {
         const [lng, lat] = c.geometry.coordinates;
         if (c.properties.cluster) {
-          // A multi-point cluster: always a count bubble that expands on tap.
+          // A multi-point cluster: bubble shows the dominant emoji, expands on tap.
           const count = c.properties.point_count as number;
-          const { root, scale } = buildClusterEl(count);
+          const emoji = dominantClusterEmoji(index, c.properties.cluster_id);
+          const { root, scale } = buildClusterEl(count, emoji);
           root.addEventListener("click", (ev) => {
             ev.stopPropagation();
             const expZoom = Math.min(index.getClusterExpansionZoom(c.properties.cluster_id), 18);
@@ -572,9 +597,9 @@ export function MapPage() {
           // Zoomed in: reveal the individual low-priority pin as an icon chip.
           addPinMarker(c.properties.pin);
         } else {
-          // Zoomed out: show even a lone low-priority pin as a count-1 bubble
+          // Zoomed out: show even a lone low-priority pin as a single-emoji bubble
           // so nothing silently disappears while still hiding the detail chip.
-          const { root, scale } = buildClusterEl(1);
+          const { root, scale } = buildClusterEl(1, getPinEmoji(c.properties.pin?.type));
           root.addEventListener("click", (ev) => {
             ev.stopPropagation();
             map.easeTo({ center: [lng, lat], zoom: SECONDARY_PIN_ZOOM });
@@ -1198,10 +1223,13 @@ const MAP_CSS = `
     color: #0369a1;
     font-weight: 800;
   }
-  .pin-cluster .pin-cluster-count { line-height: 1; }
-  .pin-cluster.cluster-sm { width: 34px; height: 34px; font-size: 13px; }
-  .pin-cluster.cluster-md { width: 42px; height: 42px; font-size: 15px; }
-  .pin-cluster.cluster-lg { width: 52px; height: 52px; font-size: 17px; }
+  .pin-cluster .pin-cluster-emoji { line-height: 1; }
+  .pin-cluster.cluster-sm { width: 36px; height: 36px; }
+  .pin-cluster.cluster-md { width: 44px; height: 44px; }
+  .pin-cluster.cluster-lg { width: 54px; height: 54px; }
+  .pin-cluster.cluster-sm .pin-cluster-emoji { font-size: 18px; }
+  .pin-cluster.cluster-md .pin-cluster-emoji { font-size: 22px; }
+  .pin-cluster.cluster-lg .pin-cluster-emoji { font-size: 26px; }
 
   /* ================= MapLibre controls polish ================= */
   .maplibregl-ctrl-group {
