@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { Home, Users, MessageCircle, MapPin, Bell, Settings } from "lucide-react";
+import { Home, Users, MessageCircle, MapPin, Bell, Settings, User } from "lucide-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -11,6 +11,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { href: "/pins", icon: MapPin, label: "Pins" },
     { href: "/messages", icon: MessageCircle, label: "Messages" },
     { href: "/friends", icon: Users, label: "Friends" },
+    { href: "/profile/me", icon: User, label: "Profile" },
     { href: "/notifications", icon: Bell, label: "Alerts" },
     { href: "/settings", icon: Settings, label: "Settings" },
   ];
@@ -24,7 +25,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Bottom Nav for Mobile / Shared */}
       <nav className="border-t border-border bg-card shrink-0 pb-safe z-50">
         <ul className="flex items-center justify-around h-16 px-2">
-          {navItems.slice(0, 5).map((item) => (
+          {navItems.slice(0, 6).map((item) => (
             <li key={item.href} className="flex-1">
               <Link
                 href={item.href}

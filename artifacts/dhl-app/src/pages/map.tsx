@@ -815,19 +815,6 @@ export function MapPage() {
     <div className="h-full w-full relative bg-blue-50">
       <style dangerouslySetInnerHTML={{ __html: MAP_CSS }} />
 
-      {me && (
-        <Link
-          href="/profile/me"
-          className="absolute top-4 left-4 z-[1000] flex items-center gap-2 bg-card/90 backdrop-blur-md border border-border rounded-full pl-1.5 pr-3.5 py-1.5 shadow-lg hover:bg-card transition-colors no-underline text-inherit"
-        >
-          <UserAvatar name={me.displayName} username={me.username} avatarUrl={me.avatarUrl} online={me.isOnline} className="w-8 h-8" />
-          <div className="leading-tight">
-            <div className="text-xs font-bold">{me.displayName}</div>
-            <div className="text-[10px] text-muted-foreground">View profile</div>
-          </div>
-        </Link>
-      )}
-
       <div ref={mapContainer} className="absolute inset-0 z-0" />
 
       {mapError && (
