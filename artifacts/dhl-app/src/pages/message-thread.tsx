@@ -1,17 +1,18 @@
 import React, { useEffect, useRef } from "react";
 import { useParams, Link } from "wouter";
-import { useGetConversationMessages, useSendMessage, useDeleteMessage, getGetConversationMessagesQueryKey } from "@workspace/api-client-react";
+import { useGetConversationMessages, useSendMessage, useDeleteMessage, useGetConversations, useMarkConversationRead, getGetConversationMessagesQueryKey, getGetConversationsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUpload } from "@workspace/object-storage-web";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { UserAvatar } from "@/components/UserAvatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowLeft, Send, ImagePlus, Loader2, X, Trash2, MoreVertical } from "lucide-react";
+import { ArrowLeft, Send, ImagePlus, Loader2, X, Trash2, MoreVertical, Check, CheckCheck } from "lucide-react";
 import { format } from "date-fns";
 import { useGetMe } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
@@ -25,8 +26,23 @@ export function MessageThreadPage() {
   const convId = parseInt(id);
   const { data: messages, isLoading } = useGetConversationMessages(convId, { query: { enabled: !!convId, refetchInterval: 5000 } });
   const { data: me } = useGetMe();
+  const { data: conversations } = useGetConversations();
+  const conversation = conversations?.find((c) => c.id === convId);
+  const otherParticipants = (conversation?.participants ?? []).filter((p) => p.id !== me?.id);
+  const isGroup = conversation?.isGroup ?? (otherParticipants.length > 1);
+  const headerTitle = conversation?.name
+    ? conversation.name
+    : isGroup
+      ? otherParticipants.map((p) => p.displayName).join(", ") || "Group chat"
+      : otherParticipants[0]?.displayName || "Conversation";
+  const headerSubtitle = isGroup
+    ? `${(conversation?.participants?.length ?? otherParticipants.length + 1)} members`
+    : otherParticipants[0]?.isOnline
+      ? "Online now"
+      : "On the lake";
   const sendMessage = useSendMessage();
   const deleteMessage = useDeleteMessage();
+  const markRead = useMarkConversationRead();
   const [text, setText] = React.useState("");
   const [pending, setPending] = React.useState<{ objectPath: string; type: "image" | "video" } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -43,6 +59,16 @@ export function MessageThreadPage() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  const hasUnreadFromOthers = !!messages?.some((m) => m.senderId !== me?.id && !m.read);
+  useEffect(() => {
+    if (!convId || !me || !hasUnreadFromOthers) return;
+    markRead.mutate(
+      { conversationId: convId },
+      { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetConversationsQueryKey() }) }
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [convId, me?.id, hasUnreadFromOthers]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: getGetConversationMessagesQueryKey(convId) });
 
@@ -100,10 +126,23 @@ export function MessageThreadPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-muted border border-border" />
-          <div>
-            <h2 className="font-semibold text-sm">Conversation</h2>
+        <div className="flex items-center gap-3 min-w-0">
+          {isGroup ? (
+            <div className="w-10 h-10 rounded-full bg-primary/15 border border-border flex items-center justify-center text-primary font-semibold text-sm shrink-0">
+              {(conversation?.name?.[0] || "G").toUpperCase()}
+            </div>
+          ) : (
+            <UserAvatar
+              name={otherParticipants[0]?.displayName || "User"}
+              username={otherParticipants[0]?.username || ""}
+              avatarUrl={otherParticipants[0]?.avatarUrl}
+              online={otherParticipants[0]?.isOnline}
+              className="w-10 h-10 shrink-0"
+            />
+          )}
+          <div className="min-w-0">
+            <h2 className="font-semibold text-sm truncate">{headerTitle}</h2>
+            <p className="text-[11px] text-muted-foreground truncate">{headerSubtitle}</p>
           </div>
         </div>
       </div>
@@ -114,11 +153,17 @@ export function MessageThreadPage() {
           {isLoading ? (
             <div className="text-center text-muted-foreground text-sm py-4">Loading messages...</div>
           ) : messages?.length ? (
-            messages.map(msg => {
+            messages.map((msg, idx) => {
               const isMe = msg.senderId === me?.id;
               const hasText = !!msg.content?.trim();
+              const senderName = msg.sender?.displayName || otherParticipants.find((p) => p.id === msg.senderId)?.displayName;
+              const showSenderName = isGroup && !isMe && senderName && messages[idx - 1]?.senderId !== msg.senderId;
+              const isLastMine = isMe && idx === messages.length - 1;
               return (
                 <div key={msg.id} className={`group flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                  {showSenderName && (
+                    <span className="text-[11px] font-medium text-muted-foreground mb-0.5 mx-1">{senderName}</span>
+                  )}
                   <div className="flex items-center gap-1">
                     {isMe && (
                       <DropdownMenu>
@@ -148,8 +193,15 @@ export function MessageThreadPage() {
                       {hasText && <p className={`text-sm ${msg.mediaUrl ? 'px-3 pb-1' : ''}`}>{msg.content}</p>}
                     </div>
                   </div>
-                  <span className="text-[10px] text-muted-foreground mt-1 mx-1">
+                  <span className="text-[10px] text-muted-foreground mt-1 mx-1 flex items-center gap-1">
                     {format(new Date(msg.createdAt), 'h:mm a')}
+                    {isLastMine && (
+                      msg.read ? (
+                        <span className="flex items-center gap-0.5 text-primary"><CheckCheck className="w-3 h-3" /> Read</span>
+                      ) : (
+                        <span className="flex items-center gap-0.5"><Check className="w-3 h-3" /> Sent</span>
+                      )
+                    )}
                   </span>
                 </div>
               );

@@ -2,10 +2,10 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Supercluster from "supercluster";
-import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, getGetPinsQueryKey } from "@workspace/api-client-react";
+import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey } from "@workspace/api-client-react";
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
-import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X, ImagePlus } from "lucide-react";
+import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X, ImagePlus, Heart, Star, Search } from "lucide-react";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -390,6 +390,9 @@ export function MapPage() {
 
   const [selected, setSelected] = useState<Selected>(null);
   const [mapError, setMapError] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [presenceOpen, setPresenceOpen] = useState(false);
 
   const [pinDialog, setPinDialog] = useState<{ open: boolean; lat?: number; lng?: number }>({ open: false });
   const [pinTitle, setPinTitle] = useState("");
@@ -783,6 +786,51 @@ export function MapPage() {
     }
   };
 
+  const flyToLocation = (lng: number, lat: number, sel: Selected) => {
+    const map = mapRef.current;
+    if (map) map.flyTo({ center: [lng, lat], zoom: 15, essential: true });
+    setSelected(sel);
+    setSearchOpen(false);
+    setSearchQuery("");
+    setPresenceOpen(false);
+  };
+
+  const onlineFriends = (friends ?? []).filter((f: any) => f.isOnline);
+  const onlineCount = onlineFriends.length + (me?.currentLat != null ? 1 : 0);
+
+  const searchResults = (() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return [] as Array<{ key: string; icon: string; title: string; subtitle: string; onSelect: () => void }>;
+    const results: Array<{ key: string; icon: string; title: string; subtitle: string; onSelect: () => void }> = [];
+    for (const p of pins ?? []) {
+      if (
+        p.title?.toLowerCase().includes(q) ||
+        p.description?.toLowerCase().includes(q) ||
+        p.type?.toLowerCase().includes(q)
+      ) {
+        results.push({
+          key: `pin-${p.id}`,
+          icon: getPinEmoji(p.type),
+          title: p.title,
+          subtitle: (p.type || "").replace(/_/g, " "),
+          onSelect: () => flyToLocation(p.lng, p.lat, { kind: "pin", data: p }),
+        });
+      }
+    }
+    for (const f of friends ?? []) {
+      if (f.displayName?.toLowerCase().includes(q) || f.username?.toLowerCase().includes(q) || f.boatName?.toLowerCase().includes(q)) {
+        results.push({
+          key: `friend-${f.userId}`,
+          icon: "🧑",
+          title: f.displayName,
+          subtitle: f.boatName ? `🚤 ${f.boatName}` : f.isOnline ? "Online now" : "On the lake",
+          onSelect: () => flyToLocation(f.lng, f.lat, { kind: "friend", data: f }),
+        });
+      }
+    }
+    return results.slice(0, 20);
+  })();
+
   const handleFabClick = () => {
     let lat = LAKE_CENTER[1];
     let lng = LAKE_CENTER[0];
@@ -871,8 +919,76 @@ export function MapPage() {
         </div>
       )}
 
+      {/* Search bar */}
+      <div className="absolute top-[80px] left-4 right-20 z-[400]">
+        {searchOpen ? (
+          <div className="rounded-2xl bg-card shadow-lg border border-border overflow-hidden">
+            <div className="flex items-center gap-2 px-3 py-2">
+              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+              <input
+                autoFocus
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search pins and people..."
+                className="flex-1 bg-transparent outline-none text-sm"
+              />
+              <button
+                aria-label="Close search"
+                onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {searchQuery.trim() && (
+              <div className="max-h-72 overflow-y-auto border-t border-border">
+                {searchResults.length === 0 ? (
+                  <p className="px-4 py-3 text-sm text-muted-foreground">No matches found.</p>
+                ) : (
+                  searchResults.map((r) => (
+                    <button
+                      key={r.key}
+                      onClick={r.onSelect}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted text-left transition-colors"
+                    >
+                      <span className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-lg shrink-0">{r.icon}</span>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{r.title}</p>
+                        <p className="text-xs text-muted-foreground truncate">{r.subtitle}</p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => setSearchOpen(true)}
+            className="flex items-center gap-2 rounded-full bg-card shadow-md border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-muted transition-colors"
+          >
+            <Search className="h-4 w-4" /> Search the lake
+          </button>
+        )}
+      </div>
+
       {/* Floating map controls */}
       <div className="absolute top-[80px] right-4 z-[400] flex flex-col items-center gap-3">
+        {/* Who's on the lake */}
+        <Button
+          size="icon"
+          className="h-10 w-10 rounded-full shadow-md bg-card text-foreground border border-border hover:bg-muted relative"
+          onClick={() => setPresenceOpen(true)}
+          aria-label="Who's on the lake"
+        >
+          <span className="text-lg leading-none">⚓</span>
+          {onlineCount > 0 && (
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center">
+              {onlineCount}
+            </span>
+          )}
+        </Button>
+
         {/* Add-pin FAB: smaller and softer so it doesn't dominate */}
         <Button
           size="icon"
@@ -912,6 +1028,78 @@ export function MapPage() {
           </button>
         </div>
       </div>
+
+      {/* Who's on the lake panel */}
+      <AnimatePresence>
+        {presenceOpen && (
+          <>
+            <motion.div
+              key="presence-scrim"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 z-[650] bg-black/30"
+              onClick={() => setPresenceOpen(false)}
+            />
+            <motion.div
+              key="presence-panel"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 320 }}
+              className="absolute top-0 right-0 bottom-0 z-[660] w-[85%] max-w-sm bg-card shadow-2xl flex flex-col"
+            >
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <div>
+                  <h2 className="font-bold text-lg">Who's on the lake</h2>
+                  <p className="text-xs text-muted-foreground">{onlineCount} {onlineCount === 1 ? "person" : "people"} out right now</p>
+                </div>
+                <Button size="icon" variant="ghost" onClick={() => setPresenceOpen(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-2">
+                {me?.currentLat != null && me?.currentLng != null && (
+                  <button
+                    onClick={() => flyToLocation(me.currentLng!, me.currentLat!, { kind: "me", data: me })}
+                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted text-left transition-colors"
+                  >
+                    <UserAvatar name={me.displayName} username={me.username} avatarUrl={me.avatarUrl} online className="w-11 h-11" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate">You</p>
+                      <p className="text-xs text-muted-foreground truncate">{me.boatName ? `🚤 ${me.boatName}` : "On the lake"}</p>
+                    </div>
+                  </button>
+                )}
+                {(friends ?? []).length === 0 ? (
+                  <div className="text-center py-12 px-6 flex flex-col items-center">
+                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3 text-2xl">⚓</div>
+                    <p className="font-semibold text-sm mb-1">Quiet waters</p>
+                    <p className="text-xs text-muted-foreground max-w-[200px]">None of your friends are sharing their location yet.</p>
+                  </div>
+                ) : (
+                  [...(friends ?? [])]
+                    .sort((a: any, b: any) => Number(b.isOnline) - Number(a.isOnline))
+                    .map((f: any) => (
+                      <button
+                        key={f.userId}
+                        onClick={() => flyToLocation(f.lng, f.lat, { kind: "friend", data: f })}
+                        className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted text-left transition-colors"
+                      >
+                        <UserAvatar name={f.displayName} username={f.username} avatarUrl={f.avatarUrl} online={f.isOnline} className="w-11 h-11" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold truncate">{f.displayName}</p>
+                          <p className="text-xs text-muted-foreground truncate">{f.boatName ? `🚤 ${f.boatName}` : f.isOnline ? "Online now" : "On the lake"}</p>
+                        </div>
+                        {f.isOnline && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />}
+                      </button>
+                    ))
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* Slide-up detail card */}
       <AnimatePresence>
@@ -1101,9 +1289,10 @@ function DetailCard({ selected, onClose }: { selected: NonNullable<Selected>; on
   const queryClient = useQueryClient();
   const likePin = useLikePin();
   const favoritePin = useToggleFavoritePin();
+  const { data: freshPins } = useGetPins({});
 
   if (selected.kind === "pin") {
-    const pin = selected.data;
+    const pin = freshPins?.find((p) => p.id === selected.data.id) ?? selected.data;
     const refreshPins = () => {
       queryClient.invalidateQueries({ queryKey: getGetPinsQueryKey() });
       queryClient.invalidateQueries({ queryKey: getGetFavoritePinsQueryKey() });

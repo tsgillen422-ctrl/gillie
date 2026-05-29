@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppLayout } from "@/components/AppLayout";
+import { Onboarding } from "@/components/Onboarding";
 
 import { MapPage } from "@/pages/map";
 import { FeedPage } from "@/pages/feed";
@@ -51,6 +52,7 @@ function App() {
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <Router />
         </WouterRouter>
+        <Onboarding />
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

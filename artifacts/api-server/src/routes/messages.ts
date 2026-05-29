@@ -1,10 +1,20 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, conversationsTable, conversationParticipantsTable, messagesTable } from "@workspace/db";
-import { eq, and, ne, desc } from "drizzle-orm";
+import { eq, and, ne, desc, gt } from "drizzle-orm";
 
 const router = Router();
 const SESSION_USER_ID = 1;
+
+async function isParticipant(conversationId: number, userId: number) {
+  const row = await db.query.conversationParticipantsTable.findFirst({
+    where: and(
+      eq(conversationParticipantsTable.conversationId, conversationId),
+      eq(conversationParticipantsTable.userId, userId)
+    ),
+  });
+  return Boolean(row);
+}
 
 function formatUser(u: typeof usersTable.$inferSelect) {
   return {
@@ -40,6 +50,8 @@ router.get("/conversations", async (_req, res) => {
       });
       if (!conv) return null;
 
+      const myLastReadAt = p.lastReadAt;
+
       const participants = await db
         .select()
         .from(conversationParticipantsTable)
@@ -62,8 +74,8 @@ router.get("/conversations", async (_req, res) => {
         .where(
           and(
             eq(messagesTable.conversationId, conv.id),
-            eq(messagesTable.read, false),
-            ne(messagesTable.senderId, SESSION_USER_ID)
+            ne(messagesTable.senderId, SESSION_USER_ID),
+            ...(myLastReadAt ? [gt(messagesTable.createdAt, myLastReadAt)] : [])
           )
         );
 
@@ -160,6 +172,16 @@ router.post("/conversations/group", async (req, res) => {
 
 router.get("/conversations/:conversationId", async (req, res) => {
   const conversationId = parseInt(req.params.conversationId);
+  if (!(await isParticipant(conversationId, SESSION_USER_ID))) {
+    return res.status(403).json({ error: "You are not a participant in this conversation" });
+  }
+
+  const participants = await db
+    .select()
+    .from(conversationParticipantsTable)
+    .where(eq(conversationParticipantsTable.conversationId, conversationId));
+  const otherParticipants = participants.filter((p) => p.userId !== SESSION_USER_ID);
+
   const msgs = await db
     .select()
     .from(messagesTable)
@@ -169,6 +191,11 @@ router.get("/conversations/:conversationId", async (req, res) => {
   const formatted = await Promise.all(
     msgs.map(async (m) => {
       const sender = await db.query.usersTable.findFirst({ where: eq(usersTable.id, m.senderId) });
+      const read =
+        otherParticipants.length > 0 &&
+        otherParticipants.every(
+          (p) => p.lastReadAt != null && p.lastReadAt >= m.createdAt
+        );
       return {
         id: m.id,
         conversationId: m.conversationId,
@@ -177,7 +204,7 @@ router.get("/conversations/:conversationId", async (req, res) => {
         content: m.content,
         mediaUrl: m.mediaUrl,
         mediaType: m.mediaType,
-        read: m.read,
+        read,
         createdAt: m.createdAt.toISOString(),
       };
     })
@@ -187,13 +214,16 @@ router.get("/conversations/:conversationId", async (req, res) => {
 
 router.post("/conversations/:conversationId/read", async (req, res) => {
   const conversationId = parseInt(req.params.conversationId);
+  if (!(await isParticipant(conversationId, SESSION_USER_ID))) {
+    return res.status(403).json({ error: "You are not a participant in this conversation" });
+  }
   await db
-    .update(messagesTable)
-    .set({ read: true })
+    .update(conversationParticipantsTable)
+    .set({ lastReadAt: new Date() })
     .where(
       and(
-        eq(messagesTable.conversationId, conversationId),
-        ne(messagesTable.senderId, SESSION_USER_ID)
+        eq(conversationParticipantsTable.conversationId, conversationId),
+        eq(conversationParticipantsTable.userId, SESSION_USER_ID)
       )
     );
   res.json({ success: true });
@@ -201,6 +231,9 @@ router.post("/conversations/:conversationId/read", async (req, res) => {
 
 router.post("/conversations/:conversationId", async (req, res) => {
   const conversationId = parseInt(req.params.conversationId);
+  if (!(await isParticipant(conversationId, SESSION_USER_ID))) {
+    return res.status(403).json({ error: "You are not a participant in this conversation" });
+  }
   const { content, mediaUrl, mediaType } = req.body;
   const [msg] = await db
     .insert(messagesTable)

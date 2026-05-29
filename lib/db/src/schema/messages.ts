@@ -14,6 +14,7 @@ export const conversationParticipantsTable = pgTable("conversation_participants"
   id: serial("id").primaryKey(),
   conversationId: integer("conversation_id").notNull().references(() => conversationsTable.id),
   userId: integer("user_id").notNull().references(() => usersTable.id),
+  lastReadAt: timestamp("last_read_at"),
 });
 
 export const messagesTable = pgTable("messages", {
