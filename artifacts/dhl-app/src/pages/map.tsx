@@ -4,16 +4,14 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import Supercluster from "supercluster";
 import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, getGetPinsQueryKey } from "@workspace/api-client-react";
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Navigation, MessageSquare, Plus, Minus, Crosshair, ChevronUp, Droplet, X } from "lucide-react";
+import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X } from "lucide-react";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FeedPage } from "./feed";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -901,32 +899,6 @@ export function MapPage() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Floating Bottom Drawer / Panel */}
-      <Sheet>
-        <SheetTrigger asChild>
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[400] w-[90%] max-w-sm">
-            <Button variant="outline" className="w-full rounded-full shadow-lg bg-card/90 backdrop-blur-sm border-border h-12 flex items-center justify-between px-6 hover:bg-card">
-              <span className="font-semibold flex items-center gap-2">
-                <Droplet className="w-4 h-4 text-primary fill-primary" /> Lake Feed
-              </span>
-              <ChevronUp className="w-5 h-5 text-muted-foreground" />
-            </Button>
-          </div>
-        </SheetTrigger>
-        <SheetContent side="bottom" className="h-[85vh] p-0 rounded-t-3xl overflow-hidden flex flex-col bg-background border-border">
-          <div className="w-12 h-1.5 bg-muted mx-auto rounded-full mt-3 mb-2 shrink-0" />
-          <SheetHeader className="px-4 text-left shrink-0 pb-2">
-            <SheetTitle className="sr-only">Lake Feed</SheetTitle>
-            <SheetDescription className="sr-only">Community activity on the lake</SheetDescription>
-          </SheetHeader>
-          <div className="flex-1 overflow-y-auto w-full relative">
-            <div className="absolute inset-0">
-              <FeedPage />
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
 
       {/* Pin Creation Dialog */}
       <Dialog open={pinDialog.open} onOpenChange={(open) => !open && setPinDialog({ open: false })}>
