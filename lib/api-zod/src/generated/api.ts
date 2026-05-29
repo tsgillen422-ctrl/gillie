@@ -24,6 +24,7 @@ export const GetMeResponse = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -46,6 +47,7 @@ export const UpdateMeBody = zod.object({
   "displayName": zod.string().optional(),
   "bio": zod.string().optional(),
   "avatarUrl": zod.string().optional(),
+  "coverUrl": zod.string().optional(),
   "boatName": zod.string().optional(),
   "boatColor": zod.string().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -57,6 +59,7 @@ export const UpdateMeResponse = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -85,6 +88,7 @@ export const UpdateMyLocationResponse = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -112,6 +116,7 @@ export const SearchUsersResponseItem = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -140,6 +145,7 @@ export const GetUserResponse = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -163,6 +169,7 @@ export const GetFriendsResponseItem = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -210,6 +217,7 @@ export const GetFriendRequestsResponseItem = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -228,6 +236,7 @@ export const GetFriendRequestsResponseItem = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -263,6 +272,7 @@ export const FollowUserResponse = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -281,6 +291,7 @@ export const FollowUserResponse = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -323,6 +334,7 @@ export const AcceptFriendRequestResponse = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -341,6 +353,7 @@ export const AcceptFriendRequestResponse = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -368,6 +381,7 @@ export const GetConversationsResponseItem = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -390,6 +404,7 @@ export const GetConversationsResponseItem = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -404,6 +419,8 @@ export const GetConversationsResponseItem = zod.object({
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.union([zod.literal('image'),zod.literal('video'),zod.literal(null)]).nullish(),
   "read": zod.boolean().optional(),
   "createdAt": zod.string()
 }).optional(),
@@ -437,6 +454,7 @@ export const GetConversationMessagesResponseItem = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -451,6 +469,8 @@ export const GetConversationMessagesResponseItem = zod.object({
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.union([zod.literal('image'),zod.literal('video'),zod.literal(null)]).nullish(),
   "read": zod.boolean().optional(),
   "createdAt": zod.string()
 })
@@ -465,7 +485,9 @@ export const SendMessageParams = zod.object({
 })
 
 export const SendMessageBody = zod.object({
-  "content": zod.string()
+  "content": zod.string().optional(),
+  "mediaUrl": zod.string().optional(),
+  "mediaType": zod.enum(['image', 'video']).optional()
 })
 
 
@@ -473,7 +495,8 @@ export const SendMessageBody = zod.object({
  * @summary Get all pins on the lake
  */
 export const GetPinsQueryParams = zod.object({
-  "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'landmark', 'hazard', 'marina', 'campsite', 'other']).optional()
+  "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'landmark', 'hazard', 'marina', 'campsite', 'other']).optional(),
+  "profileUserId": zod.coerce.number().optional().describe('When set, returns the given user\'s pins for display on their profile (includes their friends-only pins).')
 })
 
 export const GetPinsResponseItem = zod.object({
@@ -484,6 +507,7 @@ export const GetPinsResponseItem = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -502,6 +526,10 @@ export const GetPinsResponseItem = zod.object({
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
   "title": zod.string(),
   "description": zod.string().nullish(),
+  "visibility": zod.enum(['friends', 'public', 'community']).optional(),
+  "approved": zod.boolean().optional(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
@@ -517,7 +545,10 @@ export const CreatePinBody = zod.object({
   "lng": zod.number(),
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
   "title": zod.string(),
-  "description": zod.string().optional()
+  "description": zod.string().optional(),
+  "visibility": zod.enum(['friends', 'public', 'community']).optional(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish()
 })
 
 
@@ -536,6 +567,7 @@ export const GetPinResponse = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -554,6 +586,10 @@ export const GetPinResponse = zod.object({
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
   "title": zod.string(),
   "description": zod.string().nullish(),
+  "visibility": zod.enum(['friends', 'public', 'community']).optional(),
+  "approved": zod.boolean().optional(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
@@ -583,6 +619,7 @@ export const LikePinResponse = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -601,6 +638,95 @@ export const LikePinResponse = zod.object({
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
   "title": zod.string(),
   "description": zod.string().nullish(),
+  "visibility": zod.enum(['friends', 'public', 'community']).optional(),
+  "approved": zod.boolean().optional(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "likeCount": zod.number().optional(),
+  "likedByMe": zod.boolean().optional(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Get community pins awaiting owner approval
+ */
+export const GetPendingPinsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "createdAt": zod.string()
+}).optional(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "visibility": zod.enum(['friends', 'public', 'community']).optional(),
+  "approved": zod.boolean().optional(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "likeCount": zod.number().optional(),
+  "likedByMe": zod.boolean().optional(),
+  "createdAt": zod.string()
+})
+export const GetPendingPinsResponse = zod.array(GetPendingPinsResponseItem)
+
+
+/**
+ * @summary Approve a community pin (app owner only)
+ */
+export const ApprovePinParams = zod.object({
+  "pinId": zod.coerce.number()
+})
+
+export const ApprovePinResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "createdAt": zod.string()
+}).optional(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "visibility": zod.enum(['friends', 'public', 'community']).optional(),
+  "approved": zod.boolean().optional(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
@@ -622,6 +748,7 @@ export const GetPostsResponseItem = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -678,6 +805,7 @@ export const GetPostResponse = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -727,6 +855,7 @@ export const LikePostResponse = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -769,6 +898,7 @@ export const GetPostsSummaryResponse = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -801,6 +931,7 @@ export const GetPostsSummaryResponse = zod.object({
   "username": zod.string(),
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "bio": zod.string().nullish(),
   "isOnline": zod.boolean().optional(),
   "isBusiness": zod.boolean().optional(),
@@ -819,6 +950,10 @@ export const GetPostsSummaryResponse = zod.object({
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
   "title": zod.string(),
   "description": zod.string().nullish(),
+  "visibility": zod.enum(['friends', 'public', 'community']).optional(),
+  "approved": zod.boolean().optional(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
@@ -839,6 +974,69 @@ export const GetNotificationsResponseItem = zod.object({
   "createdAt": zod.string()
 })
 export const GetNotificationsResponse = zod.array(GetNotificationsResponseItem)
+
+
+/**
+ * @summary Delete a message
+ */
+export const DeleteMessageParams = zod.object({
+  "messageId": zod.coerce.number()
+})
+
+
+/**
+ * Returns a presigned GCS URL for direct upload. The client sends JSON
+metadata here, then uploads the file directly to the returned URL.
+
+ * @summary Request a presigned URL for file upload
+ */
+
+
+
+
+
+export const RequestUploadUrlBody = zod.object({
+  "name": zod.string().min(1).describe('Original file name.'),
+  "size": zod.number().min(1).describe('File size in bytes.'),
+  "contentType": zod.string().min(1).describe('MIME type of the file (e.g. `image\/jpeg`).')
+})
+
+
+
+
+
+
+export const RequestUploadUrlResponse = zod.object({
+  "uploadURL": zod.string().url().describe('Presigned GCS URL for PUT upload.'),
+  "objectPath": zod.string().describe('Normalized object path (e.g. `\/objects\/uploads\/uuid`). Store this in your database.'),
+  "metadata": zod.object({
+  "name": zod.string().min(1).describe('Original file name.'),
+  "size": zod.number().min(1).describe('File size in bytes.'),
+  "contentType": zod.string().min(1).describe('MIME type of the file (e.g. `image\/jpeg`).')
+}).optional()
+})
+
+
+/**
+ * Unconditionally public — no authentication or ACL checks.
+Searches PUBLIC_OBJECT_SEARCH_PATHS for the given file path.
+
+ * @summary Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+ */
+export const GetPublicObjectParams = zod.object({
+  "filePath": zod.coerce.string().describe('Relative file path within the public search paths.')
+})
+
+
+/**
+ * Serves object entities uploaded via presigned URLs. These can optionally
+be protected with authentication or ACL checks based on the use case.
+
+ * @summary Serve an object entity from PRIVATE_OBJECT_DIR
+ */
+export const GetStorageObjectParams = zod.object({
+  "objectPath": zod.coerce.string().describe('Object path within the private object dir (e.g. `uploads\/some-uuid`).')
+})
 
 
 /**

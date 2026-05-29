@@ -9,4 +9,8 @@ import type { GetPinsType } from './getPinsType';
 
 export type GetPinsParams = {
 type?: GetPinsType;
+/**
+ * When set, returns the given user's pins for display on their profile (includes their friends-only pins).
+ */
+profileUserId?: number;
 };

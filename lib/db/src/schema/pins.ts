@@ -11,6 +11,10 @@ export const pinsTable = pgTable("pins", {
   type: text("type").notNull().default("other"),
   title: text("title").notNull(),
   description: text("description"),
+  visibility: text("visibility").notNull().default("friends"),
+  approved: boolean("approved").notNull().default(true),
+  startTime: timestamp("start_time"),
+  endTime: timestamp("end_time"),
   likeCount: integer("like_count").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

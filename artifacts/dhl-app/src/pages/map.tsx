@@ -38,17 +38,33 @@ const createBoatIcon = (color: string) => {
   });
 };
 
-const getPinEmoji = (type: string) => {
+const getPinSvgPaths = (type: string) => {
   switch (type) {
-    case 'fishing_spot': return '🎣';
-    case 'cliff': return '🏔️';
-    case 'waterfall': return '💧';
-    case 'landmark': return '📍';
-    case 'hazard': return '⚠️';
-    case 'marina': return '⛵';
-    case 'campsite': return '🏕️';
-    default: return '📍';
+    case 'fishing_spot':
+      return '<path d="M6.5 12c.94-3.46 4.94-6 8.5-6 3.56 0 6.06 2.54 7 6-.94 3.47-3.44 6-7 6s-7.56-2.53-8.5-6Z"/><path d="M18 12v.5"/><path d="M16 17.93a9.77 9.77 0 0 1 0-11.86"/>';
+    case 'cliff':
+      return '<path d="m8 3 4 8 5-5 5 15H2L8 3z"/>';
+    case 'waterfall':
+      return '<path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/>';
+    case 'hazard':
+      return '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>';
+    case 'marina':
+      return '<path d="M22 18H2a4 4 0 0 0 4 4h12a4 4 0 0 0 4-4Z"/><path d="M21 14 10 2 3 14h18Z"/><path d="M10 2v16"/>';
+    case 'campsite':
+      return '<path d="M3.5 21 14 3"/><path d="M20.5 21 10 3"/><path d="M15.5 21 12 15l-3.5 6"/><path d="M2 21h20"/>';
+    case 'landmark':
+    default:
+      return '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>';
   }
+};
+
+const formatPinWindow = (startTime?: string | null, endTime?: string | null) => {
+  if (!startTime && !endTime) return null;
+  const fmt = (s: string) =>
+    new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  if (startTime && endTime) return `${fmt(startTime)} - ${fmt(endTime)}`;
+  if (startTime) return `From ${fmt(startTime)}`;
+  return `Until ${fmt(endTime!)}`;
 };
 
 const getPinColor = (type: string) => {
@@ -65,11 +81,13 @@ const getPinColor = (type: string) => {
 };
 
 const createPinIcon = (type: string) => {
-  const emoji = getPinEmoji(type);
+  const paths = getPinSvgPaths(type);
   const color = getPinColor(type);
   return L.divIcon({
     className: 'custom-pin',
-    html: `<div class="w-8 h-8 rounded-full flex items-center justify-center text-lg shadow-md border-2 border-white ${color}">${emoji}</div>`,
+    html: `<div class="w-8 h-8 rounded-full flex items-center justify-center shadow-md border-2 border-white ${color}">
+             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>
+           </div>`,
     iconSize: [32, 32],
     iconAnchor: [16, 16],
     popupAnchor: [0, -16]
@@ -120,6 +138,9 @@ export function MapPage() {
   const [pinTitle, setPinTitle] = useState("");
   const [pinDesc, setPinDesc] = useState("");
   const [pinType, setPinType] = useState<PinInputType>("fishing_spot");
+  const [pinVisibility, setPinVisibility] = useState<"friends" | "public" | "community">("friends");
+  const [pinStart, setPinStart] = useState("");
+  const [pinEnd, setPinEnd] = useState("");
   
   const handleMapClick = (e: L.LeafletMouseEvent) => {
     // We could drop a temporary pin here, but let's just open the dialog for simplicity
@@ -153,14 +174,24 @@ export function MapPage() {
         description: pinDesc,
         type: pinType,
         lat: pinDialog.lat,
-        lng: pinDialog.lng
+        lng: pinDialog.lng,
+        visibility: pinVisibility,
+        startTime: pinStart ? new Date(pinStart).toISOString() : null,
+        endTime: pinEnd ? new Date(pinEnd).toISOString() : null,
       }
     }, {
       onSuccess: () => {
-        toast.success("Pin dropped successfully!");
+        toast.success(
+          pinVisibility === "community"
+            ? "Community pin submitted for approval."
+            : "Pin dropped successfully!"
+        );
         setPinDialog({ open: false });
         setPinTitle("");
         setPinDesc("");
+        setPinVisibility("friends");
+        setPinStart("");
+        setPinEnd("");
         queryClient.invalidateQueries({ queryKey: getGetPinsQueryKey({}) });
       }
     });
@@ -268,10 +299,14 @@ export function MapPage() {
             <Popup>
               <div className="flex flex-col min-w-[150px]">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">{getPinEmoji(pin.type)}</span>
                   <h3 className="font-bold">{pin.title}</h3>
                 </div>
                 {pin.description && <p className="text-sm text-muted-foreground">{pin.description}</p>}
+                {(pin.startTime || pin.endTime) && (
+                  <p className="text-xs text-primary font-medium mt-1">
+                    {formatPinWindow(pin.startTime, pin.endTime)}
+                  </p>
+                )}
                 <div className="flex items-center justify-between mt-3">
                   <p className="text-[10px] text-muted-foreground uppercase">By {pin.user?.displayName || 'Unknown'}</p>
                   <Button size="icon" variant="ghost" className="h-6 w-6 text-primary" asChild>
@@ -386,11 +421,57 @@ export function MapPage() {
                 className="resize-none"
               />
             </div>
+
+            <div className="grid gap-2">
+              <Label>Who can see this?</Label>
+              <Select value={pinVisibility} onValueChange={(v: "friends" | "public" | "community") => setPinVisibility(v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select visibility" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="friends">Friends only</SelectItem>
+                  <SelectItem value="public">Public</SelectItem>
+                  <SelectItem value="community">Community (needs approval)</SelectItem>
+                </SelectContent>
+              </Select>
+              {pinVisibility === "friends" && (
+                <p className="text-xs text-muted-foreground">Only your friends and people viewing your profile will see this pin.</p>
+              )}
+              {pinVisibility === "public" && (
+                <p className="text-xs text-muted-foreground">Everyone on the lake can see this pin.</p>
+              )}
+              {pinVisibility === "community" && (
+                <p className="text-xs text-muted-foreground">Goes live for everyone once an admin approves it.</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-2">
+                <Label htmlFor="start">Starts (Optional)</Label>
+                <Input
+                  id="start"
+                  type="datetime-local"
+                  value={pinStart}
+                  onChange={e => setPinStart(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="end">Ends (Optional)</Label>
+                <Input
+                  id="end"
+                  type="datetime-local"
+                  value={pinEnd}
+                  onChange={e => setPinEnd(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setPinDialog({ open: false })}>Cancel</Button>
-            <Button onClick={submitPin} disabled={!pinTitle || createPin.isPending}>Drop Pin</Button>
+            <Button onClick={submitPin} disabled={!pinTitle || createPin.isPending}>
+              {pinVisibility === "community" ? "Submit Pin" : "Drop Pin"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

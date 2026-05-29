@@ -5,7 +5,10 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { MessageInputMediaType } from './messageInputMediaType';
 
 export interface MessageInput {
-  content: string;
+  content?: string;
+  mediaUrl?: string;
+  mediaType?: MessageInputMediaType;
 }

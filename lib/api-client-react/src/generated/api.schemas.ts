@@ -16,6 +16,8 @@ export interface User {
   /** @nullable */
   avatarUrl?: string | null;
   /** @nullable */
+  coverUrl?: string | null;
+  /** @nullable */
   bio?: string | null;
   isOnline?: boolean;
   isBusiness?: boolean;
@@ -39,6 +41,7 @@ export interface UserUpdate {
   displayName?: string;
   bio?: string;
   avatarUrl?: string;
+  coverUrl?: string;
   boatName?: string;
   boatColor?: string;
   isBusiness?: boolean;
@@ -88,12 +91,27 @@ export interface FriendRequest {
   createdAt: string;
 }
 
+/**
+ * @nullable
+ */
+export type MessageMediaType = typeof MessageMediaType[keyof typeof MessageMediaType] | null;
+
+
+export const MessageMediaType = {
+  image: 'image',
+  video: 'video',
+} as const;
+
 export interface Message {
   id: number;
   conversationId: number;
   senderId: number;
   sender?: User;
   content: string;
+  /** @nullable */
+  mediaUrl?: string | null;
+  /** @nullable */
+  mediaType?: MessageMediaType;
   read?: boolean;
   createdAt: string;
 }
@@ -110,8 +128,18 @@ export interface ConversationInput {
   participantId: number;
 }
 
+export type MessageInputMediaType = typeof MessageInputMediaType[keyof typeof MessageInputMediaType];
+
+
+export const MessageInputMediaType = {
+  image: 'image',
+  video: 'video',
+} as const;
+
 export interface MessageInput {
-  content: string;
+  content?: string;
+  mediaUrl?: string;
+  mediaType?: MessageInputMediaType;
 }
 
 export type PinType = typeof PinType[keyof typeof PinType];
@@ -128,6 +156,15 @@ export const PinType = {
   other: 'other',
 } as const;
 
+export type PinVisibility = typeof PinVisibility[keyof typeof PinVisibility];
+
+
+export const PinVisibility = {
+  friends: 'friends',
+  public: 'public',
+  community: 'community',
+} as const;
+
 export interface Pin {
   id: number;
   userId: number;
@@ -138,6 +175,12 @@ export interface Pin {
   title: string;
   /** @nullable */
   description?: string | null;
+  visibility?: PinVisibility;
+  approved?: boolean;
+  /** @nullable */
+  startTime?: string | null;
+  /** @nullable */
+  endTime?: string | null;
   likeCount?: number;
   likedByMe?: boolean;
   createdAt: string;
@@ -157,12 +200,26 @@ export const PinInputType = {
   other: 'other',
 } as const;
 
+export type PinInputVisibility = typeof PinInputVisibility[keyof typeof PinInputVisibility];
+
+
+export const PinInputVisibility = {
+  friends: 'friends',
+  public: 'public',
+  community: 'community',
+} as const;
+
 export interface PinInput {
   lat: number;
   lng: number;
   type: PinInputType;
   title: string;
   description?: string;
+  visibility?: PinInputVisibility;
+  /** @nullable */
+  startTime?: string | null;
+  /** @nullable */
+  endTime?: string | null;
 }
 
 export type PostPostType = typeof PostPostType[keyof typeof PostPostType];
@@ -222,6 +279,36 @@ export interface PostsSummary {
   recentPins?: Pin[];
 }
 
+export interface UploadUrlRequest {
+  /**
+     * Original file name.
+     * @minLength 1
+     */
+  name: string;
+  /**
+     * File size in bytes.
+     * @minimum 1
+     */
+  size: number;
+  /**
+     * MIME type of the file (e.g. `image/jpeg`).
+     * @minLength 1
+     */
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  /** Presigned GCS URL for PUT upload. */
+  uploadURL: string;
+  /** Normalized object path (e.g. `/objects/uploads/uuid`). Store this in your database. */
+  objectPath: string;
+  metadata?: UploadUrlRequest;
+}
+
+export interface ErrorEnvelope {
+  error: string;
+}
+
 export type NotificationType = typeof NotificationType[keyof typeof NotificationType];
 
 
@@ -251,6 +338,10 @@ q: string;
 
 export type GetPinsParams = {
 type?: GetPinsType;
+/**
+ * When set, returns the given user's pins for display on their profile (includes their friends-only pins).
+ */
+profileUserId?: number;
 };
 
 export type GetPinsType = typeof GetPinsType[keyof typeof GetPinsType];

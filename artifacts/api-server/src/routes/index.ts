@@ -6,10 +6,12 @@ import messagesRouter from "./messages";
 import pinsRouter from "./pins";
 import postsRouter from "./posts";
 import notificationsRouter from "./notifications";
+import storageRouter from "./storage";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(storageRouter);
 router.use("/users", usersRouter);
 router.use("/friends", friendsRouter);
 router.use("/messages", messagesRouter);

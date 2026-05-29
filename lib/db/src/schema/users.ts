@@ -7,6 +7,7 @@ export const usersTable = pgTable("users", {
   username: text("username").notNull().unique(),
   displayName: text("display_name").notNull(),
   avatarUrl: text("avatar_url"),
+  coverUrl: text("cover_url"),
   bio: text("bio"),
   isOnline: boolean("is_online").notNull().default(false),
   isBusiness: boolean("is_business").notNull().default(false),

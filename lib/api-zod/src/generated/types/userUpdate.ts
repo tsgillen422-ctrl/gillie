@@ -10,6 +10,7 @@ export interface UserUpdate {
   displayName?: string;
   bio?: string;
   avatarUrl?: string;
+  coverUrl?: string;
   boatName?: string;
   boatColor?: string;
   isBusiness?: boolean;

@@ -1,12 +1,24 @@
 import React, { useEffect, useRef } from "react";
 import { useParams, Link } from "wouter";
-import { useGetConversationMessages, useSendMessage, getGetConversationMessagesQueryKey } from "@workspace/api-client-react";
+import { useGetConversationMessages, useSendMessage, useDeleteMessage, getGetConversationMessagesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useUpload } from "@workspace/object-storage-web";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Send } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ArrowLeft, Send, ImagePlus, Loader2, X, Trash2, MoreVertical } from "lucide-react";
 import { format } from "date-fns";
 import { useGetMe } from "@workspace/api-client-react";
+import { useToast } from "@/hooks/use-toast";
+
+function mediaSrc(objectPath: string) {
+  return `/api/storage${objectPath}`;
+}
 
 export function MessageThreadPage() {
   const { id } = useParams<{ id: string }>();
@@ -14,9 +26,17 @@ export function MessageThreadPage() {
   const { data: messages, isLoading } = useGetConversationMessages(convId, { query: { enabled: !!convId, refetchInterval: 5000 } });
   const { data: me } = useGetMe();
   const sendMessage = useSendMessage();
+  const deleteMessage = useDeleteMessage();
   const [text, setText] = React.useState("");
+  const [pending, setPending] = React.useState<{ objectPath: string; type: "image" | "video" } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const { uploadFile, isUploading } = useUpload({
+    onError: () => toast({ title: "Upload failed", description: "Could not upload that file.", variant: "destructive" }),
+  });
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -24,20 +44,50 @@ export function MessageThreadPage() {
     }
   }, [messages]);
 
+  const refresh = () => queryClient.invalidateQueries({ queryKey: getGetConversationMessagesQueryKey(convId) });
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const isVideo = file.type.startsWith("video/");
+    const isImage = file.type.startsWith("image/");
+    if (!isVideo && !isImage) {
+      toast({ title: "Unsupported file", description: "Only photos and videos can be sent.", variant: "destructive" });
+      return;
+    }
+    const res = await uploadFile(file);
+    if (res?.objectPath) {
+      setPending({ objectPath: res.objectPath, type: isVideo ? "video" : "image" });
+    }
+  };
+
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!text.trim()) return;
-    
+    if (!text.trim() && !pending) return;
+
     sendMessage.mutate({
+      conversationId: convId,
       data: {
-        conversationId: convId,
-        content: text.trim()
-      }
+        content: text.trim(),
+        ...(pending ? { mediaUrl: pending.objectPath, mediaType: pending.type } : {}),
+      },
     }, {
       onSuccess: () => {
         setText("");
-        queryClient.invalidateQueries({ queryKey: getGetConversationMessagesQueryKey(convId) });
-      }
+        setPending(null);
+        refresh();
+      },
+    });
+  };
+
+  const handleDelete = (messageId: number) => {
+    deleteMessage.mutate({ messageId }, {
+      onSuccess: () => {
+        refresh();
+        toast({ title: "Message deleted" });
+      },
+      onError: () => toast({ title: "Error", description: "Could not delete message.", variant: "destructive" }),
     });
   };
 
@@ -66,14 +116,37 @@ export function MessageThreadPage() {
           ) : messages?.length ? (
             messages.map(msg => {
               const isMe = msg.senderId === me?.id;
+              const hasText = !!msg.content?.trim();
               return (
-                <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                  <div className={`px-4 py-2.5 rounded-2xl max-w-[80%] ${
-                    isMe 
-                      ? 'bg-primary text-primary-foreground rounded-tr-sm' 
-                      : 'bg-muted/80 text-foreground rounded-tl-sm border border-border/50'
-                  }`}>
-                    <p className="text-sm">{msg.content}</p>
+                <div key={msg.id} className={`group flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                  <div className="flex items-center gap-1">
+                    {isMe && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground p-1">
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(msg.id)}>
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
+                    <div className={`overflow-hidden ${msg.mediaUrl && !hasText ? '' : 'px-4 py-2.5'} rounded-2xl max-w-[80%] ${
+                      isMe
+                        ? 'bg-primary text-primary-foreground rounded-tr-sm'
+                        : 'bg-muted/80 text-foreground rounded-tl-sm border border-border/50'
+                    }`}>
+                      {msg.mediaUrl && msg.mediaType === "image" && (
+                        <img src={mediaSrc(msg.mediaUrl)} alt="" className={`max-w-full max-h-72 object-cover ${hasText ? 'rounded-xl mb-2 mt-1' : ''}`} />
+                      )}
+                      {msg.mediaUrl && msg.mediaType === "video" && (
+                        <video src={mediaSrc(msg.mediaUrl)} controls className={`max-w-full max-h-72 ${hasText ? 'rounded-xl mb-2 mt-1' : ''}`} />
+                      )}
+                      {hasText && <p className={`text-sm ${msg.mediaUrl ? 'px-3 pb-1' : ''}`}>{msg.content}</p>}
+                    </div>
                   </div>
                   <span className="text-[10px] text-muted-foreground mt-1 mx-1">
                     {format(new Date(msg.createdAt), 'h:mm a')}
@@ -91,19 +164,46 @@ export function MessageThreadPage() {
 
       {/* Input Area */}
       <div className="p-3 bg-card border-t border-border shrink-0 pb-safe">
+        {pending && (
+          <div className="mb-2 relative inline-block">
+            {pending.type === "image" ? (
+              <img src={mediaSrc(pending.objectPath)} alt="" className="h-20 w-20 object-cover rounded-lg border border-border" />
+            ) : (
+              <video src={mediaSrc(pending.objectPath)} className="h-20 w-20 object-cover rounded-lg border border-border" />
+            )}
+            <button
+              type="button"
+              onClick={() => setPending(null)}
+              className="absolute -top-2 -right-2 bg-foreground text-background rounded-full p-0.5 shadow"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
         <form onSubmit={handleSend} className="flex items-end gap-2">
+          <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFile} />
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            disabled={isUploading || !!pending}
+            onClick={() => fileRef.current?.click()}
+            className="h-11 w-11 rounded-full shrink-0"
+          >
+            {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+          </Button>
           <div className="flex-1 relative">
-            <Input 
+            <Input
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Message..."
               className="pr-10 bg-muted/50 border-transparent rounded-full h-11 focus-visible:ring-1"
             />
           </div>
-          <Button 
-            type="submit" 
-            size="icon" 
-            disabled={!text.trim() || sendMessage.isPending}
+          <Button
+            type="submit"
+            size="icon"
+            disabled={(!text.trim() && !pending) || sendMessage.isPending}
             className="h-11 w-11 rounded-full shrink-0 shadow-sm"
           >
             <Send className="h-5 w-5" />

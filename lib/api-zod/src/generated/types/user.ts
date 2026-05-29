@@ -13,6 +13,8 @@ export interface User {
   /** @nullable */
   avatarUrl?: string | null;
   /** @nullable */
+  coverUrl?: string | null;
+  /** @nullable */
   bio?: string | null;
   isOnline?: boolean;
   isBusiness?: boolean;

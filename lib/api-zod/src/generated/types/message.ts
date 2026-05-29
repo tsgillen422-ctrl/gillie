@@ -5,6 +5,7 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { MessageMediaType } from './messageMediaType';
 import type { User } from './user';
 
 export interface Message {
@@ -13,6 +14,10 @@ export interface Message {
   senderId: number;
   sender?: User;
   content: string;
+  /** @nullable */
+  mediaUrl?: string | null;
+  /** @nullable */
+  mediaType?: MessageMediaType;
   read?: boolean;
   createdAt: string;
 }

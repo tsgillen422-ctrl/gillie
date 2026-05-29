@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PinInputType } from './pinInputType';
+import type { PinInputVisibility } from './pinInputVisibility';
 
 export interface PinInput {
   lat: number;
@@ -13,4 +14,9 @@ export interface PinInput {
   type: PinInputType;
   title: string;
   description?: string;
+  visibility?: PinInputVisibility;
+  /** @nullable */
+  startTime?: string | null;
+  /** @nullable */
+  endTime?: string | null;
 }

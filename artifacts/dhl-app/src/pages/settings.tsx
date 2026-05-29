@@ -1,5 +1,6 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useGetMe, useUpdateMe } from "@workspace/api-client-react";
+import { useUpload } from "@workspace/object-storage-web";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -7,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Save, LogOut, Map, Ship } from "lucide-react";
+import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BOAT_COLORS = [
@@ -32,6 +33,18 @@ export function SettingsPage() {
   const [boatColor, setBoatColor] = React.useState("");
   const [bio, setBio] = React.useState("");
   const [shareLocation, setShareLocation] = React.useState(true);
+  const [avatarUrl, setAvatarUrl] = React.useState<string | undefined>(undefined);
+  const [coverUrl, setCoverUrl] = React.useState<string | undefined>(undefined);
+
+  const avatarRef = useRef<HTMLInputElement>(null);
+  const coverRef = useRef<HTMLInputElement>(null);
+
+  const avatarUpload = useUpload({
+    onError: () => toast({ title: "Upload failed", description: "Could not upload that photo.", variant: "destructive" }),
+  });
+  const coverUpload = useUpload({
+    onError: () => toast({ title: "Upload failed", description: "Could not upload that photo.", variant: "destructive" }),
+  });
 
   // Init form
   useEffect(() => {
@@ -41,8 +54,31 @@ export function SettingsPage() {
       setBoatColor(me.boatColor || "#0ea5e9");
       setBio(me.bio || "");
       setShareLocation(me.shareLocation ?? true);
+      setAvatarUrl(me.avatarUrl ?? undefined);
+      setCoverUrl(me.coverUrl ?? undefined);
     }
   }, [me]);
+
+  const handleImage = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    kind: "avatar" | "cover"
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Unsupported file", description: "Please choose an image.", variant: "destructive" });
+      return;
+    }
+    const uploader = kind === "avatar" ? avatarUpload : coverUpload;
+    const res = await uploader.uploadFile(file);
+    if (!res?.objectPath) return;
+    if (kind === "avatar") setAvatarUrl(res.objectPath);
+    else setCoverUrl(res.objectPath);
+    updateMe.mutate({ data: kind === "avatar" ? { avatarUrl: res.objectPath } : { coverUrl: res.objectPath } }, {
+      onSuccess: () => toast({ title: kind === "avatar" ? "Photo updated" : "Cover updated" }),
+    });
+  };
 
   const handleSave = () => {
     updateMe.mutate({
@@ -115,10 +151,39 @@ export function SettingsPage() {
             <CardDescription>How others see you on the water.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex justify-center mb-6">
+            <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleImage(e, "avatar")} />
+            <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleImage(e, "cover")} />
+
+            {/* Cover photo */}
+            <div className="space-y-2">
+              <Label>Cover Photo</Label>
+              <button
+                type="button"
+                onClick={() => coverRef.current?.click()}
+                disabled={coverUpload.isUploading}
+                className="relative w-full h-28 rounded-lg overflow-hidden border border-border bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center group"
+              >
+                {coverUrl && <img src={`/api/storage${coverUrl}`} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+                <div className="relative flex items-center gap-2 text-xs font-medium bg-background/80 px-3 py-1.5 rounded-full shadow-sm">
+                  {coverUpload.isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
+                  {coverUrl ? "Change Cover" : "Add Cover"}
+                </div>
+              </button>
+            </div>
+
+            <div className="flex justify-center mb-6 -mt-12 relative z-10">
               <div className="relative">
-                <UserAvatar name={me?.displayName || "User"} username={me?.username || ""} avatarUrl={me?.avatarUrl} className="w-24 h-24" />
-                <Button size="sm" variant="secondary" className="absolute -bottom-2 -right-2 rounded-full shadow-md text-xs h-8">Change</Button>
+                <UserAvatar name={me?.displayName || "User"} username={me?.username || ""} avatarUrl={avatarUrl} className="w-24 h-24 ring-4 ring-card" />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="secondary"
+                  onClick={() => avatarRef.current?.click()}
+                  disabled={avatarUpload.isUploading}
+                  className="absolute -bottom-1 -right-1 rounded-full shadow-md h-8 w-8"
+                >
+                  {avatarUpload.isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                </Button>
               </div>
             </div>
 

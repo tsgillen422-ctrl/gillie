@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PinType } from './pinType';
+import type { PinVisibility } from './pinVisibility';
 import type { User } from './user';
 
 export interface Pin {
@@ -18,6 +19,12 @@ export interface Pin {
   title: string;
   /** @nullable */
   description?: string | null;
+  visibility?: PinVisibility;
+  approved?: boolean;
+  /** @nullable */
+  startTime?: string | null;
+  /** @nullable */
+  endTime?: string | null;
   likeCount?: number;
   likedByMe?: boolean;
   createdAt: string;

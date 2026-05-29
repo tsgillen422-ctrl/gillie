@@ -4,9 +4,41 @@ import { useGetUser, useGetMe, useGetPosts, useGetPins, useFollowUser, useUnfoll
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Fish, Tent, Sailboat, Mountain, Droplet, TriangleAlert, Lock, Globe, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/UserAvatar";
+
+function pinIcon(type: string) {
+  switch (type) {
+    case "fishing_spot": return Fish;
+    case "marina": return Sailboat;
+    case "waterfall": return Droplet;
+    case "cliff": return Mountain;
+    case "campsite": return Tent;
+    case "hazard": return TriangleAlert;
+    default: return MapPin;
+  }
+}
+
+function PinVisibility({ visibility }: { visibility?: string }) {
+  if (visibility === "public") {
+    return <Badge variant="secondary" className="gap-1 text-[10px]"><Globe className="w-3 h-3" /> Public</Badge>;
+  }
+  if (visibility === "community") {
+    return <Badge variant="secondary" className="gap-1 text-[10px]"><Users className="w-3 h-3" /> Community</Badge>;
+  }
+  return <Badge variant="secondary" className="gap-1 text-[10px]"><Lock className="w-3 h-3" /> Friends</Badge>;
+}
+
+function pinWindow(startTime?: string | null, endTime?: string | null) {
+  if (!startTime && !endTime) return null;
+  const fmt = (s: string) =>
+    new Date(s).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  if (startTime && endTime) return `${fmt(startTime)} - ${fmt(endTime)}`;
+  if (startTime) return `From ${fmt(startTime)}`;
+  return `Until ${fmt(endTime!)}`;
+}
 
 export function ProfilePage() {
   const { userId } = useParams<{ userId: string }>();
@@ -22,7 +54,10 @@ export function ProfilePage() {
   const loadingUser = isSelf ? !me : loadingOther;
 
   const { data: posts, isLoading: loadingPosts } = useGetPosts({});
-  const { data: pins, isLoading: loadingPins } = useGetPins({});
+  const { data: pins, isLoading: loadingPins } = useGetPins(
+    id ? { profileUserId: id } : {},
+    { query: { enabled: !!id } }
+  );
   const { data: friends } = useGetFriends();
 
   const followUser = useFollowUser();
@@ -55,13 +90,19 @@ export function ProfilePage() {
           </div>
         </div>
       ) : user ? (
-        <div className="flex flex-col items-center p-6 bg-card border-b border-border shadow-sm">
+        <div className="flex flex-col items-center bg-card border-b border-border shadow-sm">
+          <div className="w-full h-36 bg-gradient-to-br from-primary/30 to-primary/10 relative">
+            {user.coverUrl && (
+              <img src={`/api/storage${user.coverUrl}`} alt="" className="w-full h-full object-cover" />
+            )}
+          </div>
+          <div className="flex flex-col items-center px-6 pb-6 -mt-12 w-full">
           <UserAvatar
             name={user.displayName}
             username={user.username}
             avatarUrl={user.avatarUrl}
             online={user.isOnline}
-            className="w-24 h-24 mb-4"
+            className="w-24 h-24 mb-4 ring-4 ring-card"
           />
 
           <h2 className="text-2xl font-bold flex items-center gap-1.5">
@@ -119,6 +160,7 @@ export function ProfilePage() {
               )}
             </div>
           )}
+          </div>
         </div>
       ) : (
         <div className="p-10 text-center text-muted-foreground">User not found</div>
@@ -154,19 +196,27 @@ export function ProfilePage() {
             {loadingPins ? (
               <Skeleton className="h-24 w-full rounded-xl" />
             ) : userPins?.length ? (
-              userPins.map((pin) => (
-                <Card key={pin.id} className="border-border/50">
-                  <CardContent className="p-4 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0 text-xl">
-                      {pin.type === "fishing_spot" ? "🎣" : pin.type === "marina" ? "⛵" : pin.type === "waterfall" ? "💧" : pin.type === "cliff" ? "🏔️" : pin.type === "campsite" ? "🏕️" : pin.type === "hazard" ? "⚠️" : "📍"}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm">{pin.title}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">{pin.description}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+              userPins.map((pin) => {
+                const Icon = pinIcon(pin.type);
+                const window = pinWindow(pin.startTime, pin.endTime);
+                return (
+                  <Card key={pin.id} className="border-border/50">
+                    <CardContent className="p-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
+                        <Icon className="w-5 h-5 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-sm">{pin.title}</h3>
+                          <PinVisibility visibility={pin.visibility} />
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">{pin.description}</p>
+                        {window && <p className="text-[11px] text-primary font-medium mt-0.5">{window}</p>}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
             ) : (
               <div className="text-center py-10 text-muted-foreground">
                 {isSelf ? "You haven't dropped any pins." : "No pins dropped."}

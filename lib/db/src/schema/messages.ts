@@ -18,7 +18,9 @@ export const messagesTable = pgTable("messages", {
   id: serial("id").primaryKey(),
   conversationId: integer("conversation_id").notNull().references(() => conversationsTable.id),
   senderId: integer("sender_id").notNull().references(() => usersTable.id),
-  content: text("content").notNull(),
+  content: text("content").notNull().default(""),
+  mediaUrl: text("media_url"),
+  mediaType: text("media_type"),
   read: boolean("read").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

@@ -13,6 +13,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     username: u.username,
     displayName: u.displayName,
     avatarUrl: u.avatarUrl,
+    coverUrl: u.coverUrl,
     bio: u.bio,
     isOnline: u.isOnline,
     isBusiness: u.isBusiness,
@@ -37,11 +38,12 @@ router.get("/me", async (req, res) => {
 });
 
 router.patch("/me", async (req, res) => {
-  const { displayName, bio, avatarUrl, boatName, boatColor, isBusiness, shareLocation } = req.body;
+  const { displayName, bio, avatarUrl, coverUrl, boatName, boatColor, isBusiness, shareLocation } = req.body;
   const updates: Partial<typeof usersTable.$inferInsert> = {};
   if (displayName !== undefined) updates.displayName = displayName;
   if (bio !== undefined) updates.bio = bio;
   if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl;
+  if (coverUrl !== undefined) updates.coverUrl = coverUrl;
   if (boatName !== undefined) updates.boatName = boatName;
   if (boatColor !== undefined) updates.boatColor = boatColor;
   if (isBusiness !== undefined) updates.isBusiness = isBusiness;

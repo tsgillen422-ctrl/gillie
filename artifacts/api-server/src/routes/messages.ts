@@ -70,6 +70,8 @@ router.get("/conversations", async (_req, res) => {
           senderId: lastMessage.senderId,
           sender: sender ? formatUser(sender) : null,
           content: lastMessage.content,
+          mediaUrl: lastMessage.mediaUrl,
+          mediaType: lastMessage.mediaType,
           read: lastMessage.read,
           createdAt: lastMessage.createdAt.toISOString(),
         };
@@ -125,6 +127,8 @@ router.get("/conversations/:conversationId", async (req, res) => {
         senderId: m.senderId,
         sender: sender ? formatUser(sender) : null,
         content: m.content,
+        mediaUrl: m.mediaUrl,
+        mediaType: m.mediaType,
         read: m.read,
         createdAt: m.createdAt.toISOString(),
       };
@@ -135,10 +139,10 @@ router.get("/conversations/:conversationId", async (req, res) => {
 
 router.post("/conversations/:conversationId", async (req, res) => {
   const conversationId = parseInt(req.params.conversationId);
-  const { content } = req.body;
+  const { content, mediaUrl, mediaType } = req.body;
   const [msg] = await db
     .insert(messagesTable)
-    .values({ conversationId, senderId: SESSION_USER_ID, content })
+    .values({ conversationId, senderId: SESSION_USER_ID, content: content ?? "", mediaUrl: mediaUrl ?? null, mediaType: mediaType ?? null })
     .returning();
   const sender = await db.query.usersTable.findFirst({ where: eq(usersTable.id, SESSION_USER_ID) });
   res.status(201).json({
@@ -147,9 +151,26 @@ router.post("/conversations/:conversationId", async (req, res) => {
     senderId: msg.senderId,
     sender: sender ? formatUser(sender) : null,
     content: msg.content,
+    mediaUrl: msg.mediaUrl,
+    mediaType: msg.mediaType,
     read: msg.read,
     createdAt: msg.createdAt.toISOString(),
   });
+});
+
+router.delete("/:messageId", async (req, res) => {
+  const messageId = parseInt(req.params.messageId);
+  const msg = await db.query.messagesTable.findFirst({ where: eq(messagesTable.id, messageId) });
+  if (!msg) {
+    res.status(404).json({ error: "Message not found" });
+    return;
+  }
+  if (msg.senderId !== SESSION_USER_ID) {
+    res.status(403).json({ error: "You can only delete your own messages" });
+    return;
+  }
+  await db.delete(messagesTable).where(eq(messagesTable.id, messageId));
+  res.json({ success: true });
 });
 
 export default router;
