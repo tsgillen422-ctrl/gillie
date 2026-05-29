@@ -158,27 +158,6 @@ const getPinCategory = (type: string) => {
   }
 };
 
-// Top-down stylized marina dock (a "comb" walkway with boat slips). Static
-// markup with no user data, safe to inject via innerHTML.
-const DOCK_SVG = `<svg width="78" height="54" viewBox="0 0 78 54" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g>
-    <rect x="13" y="5" width="7" height="44" rx="2" fill="#cda868" stroke="#a87c45" stroke-width="0.9"/>
-    <rect x="35" y="5" width="7" height="44" rx="2" fill="#cda868" stroke="#a87c45" stroke-width="0.9"/>
-    <rect x="57" y="5" width="7" height="44" rx="2" fill="#cda868" stroke="#a87c45" stroke-width="0.9"/>
-    <rect x="4" y="22" width="70" height="9" rx="2.5" fill="#c2974f" stroke="#a87c45" stroke-width="1"/>
-    <line x1="6" y1="26.5" x2="72" y2="26.5" stroke="#a87c45" stroke-width="0.6" opacity="0.45"/>
-  </g>
-</svg>`;
-
-// Build a dock marker element placed under a marina pin.
-function buildDockEl(): { root: HTMLDivElement; scale: HTMLDivElement } {
-  const root = el("div", "lake-dock") as HTMLDivElement;
-  const scale = el("div", "lake-pin-scale dock-scale") as HTMLDivElement;
-  scale.innerHTML = DOCK_SVG; // static markup, no user data
-  root.appendChild(scale);
-  return { root, scale };
-}
-
 const formatPinWindow = (startTime?: string | null, endTime?: string | null) => {
   if (!startTime && !endTime) return null;
   const fmt = (s: string) =>
@@ -640,24 +619,10 @@ export function MapPage() {
       scaleEls.current.add(scale);
     };
 
-    // Add a dock beneath a marina (drawn first so it sits behind the pin).
-    const addDockMarker = (pin: any) => {
-      const { root, scale } = buildDockEl();
-      const marker = new maplibregl.Marker({ element: root, anchor: "center" })
-        .setLngLat([pin.lng, pin.lat])
-        .addTo(map);
-      pinMarkers.current.push(marker);
-      scaleEls.current.add(scale);
-    };
-
     // High-priority places: always visible, never clustered.
     allPins.forEach((pin) => {
       if (pin.lat == null || pin.lng == null) return;
-      if (pinTier(pin.type) === "high") {
-        // Marinas get a dock graphic if they don't already have one.
-        if (pin.type === "marina") addDockMarker(pin);
-        addPinMarker(pin);
-      }
+      if (pinTier(pin.type) === "high") addPinMarker(pin);
     });
 
     // Low-priority pins: clustered via supercluster for the current view.
@@ -1236,13 +1201,6 @@ const MAP_CSS = `
   @keyframes snapRipple {
     0% { transform: scale(0.5); opacity: 0.6; }
     100% { transform: scale(2.6); opacity: 0; }
-  }
-
-  /* ================= Marina dock ================= */
-  .lake-dock { pointer-events: none; z-index: 0; }
-  .dock-scale {
-    filter: drop-shadow(0 3px 5px rgba(0,0,0,0.28));
-    opacity: 0.96;
   }
 
   /* ================= Lake place label (Snap Map style) ================= */
