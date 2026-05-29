@@ -37,14 +37,15 @@ const SECONDARY_PIN_ZOOM = 13.5;
 
 // --- Snap Map style palette ---
 const SNAP = {
-  land: "#e8f0e2",
-  green: "#d4e7c4",
-  greenDeep: "#c6e0b3",
-  sand: "#ece6d6",
-  water: "#9ed5f0",
+  land: "#dde6d4",
+  green: "#cdddbb",
+  greenDeep: "#bdd3a8",
+  sand: "#e6dfcd",
+  water: "#74c2e8",
+  shoreline: "#4f9fcf",
   road: "#ffffff",
   roadCasing: "#e2e8dd",
-  label: "#7a8a72",
+  label: "#6f7f67",
   labelHalo: "#ffffff",
 };
 
@@ -63,6 +64,8 @@ function applySnapStyle(map: maplibregl.Map) {
         if (/water|ocean|lake|river|reservoir|bay/i.test(id)) {
           map.setPaintProperty(id, "fill-color", SNAP.water);
           map.setPaintProperty(id, "fill-opacity", 1);
+          // thin shoreline stroke to separate water from land
+          map.setPaintProperty(id, "fill-outline-color", SNAP.shoreline);
         } else if (/wood|forest|park|grass|wetland|scrub|nature|landcover_/i.test(id)) {
           map.setPaintProperty(id, "fill-color", SNAP.green);
           map.setPaintProperty(id, "fill-opacity", 0.9);
@@ -154,6 +157,27 @@ const getPinCategory = (type: string) => {
     default: return "Place";
   }
 };
+
+// Top-down stylized marina dock (a "comb" walkway with boat slips). Static
+// markup with no user data, safe to inject via innerHTML.
+const DOCK_SVG = `<svg width="78" height="54" viewBox="0 0 78 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g>
+    <rect x="13" y="5" width="7" height="44" rx="2" fill="#cda868" stroke="#a87c45" stroke-width="0.9"/>
+    <rect x="35" y="5" width="7" height="44" rx="2" fill="#cda868" stroke="#a87c45" stroke-width="0.9"/>
+    <rect x="57" y="5" width="7" height="44" rx="2" fill="#cda868" stroke="#a87c45" stroke-width="0.9"/>
+    <rect x="4" y="22" width="70" height="9" rx="2.5" fill="#c2974f" stroke="#a87c45" stroke-width="1"/>
+    <line x1="6" y1="26.5" x2="72" y2="26.5" stroke="#a87c45" stroke-width="0.6" opacity="0.45"/>
+  </g>
+</svg>`;
+
+// Build a dock marker element placed under a marina pin.
+function buildDockEl(): { root: HTMLDivElement; scale: HTMLDivElement } {
+  const root = el("div", "lake-dock") as HTMLDivElement;
+  const scale = el("div", "lake-pin-scale dock-scale") as HTMLDivElement;
+  scale.innerHTML = DOCK_SVG; // static markup, no user data
+  root.appendChild(scale);
+  return { root, scale };
+}
 
 const formatPinWindow = (startTime?: string | null, endTime?: string | null) => {
   if (!startTime && !endTime) return null;
@@ -479,10 +503,10 @@ export function MapPage() {
           lastTick = now;
           const t = now / 1000;
 
-          // water: livelier shimmer around the Snap pastel blue
+          // water: livelier shimmer around the Snap pastel blue (a touch darker)
           const wHue = 200 + Math.sin(t * 0.6) * 10;
-          const wLight = 77 + Math.sin(t * 1.1 + 1) * 7;
-          const wSat = 80 + Math.sin(t * 0.8) * 9;
+          const wLight = 69 + Math.sin(t * 1.1 + 1) * 6;
+          const wSat = 78 + Math.sin(t * 0.8) * 9;
           const waterColor = `hsl(${wHue.toFixed(1)}, ${wSat.toFixed(1)}%, ${wLight.toFixed(1)}%)`;
           waterLayers.forEach((id) => {
             if (map.getLayer(id)) {
@@ -492,10 +516,10 @@ export function MapPage() {
             }
           });
 
-          // land: gentle "breathing" green that drifts in hue and brightness
+          // land: gentle "breathing" green, more muted so it reads below water
           const lHue = 96 + Math.sin(t * 0.35 + 0.5) * 8;
-          const lLight = 80 + Math.sin(t * 0.5) * 4;
-          const lSat = 45 + Math.sin(t * 0.4 + 2) * 8;
+          const lLight = 75 + Math.sin(t * 0.5) * 4;
+          const lSat = 36 + Math.sin(t * 0.4 + 2) * 7;
           const landColor = `hsl(${lHue.toFixed(1)}, ${lSat.toFixed(1)}%, ${lLight.toFixed(1)}%)`;
           landLayers.forEach((id) => {
             if (map.getLayer(id)) {
@@ -616,10 +640,24 @@ export function MapPage() {
       scaleEls.current.add(scale);
     };
 
+    // Add a dock beneath a marina (drawn first so it sits behind the pin).
+    const addDockMarker = (pin: any) => {
+      const { root, scale } = buildDockEl();
+      const marker = new maplibregl.Marker({ element: root, anchor: "center" })
+        .setLngLat([pin.lng, pin.lat])
+        .addTo(map);
+      pinMarkers.current.push(marker);
+      scaleEls.current.add(scale);
+    };
+
     // High-priority places: always visible, never clustered.
     allPins.forEach((pin) => {
       if (pin.lat == null || pin.lng == null) return;
-      if (pinTier(pin.type) === "high") addPinMarker(pin);
+      if (pinTier(pin.type) === "high") {
+        // Marinas get a dock graphic if they don't already have one.
+        if (pin.type === "marina") addDockMarker(pin);
+        addPinMarker(pin);
+      }
     });
 
     // Low-priority pins: clustered via supercluster for the current view.
@@ -1198,6 +1236,13 @@ const MAP_CSS = `
   @keyframes snapRipple {
     0% { transform: scale(0.5); opacity: 0.6; }
     100% { transform: scale(2.6); opacity: 0; }
+  }
+
+  /* ================= Marina dock ================= */
+  .lake-dock { pointer-events: none; z-index: 0; }
+  .dock-scale {
+    filter: drop-shadow(0 3px 5px rgba(0,0,0,0.28));
+    opacity: 0.96;
   }
 
   /* ================= Lake place label (Snap Map style) ================= */
