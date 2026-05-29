@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import Supercluster from "supercluster";
 import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, getGetPinsQueryKey } from "@workspace/api-client-react";
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
@@ -22,6 +23,17 @@ import { boatSvgFor, FLAG_SVG } from "../boats";
 const LAKE_CENTER: [number, number] = [-85.37, 36.53]; // [lng, lat]
 const BASE_ZOOM = 12;
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+
+// Pin priority tiers control visual weight and clustering behavior.
+// High-priority places are always visible, large, and never clustered.
+// Low-priority (user-generated) pins are smaller, icon-only, and cluster
+// together when zoomed out so the map stays uncluttered near the marina.
+const HIGH_PRIORITY_PINS = new Set(["marina", "campsite", "hazard"]);
+const pinTier = (type: string): "high" | "low" =>
+  HIGH_PRIORITY_PINS.has(type) ? "high" : "low";
+
+// Below this zoom, low-priority pins only appear aggregated inside clusters.
+const SECONDARY_PIN_ZOOM = 13.5;
 
 // --- Snap Map style palette ---
 const SNAP = {
@@ -234,27 +246,47 @@ function buildFriendEl(opts: {
 }
 
 // --- Lake pin (emoji pill) marker element ---
-function buildPinEl(opts: { emoji: string; title: string; delay: number }): {
+// High-priority pins render as a large labelled pill; low-priority pins render
+// as a compact icon-only chip (details appear on tap).
+function buildPinEl(opts: { emoji: string; title: string; delay: number; tier: "high" | "low" }): {
   root: HTMLDivElement;
   scale: HTMLDivElement;
 } {
-  const { emoji, title, delay } = opts;
+  const { emoji, title, delay, tier } = opts;
   const root = el("div", "lake-pin") as HTMLDivElement;
   const scale = el("div", "lake-pin-scale") as HTMLDivElement;
 
-  const pill = el("div", "pin-pill");
+  const pill = el("div", `pin-pill tier-${tier}`);
   pill.style.animationDelay = `${delay}s`;
 
   const emojiEl = el("span", "pin-pill-emoji");
   emojiEl.textContent = emoji;
-  const label = el("span", "pin-pill-label");
-  label.textContent = title;
-
   pill.appendChild(emojiEl);
-  pill.appendChild(label);
+
+  // Only high-priority places get an always-on label.
+  if (tier === "high") {
+    const label = el("span", "pin-pill-label");
+    label.textContent = title;
+    pill.appendChild(label);
+  }
 
   scale.appendChild(pill);
   scale.appendChild(el("div", "pin-pill-stem"));
+  root.appendChild(scale);
+  return { root, scale };
+}
+
+// --- Cluster bubble marker element (aggregates nearby low-priority pins) ---
+function buildClusterEl(count: number): { root: HTMLDivElement; scale: HTMLDivElement } {
+  const root = el("div", "lake-pin") as HTMLDivElement;
+  const scale = el("div", "lake-pin-scale") as HTMLDivElement;
+  // larger bubble for denser clusters
+  const sizeClass = count >= 25 ? "cluster-lg" : count >= 10 ? "cluster-md" : "cluster-sm";
+  const bubble = el("div", `pin-cluster ${sizeClass}`);
+  const num = el("span", "pin-cluster-count");
+  num.textContent = String(count);
+  bubble.appendChild(num);
+  scale.appendChild(bubble);
   root.appendChild(scale);
   return { root, scale };
 }
@@ -277,6 +309,9 @@ export function MapPage() {
   const friendMarkers = useRef<maplibregl.Marker[]>([]);
   const pinMarkers = useRef<maplibregl.Marker[]>([]);
   const meMarker = useRef<maplibregl.Marker | null>(null);
+  // Supercluster index over low-priority pins + the raw pin list it was built from.
+  const clusterIndex = useRef<Supercluster | null>(null);
+  const pinsRef = useRef<any[]>([]);
 
   const [selected, setSelected] = useState<Selected>(null);
   const [mapError, setMapError] = useState(false);
@@ -463,11 +498,13 @@ export function MapPage() {
     applyZoomScale(map.getZoom());
   }, [friends, styleReady, applyZoomScale]);
 
-  // --- Render pin markers ---
-  useEffect(() => {
+  // --- Render pin markers (with clustering + tiering) ---
+  // Re-runs on every map move/zoom so clusters re-form for the current view.
+  const renderPins = useCallback(() => {
     const map = mapRef.current;
     if (!map || !styleReady) return;
 
+    // Clear existing pin/cluster markers.
     pinMarkers.current.forEach((m) => {
       const el = m.getElement().querySelector(".lake-pin-scale") as HTMLDivElement | null;
       if (el) scaleEls.current.delete(el);
@@ -475,11 +512,16 @@ export function MapPage() {
     });
     pinMarkers.current = [];
 
-    pins?.forEach((pin, i) => {
+    const zoom = map.getZoom();
+    const allPins = pinsRef.current;
+
+    const addPinMarker = (pin: any) => {
+      const tier = pinTier(pin.type);
       const { root, scale } = buildPinEl({
         emoji: getPinEmoji(pin.type),
         title: pin.title,
-        delay: (i * 0.15) % 3,
+        delay: (Math.abs((pin.id ?? 0) * 13) % 30) / 10,
+        tier,
       });
       root.addEventListener("click", (ev) => {
         ev.stopPropagation();
@@ -490,10 +532,96 @@ export function MapPage() {
         .addTo(map);
       pinMarkers.current.push(marker);
       scaleEls.current.add(scale);
+    };
+
+    // High-priority places: always visible, never clustered.
+    allPins.forEach((pin) => {
+      if (pin.lat == null || pin.lng == null) return;
+      if (pinTier(pin.type) === "high") addPinMarker(pin);
     });
 
-    applyZoomScale(map.getZoom());
-  }, [pins, styleReady, applyZoomScale]);
+    // Low-priority pins: clustered via supercluster for the current view.
+    const index = clusterIndex.current;
+    if (index) {
+      const b = map.getBounds();
+      const bbox: [number, number, number, number] = [
+        b.getWest(),
+        b.getSouth(),
+        b.getEast(),
+        b.getNorth(),
+      ];
+      const clusters = index.getClusters(bbox, Math.floor(zoom));
+      const revealChips = zoom >= SECONDARY_PIN_ZOOM;
+      clusters.forEach((c: any) => {
+        const [lng, lat] = c.geometry.coordinates;
+        if (c.properties.cluster) {
+          // A multi-point cluster: always a count bubble that expands on tap.
+          const count = c.properties.point_count as number;
+          const { root, scale } = buildClusterEl(count);
+          root.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            const expZoom = Math.min(index.getClusterExpansionZoom(c.properties.cluster_id), 18);
+            map.easeTo({ center: [lng, lat], zoom: expZoom });
+          });
+          const marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
+            .setLngLat([lng, lat])
+            .addTo(map);
+          pinMarkers.current.push(marker);
+          scaleEls.current.add(scale);
+        } else if (revealChips) {
+          // Zoomed in: reveal the individual low-priority pin as an icon chip.
+          addPinMarker(c.properties.pin);
+        } else {
+          // Zoomed out: show even a lone low-priority pin as a count-1 bubble
+          // so nothing silently disappears while still hiding the detail chip.
+          const { root, scale } = buildClusterEl(1);
+          root.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            map.easeTo({ center: [lng, lat], zoom: SECONDARY_PIN_ZOOM });
+          });
+          const marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
+            .setLngLat([lng, lat])
+            .addTo(map);
+          pinMarkers.current.push(marker);
+          scaleEls.current.add(scale);
+        }
+      });
+    }
+
+    applyZoomScale(zoom);
+  }, [styleReady, applyZoomScale]);
+
+  // Build the supercluster index whenever the pin set changes, then render.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+
+    pinsRef.current = pins ?? [];
+
+    const lowPoints = (pins ?? [])
+      .filter((p) => p.lat != null && p.lng != null && pinTier(p.type) === "low")
+      .map((p) => ({
+        type: "Feature" as const,
+        properties: { pin: p },
+        geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] },
+      }));
+
+    const index = new Supercluster({ radius: 70, maxZoom: 16 });
+    index.load(lowPoints as any);
+    clusterIndex.current = index;
+
+    renderPins();
+  }, [pins, styleReady, renderPins]);
+
+  // Re-cluster on view changes.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    map.on("moveend", renderPins);
+    return () => {
+      map.off("moveend", renderPins);
+    };
+  }, [styleReady, renderPins]);
 
   // --- Render my own marker ---
   useEffect(() => {
@@ -1019,14 +1147,26 @@ const MAP_CSS = `
     align-items: center;
     gap: 5px;
     max-width: 160px;
-    padding: 5px 11px 5px 7px;
     background: rgba(255,255,255,0.97);
     border-radius: 999px;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.28);
     border: 1px solid rgba(0,0,0,0.06);
     animation: pinFloat 4s ease-in-out infinite;
   }
-  .pin-pill-emoji { font-size: 16px; line-height: 1; }
+  /* High-priority places: larger, labelled, stronger shadow */
+  .pin-pill.tier-high {
+    padding: 6px 13px 6px 9px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.30);
+    border-color: rgba(0,0,0,0.08);
+  }
+  .pin-pill.tier-high .pin-pill-emoji { font-size: 20px; }
+  /* Low-priority pins: compact icon-only chip */
+  .pin-pill.tier-low {
+    padding: 5px;
+    box-shadow: 0 4px 11px rgba(0,0,0,0.22);
+    opacity: 0.96;
+  }
+  .pin-pill.tier-low .pin-pill-emoji { font-size: 14px; }
+  .pin-pill-emoji { line-height: 1; }
   .pin-pill-label {
     font-size: 12px;
     font-weight: 700;
@@ -1045,6 +1185,23 @@ const MAP_CSS = `
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-5px); }
   }
+
+  /* ================= Pin cluster bubble ================= */
+  .pin-cluster {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #ffffff 0%, #eaf6ff 100%);
+    border: 2px solid #38bdf8;
+    box-shadow: 0 6px 16px rgba(2,132,199,0.35);
+    color: #0369a1;
+    font-weight: 800;
+  }
+  .pin-cluster .pin-cluster-count { line-height: 1; }
+  .pin-cluster.cluster-sm { width: 34px; height: 34px; font-size: 13px; }
+  .pin-cluster.cluster-md { width: 42px; height: 42px; font-size: 15px; }
+  .pin-cluster.cluster-lg { width: 52px; height: 52px; font-size: 17px; }
 
   /* ================= MapLibre controls polish ================= */
   .maplibregl-ctrl-group {
