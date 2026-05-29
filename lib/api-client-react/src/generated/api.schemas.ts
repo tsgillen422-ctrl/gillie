@@ -37,6 +37,8 @@ export interface User {
   boatNeon?: boolean | null;
   /** @nullable */
   boatFlag?: boolean | null;
+  /** @nullable */
+  boatAccent?: string | null;
   shareLocation?: boolean;
   followerCount?: number;
   followingCount?: number;
@@ -53,6 +55,8 @@ export interface UserUpdate {
   boatType?: string;
   boatNeon?: boolean;
   boatFlag?: boolean;
+  /** @nullable */
+  boatAccent?: string | null;
   isBusiness?: boolean;
   shareLocation?: boolean;
 }
@@ -78,6 +82,8 @@ export interface FriendLocation {
   boatNeon?: boolean | null;
   /** @nullable */
   boatFlag?: boolean | null;
+  /** @nullable */
+  boatAccent?: string | null;
   /** @nullable */
   lat?: number | null;
   /** @nullable */

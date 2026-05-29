@@ -44,7 +44,8 @@ const BOAT_TYPES = [
   { value: 'yacht', label: 'Yacht', desc: 'Luxury cruiser' },
 ];
 
-function BoatPreview({ type, color, neon, flag }: { type: string; color: string; neon?: boolean; flag?: boolean }) {
+function BoatPreview({ type, color, neon, flag, accent }: { type: string; color: string; neon?: boolean; flag?: boolean; accent?: string }) {
+  const accentColor = accent || color;
   return (
     <span className="relative inline-flex items-center justify-center" style={{ width: 84, height: 56, color }}>
       {neon && (
@@ -54,7 +55,7 @@ function BoatPreview({ type, color, neon, flag }: { type: string; color: string;
             width: 56,
             height: 14,
             bottom: 8,
-            background: color,
+            background: accentColor,
             filter: "blur(7px)",
             opacity: 0.8,
           }}
@@ -68,7 +69,7 @@ function BoatPreview({ type, color, neon, flag }: { type: string; color: string;
       {flag && (
         <span
           className="absolute"
-          style={{ color, left: 8, top: 0, lineHeight: 0 }}
+          style={{ color: accentColor, left: 8, top: 0, lineHeight: 0 }}
           dangerouslySetInnerHTML={{ __html: FLAG_SVG }}
         />
       )}
@@ -88,6 +89,7 @@ export function SettingsPage() {
   const [boatType, setBoatType] = React.useState("speedboat");
   const [boatNeon, setBoatNeon] = React.useState(false);
   const [boatFlag, setBoatFlag] = React.useState(false);
+  const [boatAccent, setBoatAccent] = React.useState("");
   const [bio, setBio] = React.useState("");
   const [shareLocation, setShareLocation] = React.useState(true);
   const [avatarUrl, setAvatarUrl] = React.useState<string | undefined>(undefined);
@@ -112,6 +114,7 @@ export function SettingsPage() {
       setBoatType(me.boatType || "speedboat");
       setBoatNeon(me.boatNeon ?? false);
       setBoatFlag(me.boatFlag ?? false);
+      setBoatAccent(me.boatAccent || "");
       setBio(me.bio || "");
       setShareLocation(me.shareLocation ?? true);
       setAvatarUrl(me.avatarUrl ?? undefined);
@@ -149,6 +152,7 @@ export function SettingsPage() {
         boatType,
         boatNeon,
         boatFlag,
+        boatAccent: boatAccent || null,
         bio,
         shareLocation
       }
@@ -271,7 +275,7 @@ export function SettingsPage() {
             {/* Live preview */}
             <div className="rounded-xl border border-border bg-gradient-to-b from-sky-100 to-sky-200 p-4 flex flex-col items-center gap-1">
               <div className="flex items-center justify-center h-14">
-                <BoatPreview type={boatType} color={boatColor || "#0ea5e9"} neon={boatNeon} flag={boatFlag} />
+                <BoatPreview type={boatType} color={boatColor || "#0ea5e9"} neon={boatNeon} flag={boatFlag} accent={boatAccent || undefined} />
               </div>
               <span className="text-xs font-medium text-slate-600">{boatName || "Your boat on the lake"}</span>
             </div>
@@ -349,6 +353,42 @@ export function SettingsPage() {
                 </div>
                 <Switch checked={boatFlag} onCheckedChange={setBoatFlag} className="data-[state=checked]:bg-primary" />
               </label>
+
+              {(boatNeon || boatFlag) && (
+                <div className="space-y-3 pt-1">
+                  <div className="flex flex-col">
+                    <Label>Accent color</Label>
+                    <span className="text-[11px] text-muted-foreground">Used for the flag &amp; underglow</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-3">
+                    {BOAT_COLORS.map(color => (
+                      <button
+                        key={color.value}
+                        type="button"
+                        onClick={() => setBoatAccent(color.value)}
+                        className={`w-full aspect-square rounded-full flex items-center justify-center transition-all ${(boatAccent || boatColor) === color.value ? 'ring-2 ring-primary ring-offset-2 scale-110 shadow-md' : 'opacity-80 hover:opacity-100 hover:scale-105'}`}
+                        style={{ backgroundColor: color.value, border: color.value === '#f8fafc' ? '1px solid #e2e8f0' : 'none' }}
+                        title={color.label}
+                      />
+                    ))}
+                  </div>
+                  <label className="flex items-center gap-3 rounded-lg border border-border bg-background p-2.5 cursor-pointer">
+                    <span className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full overflow-hidden border border-border" style={{ backgroundColor: boatAccent || boatColor || "#0ea5e9" }}>
+                      <input
+                        type="color"
+                        value={boatAccent || boatColor || "#0ea5e9"}
+                        onChange={e => setBoatAccent(e.target.value)}
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        aria-label="Choose a custom accent color"
+                      />
+                    </span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">Custom accent</span>
+                      <span className="text-[11px] text-muted-foreground uppercase">{boatAccent || boatColor || "#0ea5e9"}</span>
+                    </div>
+                  </label>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

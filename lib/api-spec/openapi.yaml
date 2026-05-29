@@ -752,6 +752,8 @@ components:
           type: ["boolean", "null"]
         boatFlag:
           type: ["boolean", "null"]
+        boatAccent:
+          type: ["string", "null"]
         shareLocation:
           type: boolean
         followerCount:
@@ -782,6 +784,8 @@ components:
           type: boolean
         boatFlag:
           type: boolean
+        boatAccent:
+          type: ["string", "null"]
         isBusiness:
           type: boolean
         shareLocation:
@@ -818,6 +822,8 @@ components:
           type: ["boolean", "null"]
         boatFlag:
           type: ["boolean", "null"]
+        boatAccent:
+          type: ["string", "null"]
         lat:
           type: ["number", "null"]
         lng:

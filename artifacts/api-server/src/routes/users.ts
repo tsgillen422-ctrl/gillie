@@ -25,6 +25,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     boatType: u.boatType,
     boatNeon: u.boatNeon,
     boatFlag: u.boatFlag,
+    boatAccent: u.boatAccent,
     shareLocation: u.shareLocation,
     followerCount: 0,
     followingCount: 0,
@@ -41,7 +42,7 @@ router.get("/me", async (req, res) => {
 });
 
 router.patch("/me", async (req, res) => {
-  const { displayName, bio, avatarUrl, coverUrl, boatName, boatColor, boatType, boatNeon, boatFlag, isBusiness, shareLocation } = req.body;
+  const { displayName, bio, avatarUrl, coverUrl, boatName, boatColor, boatType, boatNeon, boatFlag, boatAccent, isBusiness, shareLocation } = req.body;
   const updates: Partial<typeof usersTable.$inferInsert> = {};
   if (displayName !== undefined) updates.displayName = displayName;
   if (bio !== undefined) updates.bio = bio;
@@ -67,6 +68,12 @@ router.patch("/me", async (req, res) => {
       return res.status(400).json({ error: "boatFlag must be a boolean" });
     }
     updates.boatFlag = boatFlag;
+  }
+  if (boatAccent !== undefined) {
+    if (boatAccent !== null && typeof boatAccent !== "string") {
+      return res.status(400).json({ error: "boatAccent must be a string or null" });
+    }
+    updates.boatAccent = boatAccent;
   }
   if (isBusiness !== undefined) updates.isBusiness = isBusiness;
   if (shareLocation !== undefined) updates.shareLocation = shareLocation;

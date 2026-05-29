@@ -161,8 +161,11 @@ function buildFriendEl(opts: {
   boatType?: string | null;
   boatNeon?: boolean | null;
   boatFlag?: boolean | null;
+  boatAccent?: string | null;
 }): { root: HTMLDivElement; scale: HTMLDivElement } {
-  const { color, name, avatarUrl, online, isMe, boatType, boatNeon, boatFlag } = opts;
+  const { color, name, avatarUrl, online, isMe, boatType, boatNeon, boatFlag, boatAccent } = opts;
+  // accent color drives the flag + neon glow; falls back to the boat color
+  const accent = boatAccent || color;
   const root = el("div", "snap-marker") as HTMLDivElement;
   const scale = el("div", "snap-scale") as HTMLDivElement;
   // expose the boat color to CSS for accents (neon glow, ripples)
@@ -183,7 +186,7 @@ function buildFriendEl(opts: {
   // neon underglow accessory (sits just under the hull at the waterline)
   if (boatNeon) {
     const glow = el("div", "snap-underglow");
-    glow.style.background = color;
+    glow.style.background = accent;
     bob.appendChild(glow);
   }
 
@@ -196,7 +199,7 @@ function buildFriendEl(opts: {
   // flag accessory: a small pennant flying off the stern
   if (boatFlag) {
     const flag = el("div", "snap-flag");
-    flag.style.color = color;
+    flag.style.color = accent;
     flag.innerHTML = FLAG_SVG; // static markup, no user data
     bob.appendChild(flag);
   }
@@ -444,6 +447,7 @@ export function MapPage() {
         boatType: friend.boatType,
         boatNeon: friend.boatNeon,
         boatFlag: friend.boatFlag,
+        boatAccent: friend.boatAccent,
       });
       root.addEventListener("click", (ev) => {
         ev.stopPropagation();
@@ -514,6 +518,7 @@ export function MapPage() {
         boatType: me.boatType,
         boatNeon: me.boatNeon,
         boatFlag: me.boatFlag,
+        boatAccent: me.boatAccent,
       });
       root.addEventListener("click", (ev) => {
         ev.stopPropagation();
