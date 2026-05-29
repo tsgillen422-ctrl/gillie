@@ -22,6 +22,85 @@ const LAKE_CENTER: [number, number] = [-85.37, 36.53]; // [lng, lat]
 const BASE_ZOOM = 12;
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
+// --- Snap Map style palette ---
+const SNAP = {
+  land: "#e8f0e2",
+  green: "#d4e7c4",
+  greenDeep: "#c6e0b3",
+  sand: "#ece6d6",
+  water: "#9ed5f0",
+  road: "#ffffff",
+  roadCasing: "#e2e8dd",
+  label: "#7a8a72",
+  labelHalo: "#ffffff",
+};
+
+// Recolor the OpenMapTiles "liberty" style into a clean pastel Snap Map look.
+function applySnapStyle(map: maplibregl.Map) {
+  const layers = map.getStyle().layers || [];
+  for (const layer of layers) {
+    const id = layer.id;
+    const type = layer.type;
+    try {
+      if (type === "background") {
+        map.setPaintProperty(id, "background-color", SNAP.land);
+        continue;
+      }
+      if (type === "fill") {
+        if (/water|ocean|lake|river|reservoir|bay/i.test(id)) {
+          map.setPaintProperty(id, "fill-color", SNAP.water);
+          map.setPaintProperty(id, "fill-opacity", 1);
+        } else if (/wood|forest|park|grass|wetland|scrub|nature|landcover_/i.test(id)) {
+          map.setPaintProperty(id, "fill-color", SNAP.green);
+          map.setPaintProperty(id, "fill-opacity", 0.9);
+        } else if (/sand|beach|desert/i.test(id)) {
+          map.setPaintProperty(id, "fill-color", SNAP.sand);
+        } else if (/building/i.test(id)) {
+          map.setLayoutProperty(id, "visibility", "none");
+        } else if (/landuse|residential|industrial|commercial|pitch|cemetery/i.test(id)) {
+          map.setPaintProperty(id, "fill-color", SNAP.greenDeep);
+          map.setPaintProperty(id, "fill-opacity", 0.5);
+        } else {
+          map.setPaintProperty(id, "fill-color", SNAP.land);
+        }
+        continue;
+      }
+      if (type === "fill-extrusion") {
+        map.setLayoutProperty(id, "visibility", "none");
+        continue;
+      }
+      if (type === "line") {
+        if (/water|river|stream|canal|waterway/i.test(id)) {
+          map.setPaintProperty(id, "line-color", SNAP.water);
+        } else if (/bridge|tunnel|road|street|highway|motorway|trunk|primary|secondary|tertiary|path|transit|rail|service/i.test(id)) {
+          if (/casing|outline/i.test(id)) {
+            map.setPaintProperty(id, "line-color", SNAP.roadCasing);
+          } else {
+            map.setPaintProperty(id, "line-color", SNAP.road);
+          }
+        } else if (/admin|boundary|border/i.test(id)) {
+          map.setLayoutProperty(id, "visibility", "none");
+        }
+        continue;
+      }
+      if (type === "symbol") {
+        if (/poi|building|housenumber|continent|aerodrome|airport|transit/i.test(id)) {
+          map.setLayoutProperty(id, "visibility", "none");
+        } else {
+          if (layer.layout && (layer.layout as any)["text-field"]) {
+            map.setPaintProperty(id, "text-color", SNAP.label);
+            map.setPaintProperty(id, "text-halo-color", SNAP.labelHalo);
+            map.setPaintProperty(id, "text-halo-width", 1.4);
+          }
+        }
+        continue;
+      }
+    } catch {
+      // some layers may not accept a given property — ignore
+    }
+  }
+}
+
 const getPinEmoji = (type: string) => {
   switch (type) {
     case "fishing_spot": return "🎣";
@@ -196,9 +275,10 @@ export function MapPage() {
         style: MAP_STYLE,
         center: LAKE_CENTER,
         zoom: BASE_ZOOM,
-        pitch: 55,
-        bearing: -18,
-        maxPitch: 80,
+        pitch: 0,
+        bearing: 0,
+        maxPitch: 0,
+        dragRotate: false,
         attributionControl: { compact: true },
       });
     } catch (e) {
@@ -220,49 +300,21 @@ export function MapPage() {
     map.on("load", () => {
       mapLoaded.current = true;
 
-      // --- 3D terrain (free terrarium DEM, no API key) ---
-      try {
-        if (!map.getSource("terrain-dem")) {
-          map.addSource("terrain-dem", {
-            type: "raster-dem",
-            tiles: ["https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png"],
-            encoding: "terrarium",
-            tileSize: 256,
-            maxzoom: 14,
-          });
-        }
-        map.setTerrain({ source: "terrain-dem", exaggeration: 1.4 });
-      } catch (e) {
-        // terrain unsupported — continue with flat map
-      }
+      // --- Clean pastel Snap Map look ---
+      applySnapStyle(map);
 
-      // --- Sky / atmosphere ---
-      try {
-        map.setSky({
-          "sky-color": "#8cc3ff",
-          "sky-horizon-blend": 0.6,
-          "horizon-color": "#d8ecff",
-          "horizon-fog-blend": 0.6,
-          "fog-color": "#eaf4ff",
-          "fog-ground-blend": 0.4,
-          "atmosphere-blend": 0.8,
-        });
-      } catch (e) {
-        // sky unsupported — ignore
-      }
-
-      // --- Animated shimmering water ---
+      // --- Animated shimmering water (centered on Snap blue) ---
       const waterLayers = map
         .getStyle()
-        .layers?.filter((l) => /water/i.test(l.id) && l.type === "fill")
+        .layers?.filter((l) => /water|lake|river|reservoir/i.test(l.id) && l.type === "fill")
         .map((l) => l.id) ?? [];
 
       const animateWater = () => {
         const t = performance.now() / 1000;
-        // gentle hue/brightness cycle
-        const hue = 205 + Math.sin(t * 0.5) * 12;
-        const light = 52 + Math.sin(t * 0.9 + 1) * 6;
-        const sat = 70 + Math.sin(t * 0.7) * 8;
+        // subtle shimmer around the Snap pastel blue (~hsl(200 78% 78%))
+        const hue = 200 + Math.sin(t * 0.5) * 6;
+        const light = 78 + Math.sin(t * 0.9 + 1) * 4;
+        const sat = 78 + Math.sin(t * 0.7) * 6;
         const color = `hsl(${hue.toFixed(1)}, ${sat.toFixed(1)}%, ${light.toFixed(1)}%)`;
         waterLayers.forEach((id) => {
           if (map.getLayer(id)) {
@@ -408,10 +460,10 @@ export function MapPage() {
     const map = mapRef.current;
     if (!map) return;
     if (me?.currentLat != null && me?.currentLng != null) {
-      map.flyTo({ center: [me.currentLng, me.currentLat], zoom: 14, pitch: 60, essential: true });
+      map.flyTo({ center: [me.currentLng, me.currentLat], zoom: 14, essential: true });
     } else if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((pos) => {
-        map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 14, pitch: 60, essential: true });
+        map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 14, essential: true });
       });
     }
   };
