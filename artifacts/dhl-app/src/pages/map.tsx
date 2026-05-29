@@ -150,7 +150,14 @@ const el = (tag: string, className?: string) => {
   return node;
 };
 
-// --- Friend (Snap Map style) marker element ---
+// Static boat SVG — uses currentColor so no user data is injected into HTML.
+const BOAT_SVG = `<svg width="52" height="30" viewBox="0 0 52 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M3 13 H49 L42 25 C41 27 39 28 36 28 H16 C13 28 11 27 10 25 Z" fill="currentColor" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M20 6 H30 C32 6 33 7 33 9 V13 H18 V9 C18 7 18.5 6 20 6 Z" fill="#ffffff" opacity="0.92"/>
+  <rect x="20" y="8.5" width="11" height="4.5" rx="1.5" fill="currentColor" opacity="0.65"/>
+</svg>`;
+
+// --- Friend (Snap Map style) marker element: profile pic floating above a boat ---
 function buildFriendEl(opts: {
   color: string;
   name: string;
@@ -162,15 +169,18 @@ function buildFriendEl(opts: {
   const root = el("div", "snap-marker") as HTMLDivElement;
   const scale = el("div", "snap-scale") as HTMLDivElement;
 
+  // water ripple rings at the boat's waterline
   const ring1 = el("div", "snap-ring");
   ring1.style.borderColor = color;
   const ring2 = el("div", "snap-ring snap-ring-delay");
   ring2.style.borderColor = color;
 
+  // bob group floats up/down as a whole
   const bob = el("div", "snap-bob");
+
+  // profile photo on top
   const photo = el("div", "snap-photo");
   photo.style.borderColor = color;
-
   if (avatarUrl) {
     const img = el("img") as HTMLImageElement;
     img.src = avatarUrl;
@@ -184,11 +194,18 @@ function buildFriendEl(opts: {
   }
   if (online) photo.appendChild(el("div", "snap-online"));
 
-  const tail = el("div", "snap-tail");
-  tail.style.borderTopColor = color;
+  // little stem connecting photo to boat
+  const stem = el("div", "snap-stem");
+  stem.style.background = color;
+
+  // boat beneath the photo, rocking on the water
+  const boat = el("div", "snap-boat");
+  boat.style.color = color;
+  boat.innerHTML = BOAT_SVG; // static markup, no user data
 
   bob.appendChild(photo);
-  bob.appendChild(tail);
+  bob.appendChild(stem);
+  bob.appendChild(boat);
 
   const chip = el("div", "snap-chip");
   chip.textContent = isMe ? "You" : name;
@@ -303,29 +320,66 @@ export function MapPage() {
       // --- Clean pastel Snap Map look ---
       applySnapStyle(map);
 
-      // --- Animated shimmering water (centered on Snap blue) ---
-      const waterLayers = map
-        .getStyle()
-        .layers?.filter((l) => /water|lake|river|reservoir/i.test(l.id) && l.type === "fill")
-        .map((l) => l.id) ?? [];
+      // --- Animated shimmering water + breathing land ---
+      const allLayers = map.getStyle().layers || [];
+      const waterLayers = allLayers
+        .filter((l) => /water|lake|river|reservoir|bay/i.test(l.id) && l.type === "fill")
+        .map((l) => l.id);
+      const landLayers = allLayers
+        .filter(
+          (l) =>
+            l.type === "fill" &&
+            /wood|forest|park|grass|wetland|scrub|nature|landcover_|landuse/i.test(l.id)
+        )
+        .map((l) => l.id);
 
-      const animateWater = () => {
-        const t = performance.now() / 1000;
-        // subtle shimmer around the Snap pastel blue (~hsl(200 78% 78%))
-        const hue = 200 + Math.sin(t * 0.5) * 6;
-        const light = 78 + Math.sin(t * 0.9 + 1) * 4;
-        const sat = 78 + Math.sin(t * 0.7) * 6;
-        const color = `hsl(${hue.toFixed(1)}, ${sat.toFixed(1)}%, ${light.toFixed(1)}%)`;
-        waterLayers.forEach((id) => {
-          if (map.getLayer(id)) {
-            try {
-              map.setPaintProperty(id, "fill-color", color);
-            } catch {}
-          }
-        });
-        waterRaf = requestAnimationFrame(animateWater);
+      const reducedMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+      let lastTick = 0;
+      const animateScene = (now: number) => {
+        // pause when tab is hidden to save resources
+        if (document.visibilityState === "hidden") {
+          waterRaf = requestAnimationFrame(animateScene);
+          return;
+        }
+        // throttle to ~15fps — plenty for a slow ambient shimmer, easy on the GPU
+        if (now - lastTick > 66) {
+          lastTick = now;
+          const t = now / 1000;
+
+          // water: livelier shimmer around the Snap pastel blue
+          const wHue = 200 + Math.sin(t * 0.6) * 10;
+          const wLight = 77 + Math.sin(t * 1.1 + 1) * 7;
+          const wSat = 80 + Math.sin(t * 0.8) * 9;
+          const waterColor = `hsl(${wHue.toFixed(1)}, ${wSat.toFixed(1)}%, ${wLight.toFixed(1)}%)`;
+          waterLayers.forEach((id) => {
+            if (map.getLayer(id)) {
+              try {
+                map.setPaintProperty(id, "fill-color", waterColor);
+              } catch {}
+            }
+          });
+
+          // land: gentle "breathing" green that drifts in hue and brightness
+          const lHue = 96 + Math.sin(t * 0.35 + 0.5) * 8;
+          const lLight = 80 + Math.sin(t * 0.5) * 4;
+          const lSat = 45 + Math.sin(t * 0.4 + 2) * 8;
+          const landColor = `hsl(${lHue.toFixed(1)}, ${lSat.toFixed(1)}%, ${lLight.toFixed(1)}%)`;
+          landLayers.forEach((id) => {
+            if (map.getLayer(id)) {
+              try {
+                map.setPaintProperty(id, "fill-color", landColor);
+              } catch {}
+            }
+          });
+        }
+        waterRaf = requestAnimationFrame(animateScene);
       };
-      if (waterLayers.length) animateWater();
+      if (!reducedMotion && (waterLayers.length || landLayers.length)) {
+        waterRaf = requestAnimationFrame(animateScene);
+      }
 
       setStyleReady(true);
       applyZoomScale(map.getZoom());
@@ -380,7 +434,7 @@ export function MapPage() {
         ev.stopPropagation();
         setSelected({ kind: "friend", data: friend });
       });
-      const marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
+      const marker = new maplibregl.Marker({ element: root, anchor: "bottom", offset: [0, 13] })
         .setLngLat([friend.lng, friend.lat])
         .addTo(map);
       friendMarkers.current.push(marker);
@@ -447,7 +501,7 @@ export function MapPage() {
         ev.stopPropagation();
         setSelected({ kind: "me", data: me });
       });
-      const marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
+      const marker = new maplibregl.Marker({ element: root, anchor: "bottom", offset: [0, 13] })
         .setLngLat([me.currentLng, me.currentLat])
         .addTo(map);
       meMarker.current = marker;
@@ -769,35 +823,40 @@ const MAP_CSS = `
   .maplibregl-map { height: 100%; width: 100%; font-family: inherit; }
   .maplibregl-ctrl-top-right { margin-top: 140px; }
 
-  /* ================= Friend (Snap Map) marker ================= */
+  /* ================= Friend marker: profile pic above a boat ================= */
   .snap-marker { cursor: pointer; will-change: transform; }
   .snap-scale {
     position: relative;
-    width: 56px;
-    height: 78px;
+    width: 64px;
+    height: 104px;
     transform-origin: bottom center;
     transition: transform 0.18s ease-out;
   }
+  /* whole group bobs up and down on the water */
   .snap-bob {
     position: absolute;
     left: 50%;
-    top: 4px;
+    bottom: 14px;
     transform: translateX(-50%);
-    animation: snapBob 3.4s ease-in-out infinite;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: snapBob 3.2s ease-in-out infinite;
   }
   @keyframes snapBob {
     0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(-5px); }
+    50% { transform: translateX(-50%) translateY(-6px); }
   }
   .snap-photo {
     position: relative;
-    width: 46px;
-    height: 46px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     border: 3px solid;
     background: #fff;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.32);
+    box-shadow: 0 5px 12px rgba(0,0,0,0.30);
     overflow: hidden;
+    z-index: 3;
   }
   .snap-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .snap-initials {
@@ -813,22 +872,36 @@ const MAP_CSS = `
     background: #22c55e;
     border: 2px solid #fff;
     box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+    animation: snapPulse 1.8s ease-in-out infinite;
   }
-  .snap-tail {
-    position: absolute;
-    left: 50%;
-    bottom: -7px;
-    transform: translateX(-50%);
-    width: 0; height: 0;
-    border-left: 8px solid transparent;
-    border-right: 8px solid transparent;
-    border-top: 10px solid;
-    filter: drop-shadow(0 3px 2px rgba(0,0,0,0.22));
+  @keyframes snapPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.55); }
+    50% { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+  }
+  .snap-stem {
+    width: 3px;
+    height: 6px;
+    margin-top: -1px;
+    border-radius: 2px;
+    z-index: 1;
+  }
+  /* boat rocks side to side */
+  .snap-boat {
+    margin-top: -2px;
+    line-height: 0;
+    z-index: 2;
+    filter: drop-shadow(0 4px 4px rgba(0,0,0,0.25));
+    transform-origin: 50% 40%;
+    animation: snapRock 3.6s ease-in-out infinite;
+  }
+  @keyframes snapRock {
+    0%, 100% { transform: rotate(-7deg); }
+    50% { transform: rotate(7deg); }
   }
   .snap-chip {
     position: absolute;
     left: 50%;
-    bottom: -4px;
+    bottom: -2px;
     transform: translateX(-50%);
     background: rgba(255,255,255,0.96);
     color: #0f172a;
@@ -840,23 +913,23 @@ const MAP_CSS = `
     box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     pointer-events: none;
   }
-  /* ripple rings */
+  /* expanding water ripple rings at the boat's waterline */
   .snap-ring {
     position: absolute;
     left: 50%;
-    top: 27px;
-    width: 46px; height: 46px;
-    margin-left: -23px;
-    margin-top: -23px;
+    bottom: 16px;
+    width: 40px; height: 16px;
+    margin-left: -20px;
     border-radius: 50%;
     border: 2px solid;
-    animation: snapRipple 2.6s ease-out infinite;
+    opacity: 0;
+    animation: snapRipple 2.8s ease-out infinite;
     pointer-events: none;
   }
-  .snap-ring-delay { animation-delay: 1.3s; }
+  .snap-ring-delay { animation-delay: 1.4s; }
   @keyframes snapRipple {
-    0% { transform: scale(0.5); opacity: 0.65; }
-    100% { transform: scale(2.4); opacity: 0; }
+    0% { transform: scale(0.5); opacity: 0.6; }
+    100% { transform: scale(2.6); opacity: 0; }
   }
 
   /* ================= Lake pin (emoji pill) ================= */
