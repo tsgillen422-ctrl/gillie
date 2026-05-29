@@ -16,6 +16,7 @@ export const usersTable = pgTable("users", {
   lastSeen: timestamp("last_seen"),
   boatName: text("boat_name"),
   boatColor: text("boat_color").notNull().default("#3b82f6"),
+  boatType: text("boat_type").notNull().default("speedboat"),
   shareLocation: boolean("share_location").notNull().default(true),
   followerCount: serial("follower_count"),
   followingCount: serial("following_count"),

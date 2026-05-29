@@ -22,6 +22,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     lastSeen: u.lastSeen ? u.lastSeen.toISOString() : null,
     boatName: u.boatName,
     boatColor: u.boatColor,
+    boatType: u.boatType,
     shareLocation: u.shareLocation,
     followerCount: 0,
     followingCount: 0,
@@ -38,7 +39,7 @@ router.get("/me", async (req, res) => {
 });
 
 router.patch("/me", async (req, res) => {
-  const { displayName, bio, avatarUrl, coverUrl, boatName, boatColor, isBusiness, shareLocation } = req.body;
+  const { displayName, bio, avatarUrl, coverUrl, boatName, boatColor, boatType, isBusiness, shareLocation } = req.body;
   const updates: Partial<typeof usersTable.$inferInsert> = {};
   if (displayName !== undefined) updates.displayName = displayName;
   if (bio !== undefined) updates.bio = bio;
@@ -46,6 +47,12 @@ router.patch("/me", async (req, res) => {
   if (coverUrl !== undefined) updates.coverUrl = coverUrl;
   if (boatName !== undefined) updates.boatName = boatName;
   if (boatColor !== undefined) updates.boatColor = boatColor;
+  if (boatType !== undefined) {
+    if (boatType !== "speedboat" && boatType !== "pontoon") {
+      return res.status(400).json({ error: "Invalid boatType" });
+    }
+    updates.boatType = boatType;
+  }
   if (isBusiness !== undefined) updates.isBusiness = isBusiness;
   if (shareLocation !== undefined) updates.shareLocation = shareLocation;
   const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, SESSION_USER_ID)).returning();

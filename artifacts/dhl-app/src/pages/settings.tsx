@@ -22,6 +22,32 @@ const BOAT_COLORS = [
   { value: '#f8fafc', label: 'White' }
 ];
 
+const BOAT_TYPES = [
+  { value: 'speedboat', label: 'Speed Boat', desc: 'Sleek & fast' },
+  { value: 'pontoon', label: 'Pontoon', desc: 'Relaxed cruiser' },
+];
+
+function BoatPreview({ type, color }: { type: string; color: string }) {
+  if (type === 'pontoon') {
+    return (
+      <svg width="84" height="48" viewBox="0 0 56 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="7" y="22.5" width="42" height="5.5" rx="2.75" fill={color} stroke="#ffffff" strokeWidth="2" />
+        <rect x="5" y="16" width="46" height="6" rx="2" fill={color} stroke="#ffffff" strokeWidth="2" />
+        <rect x="12" y="4.5" width="32" height="4" rx="2" fill="#ffffff" opacity="0.92" />
+        <rect x="13" y="8" width="2.2" height="8" rx="1" fill="#ffffff" opacity="0.7" />
+        <rect x="40.8" y="8" width="2.2" height="8" rx="1" fill="#ffffff" opacity="0.7" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="84" height="45" viewBox="0 0 56 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 13 H44 C50 13 53 15 53.5 17 L48 25 C47 27 45 28 42 28 H14 C11 28 9 27 8 25 Z" fill={color} stroke="#ffffff" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M29 6.5 C30.5 6.5 31.5 7 32.5 8 L39 13 H27 V9 C27 7.5 27.5 6.5 29 6.5 Z" fill="#ffffff" opacity="0.92" />
+      <rect x="10" y="14.5" width="33" height="3" rx="1.5" fill="#ffffff" opacity="0.55" />
+    </svg>
+  );
+}
+
 export function SettingsPage() {
   const { data: me, isLoading } = useGetMe();
   const updateMe = useUpdateMe();
@@ -31,6 +57,7 @@ export function SettingsPage() {
   const [displayName, setDisplayName] = React.useState("");
   const [boatName, setBoatName] = React.useState("");
   const [boatColor, setBoatColor] = React.useState("");
+  const [boatType, setBoatType] = React.useState("speedboat");
   const [bio, setBio] = React.useState("");
   const [shareLocation, setShareLocation] = React.useState(true);
   const [avatarUrl, setAvatarUrl] = React.useState<string | undefined>(undefined);
@@ -52,6 +79,7 @@ export function SettingsPage() {
       setDisplayName(me.displayName || "");
       setBoatName(me.boatName || "");
       setBoatColor(me.boatColor || "#0ea5e9");
+      setBoatType(me.boatType || "speedboat");
       setBio(me.bio || "");
       setShareLocation(me.shareLocation ?? true);
       setAvatarUrl(me.avatarUrl ?? undefined);
@@ -86,6 +114,7 @@ export function SettingsPage() {
         displayName,
         boatName,
         boatColor,
+        boatType,
         bio,
         shareLocation
       }
@@ -205,17 +234,45 @@ export function SettingsPage() {
             <CardTitle className="flex items-center gap-2"><Ship className="w-5 h-5 text-primary" /> Vessel Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-5">
+            {/* Live preview */}
+            <div className="rounded-xl border border-border bg-gradient-to-b from-sky-100 to-sky-200 p-4 flex flex-col items-center gap-1">
+              <div className="flex items-center justify-center h-14">
+                <BoatPreview type={boatType} color={boatColor || "#0ea5e9"} />
+              </div>
+              <span className="text-xs font-medium text-slate-600">{boatName || "Your boat on the lake"}</span>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="boatName">Boat Name</Label>
               <Input id="boatName" value={boatName} onChange={e => setBoatName(e.target.value)} placeholder="e.g. Wake Maker" className="bg-background" />
             </div>
-            
+
+            {/* Boat type */}
             <div className="space-y-3">
-              <Label>Map Icon Color</Label>
+              <Label>Boat Style</Label>
+              <div className="grid grid-cols-2 gap-3">
+                {BOAT_TYPES.map(t => (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setBoatType(t.value)}
+                    className={`flex flex-col items-center gap-1 rounded-xl border p-3 transition-all ${boatType === t.value ? 'border-primary ring-2 ring-primary/30 bg-primary/5 shadow-sm' : 'border-border hover:border-primary/40 hover:bg-muted/40'}`}
+                  >
+                    <BoatPreview type={t.value} color={boatColor || "#0ea5e9"} />
+                    <span className="text-sm font-semibold">{t.label}</span>
+                    <span className="text-[11px] text-muted-foreground">{t.desc}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label>Boat Color</Label>
               <div className="grid grid-cols-4 gap-3">
                 {BOAT_COLORS.map(color => (
                   <button
                     key={color.value}
+                    type="button"
                     onClick={() => setBoatColor(color.value)}
                     className={`w-full aspect-square rounded-full flex items-center justify-center transition-all ${boatColor === color.value ? 'ring-2 ring-primary ring-offset-2 scale-110 shadow-md' : 'opacity-80 hover:opacity-100 hover:scale-105'}`}
                     style={{ backgroundColor: color.value, border: color.value === '#f8fafc' ? '1px solid #e2e8f0' : 'none' }}
@@ -223,6 +280,22 @@ export function SettingsPage() {
                   />
                 ))}
               </div>
+              {/* Custom color */}
+              <label className="flex items-center gap-3 rounded-lg border border-border bg-background p-2.5 cursor-pointer">
+                <span className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full overflow-hidden border border-border" style={{ backgroundColor: boatColor || "#0ea5e9" }}>
+                  <input
+                    type="color"
+                    value={boatColor || "#0ea5e9"}
+                    onChange={e => setBoatColor(e.target.value)}
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                    aria-label="Choose a custom boat color"
+                  />
+                </span>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">Custom color</span>
+                  <span className="text-[11px] text-muted-foreground uppercase">{boatColor || "#0ea5e9"}</span>
+                </div>
+              </label>
             </div>
           </CardContent>
         </Card>

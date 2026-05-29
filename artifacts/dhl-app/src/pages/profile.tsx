@@ -155,6 +155,7 @@ export function ProfilePage() {
               <Ship className="w-4 h-4 text-primary" />
               <span className="font-medium text-foreground">Vessel:</span>
               <span className="text-muted-foreground">{user.boatName}</span>
+              <span className="text-muted-foreground">· {user.boatType === "pontoon" ? "Pontoon" : "Speed Boat"}</span>
               {user.boatColor && (
                 <div className="w-3 h-3 rounded-full ml-1" style={{ backgroundColor: user.boatColor }} />
               )}

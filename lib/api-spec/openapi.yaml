@@ -746,6 +746,8 @@ components:
           type: ["string", "null"]
         boatColor:
           type: ["string", "null"]
+        boatType:
+          type: ["string", "null"]
         shareLocation:
           type: boolean
         followerCount:
@@ -769,6 +771,8 @@ components:
         boatName:
           type: string
         boatColor:
+          type: string
+        boatType:
           type: string
         isBusiness:
           type: boolean
@@ -799,6 +803,8 @@ components:
         boatName:
           type: ["string", "null"]
         boatColor:
+          type: ["string", "null"]
+        boatType:
           type: ["string", "null"]
         lat:
           type: ["number", "null"]

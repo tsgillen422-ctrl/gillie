@@ -13,6 +13,7 @@ export interface UserUpdate {
   coverUrl?: string;
   boatName?: string;
   boatColor?: string;
+  boatType?: string;
   isBusiness?: boolean;
   shareLocation?: boolean;
 }

@@ -150,12 +150,26 @@ const el = (tag: string, className?: string) => {
   return node;
 };
 
-// Static boat SVG — uses currentColor so no user data is injected into HTML.
-const BOAT_SVG = `<svg width="52" height="30" viewBox="0 0 52 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M3 13 H49 L42 25 C41 27 39 28 36 28 H16 C13 28 11 27 10 25 Z" fill="currentColor" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M20 6 H30 C32 6 33 7 33 9 V13 H18 V9 C18 7 18.5 6 20 6 Z" fill="#ffffff" opacity="0.92"/>
-  <rect x="20" y="8.5" width="11" height="4.5" rx="1.5" fill="currentColor" opacity="0.65"/>
+// Static boat SVGs — use currentColor so no user data is injected into HTML.
+// Sporty speedboat: pointed bow, swept windshield, racing stripe.
+const SPEEDBOAT_SVG = `<svg width="56" height="30" viewBox="0 0 56 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M3 13 H44 C50 13 53 15 53.5 17 L48 25 C47 27 45 28 42 28 H14 C11 28 9 27 8 25 Z" fill="currentColor" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M29 6.5 C30.5 6.5 31.5 7 32.5 8 L39 13 H27 V9 C27 7.5 27.5 6.5 29 6.5 Z" fill="#ffffff" opacity="0.92"/>
+  <rect x="10" y="14.5" width="33" height="3" rx="1.5" fill="#ffffff" opacity="0.55"/>
 </svg>`;
+
+// Pontoon: flat deck on two tubes with a sun canopy.
+const PONTOON_SVG = `<svg width="56" height="32" viewBox="0 0 56 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="7" y="22.5" width="42" height="5.5" rx="2.75" fill="currentColor" stroke="#ffffff" stroke-width="2"/>
+  <rect x="5" y="16" width="46" height="6" rx="2" fill="currentColor" stroke="#ffffff" stroke-width="2"/>
+  <rect x="12" y="4.5" width="32" height="4" rx="2" fill="#ffffff" opacity="0.92"/>
+  <rect x="13" y="8" width="2.2" height="8" rx="1" fill="#ffffff" opacity="0.7"/>
+  <rect x="40.8" y="8" width="2.2" height="8" rx="1" fill="#ffffff" opacity="0.7"/>
+</svg>`;
+
+function boatSvgFor(type?: string | null): string {
+  return type === "pontoon" ? PONTOON_SVG : SPEEDBOAT_SVG;
+}
 
 // --- Friend (Snap Map style) marker element: profile pic floating above a boat ---
 function buildFriendEl(opts: {
@@ -164,8 +178,9 @@ function buildFriendEl(opts: {
   avatarUrl?: string | null;
   online?: boolean;
   isMe?: boolean;
+  boatType?: string | null;
 }): { root: HTMLDivElement; scale: HTMLDivElement } {
-  const { color, name, avatarUrl, online, isMe } = opts;
+  const { color, name, avatarUrl, online, isMe, boatType } = opts;
   const root = el("div", "snap-marker") as HTMLDivElement;
   const scale = el("div", "snap-scale") as HTMLDivElement;
 
@@ -201,7 +216,7 @@ function buildFriendEl(opts: {
   // boat beneath the photo, rocking on the water
   const boat = el("div", "snap-boat");
   boat.style.color = color;
-  boat.innerHTML = BOAT_SVG; // static markup, no user data
+  boat.innerHTML = boatSvgFor(boatType); // static markup, no user data
 
   bob.appendChild(photo);
   bob.appendChild(stem);
@@ -429,6 +444,7 @@ export function MapPage() {
         name: friend.displayName || friend.username || "Friend",
         avatarUrl: friend.avatarUrl,
         online: friend.isOnline,
+        boatType: friend.boatType,
       });
       root.addEventListener("click", (ev) => {
         ev.stopPropagation();
@@ -496,6 +512,7 @@ export function MapPage() {
         avatarUrl: me.avatarUrl,
         online: me.isOnline,
         isMe: true,
+        boatType: me.boatType,
       });
       root.addEventListener("click", (ev) => {
         ev.stopPropagation();

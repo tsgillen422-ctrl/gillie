@@ -31,6 +31,8 @@ export interface User {
   boatName?: string | null;
   /** @nullable */
   boatColor?: string | null;
+  /** @nullable */
+  boatType?: string | null;
   shareLocation?: boolean;
   followerCount?: number;
   followingCount?: number;
@@ -44,6 +46,7 @@ export interface UserUpdate {
   coverUrl?: string;
   boatName?: string;
   boatColor?: string;
+  boatType?: string;
   isBusiness?: boolean;
   shareLocation?: boolean;
 }
@@ -63,6 +66,8 @@ export interface FriendLocation {
   boatName?: string | null;
   /** @nullable */
   boatColor?: string | null;
+  /** @nullable */
+  boatType?: string | null;
   /** @nullable */
   lat?: number | null;
   /** @nullable */

@@ -17,6 +17,8 @@ export interface FriendLocation {
   /** @nullable */
   boatColor?: string | null;
   /** @nullable */
+  boatType?: string | null;
+  /** @nullable */
   lat?: number | null;
   /** @nullable */
   lng?: number | null;
