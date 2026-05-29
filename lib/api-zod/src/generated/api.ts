@@ -1005,6 +1005,7 @@ export const GetPostsResponseItem = zod.object({
   "postType": zod.enum(['post', 'event', 'business']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
+  "videoUrl": zod.string().nullish(),
   "pinLat": zod.number().nullish(),
   "pinLng": zod.number().nullish(),
   "likeCount": zod.number().optional(),
@@ -1023,6 +1024,7 @@ export const CreatePostBody = zod.object({
   "postType": zod.enum(['post', 'event', 'business']),
   "eventDate": zod.string().optional(),
   "imageUrl": zod.string().optional(),
+  "videoUrl": zod.string().optional(),
   "pinLat": zod.number().optional(),
   "pinLng": zod.number().optional()
 })
@@ -1066,6 +1068,7 @@ export const GetPostResponse = zod.object({
   "postType": zod.enum(['post', 'event', 'business']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
+  "videoUrl": zod.string().nullish(),
   "pinLat": zod.number().nullish(),
   "pinLng": zod.number().nullish(),
   "likeCount": zod.number().optional(),
@@ -1120,6 +1123,7 @@ export const LikePostResponse = zod.object({
   "postType": zod.enum(['post', 'event', 'business']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
+  "videoUrl": zod.string().nullish(),
   "pinLat": zod.number().nullish(),
   "pinLng": zod.number().nullish(),
   "likeCount": zod.number().optional(),
@@ -1163,6 +1167,7 @@ export const GetPostCommentsResponseItem = zod.object({
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
+  "videoUrl": zod.string().nullish(),
   "createdAt": zod.string()
 })
 export const GetPostCommentsResponse = zod.array(GetPostCommentsResponseItem)
@@ -1176,7 +1181,8 @@ export const CreatePostCommentParams = zod.object({
 })
 
 export const CreatePostCommentBody = zod.object({
-  "content": zod.string()
+  "content": zod.string().optional(),
+  "videoUrl": zod.string().optional()
 })
 
 
@@ -1228,6 +1234,7 @@ export const GetPostsSummaryResponse = zod.object({
   "postType": zod.enum(['post', 'event', 'business']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
+  "videoUrl": zod.string().nullish(),
   "pinLat": zod.number().nullish(),
   "pinLng": zod.number().nullish(),
   "likeCount": zod.number().optional(),

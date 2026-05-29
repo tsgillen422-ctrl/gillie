@@ -41,6 +41,7 @@ async function formatPost(post: typeof postsTable.$inferSelect) {
     postType: post.postType,
     eventDate: post.eventDate ? post.eventDate.toISOString() : null,
     imageUrl: post.imageUrl,
+    videoUrl: post.videoUrl,
     pinLat: post.pinLat,
     pinLng: post.pinLng,
     likeCount: post.likeCount,
@@ -61,7 +62,7 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { title, content, postType, eventDate, imageUrl, pinLat, pinLng } = req.body;
+  const { title, content, postType, eventDate, imageUrl, videoUrl, pinLat, pinLng } = req.body;
   const [post] = await db
     .insert(postsTable)
     .values({
@@ -71,6 +72,7 @@ router.post("/", async (req, res) => {
       postType: postType || "post",
       eventDate: eventDate ? new Date(eventDate) : null,
       imageUrl,
+      videoUrl,
       pinLat,
       pinLng,
     })
@@ -171,6 +173,7 @@ router.get("/:postId/comments", async (req, res) => {
         userId: c.userId,
         user: user ? formatUser(user) : null,
         content: c.content,
+        videoUrl: c.videoUrl,
         createdAt: c.createdAt.toISOString(),
       };
     })
@@ -180,15 +183,17 @@ router.get("/:postId/comments", async (req, res) => {
 
 router.post("/:postId/comments", async (req, res) => {
   const postId = parseInt(req.params.postId);
-  const { content } = req.body;
-  if (!content || !String(content).trim()) {
-    return res.status(400).json({ error: "Comment content is required" });
+  const { content, videoUrl } = req.body;
+  const trimmedContent = content ? String(content).trim() : "";
+  const trimmedVideoUrl = videoUrl ? String(videoUrl).trim() : "";
+  if (!trimmedContent && !trimmedVideoUrl) {
+    return res.status(400).json({ error: "Add a message or a video to comment" });
   }
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!post) return res.status(404).json({ error: "Post not found" });
   const [comment] = await db
     .insert(postCommentsTable)
-    .values({ postId, userId: SESSION_USER_ID, content: String(content).trim() })
+    .values({ postId, userId: SESSION_USER_ID, content: trimmedContent, videoUrl: trimmedVideoUrl || null })
     .returning();
   const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, comment.userId) });
   res.status(201).json({
@@ -197,6 +202,7 @@ router.post("/:postId/comments", async (req, res) => {
     userId: comment.userId,
     user: user ? formatUser(user) : null,
     content: comment.content,
+    videoUrl: comment.videoUrl,
     createdAt: comment.createdAt.toISOString(),
   });
 });

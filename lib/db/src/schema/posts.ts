@@ -11,6 +11,7 @@ export const postsTable = pgTable("posts", {
   postType: text("post_type").notNull().default("post"),
   eventDate: timestamp("event_date"),
   imageUrl: text("image_url"),
+  videoUrl: text("video_url"),
   pinLat: real("pin_lat"),
   pinLng: real("pin_lng"),
   likeCount: integer("like_count").notNull().default(0),
@@ -28,7 +29,8 @@ export const postCommentsTable = pgTable("post_comments", {
   id: serial("id").primaryKey(),
   postId: integer("post_id").notNull().references(() => postsTable.id),
   userId: integer("user_id").notNull().references(() => usersTable.id),
-  content: text("content").notNull(),
+  content: text("content").notNull().default(""),
+  videoUrl: text("video_url"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

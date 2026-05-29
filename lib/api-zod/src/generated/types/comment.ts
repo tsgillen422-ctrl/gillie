@@ -13,5 +13,7 @@ export interface Comment {
   userId: number;
   user?: User;
   content: string;
+  /** @nullable */
+  videoUrl?: string | null;
   createdAt: string;
 }

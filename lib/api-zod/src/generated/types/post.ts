@@ -20,6 +20,8 @@ export interface Post {
   /** @nullable */
   imageUrl?: string | null;
   /** @nullable */
+  videoUrl?: string | null;
+  /** @nullable */
   pinLat?: number | null;
   /** @nullable */
   pinLng?: number | null;

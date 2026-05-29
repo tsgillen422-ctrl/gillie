@@ -13,6 +13,7 @@ export interface PostInput {
   postType: PostInputPostType;
   eventDate?: string;
   imageUrl?: string;
+  videoUrl?: string;
   pinLat?: number;
   pinLng?: number;
 }

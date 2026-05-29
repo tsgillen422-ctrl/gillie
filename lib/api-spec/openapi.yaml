@@ -1159,6 +1159,8 @@ components:
           type: ["string", "null"]
         imageUrl:
           type: ["string", "null"]
+        videoUrl:
+          type: ["string", "null"]
         pinLat:
           type: ["number", "null"]
         pinLng:
@@ -1184,6 +1186,8 @@ components:
         eventDate:
           type: string
         imageUrl:
+          type: string
+        videoUrl:
           type: string
         pinLat:
           type: number
@@ -1261,14 +1265,17 @@ components:
           $ref: "#/components/schemas/User"
         content:
           type: string
+        videoUrl:
+          type: ["string", "null"]
         createdAt:
           type: string
 
     CommentInput:
       type: object
-      required: [content]
       properties:
         content:
+          type: string
+        videoUrl:
           type: string
 
     Conditions:

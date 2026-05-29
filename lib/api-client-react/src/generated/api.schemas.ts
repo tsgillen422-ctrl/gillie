@@ -276,6 +276,8 @@ export interface Post {
   /** @nullable */
   imageUrl?: string | null;
   /** @nullable */
+  videoUrl?: string | null;
+  /** @nullable */
   pinLat?: number | null;
   /** @nullable */
   pinLng?: number | null;
@@ -299,6 +301,7 @@ export interface PostInput {
   postType: PostInputPostType;
   eventDate?: string;
   imageUrl?: string;
+  videoUrl?: string;
   pinLat?: number;
   pinLng?: number;
 }
@@ -348,11 +351,14 @@ export interface Comment {
   userId: number;
   user?: User;
   content: string;
+  /** @nullable */
+  videoUrl?: string | null;
   createdAt: string;
 }
 
 export interface CommentInput {
-  content: string;
+  content?: string;
+  videoUrl?: string;
 }
 
 export interface Conditions {

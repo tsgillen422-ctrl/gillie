@@ -6,7 +6,7 @@ import { ConditionsWidget } from "@/components/ConditionsWidget";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send } from "lucide-react";
+import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -49,6 +49,7 @@ export function FeedPage() {
   const [newType, setNewType] = React.useState<"post" | "event" | "business">("post");
   const [newEventDate, setNewEventDate] = React.useState("");
   const [newImageUrl, setNewImageUrl] = React.useState<string | null>(null);
+  const [newVideoUrl, setNewVideoUrl] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const { uploadFile, isUploading } = useUpload();
 
@@ -76,25 +77,34 @@ export function FeedPage() {
     setNewType("post");
     setNewEventDate("");
     setNewImageUrl(null);
+    setNewVideoUrl(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please choose an image file.");
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+    if (!isImage && !isVideo) {
+      toast.error("Please choose an image or video file.");
       return;
     }
     try {
       const res = await uploadFile(file);
       if (res?.objectPath) {
-        setNewImageUrl(res.objectPath);
+        if (isVideo) {
+          setNewVideoUrl(res.objectPath);
+          setNewImageUrl(null);
+        } else {
+          setNewImageUrl(res.objectPath);
+          setNewVideoUrl(null);
+        }
       } else {
-        toast.error("Couldn't upload that photo.");
+        toast.error("Couldn't upload that file.");
       }
     } catch {
-      toast.error("Couldn't upload that photo.");
+      toast.error("Couldn't upload that file.");
     }
   };
 
@@ -115,6 +125,7 @@ export function FeedPage() {
           postType: newType as PostInputPostType,
           eventDate: newType === "event" && newEventDate ? new Date(newEventDate).toISOString() : undefined,
           imageUrl: newImageUrl ? `/api/storage${newImageUrl}` : undefined,
+          videoUrl: newVideoUrl ? `/api/storage${newVideoUrl}` : undefined,
         },
       },
       {
@@ -245,8 +256,8 @@ export function FeedPage() {
             )}
 
             <div className="space-y-1.5">
-              <Label>Photo</Label>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+              <Label>Photo or video</Label>
+              <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handlePhotoSelect} />
               {newImageUrl ? (
                 <div className="relative rounded-lg overflow-hidden bg-muted aspect-video">
                   <img src={`/api/storage${newImageUrl}`} alt="Selected" className="object-cover w-full h-full" />
@@ -260,10 +271,23 @@ export function FeedPage() {
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
+              ) : newVideoUrl ? (
+                <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
+                  <video src={`/api/storage${newVideoUrl}`} controls className="w-full h-full" />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="absolute top-2 right-2 h-7 w-7"
+                    onClick={() => { setNewVideoUrl(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               ) : (
                 <Button type="button" variant="outline" className="w-full" disabled={isUploading} onClick={() => fileInputRef.current?.click()}>
                   <ImagePlus className="w-4 h-4 mr-2" />
-                  {isUploading ? "Uploading..." : "Add a photo"}
+                  {isUploading ? "Uploading..." : "Add a photo or video"}
                 </Button>
               )}
             </div>
@@ -289,17 +313,50 @@ function PostCard({ post, onLike, canDelete, onDelete, currentUserId }: { post: 
   const deleteComment = useDeletePostComment();
   const queryClient = useQueryClient();
   const [commentText, setCommentText] = React.useState("");
+  const [commentVideoUrl, setCommentVideoUrl] = React.useState<string | null>(null);
+  const commentVideoInputRef = React.useRef<HTMLInputElement>(null);
+  const { uploadFile: uploadCommentFile, isUploading: isUploadingComment } = useUpload();
 
   const refreshComments = () => {
     queryClient.invalidateQueries({ queryKey: getGetPostCommentsQueryKey(post.id) });
   };
 
+  const handleCommentVideoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("video/")) {
+      toast.error("Please choose a video file.");
+      return;
+    }
+    try {
+      const res = await uploadCommentFile(file);
+      if (res?.objectPath) {
+        setCommentVideoUrl(res.objectPath);
+      } else {
+        toast.error("Couldn't upload that video.");
+      }
+    } catch {
+      toast.error("Couldn't upload that video.");
+    }
+  };
+
   const submitComment = () => {
-    if (!commentText.trim()) return;
+    if (!commentText.trim() && !commentVideoUrl) return;
     createComment.mutate(
-      { postId: post.id, data: { content: commentText.trim() } },
       {
-        onSuccess: () => { setCommentText(""); refreshComments(); },
+        postId: post.id,
+        data: {
+          content: commentText.trim() || undefined,
+          videoUrl: commentVideoUrl ? `/api/storage${commentVideoUrl}` : undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          setCommentText("");
+          setCommentVideoUrl(null);
+          if (commentVideoInputRef.current) commentVideoInputRef.current.value = "";
+          refreshComments();
+        },
         onError: () => toast.error("Couldn't post your comment."),
       }
     );
@@ -369,6 +426,12 @@ function PostCard({ post, onLike, canDelete, onDelete, currentUserId }: { post: 
             <img src={post.imageUrl} alt="Post content" className="object-cover w-full h-full" />
           </div>
         )}
+
+        {post.videoUrl && (
+          <div className="mt-3 rounded-xl overflow-hidden bg-black relative aspect-video">
+            <video src={post.videoUrl} controls className="w-full h-full" />
+          </div>
+        )}
       </CardContent>
       
       <CardFooter className="p-2 border-t border-border/40 flex justify-between bg-muted/10">
@@ -398,7 +461,12 @@ function PostCard({ post, onLike, canDelete, onDelete, currentUserId }: { post: 
                       <span className="font-semibold text-xs">{c.user?.displayName || "User"}</span>
                       <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}</span>
                     </div>
-                    <p className="text-sm whitespace-pre-wrap break-words">{c.content}</p>
+                    {c.content && <p className="text-sm whitespace-pre-wrap break-words">{c.content}</p>}
+                    {c.videoUrl && (
+                      <div className="mt-2 rounded-lg overflow-hidden bg-black aspect-video">
+                        <video src={c.videoUrl} controls className="w-full h-full" />
+                      </div>
+                    )}
                   </div>
                 </div>
                 {currentUserId != null && c.userId === currentUserId && (
@@ -412,15 +480,42 @@ function PostCard({ post, onLike, canDelete, onDelete, currentUserId }: { post: 
             <p className="text-xs text-muted-foreground text-center py-2">No comments yet. Be the first to say something.</p>
           )}
 
+          {commentVideoUrl && (
+            <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
+              <video src={`/api/storage${commentVideoUrl}`} controls className="w-full h-full" />
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                className="absolute top-2 right-2 h-7 w-7"
+                onClick={() => { setCommentVideoUrl(null); if (commentVideoInputRef.current) commentVideoInputRef.current.value = ""; }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 pt-1">
+            <input ref={commentVideoInputRef} type="file" accept="video/*" className="hidden" onChange={handleCommentVideoSelect} />
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="rounded-full shrink-0"
+              disabled={isUploadingComment}
+              onClick={() => commentVideoInputRef.current?.click()}
+              title="Add a video"
+            >
+              <Video className="w-4 h-4" />
+            </Button>
             <Input
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submitComment(); } }}
-              placeholder="Add a comment..."
+              placeholder={isUploadingComment ? "Uploading video..." : "Add a comment..."}
               className="rounded-full"
             />
-            <Button size="icon" className="rounded-full shrink-0" onClick={submitComment} disabled={!commentText.trim() || createComment.isPending}>
+            <Button size="icon" className="rounded-full shrink-0" onClick={submitComment} disabled={(!commentText.trim() && !commentVideoUrl) || createComment.isPending || isUploadingComment}>
               <Send className="w-4 h-4" />
             </Button>
           </div>
