@@ -211,7 +211,7 @@ function buildFriendEl(opts: {
   boatFlag?: boolean | null;
   boatAccent?: string | null;
 }): { root: HTMLDivElement; scale: HTMLDivElement } {
-  const { color, name, avatarUrl, online, isMe, boatType, boatNeon, boatFlag, boatAccent } = opts;
+  const { color, name, avatarUrl, online, boatType, boatNeon, boatFlag, boatAccent } = opts;
   // accent color drives the flag + neon glow; falls back to the boat color
   const accent = boatAccent || color;
   const root = el("div", "snap-marker") as HTMLDivElement;
@@ -269,14 +269,10 @@ function buildFriendEl(opts: {
   if (online) photo.appendChild(el("div", "snap-online"));
   bob.appendChild(photo);
 
-  const chip = el("div", "snap-chip");
-  chip.textContent = isMe ? "You" : name;
-
   scale.appendChild(ring1);
   scale.appendChild(ring2);
   scale.appendChild(wake);
   scale.appendChild(bob);
-  scale.appendChild(chip);
   root.appendChild(scale);
   return { root, scale };
 }
@@ -1184,21 +1180,6 @@ const MAP_CSS = `
   @keyframes snapWake {
     0%, 100% { transform: scaleX(0.9); opacity: 0.5; }
     50% { transform: scaleX(1.08); opacity: 0.8; }
-  }
-  .snap-chip {
-    position: absolute;
-    left: 50%;
-    bottom: -2px;
-    transform: translateX(-50%);
-    background: rgba(255,255,255,0.96);
-    color: #0f172a;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 999px;
-    white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    pointer-events: none;
   }
   /* expanding water ripple rings at the boat's waterline */
   .snap-ring {
