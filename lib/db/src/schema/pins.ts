@@ -14,6 +14,8 @@ export const pinsTable = pgTable("pins", {
   visibility: text("visibility").notNull().default("friends"),
   imageUrl: text("image_url"),
   approved: boolean("approved").notNull().default(true),
+  severity: text("severity"),
+  expiresAt: timestamp("expires_at"),
   startTime: timestamp("start_time"),
   endTime: timestamp("end_time"),
   likeCount: integer("like_count").notNull().default(0),

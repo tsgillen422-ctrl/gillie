@@ -16,4 +16,6 @@ export const NotificationType = {
   pin_like: 'pin_like',
   event: 'event',
   system: 'system',
+  sos: 'sos',
+  rsvp: 'rsvp',
 } as const;

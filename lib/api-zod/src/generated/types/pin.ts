@@ -5,6 +5,7 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { PinSeverity } from './pinSeverity';
 import type { PinType } from './pinType';
 import type { PinVisibility } from './pinVisibility';
 import type { User } from './user';
@@ -27,6 +28,10 @@ export interface Pin {
   startTime?: string | null;
   /** @nullable */
   endTime?: string | null;
+  /** @nullable */
+  severity?: PinSeverity;
+  /** @nullable */
+  expiresAt?: string | null;
   likeCount?: number;
   likedByMe?: boolean;
   favoritedByMe?: boolean;

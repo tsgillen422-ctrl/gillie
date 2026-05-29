@@ -40,6 +40,7 @@ export const GetMeResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 })
 
@@ -83,6 +84,7 @@ export const UpdateMeResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 })
 
@@ -116,6 +118,7 @@ export const UpdateMyLocationResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 })
 
@@ -148,6 +151,7 @@ export const SearchUsersResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 })
 export const SearchUsersResponse = zod.array(SearchUsersResponseItem)
@@ -181,6 +185,7 @@ export const GetUserResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 })
 
@@ -209,6 +214,7 @@ export const GetFriendsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 })
 export const GetFriendsResponse = zod.array(GetFriendsResponseItem)
@@ -265,6 +271,7 @@ export const GetFriendRequestsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "followee": zod.object({
@@ -288,6 +295,7 @@ export const GetFriendRequestsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -328,6 +336,7 @@ export const FollowUserResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "followee": zod.object({
@@ -351,6 +360,7 @@ export const FollowUserResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -398,6 +408,7 @@ export const AcceptFriendRequestResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "followee": zod.object({
@@ -421,6 +432,7 @@ export const AcceptFriendRequestResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -455,6 +467,7 @@ export const GetConversationsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 })).optional(),
   "lastMessage": zod.object({
@@ -482,6 +495,7 @@ export const GetConversationsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -536,6 +550,7 @@ export const GetConversationMessagesResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -593,6 +608,11 @@ export const GetConditionsResponse = zod.object({
   "weatherCode": zod.number(),
   "weatherLabel": zod.string(),
   "isDay": zod.boolean().optional(),
+  "advisories": zod.array(zod.object({
+  "level": zod.enum(['good', 'caution', 'warning']),
+  "title": zod.string(),
+  "detail": zod.string()
+})).optional(),
   "updatedAt": zod.string()
 })
 
@@ -629,6 +649,7 @@ export const GetPinsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -641,6 +662,8 @@ export const GetPinsResponseItem = zod.object({
   "approved": zod.boolean().optional(),
   "startTime": zod.string().nullish(),
   "endTime": zod.string().nullish(),
+  "severity": zod.union([zod.literal('low'),zod.literal('medium'),zod.literal('high'),zod.literal(null)]).nullish(),
+  "expiresAt": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
@@ -661,7 +684,9 @@ export const CreatePinBody = zod.object({
   "visibility": zod.enum(['friends', 'public', 'community']).optional(),
   "imageUrl": zod.string().optional(),
   "startTime": zod.string().nullish(),
-  "endTime": zod.string().nullish()
+  "endTime": zod.string().nullish(),
+  "severity": zod.enum(['low', 'medium', 'high']).optional(),
+  "expiresAt": zod.string().nullish()
 })
 
 
@@ -696,6 +721,7 @@ export const GetPinResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -708,6 +734,8 @@ export const GetPinResponse = zod.object({
   "approved": zod.boolean().optional(),
   "startTime": zod.string().nullish(),
   "endTime": zod.string().nullish(),
+  "severity": zod.union([zod.literal('low'),zod.literal('medium'),zod.literal('high'),zod.literal(null)]).nullish(),
+  "expiresAt": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
@@ -754,6 +782,7 @@ export const LikePinResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -766,6 +795,8 @@ export const LikePinResponse = zod.object({
   "approved": zod.boolean().optional(),
   "startTime": zod.string().nullish(),
   "endTime": zod.string().nullish(),
+  "severity": zod.union([zod.literal('low'),zod.literal('medium'),zod.literal('high'),zod.literal(null)]).nullish(),
+  "expiresAt": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
@@ -800,6 +831,7 @@ export const GetFavoritePinsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -812,6 +844,8 @@ export const GetFavoritePinsResponseItem = zod.object({
   "approved": zod.boolean().optional(),
   "startTime": zod.string().nullish(),
   "endTime": zod.string().nullish(),
+  "severity": zod.union([zod.literal('low'),zod.literal('medium'),zod.literal('high'),zod.literal(null)]).nullish(),
+  "expiresAt": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
@@ -851,6 +885,7 @@ export const ToggleFavoritePinResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -863,6 +898,8 @@ export const ToggleFavoritePinResponse = zod.object({
   "approved": zod.boolean().optional(),
   "startTime": zod.string().nullish(),
   "endTime": zod.string().nullish(),
+  "severity": zod.union([zod.literal('low'),zod.literal('medium'),zod.literal('high'),zod.literal(null)]).nullish(),
+  "expiresAt": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
@@ -897,6 +934,7 @@ export const GetPendingPinsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -909,6 +947,8 @@ export const GetPendingPinsResponseItem = zod.object({
   "approved": zod.boolean().optional(),
   "startTime": zod.string().nullish(),
   "endTime": zod.string().nullish(),
+  "severity": zod.union([zod.literal('low'),zod.literal('medium'),zod.literal('high'),zod.literal(null)]).nullish(),
+  "expiresAt": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
@@ -948,6 +988,7 @@ export const ApprovePinResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -960,6 +1001,8 @@ export const ApprovePinResponse = zod.object({
   "approved": zod.boolean().optional(),
   "startTime": zod.string().nullish(),
   "endTime": zod.string().nullish(),
+  "severity": zod.union([zod.literal('low'),zod.literal('medium'),zod.literal('high'),zod.literal(null)]).nullish(),
+  "expiresAt": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
@@ -998,6 +1041,7 @@ export const GetPostsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -1010,6 +1054,8 @@ export const GetPostsResponseItem = zod.object({
   "pinLng": zod.number().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "rsvpCount": zod.number().optional(),
+  "rsvpByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 export const GetPostsResponse = zod.array(GetPostsResponseItem)
@@ -1061,6 +1107,7 @@ export const GetPostResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -1073,6 +1120,8 @@ export const GetPostResponse = zod.object({
   "pinLng": zod.number().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "rsvpCount": zod.number().optional(),
+  "rsvpByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -1116,6 +1165,7 @@ export const LikePostResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -1128,6 +1178,8 @@ export const LikePostResponse = zod.object({
   "pinLng": zod.number().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "rsvpCount": zod.number().optional(),
+  "rsvpByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -1164,6 +1216,7 @@ export const GetPostCommentsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -1227,6 +1280,7 @@ export const GetPostsSummaryResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -1239,6 +1293,8 @@ export const GetPostsSummaryResponse = zod.object({
   "pinLng": zod.number().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "rsvpCount": zod.number().optional(),
+  "rsvpByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })).optional(),
   "recentPins": zod.array(zod.object({
@@ -1265,6 +1321,7 @@ export const GetPostsSummaryResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1277,6 +1334,8 @@ export const GetPostsSummaryResponse = zod.object({
   "approved": zod.boolean().optional(),
   "startTime": zod.string().nullish(),
   "endTime": zod.string().nullish(),
+  "severity": zod.union([zod.literal('low'),zod.literal('medium'),zod.literal('high'),zod.literal(null)]).nullish(),
+  "expiresAt": zod.string().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
@@ -1291,7 +1350,7 @@ export const GetPostsSummaryResponse = zod.object({
 export const GetNotificationsResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
-  "type": zod.enum(['friend_request', 'message', 'post_like', 'pin_like', 'event', 'system']),
+  "type": zod.enum(['friend_request', 'message', 'post_like', 'pin_like', 'event', 'system', 'sos', 'rsvp']),
   "message": zod.string(),
   "read": zod.boolean(),
   "relatedId": zod.number().nullish(),
@@ -1368,6 +1427,280 @@ export const GetStorageObjectParams = zod.object({
  */
 export const MarkNotificationReadParams = zod.object({
   "notificationId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Get active (non-expired) hazard pins
+ */
+export const GetActiveHazardsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
+  "createdAt": zod.string()
+}).optional(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "visibility": zod.enum(['friends', 'public', 'community']).optional(),
+  "imageUrl": zod.string().nullish(),
+  "approved": zod.boolean().optional(),
+  "startTime": zod.string().nullish(),
+  "endTime": zod.string().nullish(),
+  "severity": zod.union([zod.literal('low'),zod.literal('medium'),zod.literal('high'),zod.literal(null)]).nullish(),
+  "expiresAt": zod.string().nullish(),
+  "likeCount": zod.number().optional(),
+  "likedByMe": zod.boolean().optional(),
+  "favoritedByMe": zod.boolean().optional(),
+  "createdAt": zod.string()
+})
+export const GetActiveHazardsResponse = zod.array(GetActiveHazardsResponseItem)
+
+
+/**
+ * @summary Toggle RSVP (going) for an event post
+ */
+export const ToggleRsvpParams = zod.object({
+  "postId": zod.coerce.number()
+})
+
+export const ToggleRsvpResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
+  "createdAt": zod.string()
+}).optional(),
+  "title": zod.string(),
+  "content": zod.string(),
+  "postType": zod.enum(['post', 'event', 'business']),
+  "eventDate": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "videoUrl": zod.string().nullish(),
+  "pinLat": zod.number().nullish(),
+  "pinLng": zod.number().nullish(),
+  "likeCount": zod.number().optional(),
+  "likedByMe": zod.boolean().optional(),
+  "rsvpCount": zod.number().optional(),
+  "rsvpByMe": zod.boolean().optional(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Get the list of users going to an event
+ */
+export const GetRsvpsParams = zod.object({
+  "postId": zod.coerce.number()
+})
+
+export const GetRsvpsResponseItem = zod.object({
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
+  "createdAt": zod.string()
+}).optional()
+})
+export const GetRsvpsResponse = zod.array(GetRsvpsResponseItem)
+
+
+/**
+ * @summary Get the catch log feed
+ */
+export const GetCatchesQueryParams = zod.object({
+  "profileUserId": zod.coerce.number().optional().describe('When set, returns the given user\'s catches (public only unless it\'s the current user).')
+})
+
+export const GetCatchesResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
+  "createdAt": zod.string()
+}).optional(),
+  "species": zod.string(),
+  "weight": zod.number().nullish(),
+  "length": zod.number().nullish(),
+  "notes": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "isPrivate": zod.boolean(),
+  "caughtAt": zod.string(),
+  "createdAt": zod.string()
+})
+export const GetCatchesResponse = zod.array(GetCatchesResponseItem)
+
+
+/**
+ * @summary Log a catch
+ */
+export const CreateCatchBody = zod.object({
+  "species": zod.string(),
+  "weight": zod.number().optional(),
+  "length": zod.number().optional(),
+  "notes": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
+  "lat": zod.number().optional(),
+  "lng": zod.number().optional(),
+  "isPrivate": zod.boolean().optional(),
+  "caughtAt": zod.string().optional()
+})
+
+
+/**
+ * @summary Delete a catch
+ */
+export const DeleteCatchParams = zod.object({
+  "catchId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Unified search across users, pins, and posts
+ */
+export const SearchQueryParams = zod.object({
+  "q": zod.coerce.string()
+})
+
+export const SearchResponse = zod.object({
+  "users": zod.array(zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
+  "createdAt": zod.string()
+})),
+  "pins": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "description": zod.string().nullish(),
+  "type": zod.string(),
+  "lat": zod.number().optional(),
+  "lng": zod.number().optional()
+})),
+  "posts": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "content": zod.string().optional(),
+  "postType": zod.string(),
+  "createdAt": zod.string()
+}))
+})
+
+
+/**
+ * @summary Send an emergency SOS alert to friends
+ */
+export const SendSosBody = zod.object({
+  "message": zod.string().optional()
+})
+
+export const SendSosResponse = zod.object({
+  "success": zod.boolean(),
+  "notified": zod.number(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish()
 })
 
 

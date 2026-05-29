@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, postsTable, postLikesTable, postCommentsTable, pinsTable } from "@workspace/db";
+import { usersTable, postsTable, postLikesTable, postCommentsTable, pinsTable, eventRsvpsTable } from "@workspace/db";
 import { eq, and, sql, desc, count } from "drizzle-orm";
 
 const router = Router();
@@ -32,6 +32,19 @@ async function formatPost(post: typeof postsTable.$inferSelect) {
   const like = await db.query.postLikesTable.findFirst({
     where: and(eq(postLikesTable.postId, post.id), eq(postLikesTable.userId, SESSION_USER_ID)),
   });
+  let rsvpCount = 0;
+  let rsvpByMe = false;
+  if (post.postType === "event") {
+    const [rsvpResult] = await db
+      .select({ value: count() })
+      .from(eventRsvpsTable)
+      .where(and(eq(eventRsvpsTable.postId, post.id), eq(eventRsvpsTable.status, "going")));
+    rsvpCount = rsvpResult?.value ?? 0;
+    const mine = await db.query.eventRsvpsTable.findFirst({
+      where: and(eq(eventRsvpsTable.postId, post.id), eq(eventRsvpsTable.userId, SESSION_USER_ID)),
+    });
+    rsvpByMe = mine?.status === "going";
+  }
   return {
     id: post.id,
     userId: post.userId,
@@ -46,6 +59,8 @@ async function formatPost(post: typeof postsTable.$inferSelect) {
     pinLng: post.pinLng,
     likeCount: post.likeCount,
     likedByMe: !!like,
+    rsvpCount,
+    rsvpByMe,
     createdAt: post.createdAt.toISOString(),
   };
 }
@@ -155,6 +170,40 @@ router.post("/:postId/like", async (req, res) => {
   }
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   res.json(await formatPost(post!));
+});
+
+router.post("/:postId/rsvp", async (req, res) => {
+  const postId = parseInt(req.params.postId);
+  const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
+  if (!post) return res.status(404).json({ error: "Post not found" });
+  if (post.postType !== "event") {
+    return res.status(400).json({ error: "You can only RSVP to events" });
+  }
+  const existing = await db.query.eventRsvpsTable.findFirst({
+    where: and(eq(eventRsvpsTable.postId, postId), eq(eventRsvpsTable.userId, SESSION_USER_ID)),
+  });
+  if (existing) {
+    await db.delete(eventRsvpsTable).where(eq(eventRsvpsTable.id, existing.id));
+  } else {
+    await db.insert(eventRsvpsTable).values({ postId, userId: SESSION_USER_ID, status: "going" });
+  }
+  res.json(await formatPost(post));
+});
+
+router.get("/:postId/rsvps", async (req, res) => {
+  const postId = parseInt(req.params.postId);
+  const rsvps = await db
+    .select()
+    .from(eventRsvpsTable)
+    .where(and(eq(eventRsvpsTable.postId, postId), eq(eventRsvpsTable.status, "going")))
+    .orderBy(eventRsvpsTable.createdAt);
+  const formatted = await Promise.all(
+    rsvps.map(async (r) => {
+      const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, r.userId) });
+      return { userId: r.userId, user: user ? formatUser(user) : null };
+    })
+  );
+  res.json(formatted);
 });
 
 router.get("/:postId/comments", async (req, res) => {

@@ -81,6 +81,7 @@
     "@uppy/dashboard": "^5.1.1",
     "@uppy/react": "^5.2.0",
     "@workspace/object-storage-web": "workspace:*",
+    "browser-image-compression": "^2.0.2",
     "maplibre-gl": "^5.24.0",
     "supercluster": "^8.0.1"
   }

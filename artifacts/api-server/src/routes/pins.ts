@@ -75,6 +75,8 @@ async function formatPin(pin: typeof pinsTable.$inferSelect) {
     visibility: pin.visibility,
     imageUrl: pin.imageUrl,
     approved: pin.approved,
+    severity: pin.severity,
+    expiresAt: pin.expiresAt ? pin.expiresAt.toISOString() : null,
     startTime: pin.startTime ? pin.startTime.toISOString() : null,
     endTime: pin.endTime ? pin.endTime.toISOString() : null,
     likeCount: pin.likeCount,
@@ -117,8 +119,13 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { lat, lng, type, title, description, visibility, imageUrl, startTime, endTime } = req.body;
+  const { lat, lng, type, title, description, visibility, imageUrl, startTime, endTime, severity, expiresAt } = req.body;
   const vis = visibility === "public" || visibility === "community" ? visibility : "friends";
+  const expires = expiresAt ? new Date(expiresAt) : null;
+  if (expires && isNaN(expires.getTime())) {
+    return res.status(400).json({ error: "Invalid expiry time" });
+  }
+  const validSeverity = severity === "low" || severity === "medium" || severity === "high" ? severity : null;
 
   const start = startTime ? new Date(startTime) : null;
   const end = endTime ? new Date(endTime) : null;
@@ -153,11 +160,26 @@ router.post("/", async (req, res) => {
       visibility: vis,
       imageUrl: imageUrl || null,
       approved,
+      severity: validSeverity,
+      expiresAt: expires,
       startTime: start,
       endTime: end,
     })
     .returning();
   res.status(201).json(await formatPin(pin));
+});
+
+router.get("/hazards/active", async (_req, res) => {
+  const now = new Date();
+  const friendIds = await getFriendIds(SESSION_USER_ID);
+  const hazards = await db.select().from(pinsTable).where(eq(pinsTable.type, "hazard"));
+  const active = hazards.filter((pin) => {
+    if (!canViewPin(pin, SESSION_USER_ID, friendIds)) return false;
+    if (pin.expiresAt && pin.expiresAt.getTime() < now.getTime()) return false;
+    return true;
+  });
+  active.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  res.json(await Promise.all(active.map(formatPin)));
 });
 
 router.get("/pending/approval", async (_req, res) => {

@@ -1,11 +1,38 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db";
-import { eq, ilike, or } from "drizzle-orm";
+import { usersTable, friendRequestsTable, notificationsTable, postsTable, pinsTable, catchesTable } from "@workspace/db";
+import { eq, ilike, or, and, count } from "drizzle-orm";
 
 const router = Router();
 
 const SESSION_USER_ID = 1;
+
+async function getFriendIds(userId: number): Promise<number[]> {
+  const accepted = await db.query.friendRequestsTable.findMany({
+    where: and(
+      or(
+        eq(friendRequestsTable.followerId, userId),
+        eq(friendRequestsTable.followeeId, userId)
+      ),
+      eq(friendRequestsTable.status, "accepted")
+    ),
+  });
+  return accepted.map((r) => (r.followerId === userId ? r.followeeId : r.followerId));
+}
+
+async function computeBadges(userId: number): Promise<string[]> {
+  const badges: string[] = [];
+  const [postRes] = await db.select({ value: count() }).from(postsTable).where(eq(postsTable.userId, userId));
+  const [pinRes] = await db.select({ value: count() }).from(pinsTable).where(eq(pinsTable.userId, userId));
+  const [catchRes] = await db.select({ value: count() }).from(catchesTable).where(eq(catchesTable.userId, userId));
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, userId) });
+  if (user?.isBusiness) badges.push("verified_business");
+  if ((postRes?.value ?? 0) >= 10) badges.push("frequent_poster");
+  if ((pinRes?.value ?? 0) >= 5) badges.push("trailblazer");
+  if ((catchRes?.value ?? 0) >= 10) badges.push("angler");
+  else if ((catchRes?.value ?? 0) >= 1) badges.push("first_catch");
+  return badges;
+}
 
 function formatUser(u: typeof usersTable.$inferSelect) {
   return {
@@ -38,7 +65,37 @@ router.get("/me", async (req, res) => {
     where: eq(usersTable.id, SESSION_USER_ID),
   });
   if (!user) return res.status(401).json({ error: "Not logged in" });
-  res.json(formatUser(user));
+  res.json({ ...formatUser(user), badges: await computeBadges(user.id) });
+});
+
+router.post("/me/sos", async (req, res) => {
+  const { message } = req.body;
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, SESSION_USER_ID) });
+  if (!user) return res.status(401).json({ error: "Not logged in" });
+  const friendIds = await getFriendIds(SESSION_USER_ID);
+  const text =
+    (message && String(message).trim()) ||
+    `${user.displayName} needs help on the water!`;
+  const locationNote =
+    user.currentLat != null && user.currentLng != null
+      ? ` Last known location: ${user.currentLat.toFixed(4)}, ${user.currentLng.toFixed(4)}.`
+      : "";
+  if (friendIds.length > 0) {
+    await db.insert(notificationsTable).values(
+      friendIds.map((fid) => ({
+        userId: fid,
+        type: "sos",
+        message: `🚨 ${text}${locationNote}`,
+        relatedId: SESSION_USER_ID,
+      }))
+    );
+  }
+  res.json({
+    success: true,
+    notified: friendIds.length,
+    lat: user.currentLat,
+    lng: user.currentLng,
+  });
 });
 
 router.patch("/me", async (req, res) => {
@@ -106,7 +163,7 @@ router.get("/:userId", async (req, res) => {
   const userId = parseInt(req.params.userId);
   const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, userId) });
   if (!user) return res.status(404).json({ error: "User not found" });
-  res.json(formatUser(user));
+  res.json({ ...formatUser(user), badges: await computeBadges(user.id) });
 });
 
 export default router;

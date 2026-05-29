@@ -1,6 +1,7 @@
 import React from "react";
 import {
   useGetPins,
+  useGetFavoritePins,
   useGetPendingPins,
   useApprovePin,
   useGetMe,
@@ -9,7 +10,7 @@ import {
 } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, Navigation, Check, Lock, Globe, Users } from "lucide-react";
+import { Search, MapPin, Navigation, Check, Lock, Globe, Users, Bookmark } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -71,7 +72,14 @@ export function PinsPage() {
   const { data: me } = useGetMe();
   const isOwner = me?.id === OWNER_ID;
 
-  const { data: pins, isLoading } = useGetPins(filter !== 'all' ? { type: filter as any } : {});
+  const isSaved = filter === "saved";
+  const { data: pins, isLoading } = useGetPins(
+    filter !== 'all' && !isSaved ? { type: filter as any } : {},
+    { query: { enabled: !isSaved } }
+  );
+  const { data: favoritePins, isLoading: favoritesLoading } = useGetFavoritePins({
+    query: { enabled: isSaved },
+  });
   const { data: pendingPins } = useGetPendingPins({ query: { enabled: isOwner } });
   const approvePin = useApprovePin();
   const queryClient = useQueryClient();
@@ -88,15 +96,18 @@ export function PinsPage() {
     });
   };
 
+  const sourcePins = isSaved ? favoritePins : pins;
+  const listLoading = isSaved ? favoritesLoading : isLoading;
+
   const filteredPins = React.useMemo(() => {
-    if (!pins) return [];
-    if (!search) return pins;
+    if (!sourcePins) return [];
+    if (!search) return sourcePins;
     const lowerSearch = search.toLowerCase();
-    return pins.filter(p =>
+    return sourcePins.filter(p =>
       p.title.toLowerCase().includes(lowerSearch) ||
       p.description?.toLowerCase().includes(lowerSearch)
     );
-  }, [pins, search]);
+  }, [sourcePins, search]);
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -114,6 +125,13 @@ export function PinsPage() {
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+          <Badge
+            variant={filter === "saved" ? "default" : "secondary"}
+            className="cursor-pointer whitespace-nowrap px-3 py-1.5 text-sm"
+            onClick={() => setFilter("saved")}
+          >
+            <Bookmark className="w-3.5 h-3.5 mr-1.5" /> Saved
+          </Badge>
           {PIN_TYPES.map(type => (
             <Badge
               key={type.value}
@@ -162,7 +180,7 @@ export function PinsPage() {
           </div>
         )}
 
-        {isLoading ? (
+        {listLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-24 w-full rounded-xl" />
           ))
@@ -199,9 +217,19 @@ export function PinsPage() {
           })
         ) : (
           <div className="text-center py-16">
-            <MapPin className="w-12 h-12 text-muted mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-1">No pins found</h3>
-            <p className="text-muted-foreground text-sm">Be the first to drop a pin here!</p>
+            {isSaved ? (
+              <>
+                <Bookmark className="w-12 h-12 text-muted mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-1">No saved spots yet</h3>
+                <p className="text-muted-foreground text-sm">Tap the bookmark on any pin to save it here for quick access.</p>
+              </>
+            ) : (
+              <>
+                <MapPin className="w-12 h-12 text-muted mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-1">No pins found</h3>
+                <p className="text-muted-foreground text-sm">Be the first to drop a pin here!</p>
+              </>
+            )}
           </div>
         )}
       </div>

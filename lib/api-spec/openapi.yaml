@@ -851,6 +851,171 @@ paths:
         "200":
           description: Marked read
 
+  /pins/hazards/active:
+    get:
+      operationId: getActiveHazards
+      tags: [pins]
+      summary: Get active (non-expired) hazard pins
+      responses:
+        "200":
+          description: List of active hazard pins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pin"
+
+  /posts/{postId}/rsvp:
+    post:
+      operationId: toggleRsvp
+      tags: [posts]
+      summary: Toggle RSVP (going) for an event post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "400":
+          description: Not an event
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /posts/{postId}/rsvps:
+    get:
+      operationId: getRsvps
+      tags: [posts]
+      summary: Get the list of users going to an event
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of attendees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RsvpUser"
+
+  /catches:
+    get:
+      operationId: getCatches
+      tags: [catches]
+      summary: Get the catch log feed
+      parameters:
+        - name: profileUserId
+          in: query
+          required: false
+          description: When set, returns the given user's catches (public only unless it's the current user).
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of catches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Catch"
+    post:
+      operationId: createCatch
+      tags: [catches]
+      summary: Log a catch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CatchInput"
+      responses:
+        "201":
+          description: Catch created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Catch"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /catches/{catchId}:
+    delete:
+      operationId: deleteCatch
+      tags: [catches]
+      summary: Delete a catch
+      parameters:
+        - name: catchId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+        "403":
+          description: Not the owner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /search:
+    get:
+      operationId: search
+      tags: [search]
+      summary: Unified search across users, pins, and posts
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResults"
+
+  /users/me/sos:
+    post:
+      operationId: sendSos
+      tags: [users]
+      summary: Send an emergency SOS alert to friends
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SosInput"
+      responses:
+        "200":
+          description: SOS sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SosResult"
+
 components:
   schemas:
     HealthStatus:
@@ -905,6 +1070,10 @@ components:
           type: integer
         followingCount:
           type: integer
+        badges:
+          type: array
+          items:
+            type: string
         createdAt:
           type: string
 
@@ -1104,6 +1273,11 @@ components:
           type: ["string", "null"]
         endTime:
           type: ["string", "null"]
+        severity:
+          type: ["string", "null"]
+          enum: [low, medium, high, null]
+        expiresAt:
+          type: ["string", "null"]
         likeCount:
           type: integer
         likedByMe:
@@ -1137,6 +1311,11 @@ components:
           type: ["string", "null"]
         endTime:
           type: ["string", "null"]
+        severity:
+          type: string
+          enum: [low, medium, high]
+        expiresAt:
+          type: ["string", "null"]
 
     Post:
       type: object
@@ -1168,6 +1347,10 @@ components:
         likeCount:
           type: integer
         likedByMe:
+          type: boolean
+        rsvpCount:
+          type: integer
+        rsvpByMe:
           type: boolean
         createdAt:
           type: string
@@ -1307,7 +1490,154 @@ components:
           type: string
         isDay:
           type: boolean
+        advisories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Advisory"
         updatedAt:
+          type: string
+
+    Advisory:
+      type: object
+      required: [level, title, detail]
+      properties:
+        level:
+          type: string
+          enum: [good, caution, warning]
+        title:
+          type: string
+        detail:
+          type: string
+
+    Catch:
+      type: object
+      required: [id, userId, species, isPrivate, caughtAt, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        user:
+          $ref: "#/components/schemas/User"
+        species:
+          type: string
+        weight:
+          type: ["number", "null"]
+        length:
+          type: ["number", "null"]
+        notes:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        lat:
+          type: ["number", "null"]
+        lng:
+          type: ["number", "null"]
+        isPrivate:
+          type: boolean
+        caughtAt:
+          type: string
+        createdAt:
+          type: string
+
+    CatchInput:
+      type: object
+      required: [species]
+      properties:
+        species:
+          type: string
+        weight:
+          type: number
+        length:
+          type: number
+        notes:
+          type: string
+        imageUrl:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        isPrivate:
+          type: boolean
+        caughtAt:
+          type: string
+
+    RsvpUser:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: integer
+        user:
+          $ref: "#/components/schemas/User"
+
+    SosInput:
+      type: object
+      properties:
+        message:
+          type: string
+
+    SosResult:
+      type: object
+      required: [success, notified]
+      properties:
+        success:
+          type: boolean
+        notified:
+          type: integer
+        lat:
+          type: ["number", "null"]
+        lng:
+          type: ["number", "null"]
+
+    SearchResults:
+      type: object
+      required: [users, pins, posts]
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        pins:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchPin"
+        posts:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchPost"
+
+    SearchPin:
+      type: object
+      required: [id, title, type]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        type:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+
+    SearchPost:
+      type: object
+      required: [id, title, postType, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        postType:
+          type: string
+        createdAt:
           type: string
 
     Notification:
@@ -1320,7 +1650,7 @@ components:
           type: integer
         type:
           type: string
-          enum: [friend_request, message, post_like, pin_like, event, system]
+          enum: [friend_request, message, post_like, pin_like, event, system, sos, rsvp]
         message:
           type: string
         read:

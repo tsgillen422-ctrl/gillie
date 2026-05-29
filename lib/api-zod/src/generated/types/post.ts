@@ -27,5 +27,7 @@ export interface Post {
   pinLng?: number | null;
   likeCount?: number;
   likedByMe?: boolean;
+  rsvpCount?: number;
+  rsvpByMe?: boolean;
   createdAt: string;
 }

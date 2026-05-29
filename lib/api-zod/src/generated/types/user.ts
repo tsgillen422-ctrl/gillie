@@ -39,5 +39,6 @@ export interface User {
   shareLocation?: boolean;
   followerCount?: number;
   followingCount?: number;
+  badges?: string[];
   createdAt: string;
 }

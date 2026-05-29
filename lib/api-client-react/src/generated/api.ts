@@ -20,6 +20,8 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  Catch,
+  CatchInput,
   Comment,
   CommentInput,
   Conditions,
@@ -28,6 +30,7 @@ import type {
   ErrorEnvelope,
   FriendLocation,
   FriendRequest,
+  GetCatchesParams,
   GetPinsParams,
   GetPostsParams,
   GroupConversationInput,
@@ -41,7 +44,12 @@ import type {
   Post,
   PostInput,
   PostsSummary,
+  RsvpUser,
+  SearchParams,
+  SearchResults,
   SearchUsersParams,
+  SosInput,
+  SosResult,
   UploadUrlRequest,
   UploadUrlResponse,
   User,
@@ -3258,5 +3266,609 @@ export const useMarkNotificationRead = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getMarkNotificationReadMutationOptions(options));
+    }
+
+export const getGetActiveHazardsUrl = () => {
+
+
+
+
+  return `/api/pins/hazards/active`
+}
+
+/**
+ * @summary Get active (non-expired) hazard pins
+ */
+export const getActiveHazards = async ( options?: RequestInit): Promise<Pin[]> => {
+
+  return customFetch<Pin[]>(getGetActiveHazardsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetActiveHazardsQueryKey = () => {
+    return [
+    `/api/pins/hazards/active`
+    ] as const;
+    }
+
+
+export const getGetActiveHazardsQueryOptions = <TData = Awaited<ReturnType<typeof getActiveHazards>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActiveHazards>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetActiveHazardsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getActiveHazards>>> = ({ signal }) => getActiveHazards({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getActiveHazards>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetActiveHazardsQueryResult = NonNullable<Awaited<ReturnType<typeof getActiveHazards>>>
+export type GetActiveHazardsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get active (non-expired) hazard pins
+ */
+
+export function useGetActiveHazards<TData = Awaited<ReturnType<typeof getActiveHazards>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActiveHazards>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetActiveHazardsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getToggleRsvpUrl = (postId: number,) => {
+
+
+
+
+  return `/api/posts/${postId}/rsvp`
+}
+
+/**
+ * @summary Toggle RSVP (going) for an event post
+ */
+export const toggleRsvp = async (postId: number, options?: RequestInit): Promise<Post> => {
+
+  return customFetch<Post>(getToggleRsvpUrl(postId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getToggleRsvpMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleRsvp>>, TError,{postId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof toggleRsvp>>, TError,{postId: number}, TContext> => {
+
+const mutationKey = ['toggleRsvp'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof toggleRsvp>>, {postId: number}> = (props) => {
+          const {postId} = props ?? {};
+
+          return  toggleRsvp(postId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ToggleRsvpMutationResult = NonNullable<Awaited<ReturnType<typeof toggleRsvp>>>
+
+    export type ToggleRsvpMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Toggle RSVP (going) for an event post
+ */
+export const useToggleRsvp = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof toggleRsvp>>, TError,{postId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof toggleRsvp>>,
+        TError,
+        {postId: number},
+        TContext
+      > => {
+      return useMutation(getToggleRsvpMutationOptions(options));
+    }
+
+export const getGetRsvpsUrl = (postId: number,) => {
+
+
+
+
+  return `/api/posts/${postId}/rsvps`
+}
+
+/**
+ * @summary Get the list of users going to an event
+ */
+export const getRsvps = async (postId: number, options?: RequestInit): Promise<RsvpUser[]> => {
+
+  return customFetch<RsvpUser[]>(getGetRsvpsUrl(postId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetRsvpsQueryKey = (postId: number,) => {
+    return [
+    `/api/posts/${postId}/rsvps`
+    ] as const;
+    }
+
+
+export const getGetRsvpsQueryOptions = <TData = Awaited<ReturnType<typeof getRsvps>>, TError = ErrorType<unknown>>(postId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRsvps>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetRsvpsQueryKey(postId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getRsvps>>> = ({ signal }) => getRsvps(postId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(postId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getRsvps>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetRsvpsQueryResult = NonNullable<Awaited<ReturnType<typeof getRsvps>>>
+export type GetRsvpsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the list of users going to an event
+ */
+
+export function useGetRsvps<TData = Awaited<ReturnType<typeof getRsvps>>, TError = ErrorType<unknown>>(
+ postId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getRsvps>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetRsvpsQueryOptions(postId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetCatchesUrl = (params?: GetCatchesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/catches?${stringifiedParams}` : `/api/catches`
+}
+
+/**
+ * @summary Get the catch log feed
+ */
+export const getCatches = async (params?: GetCatchesParams, options?: RequestInit): Promise<Catch[]> => {
+
+  return customFetch<Catch[]>(getGetCatchesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCatchesQueryKey = (params?: GetCatchesParams,) => {
+    return [
+    `/api/catches`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetCatchesQueryOptions = <TData = Awaited<ReturnType<typeof getCatches>>, TError = ErrorType<unknown>>(params?: GetCatchesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCatches>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCatchesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCatches>>> = ({ signal }) => getCatches(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCatches>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCatchesQueryResult = NonNullable<Awaited<ReturnType<typeof getCatches>>>
+export type GetCatchesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the catch log feed
+ */
+
+export function useGetCatches<TData = Awaited<ReturnType<typeof getCatches>>, TError = ErrorType<unknown>>(
+ params?: GetCatchesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCatches>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCatchesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateCatchUrl = () => {
+
+
+
+
+  return `/api/catches`
+}
+
+/**
+ * @summary Log a catch
+ */
+export const createCatch = async (catchInput: CatchInput, options?: RequestInit): Promise<Catch> => {
+
+  return customFetch<Catch>(getCreateCatchUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catchInput,)
+  }
+);}
+
+
+
+
+export const getCreateCatchMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCatch>>, TError,{data: BodyType<CatchInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCatch>>, TError,{data: BodyType<CatchInput>}, TContext> => {
+
+const mutationKey = ['createCatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCatch>>, {data: BodyType<CatchInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createCatch(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCatchMutationResult = NonNullable<Awaited<ReturnType<typeof createCatch>>>
+    export type CreateCatchMutationBody = BodyType<CatchInput>
+    export type CreateCatchMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Log a catch
+ */
+export const useCreateCatch = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCatch>>, TError,{data: BodyType<CatchInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCatch>>,
+        TError,
+        {data: BodyType<CatchInput>},
+        TContext
+      > => {
+      return useMutation(getCreateCatchMutationOptions(options));
+    }
+
+export const getDeleteCatchUrl = (catchId: number,) => {
+
+
+
+
+  return `/api/catches/${catchId}`
+}
+
+/**
+ * @summary Delete a catch
+ */
+export const deleteCatch = async (catchId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteCatchUrl(catchId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteCatchMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCatch>>, TError,{catchId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCatch>>, TError,{catchId: number}, TContext> => {
+
+const mutationKey = ['deleteCatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCatch>>, {catchId: number}> = (props) => {
+          const {catchId} = props ?? {};
+
+          return  deleteCatch(catchId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCatchMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCatch>>>
+
+    export type DeleteCatchMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Delete a catch
+ */
+export const useDeleteCatch = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCatch>>, TError,{catchId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCatch>>,
+        TError,
+        {catchId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteCatchMutationOptions(options));
+    }
+
+export const getSearchUrl = (params: SearchParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/search?${stringifiedParams}` : `/api/search`
+}
+
+/**
+ * @summary Unified search across users, pins, and posts
+ */
+export const search = async (params: SearchParams, options?: RequestInit): Promise<SearchResults> => {
+
+  return customFetch<SearchResults>(getSearchUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchQueryKey = (params?: SearchParams,) => {
+    return [
+    `/api/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchQueryOptions = <TData = Awaited<ReturnType<typeof search>>, TError = ErrorType<unknown>>(params: SearchParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof search>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof search>>> = ({ signal }) => search(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof search>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchQueryResult = NonNullable<Awaited<ReturnType<typeof search>>>
+export type SearchQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Unified search across users, pins, and posts
+ */
+
+export function useSearch<TData = Awaited<ReturnType<typeof search>>, TError = ErrorType<unknown>>(
+ params: SearchParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof search>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getSendSosUrl = () => {
+
+
+
+
+  return `/api/users/me/sos`
+}
+
+/**
+ * @summary Send an emergency SOS alert to friends
+ */
+export const sendSos = async (sosInput?: SosInput, options?: RequestInit): Promise<SosResult> => {
+
+  return customFetch<SosResult>(getSendSosUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      sosInput,)
+  }
+);}
+
+
+
+
+export const getSendSosMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendSos>>, TError,{data?: BodyType<SosInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof sendSos>>, TError,{data?: BodyType<SosInput>}, TContext> => {
+
+const mutationKey = ['sendSos'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sendSos>>, {data?: BodyType<SosInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  sendSos(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SendSosMutationResult = NonNullable<Awaited<ReturnType<typeof sendSos>>>
+    export type SendSosMutationBody = BodyType<SosInput> | undefined
+    export type SendSosMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Send an emergency SOS alert to friends
+ */
+export const useSendSos = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sendSos>>, TError,{data?: BodyType<SosInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof sendSos>>,
+        TError,
+        {data?: BodyType<SosInput>},
+        TContext
+      > => {
+      return useMutation(getSendSosMutationOptions(options));
     }
 

@@ -14,6 +14,8 @@ import { PinsPage } from "@/pages/pins";
 import { SettingsPage } from "@/pages/settings";
 import { NotificationsPage } from "@/pages/notifications";
 import { ProfilePage } from "@/pages/profile";
+import { CatchesPage } from "@/pages/catches";
+import { SearchPage } from "@/pages/search";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -36,6 +38,8 @@ function Router() {
         <Route path="/messages/:id" component={MessageThreadPage} />
         <Route path="/friends" component={FriendsPage} />
         <Route path="/pins" component={PinsPage} />
+        <Route path="/catches" component={CatchesPage} />
+        <Route path="/search" component={SearchPage} />
         <Route path="/notifications" component={NotificationsPage} />
         <Route path="/settings" component={SettingsPage} />
         <Route path="/profile/:userId" component={ProfilePage} />

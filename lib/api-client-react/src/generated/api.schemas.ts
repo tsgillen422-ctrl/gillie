@@ -42,6 +42,7 @@ export interface User {
   shareLocation?: boolean;
   followerCount?: number;
   followingCount?: number;
+  badges?: string[];
   createdAt: string;
 }
 
@@ -194,6 +195,18 @@ export const PinVisibility = {
   community: 'community',
 } as const;
 
+/**
+ * @nullable
+ */
+export type PinSeverity = typeof PinSeverity[keyof typeof PinSeverity] | null;
+
+
+export const PinSeverity = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
 export interface Pin {
   id: number;
   userId: number;
@@ -212,6 +225,10 @@ export interface Pin {
   startTime?: string | null;
   /** @nullable */
   endTime?: string | null;
+  /** @nullable */
+  severity?: PinSeverity;
+  /** @nullable */
+  expiresAt?: string | null;
   likeCount?: number;
   likedByMe?: boolean;
   favoritedByMe?: boolean;
@@ -241,6 +258,15 @@ export const PinInputVisibility = {
   community: 'community',
 } as const;
 
+export type PinInputSeverity = typeof PinInputSeverity[keyof typeof PinInputSeverity];
+
+
+export const PinInputSeverity = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
 export interface PinInput {
   lat: number;
   lng: number;
@@ -253,6 +279,9 @@ export interface PinInput {
   startTime?: string | null;
   /** @nullable */
   endTime?: string | null;
+  severity?: PinInputSeverity;
+  /** @nullable */
+  expiresAt?: string | null;
 }
 
 export type PostPostType = typeof PostPostType[keyof typeof PostPostType];
@@ -283,6 +312,8 @@ export interface Post {
   pinLng?: number | null;
   likeCount?: number;
   likedByMe?: boolean;
+  rsvpCount?: number;
+  rsvpByMe?: boolean;
   createdAt: string;
 }
 
@@ -361,6 +392,21 @@ export interface CommentInput {
   videoUrl?: string;
 }
 
+export type AdvisoryLevel = typeof AdvisoryLevel[keyof typeof AdvisoryLevel];
+
+
+export const AdvisoryLevel = {
+  good: 'good',
+  caution: 'caution',
+  warning: 'warning',
+} as const;
+
+export interface Advisory {
+  level: AdvisoryLevel;
+  title: string;
+  detail: string;
+}
+
 export interface Conditions {
   /** Air temperature in Fahrenheit. */
   temperature: number;
@@ -384,7 +430,84 @@ export interface Conditions {
   weatherCode: number;
   weatherLabel: string;
   isDay?: boolean;
+  advisories?: Advisory[];
   updatedAt: string;
+}
+
+export interface Catch {
+  id: number;
+  userId: number;
+  user?: User;
+  species: string;
+  /** @nullable */
+  weight?: number | null;
+  /** @nullable */
+  length?: number | null;
+  /** @nullable */
+  notes?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+  /** @nullable */
+  lat?: number | null;
+  /** @nullable */
+  lng?: number | null;
+  isPrivate: boolean;
+  caughtAt: string;
+  createdAt: string;
+}
+
+export interface CatchInput {
+  species: string;
+  weight?: number;
+  length?: number;
+  notes?: string;
+  imageUrl?: string;
+  lat?: number;
+  lng?: number;
+  isPrivate?: boolean;
+  caughtAt?: string;
+}
+
+export interface RsvpUser {
+  userId: number;
+  user?: User;
+}
+
+export interface SosInput {
+  message?: string;
+}
+
+export interface SosResult {
+  success: boolean;
+  notified: number;
+  /** @nullable */
+  lat?: number | null;
+  /** @nullable */
+  lng?: number | null;
+}
+
+export interface SearchPin {
+  id: number;
+  title: string;
+  /** @nullable */
+  description?: string | null;
+  type: string;
+  lat?: number;
+  lng?: number;
+}
+
+export interface SearchPost {
+  id: number;
+  title: string;
+  content?: string;
+  postType: string;
+  createdAt: string;
+}
+
+export interface SearchResults {
+  users: User[];
+  pins: SearchPin[];
+  posts: SearchPost[];
 }
 
 export type NotificationType = typeof NotificationType[keyof typeof NotificationType];
@@ -397,6 +520,8 @@ export const NotificationType = {
   pin_like: 'pin_like',
   event: 'event',
   system: 'system',
+  sos: 'sos',
+  rsvp: 'rsvp',
 } as const;
 
 export interface Notification {
@@ -448,4 +573,15 @@ export const GetPostsType = {
   event: 'event',
   business: 'business',
 } as const;
+
+export type GetCatchesParams = {
+/**
+ * When set, returns the given user's catches (public only unless it's the current user).
+ */
+profileUserId?: number;
+};
+
+export type SearchParams = {
+q: string;
+};
 

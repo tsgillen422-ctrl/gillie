@@ -1,6 +1,12 @@
 import { useGetConditions } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Wind, Droplets, Thermometer, Waves } from "lucide-react";
+import { Wind, Droplets, Thermometer, Waves, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
+
+const advisoryStyles: Record<string, { wrap: string; icon: typeof Info }> = {
+  warning: { wrap: "bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300", icon: AlertTriangle },
+  caution: { wrap: "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300", icon: Info },
+  good: { wrap: "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300", icon: CheckCircle2 },
+};
 
 function weatherEmoji(code: number, isDay?: boolean): string {
   if (code === 0) return isDay === false ? "🌙" : "☀️";
@@ -75,6 +81,20 @@ export function ConditionsWidget() {
           </div>
         )}
       </div>
+      {data.advisories && data.advisories.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          {data.advisories.map((a, i) => {
+            const style = advisoryStyles[a.level] ?? advisoryStyles.good;
+            const Icon = style.icon;
+            return (
+              <div key={i} className={`flex items-start gap-2 rounded-lg border px-2.5 py-1.5 text-xs ${style.wrap}`}>
+                <Icon className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                <span><span className="font-semibold">{a.title}.</span> {a.detail}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

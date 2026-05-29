@@ -35,6 +35,80 @@ const WEATHER_LABELS: Record<number, string> = {
   99: "Thunderstorm w/ hail",
 };
 
+interface AdvisoryInput {
+  airTemp: number;
+  waterTemperature: number;
+  windSpeed: number;
+  windGust: number | null;
+  precipitation: number | null;
+  weatherCode: number;
+  isDay: boolean;
+}
+
+interface Advisory {
+  level: "good" | "caution" | "warning";
+  title: string;
+  detail: string;
+}
+
+function buildAdvisories(i: AdvisoryInput): Advisory[] {
+  const out: Advisory[] = [];
+  const gust = i.windGust ?? i.windSpeed;
+
+  if (gust >= 25 || i.windSpeed >= 20) {
+    out.push({
+      level: "warning",
+      title: "Small craft advisory",
+      detail: "High winds and chop — small boats and kayaks should stay off open water.",
+    });
+  } else if (i.windSpeed >= 12) {
+    out.push({
+      level: "caution",
+      title: "Breezy on the water",
+      detail: "Expect some chop in open areas. Find sheltered coves if conditions worsen.",
+    });
+  } else {
+    out.push({
+      level: "good",
+      title: "Calm water",
+      detail: "Light winds make for smooth cruising and easy casting.",
+    });
+  }
+
+  if ([95, 96, 99].includes(i.weatherCode)) {
+    out.push({
+      level: "warning",
+      title: "Thunderstorms in the area",
+      detail: "Lightning risk — get off the water and seek shelter.",
+    });
+  } else if ([61, 63, 65, 80, 81, 82].includes(i.weatherCode) || (i.precipitation ?? 0) > 0.05) {
+    out.push({
+      level: "caution",
+      title: "Wet conditions",
+      detail: "Rain expected — pack rain gear and watch for slick docks.",
+    });
+  }
+
+  // Fishing guidance based on time of day and water temp
+  if (i.isDay && i.airTemp >= 50 && i.airTemp <= 85 && i.windSpeed < 15) {
+    out.push({
+      level: "good",
+      title: "Good fishing window",
+      detail: "Mild temps and steady water — bass should be active near structure.",
+    });
+  }
+
+  if (i.waterTemperature < 55) {
+    out.push({
+      level: "caution",
+      title: "Cold water",
+      detail: `Water near ${Math.round(i.waterTemperature)}°F — wear a life jacket; cold shock is a real risk.`,
+    });
+  }
+
+  return out;
+}
+
 let cache: { data: unknown; expires: number } | null = null;
 
 router.get("/", async (_req, res) => {
@@ -72,6 +146,21 @@ router.get("/", async (_req, res) => {
     // value without a dedicated water-temp data source.
     const waterTemperature = Math.round((airTemp * 0.6 + 68 * 0.4) * 10) / 10;
 
+    const windSpeed = Math.round((c.wind_speed_10m ?? 0) * 10) / 10;
+    const windGust = c.wind_gusts_10m != null ? Math.round(c.wind_gusts_10m * 10) / 10 : null;
+    const precipitation = c.precipitation ?? null;
+    const isDay = (c.is_day ?? 1) === 1;
+
+    const advisories = buildAdvisories({
+      airTemp,
+      waterTemperature,
+      windSpeed,
+      windGust,
+      precipitation,
+      weatherCode,
+      isDay,
+    });
+
     const data = {
       temperature: Math.round(airTemp * 10) / 10,
       apparentTemperature:
@@ -79,15 +168,15 @@ router.get("/", async (_req, res) => {
           ? Math.round(c.apparent_temperature * 10) / 10
           : null,
       waterTemperature,
-      windSpeed: Math.round((c.wind_speed_10m ?? 0) * 10) / 10,
-      windGust:
-        c.wind_gusts_10m != null ? Math.round(c.wind_gusts_10m * 10) / 10 : null,
+      windSpeed,
+      windGust,
       windDirection: c.wind_direction_10m ?? null,
       humidity: c.relative_humidity_2m ?? null,
-      precipitation: c.precipitation ?? null,
+      precipitation,
       weatherCode,
       weatherLabel: WEATHER_LABELS[weatherCode] ?? "Unknown",
-      isDay: (c.is_day ?? 1) === 1,
+      isDay,
+      advisories,
       updatedAt: new Date().toISOString(),
     };
 

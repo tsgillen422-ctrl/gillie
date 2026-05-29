@@ -1,10 +1,11 @@
 import React from "react";
 import { useParams, Link } from "wouter";
-import { useGetUser, useGetMe, useGetPosts, useGetPins, useFollowUser, useUnfollowUser, useGetFriends, getGetUserQueryKey } from "@workspace/api-client-react";
+import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetCatches, useFollowUser, useUnfollowUser, useGetFriends, getGetUserQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, Fish } from "lucide-react";
+import { BadgeRow } from "@/components/Badges";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -68,6 +69,10 @@ export function ProfilePage() {
     { query: { enabled: !!id } }
   );
   const { data: friends } = useGetFriends();
+  const { data: catches, isLoading: loadingCatches } = useGetCatches(
+    id ? { profileUserId: id } : {},
+    { query: { enabled: !!id } }
+  );
 
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
@@ -155,6 +160,8 @@ export function ProfilePage() {
             )}
           </div>
 
+          <BadgeRow badges={(user as any).badges} />
+
           {user.bio && (
             <p className="mt-6 text-center text-sm px-4 whitespace-pre-wrap">{user.bio}</p>
           )}
@@ -181,6 +188,7 @@ export function ProfilePage() {
           <TabsList className="w-full mb-4">
             <TabsTrigger value="posts" className="flex-1">Posts</TabsTrigger>
             <TabsTrigger value="pins" className="flex-1">Pins</TabsTrigger>
+            <TabsTrigger value="catches" className="flex-1">Catches</TabsTrigger>
           </TabsList>
 
           <TabsContent value="posts" className="space-y-4">
@@ -229,6 +237,42 @@ export function ProfilePage() {
             ) : (
               <div className="text-center py-10 text-muted-foreground">
                 {isSelf ? "You haven't dropped any pins." : "No pins dropped."}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="catches" className="space-y-4">
+            {loadingCatches ? (
+              <Skeleton className="h-24 w-full rounded-xl" />
+            ) : catches?.length ? (
+              catches.map((c) => (
+                <Card key={c.id} className="border-border/50 overflow-hidden">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    {c.imageUrl ? (
+                      <img src={c.imageUrl} alt={c.species} className="w-14 h-14 rounded-lg object-cover shrink-0" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-lg bg-cyan-500/10 flex items-center justify-center shrink-0">
+                        <Fish className="w-6 h-6 text-cyan-500" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-bold text-sm">{c.species}</h3>
+                      <p className="text-xs text-muted-foreground">
+                        {[c.weight != null ? `${c.weight} lb` : null, c.length != null ? `${c.length} in` : null]
+                          .filter(Boolean)
+                          .join(" · ") || "No measurements"}
+                      </p>
+                      {c.notes && <p className="text-xs mt-0.5 line-clamp-1">{c.notes}</p>}
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {new Date(c.caughtAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-10 text-muted-foreground">
+                {isSelf ? "You haven't logged any catches yet." : "No catches logged."}
               </div>
             )}
           </TabsContent>

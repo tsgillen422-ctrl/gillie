@@ -5,6 +5,7 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { Advisory } from './advisory';
 
 export interface Conditions {
   /** Air temperature in Fahrenheit. */
@@ -29,5 +30,6 @@ export interface Conditions {
   weatherCode: number;
   weatherLabel: string;
   isDay?: boolean;
+  advisories?: Advisory[];
   updatedAt: string;
 }

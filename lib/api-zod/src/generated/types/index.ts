@@ -6,6 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from './advisory';
+export * from './advisoryLevel';
+export * from './catch';
+export * from './catchInput';
 export * from './comment';
 export * from './commentInput';
 export * from './conditions';
@@ -15,6 +19,7 @@ export * from './errorEnvelope';
 export * from './friendLocation';
 export * from './friendRequest';
 export * from './friendRequestStatus';
+export * from './getCatchesParams';
 export * from './getPinsParams';
 export * from './getPinsType';
 export * from './getPostsParams';
@@ -30,8 +35,10 @@ export * from './notification';
 export * from './notificationType';
 export * from './pin';
 export * from './pinInput';
+export * from './pinInputSeverity';
 export * from './pinInputType';
 export * from './pinInputVisibility';
+export * from './pinSeverity';
 export * from './pinType';
 export * from './pinVisibility';
 export * from './post';
@@ -39,7 +46,14 @@ export * from './postInput';
 export * from './postInputPostType';
 export * from './postPostType';
 export * from './postsSummary';
+export * from './rsvpUser';
+export * from './searchParams';
+export * from './searchPin';
+export * from './searchPost';
+export * from './searchResults';
 export * from './searchUsersParams';
+export * from './sosInput';
+export * from './sosResult';
 export * from './uploadUrlRequest';
 export * from './uploadUrlResponse';
 export * from './user';

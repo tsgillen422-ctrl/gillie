@@ -5,6 +5,7 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { PinInputSeverity } from './pinInputSeverity';
 import type { PinInputType } from './pinInputType';
 import type { PinInputVisibility } from './pinInputVisibility';
 
@@ -20,4 +21,7 @@ export interface PinInput {
   startTime?: string | null;
   /** @nullable */
   endTime?: string | null;
+  severity?: PinInputSeverity;
+  /** @nullable */
+  expiresAt?: string | null;
 }

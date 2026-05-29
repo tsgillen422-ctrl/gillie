@@ -1,12 +1,13 @@
 import React from "react";
-import { useGetPosts, useGetPostsSummary, useLikePost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useCreatePostComment, useDeletePostComment, getGetPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey } from "@workspace/api-client-react";
+import { useGetPosts, useGetPostsSummary, useLikePost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useCreatePostComment, useDeletePostComment, useToggleRsvp, getGetPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey } from "@workspace/api-client-react";
 import { PostInputPostType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ConditionsWidget } from "@/components/ConditionsWidget";
+import { HazardBanner } from "@/components/HazardBanner";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video } from "lucide-react";
+import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -25,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUpload } from "@workspace/object-storage-web";
+import { compressImage } from "@/lib/compress";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -91,7 +93,7 @@ export function FeedPage() {
       return;
     }
     try {
-      const res = await uploadFile(file);
+      const res = await uploadFile(await compressImage(file));
       if (res?.objectPath) {
         setNewImageUrl(res.objectPath);
         setNewVideoUrl(null);
@@ -182,6 +184,7 @@ export function FeedPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <HazardBanner />
         <ConditionsWidget />
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
@@ -335,7 +338,18 @@ function PostCard({ post, onLike, canDelete, onDelete, currentUserId }: { post: 
   const { data: comments } = useGetPostComments(post.id, { query: { enabled: showComments } });
   const createComment = useCreatePostComment();
   const deleteComment = useDeletePostComment();
+  const toggleRsvp = useToggleRsvp();
   const queryClient = useQueryClient();
+
+  const handleRsvp = () => {
+    toggleRsvp.mutate(
+      { postId: post.id },
+      {
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetPostsQueryKey() }),
+        onError: () => toast.error("Couldn't update your RSVP."),
+      }
+    );
+  };
   const [commentText, setCommentText] = React.useState("");
   const [commentVideoUrl, setCommentVideoUrl] = React.useState<string | null>(null);
   const commentVideoInputRef = React.useRef<HTMLInputElement>(null);
@@ -440,6 +454,25 @@ function PostCard({ post, onLike, canDelete, onDelete, currentUserId }: { post: 
           <div className="flex items-center gap-2 text-sm text-accent-foreground bg-accent/20 px-3 py-2 rounded-md mb-3 font-medium">
             <Calendar className="w-4 h-4 text-accent" />
             {new Date(post.eventDate).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+          </div>
+        )}
+
+        {isEvent && (
+          <div className="flex items-center gap-3 mb-3">
+            <Button
+              type="button"
+              size="sm"
+              variant={post.rsvpByMe ? "default" : "outline"}
+              onClick={handleRsvp}
+              disabled={toggleRsvp.isPending}
+            >
+              {post.rsvpByMe ? <Check className="w-4 h-4 mr-2" /> : <Calendar className="w-4 h-4 mr-2" />}
+              {post.rsvpByMe ? "Going" : "RSVP"}
+            </Button>
+            <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Users className="w-4 h-4" />
+              {post.rsvpCount || 0} going
+            </span>
           </div>
         )}
         
