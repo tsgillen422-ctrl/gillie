@@ -748,6 +748,10 @@ components:
           type: ["string", "null"]
         boatType:
           type: ["string", "null"]
+        boatNeon:
+          type: ["boolean", "null"]
+        boatFlag:
+          type: ["boolean", "null"]
         shareLocation:
           type: boolean
         followerCount:
@@ -774,6 +778,10 @@ components:
           type: string
         boatType:
           type: string
+        boatNeon:
+          type: boolean
+        boatFlag:
+          type: boolean
         isBusiness:
           type: boolean
         shareLocation:
@@ -806,6 +814,10 @@ components:
           type: ["string", "null"]
         boatType:
           type: ["string", "null"]
+        boatNeon:
+          type: ["boolean", "null"]
+        boatFlag:
+          type: ["boolean", "null"]
         lat:
           type: ["number", "null"]
         lng:

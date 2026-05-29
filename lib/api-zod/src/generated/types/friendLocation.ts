@@ -19,6 +19,10 @@ export interface FriendLocation {
   /** @nullable */
   boatType?: string | null;
   /** @nullable */
+  boatNeon?: boolean | null;
+  /** @nullable */
+  boatFlag?: boolean | null;
+  /** @nullable */
   lat?: number | null;
   /** @nullable */
   lng?: number | null;

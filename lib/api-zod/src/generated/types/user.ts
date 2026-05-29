@@ -30,6 +30,10 @@ export interface User {
   boatColor?: string | null;
   /** @nullable */
   boatType?: string | null;
+  /** @nullable */
+  boatNeon?: boolean | null;
+  /** @nullable */
+  boatFlag?: boolean | null;
   shareLocation?: boolean;
   followerCount?: number;
   followingCount?: number;

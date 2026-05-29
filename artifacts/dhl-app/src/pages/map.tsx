@@ -17,6 +17,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
 import { AnimatePresence, motion } from "framer-motion";
+import { boatSvgFor, FLAG_SVG } from "../boats";
 
 const LAKE_CENTER: [number, number] = [-85.37, 36.53]; // [lng, lat]
 const BASE_ZOOM = 12;
@@ -150,70 +151,6 @@ const el = (tag: string, className?: string) => {
   return node;
 };
 
-// Static boat SVGs — use currentColor so no user data is injected into HTML.
-// Sporty speedboat: pointed bow, swept windshield, racing stripe.
-const SPEEDBOAT_SVG = `<svg width="56" height="30" viewBox="0 0 56 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M3 13 H44 C50 13 53 15 53.5 17 L48 25 C47 27 45 28 42 28 H14 C11 28 9 27 8 25 Z" fill="currentColor" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round"/>
-  <path d="M29 6.5 C30.5 6.5 31.5 7 32.5 8 L39 13 H27 V9 C27 7.5 27.5 6.5 29 6.5 Z" fill="#ffffff" opacity="0.92"/>
-  <rect x="10" y="14.5" width="33" height="3" rx="1.5" fill="#ffffff" opacity="0.55"/>
-</svg>`;
-
-// Pontoon: flat deck on two tubes with a sun canopy.
-const PONTOON_SVG = `<svg width="56" height="32" viewBox="0 0 56 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="7" y="22.5" width="42" height="5.5" rx="2.75" fill="currentColor" stroke="#ffffff" stroke-width="2"/>
-  <rect x="5" y="16" width="46" height="6" rx="2" fill="currentColor" stroke="#ffffff" stroke-width="2"/>
-  <rect x="12" y="4.5" width="32" height="4" rx="2" fill="#ffffff" opacity="0.92"/>
-  <rect x="13" y="8" width="2.2" height="8" rx="1" fill="#ffffff" opacity="0.7"/>
-  <rect x="40.8" y="8" width="2.2" height="8" rx="1" fill="#ffffff" opacity="0.7"/>
-</svg>`;
-
-// Sailboat: hull with a tall mainsail and jib.
-const SAILBOAT_SVG = `<svg width="56" height="32" viewBox="0 0 56 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M8 22 H48 L43 28 C42 29.5 40 30 38 30 H18 C16 30 14 29.5 13 28 Z" fill="currentColor" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
-  <rect x="27" y="3" width="2" height="19" fill="#ffffff" opacity="0.85"/>
-  <path d="M30 4 L30 20 L42 20 Z" fill="#ffffff" opacity="0.92"/>
-  <path d="M26 7 L26 20 L17 20 Z" fill="#ffffff" opacity="0.7"/>
-</svg>`;
-
-// Kayak: slim hull pointed at both ends with a paddle.
-const KAYAK_SVG = `<svg width="56" height="32" viewBox="0 0 56 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M4 19 C12 15 44 15 52 19 C44 23 12 23 4 19 Z" fill="currentColor" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
-  <ellipse cx="28" cy="19" rx="4.5" ry="2" fill="#ffffff" opacity="0.6"/>
-  <rect x="18" y="10" width="20" height="2.4" rx="1.2" fill="#ffffff" opacity="0.8"/>
-</svg>`;
-
-// Jet ski: small sporty personal watercraft with handlebars.
-const JETSKI_SVG = `<svg width="56" height="32" viewBox="0 0 56 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M6 20 C10 16 20 15 30 15 C42 15 50 17 52 20 C50 24 44 26 34 26 H16 C11 26 7 23 6 20 Z" fill="currentColor" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
-  <path d="M22 15 C24 12 30 12 33 14 L33 16 H22 Z" fill="#ffffff" opacity="0.85"/>
-  <rect x="13" y="11" width="9" height="2" rx="1" fill="#ffffff" opacity="0.8"/>
-  <rect x="20" y="12" width="2" height="4" rx="1" fill="#ffffff" opacity="0.7"/>
-</svg>`;
-
-// Yacht: larger cruiser with a two-level cabin and windows.
-const YACHT_SVG = `<svg width="56" height="32" viewBox="0 0 56 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <path d="M4 19 H50 L45 27 C44 29 42 29.5 39 29.5 H15 C12 29.5 10 29 9 27 Z" fill="currentColor" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
-  <rect x="12" y="12" width="30" height="7" rx="1.5" fill="#ffffff" opacity="0.92"/>
-  <rect x="18" y="6" width="16" height="6" rx="1.5" fill="currentColor" stroke="#ffffff" stroke-width="1.5"/>
-  <rect x="15" y="14" width="3" height="3" rx="0.6" fill="currentColor" opacity="0.6"/>
-  <rect x="21" y="14" width="3" height="3" rx="0.6" fill="currentColor" opacity="0.6"/>
-  <rect x="27" y="14" width="3" height="3" rx="0.6" fill="currentColor" opacity="0.6"/>
-  <rect x="33" y="14" width="3" height="3" rx="0.6" fill="currentColor" opacity="0.6"/>
-</svg>`;
-
-const BOAT_SVGS: Record<string, string> = {
-  speedboat: SPEEDBOAT_SVG,
-  pontoon: PONTOON_SVG,
-  sailboat: SAILBOAT_SVG,
-  kayak: KAYAK_SVG,
-  jetski: JETSKI_SVG,
-  yacht: YACHT_SVG,
-};
-
-function boatSvgFor(type?: string | null): string {
-  return (type && BOAT_SVGS[type]) || SPEEDBOAT_SVG;
-}
-
 // --- Friend (Snap Map style) marker element: profile pic floating above a boat ---
 function buildFriendEl(opts: {
   color: string;
@@ -222,10 +159,14 @@ function buildFriendEl(opts: {
   online?: boolean;
   isMe?: boolean;
   boatType?: string | null;
+  boatNeon?: boolean | null;
+  boatFlag?: boolean | null;
 }): { root: HTMLDivElement; scale: HTMLDivElement } {
-  const { color, name, avatarUrl, online, isMe, boatType } = opts;
+  const { color, name, avatarUrl, online, isMe, boatType, boatNeon, boatFlag } = opts;
   const root = el("div", "snap-marker") as HTMLDivElement;
   const scale = el("div", "snap-scale") as HTMLDivElement;
+  // expose the boat color to CSS for accents (neon glow, ripples)
+  scale.style.setProperty("--boat", color);
 
   // water ripple rings at the boat's waterline
   const ring1 = el("div", "snap-ring");
@@ -233,10 +174,34 @@ function buildFriendEl(opts: {
   const ring2 = el("div", "snap-ring snap-ring-delay");
   ring2.style.borderColor = color;
 
+  // soft wake highlight on the water behind the boat
+  const wake = el("div", "snap-wake");
+
   // bob group floats up/down as a whole
   const bob = el("div", "snap-bob");
 
-  // profile photo on top
+  // neon underglow accessory (sits just under the hull at the waterline)
+  if (boatNeon) {
+    const glow = el("div", "snap-underglow");
+    glow.style.background = color;
+    bob.appendChild(glow);
+  }
+
+  // boat hull, rocking on the water
+  const boat = el("div", "snap-boat");
+  boat.style.color = color;
+  boat.innerHTML = boatSvgFor(boatType); // static markup, no user data
+  bob.appendChild(boat);
+
+  // flag accessory: a small pennant flying off the stern
+  if (boatFlag) {
+    const flag = el("div", "snap-flag");
+    flag.style.color = color;
+    flag.innerHTML = FLAG_SVG; // static markup, no user data
+    bob.appendChild(flag);
+  }
+
+  // profile photo mounted on the boat like a captain at the helm
   const photo = el("div", "snap-photo");
   photo.style.borderColor = color;
   if (avatarUrl) {
@@ -251,25 +216,14 @@ function buildFriendEl(opts: {
     photo.appendChild(initials);
   }
   if (online) photo.appendChild(el("div", "snap-online"));
-
-  // little stem connecting photo to boat
-  const stem = el("div", "snap-stem");
-  stem.style.background = color;
-
-  // boat beneath the photo, rocking on the water
-  const boat = el("div", "snap-boat");
-  boat.style.color = color;
-  boat.innerHTML = boatSvgFor(boatType); // static markup, no user data
-
   bob.appendChild(photo);
-  bob.appendChild(stem);
-  bob.appendChild(boat);
 
   const chip = el("div", "snap-chip");
   chip.textContent = isMe ? "You" : name;
 
   scale.appendChild(ring1);
   scale.appendChild(ring2);
+  scale.appendChild(wake);
   scale.appendChild(bob);
   scale.appendChild(chip);
   root.appendChild(scale);
@@ -488,6 +442,8 @@ export function MapPage() {
         avatarUrl: friend.avatarUrl,
         online: friend.isOnline,
         boatType: friend.boatType,
+        boatNeon: friend.boatNeon,
+        boatFlag: friend.boatFlag,
       });
       root.addEventListener("click", (ev) => {
         ev.stopPropagation();
@@ -556,6 +512,8 @@ export function MapPage() {
         online: me.isOnline,
         isMe: true,
         boatType: me.boatType,
+        boatNeon: me.boatNeon,
+        boatFlag: me.boatFlag,
       });
       root.addEventListener("click", (ev) => {
         ev.stopPropagation();
@@ -887,8 +845,8 @@ const MAP_CSS = `
   .snap-marker { cursor: pointer; will-change: transform; }
   .snap-scale {
     position: relative;
-    width: 64px;
-    height: 104px;
+    width: 72px;
+    height: 116px;
     transform-origin: bottom center;
     transition: transform 0.18s ease-out;
   }
@@ -896,27 +854,30 @@ const MAP_CSS = `
   .snap-bob {
     position: absolute;
     left: 50%;
-    bottom: 14px;
+    bottom: 16px;
+    width: 64px;
+    height: 84px;
     transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     animation: snapBob 3.2s ease-in-out infinite;
   }
   @keyframes snapBob {
     0%, 100% { transform: translateX(-50%) translateY(0); }
     50% { transform: translateX(-50%) translateY(-6px); }
   }
+  /* profile photo mounted on the boat like a captain at the helm */
   .snap-photo {
-    position: relative;
-    width: 44px;
-    height: 44px;
+    position: absolute;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     border: 3px solid;
     background: #fff;
-    box-shadow: 0 5px 12px rgba(0,0,0,0.30);
+    box-shadow: 0 4px 9px rgba(0,0,0,0.32), 0 0 0 3px rgba(255,255,255,0.9);
     overflow: hidden;
-    z-index: 3;
+    z-index: 4;
   }
   .snap-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .snap-initials {
@@ -938,25 +899,71 @@ const MAP_CSS = `
     0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.55); }
     50% { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
   }
-  .snap-stem {
-    width: 3px;
-    height: 6px;
-    margin-top: -1px;
-    border-radius: 2px;
-    z-index: 1;
-  }
-  /* boat rocks side to side */
+  /* boat hull rocks gently side to side at the waterline */
   .snap-boat {
-    margin-top: -2px;
+    position: absolute;
+    left: 50%;
+    bottom: 0;
     line-height: 0;
     z-index: 2;
-    filter: drop-shadow(0 4px 4px rgba(0,0,0,0.25));
-    transform-origin: 50% 40%;
+    filter: drop-shadow(0 5px 5px rgba(11,58,91,0.30));
+    transform-origin: 50% 80%;
     animation: snapRock 3.6s ease-in-out infinite;
   }
   @keyframes snapRock {
-    0%, 100% { transform: rotate(-7deg); }
-    50% { transform: rotate(7deg); }
+    0%, 100% { transform: translateX(-50%) rotate(-5deg); }
+    50% { transform: translateX(-50%) rotate(5deg); }
+  }
+  /* neon underglow accessory: glowing colored halo under the hull */
+  .snap-underglow {
+    position: absolute;
+    left: 50%;
+    bottom: 4px;
+    width: 50px;
+    height: 13px;
+    margin-left: -25px;
+    border-radius: 50%;
+    filter: blur(6px);
+    opacity: 0.85;
+    z-index: 1;
+    animation: snapNeon 1.8s ease-in-out infinite;
+  }
+  @keyframes snapNeon {
+    0%, 100% { opacity: 0.55; transform: scaleX(0.92); }
+    50% { opacity: 0.95; transform: scaleX(1.05); }
+  }
+  /* pennant flag accessory flying off the stern */
+  .snap-flag {
+    position: absolute;
+    left: 6px;
+    bottom: 30px;
+    line-height: 0;
+    z-index: 3;
+    transform-origin: bottom left;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
+    animation: snapFlag 2.4s ease-in-out infinite;
+  }
+  @keyframes snapFlag {
+    0%, 100% { transform: rotate(-4deg); }
+    50% { transform: rotate(4deg); }
+  }
+  /* soft foamy wake highlight on the water under the boat */
+  .snap-wake {
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    width: 54px;
+    height: 14px;
+    margin-left: -27px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(255,255,255,0.85), rgba(255,255,255,0) 70%);
+    opacity: 0.7;
+    pointer-events: none;
+    animation: snapWake 3.2s ease-in-out infinite;
+  }
+  @keyframes snapWake {
+    0%, 100% { transform: scaleX(0.9); opacity: 0.5; }
+    50% { transform: scaleX(1.08); opacity: 0.8; }
   }
   .snap-chip {
     position: absolute;

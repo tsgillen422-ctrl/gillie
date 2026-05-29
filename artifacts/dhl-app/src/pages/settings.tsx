@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { boatSvgFor, FLAG_SVG } from "../boats";
 
 const BOAT_COLORS = [
   { value: '#0ea5e9', label: 'Sky Blue' },
@@ -43,66 +44,36 @@ const BOAT_TYPES = [
   { value: 'yacht', label: 'Yacht', desc: 'Luxury cruiser' },
 ];
 
-function BoatPreview({ type, color }: { type: string; color: string }) {
-  const common = { width: 84, height: 48, viewBox: "0 0 56 32", fill: "none", xmlns: "http://www.w3.org/2000/svg" } as const;
-  switch (type) {
-    case 'pontoon':
-      return (
-        <svg {...common}>
-          <rect x="7" y="22.5" width="42" height="5.5" rx="2.75" fill={color} stroke="#ffffff" strokeWidth="2" />
-          <rect x="5" y="16" width="46" height="6" rx="2" fill={color} stroke="#ffffff" strokeWidth="2" />
-          <rect x="12" y="4.5" width="32" height="4" rx="2" fill="#ffffff" opacity="0.92" />
-          <rect x="13" y="8" width="2.2" height="8" rx="1" fill="#ffffff" opacity="0.7" />
-          <rect x="40.8" y="8" width="2.2" height="8" rx="1" fill="#ffffff" opacity="0.7" />
-        </svg>
-      );
-    case 'sailboat':
-      return (
-        <svg {...common}>
-          <path d="M8 22 H48 L43 28 C42 29.5 40 30 38 30 H18 C16 30 14 29.5 13 28 Z" fill={color} stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" />
-          <rect x="27" y="3" width="2" height="19" fill="#ffffff" opacity="0.85" />
-          <path d="M30 4 L30 20 L42 20 Z" fill="#ffffff" opacity="0.92" />
-          <path d="M26 7 L26 20 L17 20 Z" fill="#ffffff" opacity="0.7" />
-        </svg>
-      );
-    case 'kayak':
-      return (
-        <svg {...common}>
-          <path d="M4 19 C12 15 44 15 52 19 C44 23 12 23 4 19 Z" fill={color} stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" />
-          <ellipse cx="28" cy="19" rx="4.5" ry="2" fill="#ffffff" opacity="0.6" />
-          <rect x="18" y="10" width="20" height="2.4" rx="1.2" fill="#ffffff" opacity="0.8" />
-        </svg>
-      );
-    case 'jetski':
-      return (
-        <svg {...common}>
-          <path d="M6 20 C10 16 20 15 30 15 C42 15 50 17 52 20 C50 24 44 26 34 26 H16 C11 26 7 23 6 20 Z" fill={color} stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" />
-          <path d="M22 15 C24 12 30 12 33 14 L33 16 H22 Z" fill="#ffffff" opacity="0.85" />
-          <rect x="13" y="11" width="9" height="2" rx="1" fill="#ffffff" opacity="0.8" />
-          <rect x="20" y="12" width="2" height="4" rx="1" fill="#ffffff" opacity="0.7" />
-        </svg>
-      );
-    case 'yacht':
-      return (
-        <svg {...common}>
-          <path d="M4 19 H50 L45 27 C44 29 42 29.5 39 29.5 H15 C12 29.5 10 29 9 27 Z" fill={color} stroke="#ffffff" strokeWidth="2" strokeLinejoin="round" />
-          <rect x="12" y="12" width="30" height="7" rx="1.5" fill="#ffffff" opacity="0.92" />
-          <rect x="18" y="6" width="16" height="6" rx="1.5" fill={color} stroke="#ffffff" strokeWidth="1.5" />
-          <rect x="15" y="14" width="3" height="3" rx="0.6" fill={color} opacity="0.6" />
-          <rect x="21" y="14" width="3" height="3" rx="0.6" fill={color} opacity="0.6" />
-          <rect x="27" y="14" width="3" height="3" rx="0.6" fill={color} opacity="0.6" />
-          <rect x="33" y="14" width="3" height="3" rx="0.6" fill={color} opacity="0.6" />
-        </svg>
-      );
-    default:
-      return (
-        <svg {...common} viewBox="0 0 56 30">
-          <path d="M3 13 H44 C50 13 53 15 53.5 17 L48 25 C47 27 45 28 42 28 H14 C11 28 9 27 8 25 Z" fill={color} stroke="#ffffff" strokeWidth="2.5" strokeLinejoin="round" />
-          <path d="M29 6.5 C30.5 6.5 31.5 7 32.5 8 L39 13 H27 V9 C27 7.5 27.5 6.5 29 6.5 Z" fill="#ffffff" opacity="0.92" />
-          <rect x="10" y="14.5" width="33" height="3" rx="1.5" fill="#ffffff" opacity="0.55" />
-        </svg>
-      );
-  }
+function BoatPreview({ type, color, neon, flag }: { type: string; color: string; neon?: boolean; flag?: boolean }) {
+  return (
+    <span className="relative inline-flex items-center justify-center" style={{ width: 84, height: 56, color }}>
+      {neon && (
+        <span
+          className="absolute rounded-full"
+          style={{
+            width: 56,
+            height: 14,
+            bottom: 8,
+            background: color,
+            filter: "blur(7px)",
+            opacity: 0.8,
+          }}
+        />
+      )}
+      <span
+        className="relative"
+        style={{ color, lineHeight: 0, filter: "drop-shadow(0 4px 4px rgba(11,58,91,0.28))" }}
+        dangerouslySetInnerHTML={{ __html: boatSvgFor(type) }}
+      />
+      {flag && (
+        <span
+          className="absolute"
+          style={{ color, left: 8, top: 0, lineHeight: 0 }}
+          dangerouslySetInnerHTML={{ __html: FLAG_SVG }}
+        />
+      )}
+    </span>
+  );
 }
 
 export function SettingsPage() {
@@ -115,6 +86,8 @@ export function SettingsPage() {
   const [boatName, setBoatName] = React.useState("");
   const [boatColor, setBoatColor] = React.useState("");
   const [boatType, setBoatType] = React.useState("speedboat");
+  const [boatNeon, setBoatNeon] = React.useState(false);
+  const [boatFlag, setBoatFlag] = React.useState(false);
   const [bio, setBio] = React.useState("");
   const [shareLocation, setShareLocation] = React.useState(true);
   const [avatarUrl, setAvatarUrl] = React.useState<string | undefined>(undefined);
@@ -137,6 +110,8 @@ export function SettingsPage() {
       setBoatName(me.boatName || "");
       setBoatColor(me.boatColor || "#0ea5e9");
       setBoatType(me.boatType || "speedboat");
+      setBoatNeon(me.boatNeon ?? false);
+      setBoatFlag(me.boatFlag ?? false);
       setBio(me.bio || "");
       setShareLocation(me.shareLocation ?? true);
       setAvatarUrl(me.avatarUrl ?? undefined);
@@ -172,6 +147,8 @@ export function SettingsPage() {
         boatName,
         boatColor,
         boatType,
+        boatNeon,
+        boatFlag,
         bio,
         shareLocation
       }
@@ -294,7 +271,7 @@ export function SettingsPage() {
             {/* Live preview */}
             <div className="rounded-xl border border-border bg-gradient-to-b from-sky-100 to-sky-200 p-4 flex flex-col items-center gap-1">
               <div className="flex items-center justify-center h-14">
-                <BoatPreview type={boatType} color={boatColor || "#0ea5e9"} />
+                <BoatPreview type={boatType} color={boatColor || "#0ea5e9"} neon={boatNeon} flag={boatFlag} />
               </div>
               <span className="text-xs font-medium text-slate-600">{boatName || "Your boat on the lake"}</span>
             </div>
@@ -352,6 +329,25 @@ export function SettingsPage() {
                   <span className="text-sm font-medium">Custom color</span>
                   <span className="text-[11px] text-muted-foreground uppercase">{boatColor || "#0ea5e9"}</span>
                 </div>
+              </label>
+            </div>
+
+            {/* Accessories */}
+            <div className="space-y-3">
+              <Label>Accessories</Label>
+              <label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background p-3 cursor-pointer">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">Neon underglow</span>
+                  <span className="text-[11px] text-muted-foreground">A glowing halo under your hull</span>
+                </div>
+                <Switch checked={boatNeon} onCheckedChange={setBoatNeon} className="data-[state=checked]:bg-primary" />
+              </label>
+              <label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background p-3 cursor-pointer">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">Pennant flag</span>
+                  <span className="text-[11px] text-muted-foreground">Fly a flag off the stern</span>
+                </div>
+                <Switch checked={boatFlag} onCheckedChange={setBoatFlag} className="data-[state=checked]:bg-primary" />
               </label>
             </div>
           </CardContent>

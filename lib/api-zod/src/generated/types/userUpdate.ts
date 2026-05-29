@@ -14,6 +14,8 @@ export interface UserUpdate {
   boatName?: string;
   boatColor?: string;
   boatType?: string;
+  boatNeon?: boolean;
+  boatFlag?: boolean;
   isBusiness?: boolean;
   shareLocation?: boolean;
 }
