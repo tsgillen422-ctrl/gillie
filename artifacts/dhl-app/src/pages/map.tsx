@@ -6,7 +6,7 @@ import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCr
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Navigation, MessageSquare, Plus, Crosshair, ChevronUp, Droplet, X } from "lucide-react";
+import { Navigation, MessageSquare, Plus, Minus, Crosshair, ChevronUp, Droplet, X } from "lucide-react";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -437,7 +437,6 @@ export function MapPage() {
     }
     mapRef.current = map;
 
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
 
     map.on("error", (e) => {
       // Surface a fatal init/style failure; ignore transient tile errors.
@@ -747,6 +746,12 @@ export function MapPage() {
     }
   }, [me, styleReady, applyZoomScale]);
 
+  const zoomBy = (delta: number) => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.easeTo({ zoom: map.getZoom() + delta, duration: 200 });
+  };
+
   const flyToMe = () => {
     const map = mapRef.current;
     if (!map) return;
@@ -839,18 +844,46 @@ export function MapPage() {
         </div>
       )}
 
-      {/* Floating Action Button for Pins */}
-      <div className="absolute top-[80px] right-4 z-[400] flex flex-col gap-3">
-        <Button size="icon" className="h-12 w-12 rounded-full shadow-lg bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleFabClick}>
-          <Plus className="h-6 w-6" />
-        </Button>
+      {/* Floating map controls */}
+      <div className="absolute top-[80px] right-4 z-[400] flex flex-col items-center gap-3">
+        {/* Add-pin FAB: smaller and softer so it doesn't dominate */}
         <Button
           size="icon"
-          className="h-12 w-12 rounded-full shadow-lg bg-card text-foreground hover:bg-muted"
-          onClick={flyToMe}
+          className="h-10 w-10 rounded-full shadow-md bg-[hsl(40,68%,58%)] text-accent-foreground hover:bg-[hsl(40,68%,52%)]"
+          onClick={handleFabClick}
         >
-          <Crosshair className="h-5 w-5" />
+          <Plus className="h-5 w-5" />
         </Button>
+
+        {/* Combined zoom + locate stack in one clean pill */}
+        <div className="flex flex-col rounded-full bg-card shadow-md border border-border overflow-hidden">
+          <button
+            type="button"
+            aria-label="Zoom in"
+            onClick={() => zoomBy(1)}
+            className="h-10 w-10 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+          <div className="h-px bg-border mx-2" />
+          <button
+            type="button"
+            aria-label="Zoom out"
+            onClick={() => zoomBy(-1)}
+            className="h-10 w-10 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+          >
+            <Minus className="h-4 w-4" />
+          </button>
+          <div className="h-px bg-border mx-2" />
+          <button
+            type="button"
+            aria-label="Center on me"
+            onClick={flyToMe}
+            className="h-10 w-10 flex items-center justify-center text-foreground hover:bg-muted transition-colors"
+          >
+            <Crosshair className="h-4 w-4" />
+          </button>
+        </div>
       </div>
 
       {/* Slide-up detail card */}
