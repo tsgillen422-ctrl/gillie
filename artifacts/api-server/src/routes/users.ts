@@ -48,7 +48,8 @@ router.patch("/me", async (req, res) => {
   if (boatName !== undefined) updates.boatName = boatName;
   if (boatColor !== undefined) updates.boatColor = boatColor;
   if (boatType !== undefined) {
-    if (boatType !== "speedboat" && boatType !== "pontoon") {
+    const validBoatTypes = ["speedboat", "pontoon", "sailboat", "kayak", "jetski", "yacht"];
+    if (!validBoatTypes.includes(boatType)) {
       return res.status(400).json({ error: "Invalid boatType" });
     }
     updates.boatType = boatType;

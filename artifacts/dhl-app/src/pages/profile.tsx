@@ -9,6 +9,15 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/UserAvatar";
 
+const BOAT_TYPE_LABELS: Record<string, string> = {
+  speedboat: "Speed Boat",
+  pontoon: "Pontoon",
+  sailboat: "Sailboat",
+  kayak: "Kayak",
+  jetski: "Jet Ski",
+  yacht: "Yacht",
+};
+
 function pinEmoji(type: string) {
   switch (type) {
     case "fishing_spot": return "🎣";
@@ -155,7 +164,7 @@ export function ProfilePage() {
               <Ship className="w-4 h-4 text-primary" />
               <span className="font-medium text-foreground">Vessel:</span>
               <span className="text-muted-foreground">{user.boatName}</span>
-              <span className="text-muted-foreground">· {user.boatType === "pontoon" ? "Pontoon" : "Speed Boat"}</span>
+              <span className="text-muted-foreground">· {BOAT_TYPE_LABELS[user.boatType ?? ""] ?? "Speed Boat"}</span>
               {user.boatColor && (
                 <div className="w-3 h-3 rounded-full ml-1" style={{ backgroundColor: user.boatColor }} />
               )}
