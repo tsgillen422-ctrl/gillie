@@ -179,6 +179,13 @@ const scaleForZoom = (zoom: number) => {
   return Math.max(0.55, Math.min(1.75, s));
 };
 
+// Text labels should shrink as you zoom into a location (opposite of the
+// marker scale, so wording stays subtle when you're up close).
+const textScaleForZoom = (zoom: number) => {
+  const t = 1.22 - (zoom - BASE_ZOOM) * 0.12;
+  return Math.max(0.5, Math.min(1.3, t));
+};
+
 type Selected =
   | { kind: "friend"; data: any }
   | { kind: "pin"; data: any }
@@ -395,8 +402,15 @@ export function MapPage() {
 
   const applyZoomScale = useCallback((zoom: number) => {
     const s = scaleForZoom(zoom);
+    const t = textScaleForZoom(zoom);
     scaleEls.current.forEach((el) => {
       el.style.transform = `scale(${s})`;
+      // Counter-scale the place text so the wording gets smaller as you zoom in.
+      const text = el.querySelector(".place-text") as HTMLElement | null;
+      if (text) {
+        text.style.transformOrigin = "left center";
+        text.style.transform = `scale(${(t / s).toFixed(3)})`;
+      }
     });
   }, []);
 
