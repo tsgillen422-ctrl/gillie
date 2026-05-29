@@ -1177,23 +1177,24 @@ const MAP_CSS = `
     border: 1px solid rgba(0,0,0,0.06);
     animation: pinFloat 4s ease-in-out infinite;
   }
-  /* High-priority places: larger, labelled, stronger shadow */
+  /* High-priority places: labelled, slightly stronger shadow */
   .pin-pill.tier-high {
-    padding: 6px 13px 6px 9px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.30);
+    padding: 3px 9px 3px 6px;
+    gap: 4px;
+    box-shadow: 0 5px 13px rgba(0,0,0,0.26);
     border-color: rgba(0,0,0,0.08);
   }
-  .pin-pill.tier-high .pin-pill-emoji { font-size: 20px; }
+  .pin-pill.tier-high .pin-pill-emoji { font-size: 14px; }
   /* Low-priority pins: compact icon-only chip */
   .pin-pill.tier-low {
-    padding: 5px;
+    padding: 4px;
     box-shadow: 0 4px 11px rgba(0,0,0,0.22);
     opacity: 0.96;
   }
-  .pin-pill.tier-low .pin-pill-emoji { font-size: 14px; }
+  .pin-pill.tier-low .pin-pill-emoji { font-size: 13px; }
   .pin-pill-emoji { line-height: 1; }
   .pin-pill-label {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
     color: #0f172a;
     white-space: nowrap;
