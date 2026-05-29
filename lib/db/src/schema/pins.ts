@@ -12,6 +12,7 @@ export const pinsTable = pgTable("pins", {
   title: text("title").notNull(),
   description: text("description"),
   visibility: text("visibility").notNull().default("friends"),
+  imageUrl: text("image_url"),
   approved: boolean("approved").notNull().default(true),
   startTime: timestamp("start_time"),
   endTime: timestamp("end_time"),

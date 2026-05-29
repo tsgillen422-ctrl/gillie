@@ -70,6 +70,7 @@ async function formatPin(pin: typeof pinsTable.$inferSelect) {
     title: pin.title,
     description: pin.description,
     visibility: pin.visibility,
+    imageUrl: pin.imageUrl,
     approved: pin.approved,
     startTime: pin.startTime ? pin.startTime.toISOString() : null,
     endTime: pin.endTime ? pin.endTime.toISOString() : null,
@@ -112,7 +113,7 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { lat, lng, type, title, description, visibility, startTime, endTime } = req.body;
+  const { lat, lng, type, title, description, visibility, imageUrl, startTime, endTime } = req.body;
   const vis = visibility === "public" || visibility === "community" ? visibility : "friends";
 
   const start = startTime ? new Date(startTime) : null;
@@ -146,6 +147,7 @@ router.post("/", async (req, res) => {
       title,
       description,
       visibility: vis,
+      imageUrl: imageUrl || null,
       approved,
       startTime: start,
       endTime: end,

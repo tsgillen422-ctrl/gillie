@@ -1,11 +1,31 @@
 import React from "react";
-import { useGetPosts, useGetPostsSummary, useLikePost } from "@workspace/api-client-react";
+import { useGetPosts, useGetPostsSummary, useLikePost, useGetMe, useDeletePost, useCreatePost, getGetPostsQueryKey, getGetPostsSummaryQueryKey } from "@workspace/api-client-react";
+import { PostInputPostType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Share2, Calendar, MapPin } from "lucide-react";
+import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useUpload } from "@workspace/object-storage-web";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
 export function FeedPage() {
@@ -16,7 +36,97 @@ export function FeedPage() {
   );
   
   const { data: summary } = useGetPostsSummary();
+  const { data: me } = useGetMe();
   const likePost = useLikePost();
+  const deletePost = useDeletePost();
+  const createPost = useCreatePost();
+  const queryClient = useQueryClient();
+
+  const [composerOpen, setComposerOpen] = React.useState(false);
+  const [newTitle, setNewTitle] = React.useState("");
+  const [newContent, setNewContent] = React.useState("");
+  const [newType, setNewType] = React.useState<"post" | "event" | "business">("post");
+  const [newEventDate, setNewEventDate] = React.useState("");
+  const [newImageUrl, setNewImageUrl] = React.useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { uploadFile, isUploading } = useUpload();
+
+  const refreshPosts = () => {
+    queryClient.invalidateQueries({ queryKey: getGetPostsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetPostsSummaryQueryKey() });
+  };
+
+  const handleDeletePost = (postId: number) => {
+    deletePost.mutate(
+      { postId },
+      {
+        onSuccess: () => {
+          toast.success("Post deleted.");
+          refreshPosts();
+        },
+        onError: () => toast.error("Couldn't delete that post."),
+      }
+    );
+  };
+
+  const resetComposer = () => {
+    setNewTitle("");
+    setNewContent("");
+    setNewType("post");
+    setNewEventDate("");
+    setNewImageUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file.");
+      return;
+    }
+    try {
+      const res = await uploadFile(file);
+      if (res?.objectPath) {
+        setNewImageUrl(res.objectPath);
+      } else {
+        toast.error("Couldn't upload that photo.");
+      }
+    } catch {
+      toast.error("Couldn't upload that photo.");
+    }
+  };
+
+  const handleCreatePost = () => {
+    if (!newContent.trim()) {
+      toast.error("Add some content for your post.");
+      return;
+    }
+    if (newType === "event" && !newEventDate) {
+      toast.error("Pick a date for your event.");
+      return;
+    }
+    createPost.mutate(
+      {
+        data: {
+          title: newTitle.trim() || (newType === "event" ? "Event" : "Post"),
+          content: newContent.trim(),
+          postType: newType as PostInputPostType,
+          eventDate: newType === "event" && newEventDate ? new Date(newEventDate).toISOString() : undefined,
+          imageUrl: newImageUrl ? `/api/storage${newImageUrl}` : undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Post shared!");
+          setComposerOpen(false);
+          resetComposer();
+          refreshPosts();
+        },
+        onError: () => toast.error("Couldn't share your post."),
+      }
+    );
+  };
 
   return (
     <div className="flex flex-col h-full bg-muted/30">
@@ -60,7 +170,13 @@ export function FeedPage() {
           ))
         ) : posts?.length ? (
           posts.map(post => (
-            <PostCard key={post.id} post={post} onLike={() => likePost.mutate({ postId: post.id })} />
+            <PostCard
+              key={post.id}
+              post={post}
+              onLike={() => likePost.mutate({ postId: post.id })}
+              canDelete={me != null && post.userId === me.id}
+              onDelete={() => handleDeletePost(post.id)}
+            />
           ))
         ) : (
           <div className="text-center py-12 text-muted-foreground">
@@ -68,11 +184,95 @@ export function FeedPage() {
           </div>
         )}
       </div>
+
+      {me && (
+        <Button
+          onClick={() => setComposerOpen(true)}
+          size="icon"
+          className="absolute bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-20"
+          aria-label="New post"
+        >
+          <Plus className="w-6 h-6" />
+        </Button>
+      )}
+
+      <Dialog open={composerOpen} onOpenChange={(open) => { setComposerOpen(open); if (!open) resetComposer(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>New Post</DialogTitle>
+            <DialogDescription>Share something with the Dale Hollow community.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Type</Label>
+              <Select value={newType} onValueChange={(v: any) => setNewType(v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="post">Social</SelectItem>
+                  <SelectItem value="event">Event</SelectItem>
+                  <SelectItem value="business">Local</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Title</Label>
+              <Input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Add a title (optional)" />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>What's happening?</Label>
+              <Textarea value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder="Share an update..." rows={4} />
+            </div>
+
+            {newType === "event" && (
+              <div className="space-y-1.5">
+                <Label>Event date</Label>
+                <Input type="datetime-local" value={newEventDate} onChange={(e) => setNewEventDate(e.target.value)} />
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <Label>Photo</Label>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+              {newImageUrl ? (
+                <div className="relative rounded-lg overflow-hidden bg-muted aspect-video">
+                  <img src={`/api/storage${newImageUrl}`} alt="Selected" className="object-cover w-full h-full" />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="absolute top-2 right-2 h-7 w-7"
+                    onClick={() => { setNewImageUrl(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button type="button" variant="outline" className="w-full" disabled={isUploading} onClick={() => fileInputRef.current?.click()}>
+                  <ImagePlus className="w-4 h-4 mr-2" />
+                  {isUploading ? "Uploading..." : "Add a photo"}
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setComposerOpen(false); resetComposer(); }}>Cancel</Button>
+            <Button onClick={handleCreatePost} disabled={createPost.isPending || isUploading}>
+              {createPost.isPending ? "Sharing..." : "Share"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function PostCard({ post, onLike }: { post: any, onLike: () => void }) {
+function PostCard({ post, onLike, canDelete, onDelete }: { post: any, onLike: () => void, canDelete?: boolean, onDelete?: () => void }) {
   const isEvent = post.postType === "event";
   
   return (
@@ -82,9 +282,32 @@ function PostCard({ post, onLike }: { post: any, onLike: () => void }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-sm truncate">{post.user?.displayName}</h3>
-            <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
-              {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-            </span>
+            <div className="flex items-center gap-1 ml-2 shrink-0">
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+              </span>
+              {canDelete && onDelete && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+                      <AlertDialogDescription>This can't be undone.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+            </div>
           </div>
           {post.user?.boatName && <p className="text-xs text-muted-foreground truncate">{post.user.boatName}</p>}
         </div>

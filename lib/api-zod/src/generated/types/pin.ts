@@ -20,6 +20,8 @@ export interface Pin {
   /** @nullable */
   description?: string | null;
   visibility?: PinVisibility;
+  /** @nullable */
+  imageUrl?: string | null;
   approved?: boolean;
   /** @nullable */
   startTime?: string | null;

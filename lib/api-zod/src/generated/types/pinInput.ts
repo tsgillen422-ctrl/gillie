@@ -15,6 +15,7 @@ export interface PinInput {
   title: string;
   description?: string;
   visibility?: PinInputVisibility;
+  imageUrl?: string;
   /** @nullable */
   startTime?: string | null;
   /** @nullable */

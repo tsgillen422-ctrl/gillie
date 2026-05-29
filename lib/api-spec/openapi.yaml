@@ -936,6 +936,8 @@ components:
         visibility:
           type: string
           enum: [friends, public, community]
+        imageUrl:
+          type: ["string", "null"]
         approved:
           type: boolean
         startTime:
@@ -967,6 +969,8 @@ components:
         visibility:
           type: string
           enum: [friends, public, community]
+        imageUrl:
+          type: string
         startTime:
           type: ["string", "null"]
         endTime:

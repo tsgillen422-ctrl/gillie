@@ -197,6 +197,8 @@ export interface Pin {
   /** @nullable */
   description?: string | null;
   visibility?: PinVisibility;
+  /** @nullable */
+  imageUrl?: string | null;
   approved?: boolean;
   /** @nullable */
   startTime?: string | null;
@@ -237,6 +239,7 @@ export interface PinInput {
   title: string;
   description?: string;
   visibility?: PinInputVisibility;
+  imageUrl?: string;
   /** @nullable */
   startTime?: string | null;
   /** @nullable */

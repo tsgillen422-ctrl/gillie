@@ -5,7 +5,7 @@ import Supercluster from "supercluster";
 import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, getGetPinsQueryKey } from "@workspace/api-client-react";
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
-import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X } from "lucide-react";
+import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X, ImagePlus } from "lucide-react";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
 import { AnimatePresence, motion } from "framer-motion";
+import { useUpload } from "@workspace/object-storage-web";
 import { boatSvgFor, FLAG_SVG } from "../boats";
 
 const LAKE_CENTER: [number, number] = [-85.37, 36.53]; // [lng, lat]
@@ -398,6 +399,25 @@ export function MapPage() {
   const [pinVisibility, setPinVisibility] = useState<"friends" | "public" | "community">("friends");
   const [pinStart, setPinStart] = useState("");
   const [pinEnd, setPinEnd] = useState("");
+  const [pinImageUrl, setPinImageUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadFile, isUploading } = useUpload();
+
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file.");
+      return;
+    }
+    const res = await uploadFile(file);
+    if (res?.objectPath) {
+      setPinImageUrl(res.objectPath);
+    } else {
+      toast.error("Photo upload failed. Try again.");
+    }
+  };
 
   const applyZoomScale = useCallback((zoom: number) => {
     const s = scaleForZoom(zoom);
@@ -787,6 +807,7 @@ export function MapPage() {
     setPinVisibility("friends");
     setPinStart("");
     setPinEnd("");
+    setPinImageUrl(null);
   };
 
   const submitPin = () => {
@@ -801,6 +822,7 @@ export function MapPage() {
           lat: pinDialog.lat,
           lng: pinDialog.lng,
           visibility: pinVisibility,
+          imageUrl: pinImageUrl || undefined,
           // Landmarks are permanent places, not time-bound events.
           startTime: !isLandmark && pinStart ? new Date(pinStart).toISOString() : null,
           endTime: !isLandmark && pinEnd ? new Date(pinEnd).toISOString() : null,
@@ -977,6 +999,42 @@ export function MapPage() {
             </div>
 
             <div className="grid gap-2">
+              <Label>Photo (Optional)</Label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoSelect}
+              />
+              {pinImageUrl ? (
+                <div className="relative overflow-hidden rounded-xl border border-border">
+                  <img src={`/api/storage${pinImageUrl}`} alt="Pin" className="h-40 w-full object-cover" />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="secondary"
+                    className="absolute right-2 top-2 h-7 w-7 rounded-full"
+                    onClick={() => setPinImageUrl(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={isUploading}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <ImagePlus className="mr-2 h-4 w-4" />
+                  {isUploading ? "Uploading…" : "Add a photo"}
+                </Button>
+              )}
+            </div>
+
+            <div className="grid gap-2">
               <Label>Who can see this?</Label>
               <Select value={pinVisibility} onValueChange={(v: "friends" | "public" | "community") => setPinVisibility(v)}>
                 <SelectTrigger>
@@ -1059,6 +1117,9 @@ function DetailCard({ selected, onClose }: { selected: NonNullable<Selected>; on
           </Button>
         </div>
         {pin.description && <p className="px-4 -mt-1 text-sm text-muted-foreground">{pin.description}</p>}
+        {pin.imageUrl && (
+          <img src={`/api/storage${pin.imageUrl}`} alt={pin.title} className="mt-3 w-full max-h-60 object-cover" />
+        )}
         {(pin.startTime || pin.endTime) && (
           <p className="px-4 mt-2 text-xs text-primary font-medium">{formatPinWindow(pin.startTime, pin.endTime)}</p>
         )}
