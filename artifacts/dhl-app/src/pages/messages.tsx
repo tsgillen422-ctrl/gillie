@@ -1,5 +1,6 @@
 import React from "react";
 import { useGetConversations, useSearchUsers, useCreateConversation } from "@workspace/api-client-react";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, MessageSquarePlus } from "lucide-react";
@@ -49,7 +50,7 @@ export function MessagesPage() {
             <h3 className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase">New Conversation</h3>
             {searchResults.map(user => (
               <button key={user.id} onClick={() => startConversation(user.id)} className="w-full text-left p-3 flex items-center gap-3 rounded-xl hover:bg-muted transition-colors">
-                <img src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${user.username}`} className="w-10 h-10 rounded-full" alt="" />
+                <UserAvatar name={user.displayName} username={user.username} avatarUrl={user.avatarUrl} className="w-10 h-10" />
                 <div>
                   <div className="font-medium text-sm">{user.displayName}</div>
                   <div className="text-xs text-muted-foreground">@{user.username}</div>
@@ -77,10 +78,7 @@ export function MessagesPage() {
                 return (
                   <Link key={conv.id} href={`/messages/${conv.id}`}>
                     <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer group">
-                      <div className="relative shrink-0">
-                        <img src={otherUser.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${otherUser.username}`} className="w-14 h-14 rounded-full object-cover bg-card shadow-sm border border-border/50" alt={otherUser.displayName} />
-                        {otherUser.isOnline && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-card rounded-full" />}
-                      </div>
+                      <UserAvatar name={otherUser.displayName} username={otherUser.username} avatarUrl={otherUser.avatarUrl} online={otherUser.isOnline} className="w-14 h-14 shrink-0" />
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-baseline mb-0.5">

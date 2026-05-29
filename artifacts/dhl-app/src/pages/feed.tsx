@@ -1,5 +1,6 @@
 import React from "react";
 import { useGetPosts, useGetPostsSummary, useLikePost } from "@workspace/api-client-react";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ function PostCard({ post, onLike }: { post: any, onLike: () => void }) {
   return (
     <Card className="border-border/60 hover-elevate overflow-hidden bg-card">
       <CardHeader className="flex flex-row items-start gap-3 p-4 pb-2">
-        <img src={post.user?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${post.user?.username}`} className="w-10 h-10 rounded-full object-cover border border-border" alt={post.user?.displayName} />
+        <UserAvatar name={post.user?.displayName || "User"} username={post.user?.username || ""} avatarUrl={post.user?.avatarUrl} className="w-10 h-10" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-sm truncate">{post.user?.displayName}</h3>

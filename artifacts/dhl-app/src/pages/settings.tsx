@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { useGetMe, useUpdateMe } from "@workspace/api-client-react";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -116,7 +117,7 @@ export function SettingsPage() {
           <CardContent className="space-y-4">
             <div className="flex justify-center mb-6">
               <div className="relative">
-                <img src={me?.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${me?.username}`} className="w-24 h-24 rounded-full object-cover border-4 border-card shadow-lg" alt="Avatar" />
+                <UserAvatar name={me?.displayName || "User"} username={me?.username || ""} avatarUrl={me?.avatarUrl} className="w-24 h-24" />
                 <Button size="sm" variant="secondary" className="absolute -bottom-2 -right-2 rounded-full shadow-md text-xs h-8">Change</Button>
               </div>
             </div>

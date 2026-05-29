@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FeedPage } from "./feed";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { UserAvatar } from "@/components/UserAvatar";
 
 // --- Leaflet setup ---
 
@@ -192,6 +193,19 @@ export function MapPage() {
         .leaflet-popup-content { margin: 8px 12px; }
       `}} />
       
+      {me && (
+        <Link
+          href="/profile/me"
+          className="absolute top-4 left-4 z-[1000] flex items-center gap-2 bg-card/90 backdrop-blur-md border border-border rounded-full pl-1.5 pr-3.5 py-1.5 shadow-lg hover:bg-card transition-colors no-underline text-inherit"
+        >
+          <UserAvatar name={me.displayName} username={me.username} avatarUrl={me.avatarUrl} online={me.isOnline} className="w-8 h-8" />
+          <div className="leading-tight">
+            <div className="text-xs font-bold">{me.displayName}</div>
+            <div className="text-[10px] text-muted-foreground">View profile</div>
+          </div>
+        </Link>
+      )}
+
       <MapContainer 
         center={center} 
         zoom={12} 
@@ -219,13 +233,13 @@ export function MapPage() {
             >
               <Popup>
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-3">
-                    <img src={friend.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${friend.username}`} className="w-10 h-10 rounded-full bg-muted border border-border" alt={friend.displayName} />
+                  <Link href={`/profile/${friend.userId}`} className="flex items-center gap-3 no-underline text-inherit">
+                    <UserAvatar name={friend.displayName} username={friend.username} avatarUrl={friend.avatarUrl} online={friend.isOnline} className="w-10 h-10" />
                     <div>
                       <h3 className="font-bold text-base leading-tight">{friend.displayName}</h3>
                       <p className="text-xs text-muted-foreground">{friend.boatName || 'No boat name'}</p>
                     </div>
-                  </div>
+                  </Link>
                   <div className="flex gap-2 mt-2">
                     <Button size="sm" variant="default" className="flex-1 text-xs h-8 bg-primary hover:bg-primary/90" asChild>
                       <a href={`https://www.google.com/maps/dir/?api=1&destination=${friend.lat},${friend.lng}`} target="_blank" rel="noreferrer">

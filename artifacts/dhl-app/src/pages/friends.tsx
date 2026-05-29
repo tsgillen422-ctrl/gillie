@@ -1,5 +1,6 @@
 import React from "react";
 import { useGetFriends, useGetFriendRequests, useSearchUsers, useFollowUser, useUnfollowUser, useAcceptFriendRequest } from "@workspace/api-client-react";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -131,12 +132,7 @@ function UserCard({ user, action }: { user: any, action?: React.ReactNode }) {
   return (
     <Card className="hover-elevate overflow-hidden border-border/50">
       <CardContent className="p-3 flex items-center gap-3">
-        <div className="relative">
-          <img src={user.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${user.username}`} className="w-12 h-12 rounded-full object-cover bg-muted" alt={user.displayName} />
-          {user.isOnline && (
-            <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-card rounded-full" />
-          )}
-        </div>
+        <UserAvatar name={user.displayName} username={user.username} avatarUrl={user.avatarUrl} online={user.isOnline} className="w-12 h-12" />
         <div className="flex-1 min-w-0">
           <Link href={`/profile/${user.id}`} className="font-semibold text-foreground truncate hover:underline block">
             {user.displayName}

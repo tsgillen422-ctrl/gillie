@@ -32,6 +32,7 @@ export const GetMeResponse = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -64,6 +65,7 @@ export const UpdateMeResponse = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -91,6 +93,7 @@ export const UpdateMyLocationResponse = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -117,6 +120,7 @@ export const SearchUsersResponseItem = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -144,6 +148,7 @@ export const GetUserResponse = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -166,6 +171,7 @@ export const GetFriendsResponseItem = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -212,6 +218,7 @@ export const GetFriendRequestsResponseItem = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -229,6 +236,7 @@ export const GetFriendRequestsResponseItem = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -263,6 +271,7 @@ export const FollowUserResponse = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -280,6 +289,7 @@ export const FollowUserResponse = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -321,6 +331,7 @@ export const AcceptFriendRequestResponse = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -338,6 +349,7 @@ export const AcceptFriendRequestResponse = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -364,6 +376,7 @@ export const GetConversationsResponseItem = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -385,6 +398,7 @@ export const GetConversationsResponseItem = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -431,6 +445,7 @@ export const GetConversationMessagesResponseItem = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -477,6 +492,7 @@ export const GetPinsResponseItem = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -528,6 +544,7 @@ export const GetPinResponse = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -574,6 +591,7 @@ export const LikePinResponse = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -612,6 +630,7 @@ export const GetPostsResponseItem = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -667,6 +686,7 @@ export const GetPostResponse = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -715,6 +735,7 @@ export const LikePostResponse = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -756,6 +777,7 @@ export const GetPostsSummaryResponse = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()
@@ -787,6 +809,7 @@ export const GetPostsSummaryResponse = zod.object({
   "lastSeen": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
   "createdAt": zod.string()

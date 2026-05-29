@@ -26,6 +26,7 @@ export interface User {
   boatName?: string | null;
   /** @nullable */
   boatColor?: string | null;
+  shareLocation?: boolean;
   followerCount?: number;
   followingCount?: number;
   createdAt: string;
