@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap, ZoomControl, useMapEvents } from "react-leaflet";
-import L from "leaflet";
+import React, { useEffect, useState, useRef, useCallback } from "react";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, getGetPinsQueryKey } from "@workspace/api-client-react";
-import { PinType, PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
+import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Navigation, MessageSquare, Plus, Crosshair, ChevronUp, Droplet } from "lucide-react";
+import { Navigation, MessageSquare, Plus, Crosshair, ChevronUp, Droplet, X } from "lucide-react";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -16,43 +16,22 @@ import { FeedPage } from "./feed";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
+import { AnimatePresence, motion } from "framer-motion";
 
-// --- Leaflet setup ---
-
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-});
-
-const createBoatIcon = (color: string) => {
-  const c = color || '#0284c7';
-  return L.divIcon({
-    className: 'boat-icon-container',
-    html: `<div style="position:relative;width:44px;height:44px;display:flex;align-items:center;justify-content:center;">
-             <div class="boat-ring" style="border-color:${c};"></div>
-             <div class="boat-ring boat-ring-delay" style="border-color:${c};"></div>
-             <div class="boat-marker animate-bob" style="background-color:${c};border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
-               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M20 12v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3"/><path d="M12 12v-6"/><path d="M12 6l5 6"/><path d="M12 6L7 12"/></svg>
-             </div>
-           </div>`,
-    iconSize: [44, 44],
-    iconAnchor: [22, 22],
-    popupAnchor: [0, -22]
-  });
-};
+const LAKE_CENTER: [number, number] = [-85.37, 36.53]; // [lng, lat]
+const BASE_ZOOM = 12;
+const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
 const getPinEmoji = (type: string) => {
   switch (type) {
-    case 'fishing_spot': return '🎣';
-    case 'cliff': return '🏔️';
-    case 'waterfall': return '💧';
-    case 'landmark': return '📍';
-    case 'hazard': return '⚠️';
-    case 'marina': return '⛵';
-    case 'campsite': return '🏕️';
-    default: return '📍';
+    case "fishing_spot": return "🎣";
+    case "cliff": return "🏔️";
+    case "waterfall": return "💧";
+    case "landmark": return "📍";
+    case "hazard": return "⚠️";
+    case "marina": return "⛵";
+    case "campsite": return "🏕️";
+    default: return "📍";
   }
 };
 
@@ -65,61 +44,108 @@ const formatPinWindow = (startTime?: string | null, endTime?: string | null) => 
   return `Until ${fmt(endTime!)}`;
 };
 
-const getPinColor = (type: string) => {
-  switch (type) {
-    case 'fishing_spot': return 'bg-blue-500';
-    case 'cliff': return 'bg-slate-500';
-    case 'waterfall': return 'bg-cyan-500';
-    case 'landmark': return 'bg-primary';
-    case 'hazard': return 'bg-destructive';
-    case 'marina': return 'bg-emerald-500';
-    case 'campsite': return 'bg-amber-600';
-    default: return 'bg-primary';
+const initialsOf = (name?: string | null) =>
+  (name || "?")
+    .split(" ")
+    .map((s) => s[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+// Compute zoom-driven scale factor for markers.
+const scaleForZoom = (zoom: number) => {
+  const s = 1 + (zoom - BASE_ZOOM) * 0.14;
+  return Math.max(0.55, Math.min(1.75, s));
+};
+
+type Selected =
+  | { kind: "friend"; data: any }
+  | { kind: "pin"; data: any }
+  | { kind: "me"; data: any }
+  | null;
+
+const el = (tag: string, className?: string) => {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  return node;
+};
+
+// --- Friend (Snap Map style) marker element ---
+function buildFriendEl(opts: {
+  color: string;
+  name: string;
+  avatarUrl?: string | null;
+  online?: boolean;
+  isMe?: boolean;
+}): { root: HTMLDivElement; scale: HTMLDivElement } {
+  const { color, name, avatarUrl, online, isMe } = opts;
+  const root = el("div", "snap-marker") as HTMLDivElement;
+  const scale = el("div", "snap-scale") as HTMLDivElement;
+
+  const ring1 = el("div", "snap-ring");
+  ring1.style.borderColor = color;
+  const ring2 = el("div", "snap-ring snap-ring-delay");
+  ring2.style.borderColor = color;
+
+  const bob = el("div", "snap-bob");
+  const photo = el("div", "snap-photo");
+  photo.style.borderColor = color;
+
+  if (avatarUrl) {
+    const img = el("img") as HTMLImageElement;
+    img.src = avatarUrl;
+    img.alt = "";
+    photo.appendChild(img);
+  } else {
+    const initials = el("div", "snap-initials");
+    initials.style.background = color;
+    initials.textContent = initialsOf(name);
+    photo.appendChild(initials);
   }
-};
+  if (online) photo.appendChild(el("div", "snap-online"));
 
-const createPinIcon = (type: string, index = 0) => {
-  const emoji = getPinEmoji(type);
-  const color = getPinColor(type);
-  const delay = (index * 0.15) % 3;
-  return L.divIcon({
-    className: 'custom-pin',
-    html: `<div class="pin-icon w-8 h-8 rounded-full flex items-center justify-center text-lg shadow-lg border-2 border-white ${color}" style="animation-delay:${delay}s">${emoji}</div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32]
-  });
-};
+  const tail = el("div", "snap-tail");
+  tail.style.borderTopColor = color;
 
-function LocationUpdater() {
-  const { data: me } = useGetMe();
-  const updateLocation = useUpdateMyLocation();
-  
-  useEffect(() => {
-    if (!me || !me.shareLocation) return;
-    
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        updateLocation.mutate({
-          data: {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude
-          }
-        });
-      });
-    }
-  }, [me?.shareLocation]);
+  bob.appendChild(photo);
+  bob.appendChild(tail);
 
-  return null;
+  const chip = el("div", "snap-chip");
+  chip.textContent = isMe ? "You" : name;
+
+  scale.appendChild(ring1);
+  scale.appendChild(ring2);
+  scale.appendChild(bob);
+  scale.appendChild(chip);
+  root.appendChild(scale);
+  return { root, scale };
 }
 
-function MapEvents({ onMapClick }: { onMapClick: (e: L.LeafletMouseEvent) => void }) {
-  useMapEvents({
-    click(e) {
-      onMapClick(e);
-    }
-  });
-  return null;
+// --- Lake pin (emoji pill) marker element ---
+function buildPinEl(opts: { emoji: string; title: string; delay: number }): {
+  root: HTMLDivElement;
+  scale: HTMLDivElement;
+} {
+  const { emoji, title, delay } = opts;
+  const root = el("div", "lake-pin") as HTMLDivElement;
+  const scale = el("div", "lake-pin-scale") as HTMLDivElement;
+
+  const pill = el("div", "pin-pill");
+  pill.style.animationDelay = `${delay}s`;
+
+  const emojiEl = el("span", "pin-pill-emoji");
+  emojiEl.textContent = emoji;
+  const label = el("span", "pin-pill-label");
+  label.textContent = title;
+
+  pill.appendChild(emojiEl);
+  pill.appendChild(label);
+
+  scale.appendChild(pill);
+  scale.appendChild(el("div", "pin-pill-stem"));
+  root.appendChild(scale);
+  return { root, scale };
 }
 
 export function MapPage() {
@@ -127,10 +153,23 @@ export function MapPage() {
   const { data: friends } = useGetFriendLocations();
   const { data: pins } = useGetPins({});
   const createPin = useCreatePin();
+  const updateLocation = useUpdateMyLocation();
   const queryClient = useQueryClient();
-  
-  const center: [number, number] = [36.53, -85.37];
-  
+
+  const mapContainer = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const mapLoaded = useRef(false);
+  const [styleReady, setStyleReady] = useState(false);
+
+  // Track scalable marker elements so we can resize on zoom.
+  const scaleEls = useRef<Set<HTMLDivElement>>(new Set());
+  const friendMarkers = useRef<maplibregl.Marker[]>([]);
+  const pinMarkers = useRef<maplibregl.Marker[]>([]);
+  const meMarker = useRef<maplibregl.Marker | null>(null);
+
+  const [selected, setSelected] = useState<Selected>(null);
+  const [mapError, setMapError] = useState(false);
+
   const [pinDialog, setPinDialog] = useState<{ open: boolean; lat?: number; lng?: number }>({ open: false });
   const [pinTitle, setPinTitle] = useState("");
   const [pinDesc, setPinDesc] = useState("");
@@ -138,18 +177,249 @@ export function MapPage() {
   const [pinVisibility, setPinVisibility] = useState<"friends" | "public" | "community">("friends");
   const [pinStart, setPinStart] = useState("");
   const [pinEnd, setPinEnd] = useState("");
-  
-  const handleMapClick = (e: L.LeafletMouseEvent) => {
-    // We could drop a temporary pin here, but let's just open the dialog for simplicity
-    // or we could ignore map clicks and only use the FAB
+
+  const applyZoomScale = useCallback((zoom: number) => {
+    const s = scaleForZoom(zoom);
+    scaleEls.current.forEach((el) => {
+      el.style.transform = `scale(${s})`;
+    });
+  }, []);
+
+  // --- Initialize the map once ---
+  useEffect(() => {
+    if (mapRef.current || !mapContainer.current) return;
+
+    let map: maplibregl.Map;
+    try {
+      map = new maplibregl.Map({
+        container: mapContainer.current,
+        style: MAP_STYLE,
+        center: LAKE_CENTER,
+        zoom: BASE_ZOOM,
+        pitch: 55,
+        bearing: -18,
+        maxPitch: 80,
+        attributionControl: { compact: true },
+      });
+    } catch (e) {
+      setMapError(true);
+      return;
+    }
+    mapRef.current = map;
+
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+
+    map.on("error", (e) => {
+      // Surface a fatal init/style failure; ignore transient tile errors.
+      const msg = (e as any)?.error?.message || "";
+      if (/webgl|context|style/i.test(msg)) setMapError(true);
+    });
+
+    let waterRaf = 0;
+
+    map.on("load", () => {
+      mapLoaded.current = true;
+
+      // --- 3D terrain (free terrarium DEM, no API key) ---
+      try {
+        if (!map.getSource("terrain-dem")) {
+          map.addSource("terrain-dem", {
+            type: "raster-dem",
+            tiles: ["https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png"],
+            encoding: "terrarium",
+            tileSize: 256,
+            maxzoom: 14,
+          });
+        }
+        map.setTerrain({ source: "terrain-dem", exaggeration: 1.4 });
+      } catch (e) {
+        // terrain unsupported — continue with flat map
+      }
+
+      // --- Sky / atmosphere ---
+      try {
+        map.setSky({
+          "sky-color": "#8cc3ff",
+          "sky-horizon-blend": 0.6,
+          "horizon-color": "#d8ecff",
+          "horizon-fog-blend": 0.6,
+          "fog-color": "#eaf4ff",
+          "fog-ground-blend": 0.4,
+          "atmosphere-blend": 0.8,
+        });
+      } catch (e) {
+        // sky unsupported — ignore
+      }
+
+      // --- Animated shimmering water ---
+      const waterLayers = map
+        .getStyle()
+        .layers?.filter((l) => /water/i.test(l.id) && l.type === "fill")
+        .map((l) => l.id) ?? [];
+
+      const animateWater = () => {
+        const t = performance.now() / 1000;
+        // gentle hue/brightness cycle
+        const hue = 205 + Math.sin(t * 0.5) * 12;
+        const light = 52 + Math.sin(t * 0.9 + 1) * 6;
+        const sat = 70 + Math.sin(t * 0.7) * 8;
+        const color = `hsl(${hue.toFixed(1)}, ${sat.toFixed(1)}%, ${light.toFixed(1)}%)`;
+        waterLayers.forEach((id) => {
+          if (map.getLayer(id)) {
+            try {
+              map.setPaintProperty(id, "fill-color", color);
+            } catch {}
+          }
+        });
+        waterRaf = requestAnimationFrame(animateWater);
+      };
+      if (waterLayers.length) animateWater();
+
+      setStyleReady(true);
+      applyZoomScale(map.getZoom());
+    });
+
+    map.on("zoom", () => applyZoomScale(map.getZoom()));
+
+    return () => {
+      cancelAnimationFrame(waterRaf);
+      map.remove();
+      mapRef.current = null;
+      mapLoaded.current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // --- Share my location ---
+  useEffect(() => {
+    if (!me || !me.shareLocation) return;
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        updateLocation.mutate({
+          data: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+        });
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me?.shareLocation]);
+
+  // --- Render friend markers ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+
+    friendMarkers.current.forEach((m) => {
+      const el = m.getElement().querySelector(".snap-scale") as HTMLDivElement | null;
+      if (el) scaleEls.current.delete(el);
+      m.remove();
+    });
+    friendMarkers.current = [];
+
+    friends?.forEach((friend) => {
+      if (friend.lat == null || friend.lng == null) return;
+      const color = friend.boatColor || "#0ea5e9";
+      const { root, scale } = buildFriendEl({
+        color,
+        name: friend.displayName || friend.username || "Friend",
+        avatarUrl: friend.avatarUrl,
+        online: friend.isOnline,
+      });
+      root.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        setSelected({ kind: "friend", data: friend });
+      });
+      const marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
+        .setLngLat([friend.lng, friend.lat])
+        .addTo(map);
+      friendMarkers.current.push(marker);
+      scaleEls.current.add(scale);
+    });
+
+    applyZoomScale(map.getZoom());
+  }, [friends, styleReady, applyZoomScale]);
+
+  // --- Render pin markers ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+
+    pinMarkers.current.forEach((m) => {
+      const el = m.getElement().querySelector(".lake-pin-scale") as HTMLDivElement | null;
+      if (el) scaleEls.current.delete(el);
+      m.remove();
+    });
+    pinMarkers.current = [];
+
+    pins?.forEach((pin, i) => {
+      const { root, scale } = buildPinEl({
+        emoji: getPinEmoji(pin.type),
+        title: pin.title,
+        delay: (i * 0.15) % 3,
+      });
+      root.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        setSelected({ kind: "pin", data: pin });
+      });
+      const marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
+        .setLngLat([pin.lng, pin.lat])
+        .addTo(map);
+      pinMarkers.current.push(marker);
+      scaleEls.current.add(scale);
+    });
+
+    applyZoomScale(map.getZoom());
+  }, [pins, styleReady, applyZoomScale]);
+
+  // --- Render my own marker ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+
+    if (meMarker.current) {
+      const el = meMarker.current.getElement().querySelector(".snap-scale") as HTMLDivElement | null;
+      if (el) scaleEls.current.delete(el);
+      meMarker.current.remove();
+      meMarker.current = null;
+    }
+
+    if (me?.shareLocation && me?.currentLat != null && me?.currentLng != null) {
+      const color = me.boatColor || "#0284c7";
+      const { root, scale } = buildFriendEl({
+        color,
+        name: me.displayName || "You",
+        avatarUrl: me.avatarUrl,
+        online: me.isOnline,
+        isMe: true,
+      });
+      root.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        setSelected({ kind: "me", data: me });
+      });
+      const marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
+        .setLngLat([me.currentLng, me.currentLat])
+        .addTo(map);
+      meMarker.current = marker;
+      scaleEls.current.add(scale);
+      applyZoomScale(map.getZoom());
+    }
+  }, [me, styleReady, applyZoomScale]);
+
+  const flyToMe = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (me?.currentLat != null && me?.currentLng != null) {
+      map.flyTo({ center: [me.currentLng, me.currentLat], zoom: 14, pitch: 60, essential: true });
+    } else if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 14, pitch: 60, essential: true });
+      });
+    }
   };
 
   const handleFabClick = () => {
-    // Normally we'd use current location, for now use center or current if available
-    let lat = center[0];
-    let lng = center[1];
-    
-    if (me?.currentLat && me?.currentLng) {
+    let lat = LAKE_CENTER[1];
+    let lng = LAKE_CENTER[0];
+    if (me?.currentLat != null && me?.currentLng != null) {
       lat = me.currentLat;
       lng = me.currentLng;
     } else if (navigator.geolocation) {
@@ -158,125 +428,47 @@ export function MapPage() {
       });
       return;
     }
-    
     setPinDialog({ open: true, lat, lng });
   };
 
   const submitPin = () => {
-    if (!pinDialog.lat || !pinDialog.lng) return;
-    
-    createPin.mutate({
-      data: {
-        title: pinTitle || "New Spot",
-        description: pinDesc,
-        type: pinType,
-        lat: pinDialog.lat,
-        lng: pinDialog.lng,
-        visibility: pinVisibility,
-        startTime: pinStart ? new Date(pinStart).toISOString() : null,
-        endTime: pinEnd ? new Date(pinEnd).toISOString() : null,
+    if (pinDialog.lat == null || pinDialog.lng == null) return;
+    createPin.mutate(
+      {
+        data: {
+          title: pinTitle || "New Spot",
+          description: pinDesc,
+          type: pinType,
+          lat: pinDialog.lat,
+          lng: pinDialog.lng,
+          visibility: pinVisibility,
+          startTime: pinStart ? new Date(pinStart).toISOString() : null,
+          endTime: pinEnd ? new Date(pinEnd).toISOString() : null,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success(
+            pinVisibility === "community"
+              ? "Community pin submitted for approval."
+              : "Pin dropped successfully!"
+          );
+          setPinDialog({ open: false });
+          setPinTitle("");
+          setPinDesc("");
+          setPinVisibility("friends");
+          setPinStart("");
+          setPinEnd("");
+          queryClient.invalidateQueries({ queryKey: getGetPinsQueryKey({}) });
+        },
       }
-    }, {
-      onSuccess: () => {
-        toast.success(
-          pinVisibility === "community"
-            ? "Community pin submitted for approval."
-            : "Pin dropped successfully!"
-        );
-        setPinDialog({ open: false });
-        setPinTitle("");
-        setPinDesc("");
-        setPinVisibility("friends");
-        setPinStart("");
-        setPinEnd("");
-        queryClient.invalidateQueries({ queryKey: getGetPinsQueryKey({}) });
-      }
-    });
+    );
   };
 
   return (
     <div className="h-full w-full relative bg-blue-50">
-      <style dangerouslySetInnerHTML={{__html: `
-        .leaflet-container { height: 100%; width: 100%; }
+      <style dangerouslySetInnerHTML={{ __html: MAP_CSS }} />
 
-        /* ── Water shimmer on the tile layer ── */
-        @keyframes waterShimmer {
-          0%   { filter: saturate(1)    brightness(1)    hue-rotate(0deg); }
-          25%  { filter: saturate(1.10) brightness(1.03) hue-rotate(4deg); }
-          50%  { filter: saturate(1.15) brightness(0.97) hue-rotate(-2deg); }
-          75%  { filter: saturate(1.08) brightness(1.02) hue-rotate(6deg); }
-          100% { filter: saturate(1)    brightness(1)    hue-rotate(0deg); }
-        }
-        .leaflet-tile-pane {
-          animation: waterShimmer 12s ease-in-out infinite;
-        }
-
-        /* ── Boat marker shape ── */
-        .boat-marker {
-          width: 32px;
-          height: 32px;
-          border-radius: 50% 50% 10% 50%;
-          transform: rotate(-45deg);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          z-index: 2;
-        }
-        .boat-marker svg { transform: rotate(45deg); }
-
-        /* ── Boat bob ── */
-        @keyframes bob {
-          0%   { transform: rotate(-45deg) translate(0,0); }
-          25%  { transform: rotate(-48deg) translate(0,-3px); }
-          50%  { transform: rotate(-45deg) translate(0,-5px); }
-          75%  { transform: rotate(-42deg) translate(0,-2px); }
-          100% { transform: rotate(-45deg) translate(0,0); }
-        }
-        .animate-bob { animation: bob 3.5s ease-in-out infinite; }
-
-        /* ── Boat ripple rings ── */
-        @keyframes boatRipple {
-          0%   { transform: scale(0.6); opacity: 0.7; }
-          100% { transform: scale(2.2); opacity: 0; }
-        }
-        .boat-ring {
-          position: absolute;
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          border: 2px solid;
-          animation: boatRipple 2.4s ease-out infinite;
-          pointer-events: none;
-        }
-        .boat-ring-delay { animation-delay: 1.2s; }
-
-        /* ── Pin drop + float ── */
-        @keyframes pinDrop {
-          0%   { transform: translateY(-24px) scale(0.4); opacity: 0; }
-          65%  { transform: translateY(5px)   scale(1.15); opacity: 1; }
-          80%  { transform: translateY(-3px)  scale(0.95); }
-          100% { transform: translateY(0)     scale(1); opacity: 1; }
-        }
-        @keyframes pinFloat {
-          0%, 100% { transform: translateY(0px)  scale(1); }
-          50%       { transform: translateY(-6px) scale(1.05); }
-        }
-        .pin-icon {
-          animation:
-            pinDrop  0.55s cubic-bezier(0.22,1,0.36,1) both,
-            pinFloat 4s ease-in-out 0.6s infinite;
-          cursor: pointer;
-          transition: filter 0.2s;
-        }
-        .pin-icon:hover { filter: brightness(1.2) drop-shadow(0 0 6px rgba(255,255,255,0.8)); }
-
-        /* ── Leaflet popup style ── */
-        .leaflet-popup-content-wrapper { border-radius: 14px; padding: 0; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
-        .leaflet-popup-content { margin: 10px 14px; }
-        .leaflet-popup-tip { box-shadow: none; }
-      `}} />
-      
       {me && (
         <Link
           href="/profile/me"
@@ -290,116 +482,49 @@ export function MapPage() {
         </Link>
       )}
 
-      <MapContainer 
-        center={center} 
-        zoom={12} 
-        zoomControl={false}
-        className="z-0"
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          className="map-tiles"
-        />
-        <ZoomControl position="topright" />
-        
-        <LocationUpdater />
-        <MapEvents onMapClick={handleMapClick} />
-        
-        {/* Friends */}
-        {friends?.map(friend => {
-          if (!friend.lat || !friend.lng) return null;
-          return (
-            <Marker 
-              key={friend.userId} 
-              position={[friend.lat, friend.lng]}
-              icon={createBoatIcon(friend.boatColor || '#0ea5e9')}
-            >
-              <Popup>
-                <div className="flex flex-col gap-2">
-                  <Link href={`/profile/${friend.userId}`} className="flex items-center gap-3 no-underline text-inherit">
-                    <UserAvatar name={friend.displayName} username={friend.username} avatarUrl={friend.avatarUrl} online={friend.isOnline} className="w-10 h-10" />
-                    <div>
-                      <h3 className="font-bold text-base leading-tight">{friend.displayName}</h3>
-                      <p className="text-xs text-muted-foreground">{friend.boatName || 'No boat name'}</p>
-                    </div>
-                  </Link>
-                  <div className="flex gap-2 mt-2">
-                    <Button size="sm" variant="default" className="flex-1 text-xs h-8 bg-primary hover:bg-primary/90" asChild>
-                      <a href={`https://www.google.com/maps/dir/?api=1&destination=${friend.lat},${friend.lng}`} target="_blank" rel="noreferrer">
-                        <Navigation className="w-3 h-3 mr-1" /> Nav
-                      </a>
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1 text-xs h-8" asChild>
-                      <Link href={`/messages?user=${friend.userId}`}>
-                        <MessageSquare className="w-3 h-3 mr-1" /> Chat
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              </Popup>
-            </Marker>
-          );
-        })}
-        
-        {/* Pins */}
-        {pins?.map((pin, i) => (
-          <Marker 
-            key={pin.id} 
-            position={[pin.lat, pin.lng]}
-            icon={createPinIcon(pin.type, i)}
-          >
-            <Popup>
-              <div className="flex flex-col min-w-[150px]">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xl">{getPinEmoji(pin.type)}</span>
-                  <h3 className="font-bold">{pin.title}</h3>
-                </div>
-                {pin.description && <p className="text-sm text-muted-foreground">{pin.description}</p>}
-                {(pin.startTime || pin.endTime) && (
-                  <p className="text-xs text-primary font-medium mt-1">
-                    {formatPinWindow(pin.startTime, pin.endTime)}
-                  </p>
-                )}
-                <div className="flex items-center justify-between mt-3">
-                  <p className="text-[10px] text-muted-foreground uppercase">By {pin.user?.displayName || 'Unknown'}</p>
-                  <Button size="icon" variant="ghost" className="h-6 w-6 text-primary" asChild>
-                    <a href={`https://www.google.com/maps/dir/?api=1&destination=${pin.lat},${pin.lng}`} target="_blank" rel="noreferrer">
-                      <Navigation className="w-3 h-3" />
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
-        
-        {/* Me */}
-        {me?.shareLocation && me?.currentLat && me?.currentLng && (
-          <Marker
-            position={[me.currentLat, me.currentLng]}
-            icon={createBoatIcon(me.boatColor || '#0284c7')}
-          >
-            <Popup>
-              <div className="font-bold text-center">You are here</div>
-            </Popup>
-          </Marker>
-        )}
-      </MapContainer>
-      
+      <div ref={mapContainer} className="absolute inset-0 z-0" />
+
+      {mapError && (
+        <div className="absolute inset-0 z-[1] flex items-center justify-center bg-blue-50 p-6 text-center">
+          <div className="max-w-xs">
+            <Droplet className="w-10 h-10 text-primary mx-auto mb-3" />
+            <p className="font-semibold">Map needs WebGL</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Your browser couldn't start 3D graphics. Try enabling hardware acceleration or a different browser.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Floating Action Button for Pins */}
       <div className="absolute top-[80px] right-4 z-[400] flex flex-col gap-3">
         <Button size="icon" className="h-12 w-12 rounded-full shadow-lg bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleFabClick}>
           <Plus className="h-6 w-6" />
         </Button>
-        <Button size="icon" className="h-12 w-12 rounded-full shadow-lg bg-card text-foreground hover:bg-muted" onClick={() => {
-            if (me?.currentLat && me?.currentLng) {
-               // A real app would pan to location here, but useMap isn't accessible outside MapContainer easily without context sharing
-            }
-          }}>
+        <Button
+          size="icon"
+          className="h-12 w-12 rounded-full shadow-lg bg-card text-foreground hover:bg-muted"
+          onClick={flyToMe}
+        >
           <Crosshair className="h-5 w-5" />
         </Button>
       </div>
+
+      {/* Slide-up detail card */}
+      <AnimatePresence>
+        {selected && (
+          <motion.div
+            key="detail-card"
+            initial={{ y: "110%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "110%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 320 }}
+            className="absolute bottom-0 left-0 right-0 z-[600] px-3 pb-3"
+          >
+            <DetailCard selected={selected} onClose={() => setSelected(null)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Floating Bottom Drawer / Panel */}
       <Sheet>
@@ -420,7 +545,6 @@ export function MapPage() {
             <SheetDescription className="sr-only">Community activity on the lake</SheetDescription>
           </SheetHeader>
           <div className="flex-1 overflow-y-auto w-full relative">
-            {/* Render the feed page directly inside the sheet for immediate access */}
             <div className="absolute inset-0">
               <FeedPage />
             </div>
@@ -435,7 +559,7 @@ export function MapPage() {
             <DialogTitle>Drop a Pin</DialogTitle>
             <DialogDescription>Mark a spot on the lake for others to see.</DialogDescription>
           </DialogHeader>
-          
+
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label>Category</Label>
@@ -454,26 +578,15 @@ export function MapPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="grid gap-2">
               <Label htmlFor="title">Title</Label>
-              <Input 
-                id="title" 
-                placeholder="e.g. Great Bass Spot" 
-                value={pinTitle}
-                onChange={e => setPinTitle(e.target.value)}
-              />
+              <Input id="title" placeholder="e.g. Great Bass Spot" value={pinTitle} onChange={(e) => setPinTitle(e.target.value)} />
             </div>
-            
+
             <div className="grid gap-2">
               <Label htmlFor="desc">Description (Optional)</Label>
-              <Textarea 
-                id="desc" 
-                placeholder="Any tips or warnings?" 
-                value={pinDesc}
-                onChange={e => setPinDesc(e.target.value)}
-                className="resize-none"
-              />
+              <Textarea id="desc" placeholder="Any tips or warnings?" value={pinDesc} onChange={(e) => setPinDesc(e.target.value)} className="resize-none" />
             </div>
 
             <div className="grid gap-2">
@@ -502,25 +615,15 @@ export function MapPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-2">
                 <Label htmlFor="start">Starts (Optional)</Label>
-                <Input
-                  id="start"
-                  type="datetime-local"
-                  value={pinStart}
-                  onChange={e => setPinStart(e.target.value)}
-                />
+                <Input id="start" type="datetime-local" value={pinStart} onChange={(e) => setPinStart(e.target.value)} />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="end">Ends (Optional)</Label>
-                <Input
-                  id="end"
-                  type="datetime-local"
-                  value={pinEnd}
-                  onChange={e => setPinEnd(e.target.value)}
-                />
+                <Input id="end" type="datetime-local" value={pinEnd} onChange={(e) => setPinEnd(e.target.value)} />
               </div>
             </div>
           </div>
-          
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setPinDialog({ open: false })}>Cancel</Button>
             <Button onClick={submitPin} disabled={!pinTitle || createPin.isPending}>
@@ -532,3 +635,224 @@ export function MapPage() {
     </div>
   );
 }
+
+// --- Slide-up social-style detail card ---
+function DetailCard({ selected, onClose }: { selected: NonNullable<Selected>; onClose: () => void }) {
+  if (selected.kind === "pin") {
+    const pin = selected.data;
+    return (
+      <div className="mx-auto w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
+        <div className="flex items-start gap-3 p-4">
+          <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-2xl shrink-0">
+            {getPinEmoji(pin.type)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-lg leading-tight truncate">{pin.title}</h3>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+              By {pin.user?.displayName || "Unknown"}
+            </p>
+          </div>
+          <Button size="icon" variant="ghost" className="h-8 w-8 -mr-1 -mt-1" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        {pin.description && <p className="px-4 -mt-1 text-sm text-muted-foreground">{pin.description}</p>}
+        {(pin.startTime || pin.endTime) && (
+          <p className="px-4 mt-2 text-xs text-primary font-medium">{formatPinWindow(pin.startTime, pin.endTime)}</p>
+        )}
+        <div className="p-4 pt-3">
+          <Button className="w-full bg-primary hover:bg-primary/90" asChild>
+            <a href={`https://www.google.com/maps/dir/?api=1&destination=${pin.lat},${pin.lng}`} target="_blank" rel="noreferrer">
+              <Navigation className="w-4 h-4 mr-2" /> Navigate here
+            </a>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const u = selected.data;
+  const isMe = selected.kind === "me";
+  const userId = isMe ? "me" : u.userId;
+  const lat = isMe ? u.currentLat : u.lat;
+  const lng = isMe ? u.currentLng : u.lng;
+
+  return (
+    <div className="mx-auto w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
+      <div className="flex items-center gap-3 p-4">
+        <Link href={`/profile/${userId}`} className="no-underline text-inherit">
+          <UserAvatar name={u.displayName} username={u.username} avatarUrl={u.avatarUrl} online={u.isOnline} className="w-14 h-14" />
+        </Link>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-lg leading-tight truncate">
+            {isMe ? "You are here" : u.displayName}
+          </h3>
+          <p className="text-xs text-muted-foreground truncate">
+            {u.boatName ? `🚤 ${u.boatName}` : u.isOnline ? "Online now" : "On the lake"}
+          </p>
+        </div>
+        <Button size="icon" variant="ghost" className="h-8 w-8 -mr-1" onClick={onClose}>
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+      <div className="flex gap-2 p-4 pt-0">
+        <Button className="flex-1 bg-primary hover:bg-primary/90" asChild>
+          <a href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`} target="_blank" rel="noreferrer">
+            <Navigation className="w-4 h-4 mr-2" /> Nav
+          </a>
+        </Button>
+        {!isMe && (
+          <Button variant="outline" className="flex-1" asChild>
+            <Link href={`/messages?user=${u.userId}`}>
+              <MessageSquare className="w-4 h-4 mr-2" /> Chat
+            </Link>
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const MAP_CSS = `
+  .maplibregl-map { height: 100%; width: 100%; font-family: inherit; }
+  .maplibregl-ctrl-top-right { margin-top: 140px; }
+
+  /* ================= Friend (Snap Map) marker ================= */
+  .snap-marker { cursor: pointer; will-change: transform; }
+  .snap-scale {
+    position: relative;
+    width: 56px;
+    height: 78px;
+    transform-origin: bottom center;
+    transition: transform 0.18s ease-out;
+  }
+  .snap-bob {
+    position: absolute;
+    left: 50%;
+    top: 4px;
+    transform: translateX(-50%);
+    animation: snapBob 3.4s ease-in-out infinite;
+  }
+  @keyframes snapBob {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(-5px); }
+  }
+  .snap-photo {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 3px solid;
+    background: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.32);
+    overflow: hidden;
+  }
+  .snap-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .snap-initials {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: 16px;
+  }
+  .snap-online {
+    position: absolute;
+    bottom: 1px; right: 1px;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: #22c55e;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
+  }
+  .snap-tail {
+    position: absolute;
+    left: 50%;
+    bottom: -7px;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 10px solid;
+    filter: drop-shadow(0 3px 2px rgba(0,0,0,0.22));
+  }
+  .snap-chip {
+    position: absolute;
+    left: 50%;
+    bottom: -4px;
+    transform: translateX(-50%);
+    background: rgba(255,255,255,0.96);
+    color: #0f172a;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    pointer-events: none;
+  }
+  /* ripple rings */
+  .snap-ring {
+    position: absolute;
+    left: 50%;
+    top: 27px;
+    width: 46px; height: 46px;
+    margin-left: -23px;
+    margin-top: -23px;
+    border-radius: 50%;
+    border: 2px solid;
+    animation: snapRipple 2.6s ease-out infinite;
+    pointer-events: none;
+  }
+  .snap-ring-delay { animation-delay: 1.3s; }
+  @keyframes snapRipple {
+    0% { transform: scale(0.5); opacity: 0.65; }
+    100% { transform: scale(2.4); opacity: 0; }
+  }
+
+  /* ================= Lake pin (emoji pill) ================= */
+  .lake-pin { cursor: pointer; will-change: transform; }
+  .lake-pin-scale {
+    position: relative;
+    transform-origin: bottom center;
+    transition: transform 0.18s ease-out;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .pin-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 160px;
+    padding: 5px 11px 5px 7px;
+    background: rgba(255,255,255,0.97);
+    border-radius: 999px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.28);
+    border: 1px solid rgba(0,0,0,0.06);
+    animation: pinFloat 4s ease-in-out infinite;
+  }
+  .pin-pill-emoji { font-size: 16px; line-height: 1; }
+  .pin-pill-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pin-pill-stem {
+    width: 2px;
+    height: 9px;
+    background: rgba(255,255,255,0.97);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  @keyframes pinFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+
+  /* ================= MapLibre controls polish ================= */
+  .maplibregl-ctrl-group {
+    border-radius: 12px !important;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18) !important;
+  }
+`;
