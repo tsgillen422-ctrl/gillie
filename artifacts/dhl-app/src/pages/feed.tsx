@@ -51,6 +51,7 @@ export function FeedPage() {
   const [newImageUrl, setNewImageUrl] = React.useState<string | null>(null);
   const [newVideoUrl, setNewVideoUrl] = React.useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const videoInputRef = React.useRef<HTMLInputElement>(null);
   const { uploadFile, isUploading } = useUpload();
 
   const refreshPosts = () => {
@@ -79,32 +80,48 @@ export function FeedPage() {
     setNewImageUrl(null);
     setNewVideoUrl(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (videoInputRef.current) videoInputRef.current.value = "";
   };
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const isImage = file.type.startsWith("image/");
-    const isVideo = file.type.startsWith("video/");
-    if (!isImage && !isVideo) {
-      toast.error("Please choose an image or video file.");
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file.");
       return;
     }
     try {
       const res = await uploadFile(file);
       if (res?.objectPath) {
-        if (isVideo) {
-          setNewVideoUrl(res.objectPath);
-          setNewImageUrl(null);
-        } else {
-          setNewImageUrl(res.objectPath);
-          setNewVideoUrl(null);
-        }
+        setNewImageUrl(res.objectPath);
+        setNewVideoUrl(null);
+        if (videoInputRef.current) videoInputRef.current.value = "";
       } else {
-        toast.error("Couldn't upload that file.");
+        toast.error("Couldn't upload that photo.");
       }
     } catch {
-      toast.error("Couldn't upload that file.");
+      toast.error("Couldn't upload that photo.");
+    }
+  };
+
+  const handleVideoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("video/")) {
+      toast.error("Please choose a video file.");
+      return;
+    }
+    try {
+      const res = await uploadFile(file);
+      if (res?.objectPath) {
+        setNewVideoUrl(res.objectPath);
+        setNewImageUrl(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      } else {
+        toast.error("Couldn't upload that video.");
+      }
+    } catch {
+      toast.error("Couldn't upload that video.");
     }
   };
 
@@ -257,7 +274,8 @@ export function FeedPage() {
 
             <div className="space-y-1.5">
               <Label>Photo or video</Label>
-              <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handlePhotoSelect} />
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+              <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} />
               {newImageUrl ? (
                 <div className="relative rounded-lg overflow-hidden bg-muted aspect-video">
                   <img src={`/api/storage${newImageUrl}`} alt="Selected" className="object-cover w-full h-full" />
@@ -279,16 +297,22 @@ export function FeedPage() {
                     variant="secondary"
                     size="icon"
                     className="absolute top-2 right-2 h-7 w-7"
-                    onClick={() => { setNewVideoUrl(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                    onClick={() => { setNewVideoUrl(null); if (videoInputRef.current) videoInputRef.current.value = ""; }}
                   >
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
               ) : (
-                <Button type="button" variant="outline" className="w-full" disabled={isUploading} onClick={() => fileInputRef.current?.click()}>
-                  <ImagePlus className="w-4 h-4 mr-2" />
-                  {isUploading ? "Uploading..." : "Add a photo or video"}
-                </Button>
+                <div className="flex gap-2">
+                  <Button type="button" variant="outline" className="flex-1" disabled={isUploading} onClick={() => fileInputRef.current?.click()}>
+                    <ImagePlus className="w-4 h-4 mr-2" />
+                    {isUploading ? "Uploading..." : "Add a photo"}
+                  </Button>
+                  <Button type="button" variant="outline" className="flex-1" disabled={isUploading} onClick={() => videoInputRef.current?.click()}>
+                    <Video className="w-4 h-4 mr-2" />
+                    {isUploading ? "Uploading..." : "Add a video"}
+                  </Button>
+                </div>
               )}
             </div>
           </div>
