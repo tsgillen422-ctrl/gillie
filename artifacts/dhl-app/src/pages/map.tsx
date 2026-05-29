@@ -27,14 +27,19 @@ L.Icon.Default.mergeOptions({
 });
 
 const createBoatIcon = (color: string) => {
+  const c = color || '#0284c7';
   return L.divIcon({
     className: 'boat-icon-container',
-    html: `<div class="boat-marker animate-bob" style="background-color: ${color || '#0284c7'}; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M20 12v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3"/><path d="M12 12v-6"/><path d="M12 6l5 6"/><path d="M12 6L7 12"/></svg>
+    html: `<div style="position:relative;width:44px;height:44px;display:flex;align-items:center;justify-content:center;">
+             <div class="boat-ring" style="border-color:${c};"></div>
+             <div class="boat-ring boat-ring-delay" style="border-color:${c};"></div>
+             <div class="boat-marker animate-bob" style="background-color:${c};border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M20 12v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3"/><path d="M12 12v-6"/><path d="M12 6l5 6"/><path d="M12 6L7 12"/></svg>
+             </div>
            </div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -16]
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+    popupAnchor: [0, -22]
   });
 };
 
@@ -73,15 +78,16 @@ const getPinColor = (type: string) => {
   }
 };
 
-const createPinIcon = (type: string) => {
+const createPinIcon = (type: string, index = 0) => {
   const emoji = getPinEmoji(type);
   const color = getPinColor(type);
+  const delay = (index * 0.15) % 3;
   return L.divIcon({
     className: 'custom-pin',
-    html: `<div class="w-8 h-8 rounded-full flex items-center justify-center text-lg shadow-md border-2 border-white ${color}">${emoji}</div>`,
+    html: `<div class="pin-icon w-8 h-8 rounded-full flex items-center justify-center text-lg shadow-lg border-2 border-white ${color}" style="animation-delay:${delay}s">${emoji}</div>`,
     iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -16]
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32]
   });
 };
 
@@ -192,6 +198,20 @@ export function MapPage() {
     <div className="h-full w-full relative bg-blue-50">
       <style dangerouslySetInnerHTML={{__html: `
         .leaflet-container { height: 100%; width: 100%; }
+
+        /* ── Water shimmer on the tile layer ── */
+        @keyframes waterShimmer {
+          0%   { filter: saturate(1)    brightness(1)    hue-rotate(0deg); }
+          25%  { filter: saturate(1.10) brightness(1.03) hue-rotate(4deg); }
+          50%  { filter: saturate(1.15) brightness(0.97) hue-rotate(-2deg); }
+          75%  { filter: saturate(1.08) brightness(1.02) hue-rotate(6deg); }
+          100% { filter: saturate(1)    brightness(1)    hue-rotate(0deg); }
+        }
+        .leaflet-tile-pane {
+          animation: waterShimmer 12s ease-in-out infinite;
+        }
+
+        /* ── Boat marker shape ── */
         .boat-marker {
           width: 32px;
           height: 32px;
@@ -200,19 +220,61 @@ export function MapPage() {
           display: flex;
           align-items: center;
           justify-content: center;
+          position: relative;
+          z-index: 2;
         }
-        .boat-marker svg {
-          transform: rotate(45deg);
-        }
+        .boat-marker svg { transform: rotate(45deg); }
+
+        /* ── Boat bob ── */
         @keyframes bob {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-4px); }
+          0%   { transform: rotate(-45deg) translate(0,0); }
+          25%  { transform: rotate(-48deg) translate(0,-3px); }
+          50%  { transform: rotate(-45deg) translate(0,-5px); }
+          75%  { transform: rotate(-42deg) translate(0,-2px); }
+          100% { transform: rotate(-45deg) translate(0,0); }
         }
-        .animate-bob {
-          animation: bob 3s ease-in-out infinite;
+        .animate-bob { animation: bob 3.5s ease-in-out infinite; }
+
+        /* ── Boat ripple rings ── */
+        @keyframes boatRipple {
+          0%   { transform: scale(0.6); opacity: 0.7; }
+          100% { transform: scale(2.2); opacity: 0; }
         }
-        .leaflet-popup-content-wrapper { border-radius: 12px; padding: 0; overflow: hidden; }
-        .leaflet-popup-content { margin: 8px 12px; }
+        .boat-ring {
+          position: absolute;
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          border: 2px solid;
+          animation: boatRipple 2.4s ease-out infinite;
+          pointer-events: none;
+        }
+        .boat-ring-delay { animation-delay: 1.2s; }
+
+        /* ── Pin drop + float ── */
+        @keyframes pinDrop {
+          0%   { transform: translateY(-24px) scale(0.4); opacity: 0; }
+          65%  { transform: translateY(5px)   scale(1.15); opacity: 1; }
+          80%  { transform: translateY(-3px)  scale(0.95); }
+          100% { transform: translateY(0)     scale(1); opacity: 1; }
+        }
+        @keyframes pinFloat {
+          0%, 100% { transform: translateY(0px)  scale(1); }
+          50%       { transform: translateY(-6px) scale(1.05); }
+        }
+        .pin-icon {
+          animation:
+            pinDrop  0.55s cubic-bezier(0.22,1,0.36,1) both,
+            pinFloat 4s ease-in-out 0.6s infinite;
+          cursor: pointer;
+          transition: filter 0.2s;
+        }
+        .pin-icon:hover { filter: brightness(1.2) drop-shadow(0 0 6px rgba(255,255,255,0.8)); }
+
+        /* ── Leaflet popup style ── */
+        .leaflet-popup-content-wrapper { border-radius: 14px; padding: 0; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.18); }
+        .leaflet-popup-content { margin: 10px 14px; }
+        .leaflet-popup-tip { box-shadow: none; }
       `}} />
       
       {me && (
@@ -281,11 +343,11 @@ export function MapPage() {
         })}
         
         {/* Pins */}
-        {pins?.map(pin => (
+        {pins?.map((pin, i) => (
           <Marker 
             key={pin.id} 
             position={[pin.lat, pin.lng]}
-            icon={createPinIcon(pin.type)}
+            icon={createPinIcon(pin.type, i)}
           >
             <Popup>
               <div className="flex flex-col min-w-[150px]">
