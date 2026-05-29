@@ -127,6 +127,34 @@ const getPinEmoji = (type: string) => {
   }
 };
 
+// Category color drives the Snap Map style text label tint.
+const getPinColor = (type: string) => {
+  switch (type) {
+    case "fishing_spot": return "#0284c7";
+    case "cliff": return "#7c3aed";
+    case "waterfall": return "#0891b2";
+    case "landmark": return "#db2777";
+    case "hazard": return "#dc2626";
+    case "marina": return "#ea7317";
+    case "campsite": return "#15803d";
+    default: return "#0284c7";
+  }
+};
+
+// Human-readable category shown as the small subtitle under a place name.
+const getPinCategory = (type: string) => {
+  switch (type) {
+    case "fishing_spot": return "Fishing Spot";
+    case "cliff": return "Cliff";
+    case "waterfall": return "Waterfall";
+    case "landmark": return "Landmark";
+    case "hazard": return "Hazard";
+    case "marina": return "Marina";
+    case "campsite": return "Campground";
+    default: return "Place";
+  }
+};
+
 const formatPinWindow = (startTime?: string | null, endTime?: string | null) => {
   if (!startTime && !endTime) return null;
   const fmt = (s: string) =>
@@ -248,30 +276,47 @@ function buildFriendEl(opts: {
 // --- Lake pin (emoji pill) marker element ---
 // High-priority pins render as a large labelled pill; low-priority pins render
 // as a compact icon-only chip (details appear on tap).
-function buildPinEl(opts: { emoji: string; title: string; delay: number; tier: "high" | "low" }): {
+function buildPinEl(opts: {
+  emoji: string;
+  title: string;
+  delay: number;
+  tier: "high" | "low";
+  color: string;
+  category: string;
+}): {
   root: HTMLDivElement;
   scale: HTMLDivElement;
 } {
-  const { emoji, title, delay, tier } = opts;
+  const { emoji, title, delay, tier, color, category } = opts;
   const root = el("div", "lake-pin") as HTMLDivElement;
   const scale = el("div", "lake-pin-scale") as HTMLDivElement;
 
-  const pill = el("div", `pin-pill tier-${tier}`);
-  pill.style.animationDelay = `${delay}s`;
+  // Inner row gently bobs; the outer scale element handles zoom sizing.
+  const row = el("div", "place-row");
+  row.style.animationDelay = `${delay}s`;
 
-  const emojiEl = el("span", "pin-pill-emoji");
+  // Round emoji badge that marks the spot (Snap Map "thumbnail" style).
+  const badge = el("div", `place-badge tier-${tier}`);
+  const emojiEl = el("span", "place-badge-emoji");
   emojiEl.textContent = emoji;
-  pill.appendChild(emojiEl);
+  badge.appendChild(emojiEl);
+  row.appendChild(badge);
 
-  // Only high-priority places get an always-on label.
+  // High-priority places get a colored text label (no white pill box).
   if (tier === "high") {
-    const label = el("span", "pin-pill-label");
-    label.textContent = title;
-    pill.appendChild(label);
+    const textWrap = el("div", "place-text");
+    const titleEl = el("div", "place-title");
+    titleEl.textContent = title;
+    titleEl.style.color = color;
+    const subEl = el("div", "place-sub");
+    subEl.textContent = category;
+    subEl.style.color = color;
+    textWrap.appendChild(titleEl);
+    textWrap.appendChild(subEl);
+    row.appendChild(textWrap);
   }
 
-  scale.appendChild(pill);
-  scale.appendChild(el("div", "pin-pill-stem"));
+  scale.appendChild(row);
   root.appendChild(scale);
   return { root, scale };
 }
@@ -546,12 +591,14 @@ export function MapPage() {
         title: pin.title,
         delay: (Math.abs((pin.id ?? 0) * 13) % 30) / 10,
         tier,
+        color: getPinColor(pin.type),
+        category: getPinCategory(pin.type),
       });
       root.addEventListener("click", (ev) => {
         ev.stopPropagation();
         setSelected({ kind: "pin", data: pin });
       });
-      const marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
+      const marker = new maplibregl.Marker({ element: root, anchor: "center" })
         .setLngLat([pin.lng, pin.lat])
         .addTo(map);
       pinMarkers.current.push(marker);
@@ -588,7 +635,7 @@ export function MapPage() {
             const expZoom = Math.min(index.getClusterExpansionZoom(c.properties.cluster_id), 18);
             map.easeTo({ center: [lng, lat], zoom: expZoom });
           });
-          const marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
+          const marker = new maplibregl.Marker({ element: root, anchor: "center" })
             .setLngLat([lng, lat])
             .addTo(map);
           pinMarkers.current.push(marker);
@@ -604,7 +651,7 @@ export function MapPage() {
             ev.stopPropagation();
             map.easeTo({ center: [lng, lat], zoom: SECONDARY_PIN_ZOOM });
           });
-          const marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
+          const marker = new maplibregl.Marker({ element: root, anchor: "center" })
             .setLngLat([lng, lat])
             .addTo(map);
           pinMarkers.current.push(marker);
@@ -1157,55 +1204,63 @@ const MAP_CSS = `
     100% { transform: scale(2.6); opacity: 0; }
   }
 
-  /* ================= Lake pin (emoji pill) ================= */
+  /* ================= Lake place label (Snap Map style) ================= */
   .lake-pin { cursor: pointer; will-change: transform; }
   .lake-pin-scale {
     position: relative;
-    transform-origin: bottom center;
+    transform-origin: center center;
     transition: transform 0.18s ease-out;
     display: flex;
     flex-direction: column;
     align-items: center;
   }
-  .pin-pill {
-    display: inline-flex;
+  /* Floating row: round emoji badge + colored text label */
+  .place-row {
+    display: flex;
+    flex-direction: row;
     align-items: center;
-    gap: 5px;
-    max-width: 160px;
-    background: rgba(255,255,255,0.97);
-    border-radius: 999px;
-    border: 1px solid rgba(0,0,0,0.06);
+    gap: 7px;
     animation: pinFloat 4s ease-in-out infinite;
   }
-  /* High-priority places: labelled, slightly stronger shadow */
-  .pin-pill.tier-high {
-    padding: 3px 9px 3px 6px;
-    gap: 4px;
-    box-shadow: 0 5px 13px rgba(0,0,0,0.26);
-    border-color: rgba(0,0,0,0.08);
+  .place-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    background: #ffffff;
+    border-radius: 999px;
+    border: 2px solid rgba(255,255,255,0.95);
   }
-  .pin-pill.tier-high .pin-pill-emoji { font-size: 14px; }
-  /* Low-priority pins: compact icon-only chip */
-  .pin-pill.tier-low {
-    padding: 4px;
-    box-shadow: 0 4px 11px rgba(0,0,0,0.22);
-    opacity: 0.96;
+  .place-badge.tier-high {
+    width: 34px; height: 34px;
+    box-shadow: 0 5px 13px rgba(0,0,0,0.28);
   }
-  .pin-pill.tier-low .pin-pill-emoji { font-size: 13px; }
-  .pin-pill-emoji { line-height: 1; }
-  .pin-pill-label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #0f172a;
+  .place-badge.tier-low {
+    width: 26px; height: 26px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.24);
+  }
+  .place-badge-emoji { line-height: 1; }
+  .place-badge.tier-high .place-badge-emoji { font-size: 17px; }
+  .place-badge.tier-low .place-badge-emoji { font-size: 13px; }
+  .place-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.08;
+  }
+  .place-title {
+    font-size: 13px;
+    font-weight: 800;
     white-space: nowrap;
+    max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(255,255,255,0.95), 0 0 4px rgba(255,255,255,0.85);
   }
-  .pin-pill-stem {
-    width: 2px;
-    height: 9px;
-    background: rgba(255,255,255,0.97);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  .place-sub {
+    font-size: 10px;
+    font-weight: 700;
+    opacity: 0.82;
+    text-shadow: 0 1px 2px rgba(255,255,255,0.95);
   }
   @keyframes pinFloat {
     0%, 100% { transform: translateY(0); }
