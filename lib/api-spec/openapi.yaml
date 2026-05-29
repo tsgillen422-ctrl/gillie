@@ -1,22 +1,33 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: DHL - Dale Hollow Lake API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: users
+    description: User operations
+  - name: friends
+    description: Friend/follow operations
+  - name: messages
+    description: Messaging operations
+  - name: pins
+    description: Map pin operations
+  - name: posts
+    description: Post and event operations
+  - name: notifications
+    description: Notification operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,504 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+
+    patch:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/me/location:
+    patch:
+      operationId: updateMyLocation
+      tags: [users]
+      summary: Update current user's location on the lake
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocationUpdate"
+      responses:
+        "200":
+          description: Location updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/search:
+    get:
+      operationId: searchUsers
+      tags: [users]
+      summary: Search users by name or username
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Matching users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+
+  /friends:
+    get:
+      operationId: getFriends
+      tags: [friends]
+      summary: Get all accepted friends/follows
+      responses:
+        "200":
+          description: List of friends
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /friends/locations:
+    get:
+      operationId: getFriendLocations
+      tags: [friends]
+      summary: Get all friends' current locations on the lake
+      responses:
+        "200":
+          description: Friends with location data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FriendLocation"
+
+  /friends/requests:
+    get:
+      operationId: getFriendRequests
+      tags: [friends]
+      summary: Get pending friend requests
+      responses:
+        "200":
+          description: Pending requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FriendRequest"
+
+  /friends/{userId}/follow:
+    post:
+      operationId: followUser
+      tags: [friends]
+      summary: Send a friend request / follow a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Follow created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FriendRequest"
+
+  /friends/{userId}/unfollow:
+    delete:
+      operationId: unfollowUser
+      tags: [friends]
+      summary: Unfollow or remove a friend
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unfollowed
+
+  /friends/{requestId}/accept:
+    post:
+      operationId: acceptFriendRequest
+      tags: [friends]
+      summary: Accept a friend request
+      parameters:
+        - name: requestId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FriendRequest"
+
+  /messages/conversations:
+    get:
+      operationId: getConversations
+      tags: [messages]
+      summary: Get all conversations for current user
+      responses:
+        "200":
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Conversation"
+
+    post:
+      operationId: createConversation
+      tags: [messages]
+      summary: Start a new conversation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConversationInput"
+      responses:
+        "201":
+          description: Conversation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conversation"
+
+  /messages/conversations/{conversationId}:
+    get:
+      operationId: getConversationMessages
+      tags: [messages]
+      summary: Get messages in a conversation
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a message in a conversation
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  /pins:
+    get:
+      operationId: getPins
+      tags: [pins]
+      summary: Get all pins on the lake
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [fishing_spot, cliff, waterfall, landmark, hazard, marina, campsite, other]
+      responses:
+        "200":
+          description: List of pins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pin"
+
+    post:
+      operationId: createPin
+      tags: [pins]
+      summary: Drop a pin on the lake
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PinInput"
+      responses:
+        "201":
+          description: Pin created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pin"
+
+  /pins/{pinId}:
+    get:
+      operationId: getPin
+      tags: [pins]
+      summary: Get a specific pin
+      parameters:
+        - name: pinId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Pin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pin"
+
+    delete:
+      operationId: deletePin
+      tags: [pins]
+      summary: Delete a pin
+      parameters:
+        - name: pinId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+  /pins/{pinId}/like:
+    post:
+      operationId: likePin
+      tags: [pins]
+      summary: Like or upvote a pin
+      parameters:
+        - name: pinId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Liked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pin"
+
+  /posts:
+    get:
+      operationId: getPosts
+      tags: [posts]
+      summary: Get community feed posts and events
+      parameters:
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [post, event, business]
+      responses:
+        "200":
+          description: Feed posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Post"
+
+    post:
+      operationId: createPost
+      tags: [posts]
+      summary: Create a post or event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+      responses:
+        "201":
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+  /posts/{postId}:
+    get:
+      operationId: getPost
+      tags: [posts]
+      summary: Get a specific post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+    delete:
+      operationId: deletePost
+      tags: [posts]
+      summary: Delete a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+  /posts/{postId}/like:
+    post:
+      operationId: likePost
+      tags: [posts]
+      summary: Like a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Liked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+  /posts/summary:
+    get:
+      operationId: getPostsSummary
+      tags: [posts]
+      summary: Get a quick summary of community activity
+      responses:
+        "200":
+          description: Activity summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostsSummary"
+
+  /notifications:
+    get:
+      operationId: getNotifications
+      tags: [notifications]
+      summary: Get notifications for current user
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{notificationId}/read:
+    post:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked read
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +543,296 @@ components:
       required:
         - status
 
+    User:
+      type: object
+      required: [id, username, displayName, createdAt]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        bio:
+          type: ["string", "null"]
+        isOnline:
+          type: boolean
+        isBusiness:
+          type: boolean
+        currentLat:
+          type: ["number", "null"]
+        currentLng:
+          type: ["number", "null"]
+        lastSeen:
+          type: ["string", "null"]
+        boatName:
+          type: ["string", "null"]
+        boatColor:
+          type: ["string", "null"]
+        followerCount:
+          type: integer
+        followingCount:
+          type: integer
+        createdAt:
+          type: string
+
+    UserUpdate:
+      type: object
+      properties:
+        displayName:
+          type: string
+        bio:
+          type: string
+        avatarUrl:
+          type: string
+        boatName:
+          type: string
+        boatColor:
+          type: string
+        isBusiness:
+          type: boolean
+        shareLocation:
+          type: boolean
+
+    LocationUpdate:
+      type: object
+      required: [lat, lng]
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+
+    FriendLocation:
+      type: object
+      required: [userId, displayName, username]
+      properties:
+        userId:
+          type: integer
+        displayName:
+          type: string
+        username:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        boatName:
+          type: ["string", "null"]
+        boatColor:
+          type: ["string", "null"]
+        lat:
+          type: ["number", "null"]
+        lng:
+          type: ["number", "null"]
+        isOnline:
+          type: boolean
+        lastSeen:
+          type: ["string", "null"]
+
+    FriendRequest:
+      type: object
+      required: [id, followerId, followeeId, status, createdAt]
+      properties:
+        id:
+          type: integer
+        followerId:
+          type: integer
+        followeeId:
+          type: integer
+        status:
+          type: string
+          enum: [pending, accepted, rejected]
+        follower:
+          $ref: "#/components/schemas/User"
+        followee:
+          $ref: "#/components/schemas/User"
+        createdAt:
+          type: string
+
+    Conversation:
+      type: object
+      required: [id, createdAt]
+      properties:
+        id:
+          type: integer
+        participants:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        lastMessage:
+          $ref: "#/components/schemas/Message"
+        unreadCount:
+          type: integer
+        createdAt:
+          type: string
+
+    ConversationInput:
+      type: object
+      required: [participantId]
+      properties:
+        participantId:
+          type: integer
+
+    Message:
+      type: object
+      required: [id, conversationId, senderId, content, createdAt]
+      properties:
+        id:
+          type: integer
+        conversationId:
+          type: integer
+        senderId:
+          type: integer
+        sender:
+          $ref: "#/components/schemas/User"
+        content:
+          type: string
+        read:
+          type: boolean
+        createdAt:
+          type: string
+
+    MessageInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+
+    Pin:
+      type: object
+      required: [id, userId, lat, lng, type, title, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        user:
+          $ref: "#/components/schemas/User"
+        lat:
+          type: number
+        lng:
+          type: number
+        type:
+          type: string
+          enum: [fishing_spot, cliff, waterfall, landmark, hazard, marina, campsite, other]
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        likeCount:
+          type: integer
+        likedByMe:
+          type: boolean
+        createdAt:
+          type: string
+
+    PinInput:
+      type: object
+      required: [lat, lng, type, title]
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+        type:
+          type: string
+          enum: [fishing_spot, cliff, waterfall, landmark, hazard, marina, campsite, other]
+        title:
+          type: string
+        description:
+          type: string
+
+    Post:
+      type: object
+      required: [id, userId, title, content, postType, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        user:
+          $ref: "#/components/schemas/User"
+        title:
+          type: string
+        content:
+          type: string
+        postType:
+          type: string
+          enum: [post, event, business]
+        eventDate:
+          type: ["string", "null"]
+        imageUrl:
+          type: ["string", "null"]
+        pinLat:
+          type: ["number", "null"]
+        pinLng:
+          type: ["number", "null"]
+        likeCount:
+          type: integer
+        likedByMe:
+          type: boolean
+        createdAt:
+          type: string
+
+    PostInput:
+      type: object
+      required: [title, content, postType]
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        postType:
+          type: string
+          enum: [post, event, business]
+        eventDate:
+          type: string
+        imageUrl:
+          type: string
+        pinLat:
+          type: number
+        pinLng:
+          type: number
+
+    PostsSummary:
+      type: object
+      required: [totalPosts, totalEvents, totalPins, activeUsersToday]
+      properties:
+        totalPosts:
+          type: integer
+        totalEvents:
+          type: integer
+        totalPins:
+          type: integer
+        activeUsersToday:
+          type: integer
+        upcomingEvents:
+          type: array
+          items:
+            $ref: "#/components/schemas/Post"
+        recentPins:
+          type: array
+          items:
+            $ref: "#/components/schemas/Pin"
+
+    Notification:
+      type: object
+      required: [id, userId, type, message, read, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        type:
+          type: string
+          enum: [friend_request, message, post_like, pin_like, event, system]
+        message:
+          type: string
+        read:
+          type: boolean
+        relatedId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
