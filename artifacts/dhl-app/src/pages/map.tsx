@@ -394,6 +394,7 @@ export function MapPage() {
   const [pinTitle, setPinTitle] = useState("");
   const [pinDesc, setPinDesc] = useState("");
   const [pinType, setPinType] = useState<PinInputType>("fishing_spot");
+  const [pinMode, setPinMode] = useState<"pin" | "landmark">("pin");
   const [pinVisibility, setPinVisibility] = useState<"friends" | "public" | "community">("friends");
   const [pinStart, setPinStart] = useState("");
   const [pinEnd, setPinEnd] = useState("");
@@ -777,34 +778,44 @@ export function MapPage() {
     setPinDialog({ open: true, lat, lng });
   };
 
+  const closePinDialog = () => {
+    setPinDialog({ open: false });
+    setPinMode("pin");
+    setPinType("fishing_spot");
+    setPinTitle("");
+    setPinDesc("");
+    setPinVisibility("friends");
+    setPinStart("");
+    setPinEnd("");
+  };
+
   const submitPin = () => {
     if (pinDialog.lat == null || pinDialog.lng == null) return;
+    const isLandmark = pinMode === "landmark";
     createPin.mutate(
       {
         data: {
-          title: pinTitle || "New Spot",
+          title: pinTitle || (isLandmark ? "New Landmark" : "New Spot"),
           description: pinDesc,
-          type: pinType,
+          type: isLandmark ? "landmark" : pinType,
           lat: pinDialog.lat,
           lng: pinDialog.lng,
           visibility: pinVisibility,
-          startTime: pinStart ? new Date(pinStart).toISOString() : null,
-          endTime: pinEnd ? new Date(pinEnd).toISOString() : null,
+          // Landmarks are permanent places, not time-bound events.
+          startTime: !isLandmark && pinStart ? new Date(pinStart).toISOString() : null,
+          endTime: !isLandmark && pinEnd ? new Date(pinEnd).toISOString() : null,
         },
       },
       {
         onSuccess: () => {
           toast.success(
-            pinVisibility === "community"
+            isLandmark
+              ? "Landmark added!"
+              : pinVisibility === "community"
               ? "Community pin submitted for approval."
               : "Pin dropped successfully!"
           );
-          setPinDialog({ open: false });
-          setPinTitle("");
-          setPinDesc("");
-          setPinVisibility("friends");
-          setPinStart("");
-          setPinEnd("");
+          closePinDialog();
           queryClient.invalidateQueries({ queryKey: getGetPinsQueryKey({}) });
         },
       }
@@ -888,35 +899,67 @@ export function MapPage() {
       </AnimatePresence>
 
       {/* Pin Creation Dialog */}
-      <Dialog open={pinDialog.open} onOpenChange={(open) => !open && setPinDialog({ open: false })}>
+      <Dialog open={pinDialog.open} onOpenChange={(open) => !open && closePinDialog()}>
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Drop a Pin</DialogTitle>
-            <DialogDescription>Mark a spot on the lake for others to see.</DialogDescription>
+            <DialogTitle>{pinMode === "landmark" ? "Name a Landmark" : "Drop a Pin"}</DialogTitle>
+            <DialogDescription>
+              {pinMode === "landmark"
+                ? "Give a place on the lake a name everyone can find."
+                : "Mark a spot on the lake for others to see."}
+            </DialogDescription>
           </DialogHeader>
 
+          {/* Choose what you're adding */}
+          <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => setPinMode("pin")}
+              className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
+                pinMode === "pin" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              📌 Drop a Pin
+            </button>
+            <button
+              type="button"
+              onClick={() => setPinMode("landmark")}
+              className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
+                pinMode === "landmark" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              📍 Landmark
+            </button>
+          </div>
+
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label>Category</Label>
-              <Select value={pinType} onValueChange={(v: PinInputType) => setPinType(v)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="fishing_spot">🎣 Fishing Spot</SelectItem>
-                  <SelectItem value="cliff">🏔️ Cliff Jumping</SelectItem>
-                  <SelectItem value="waterfall">💧 Waterfall</SelectItem>
-                  <SelectItem value="campsite">🏕️ Campsite</SelectItem>
-                  <SelectItem value="marina">⛵ Marina</SelectItem>
-                  <SelectItem value="hazard">⚠️ Hazard</SelectItem>
-                  <SelectItem value="landmark">📍 Landmark</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {pinMode === "pin" && (
+              <div className="grid gap-2">
+                <Label>Category</Label>
+                <Select value={pinType} onValueChange={(v: PinInputType) => setPinType(v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fishing_spot">🎣 Fishing Spot</SelectItem>
+                    <SelectItem value="cliff">🏔️ Cliff Jumping</SelectItem>
+                    <SelectItem value="waterfall">💧 Waterfall</SelectItem>
+                    <SelectItem value="campsite">🏕️ Campsite</SelectItem>
+                    <SelectItem value="marina">⛵ Marina</SelectItem>
+                    <SelectItem value="hazard">⚠️ Hazard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="grid gap-2">
-              <Label htmlFor="title">Title</Label>
-              <Input id="title" placeholder="e.g. Great Bass Spot" value={pinTitle} onChange={(e) => setPinTitle(e.target.value)} />
+              <Label htmlFor="title">{pinMode === "landmark" ? "Landmark name" : "Title"}</Label>
+              <Input
+                id="title"
+                placeholder={pinMode === "landmark" ? "e.g. Eagle Point" : "e.g. Great Bass Spot"}
+                value={pinTitle}
+                onChange={(e) => setPinTitle(e.target.value)}
+              />
             </div>
 
             <div className="grid gap-2">
@@ -947,22 +990,28 @@ export function MapPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="grid gap-2">
-                <Label htmlFor="start">Starts (Optional)</Label>
-                <Input id="start" type="datetime-local" value={pinStart} onChange={(e) => setPinStart(e.target.value)} />
+            {pinMode === "pin" && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-2">
+                  <Label htmlFor="start">Starts (Optional)</Label>
+                  <Input id="start" type="datetime-local" value={pinStart} onChange={(e) => setPinStart(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="end">Ends (Optional)</Label>
+                  <Input id="end" type="datetime-local" value={pinEnd} onChange={(e) => setPinEnd(e.target.value)} />
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="end">Ends (Optional)</Label>
-                <Input id="end" type="datetime-local" value={pinEnd} onChange={(e) => setPinEnd(e.target.value)} />
-              </div>
-            </div>
+            )}
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPinDialog({ open: false })}>Cancel</Button>
+            <Button variant="outline" onClick={closePinDialog}>Cancel</Button>
             <Button onClick={submitPin} disabled={!pinTitle || createPin.isPending}>
-              {pinVisibility === "community" ? "Submit Pin" : "Drop Pin"}
+              {pinMode === "landmark"
+                ? "Add Landmark"
+                : pinVisibility === "community"
+                ? "Submit Pin"
+                : "Drop Pin"}
             </Button>
           </DialogFooter>
         </DialogContent>
