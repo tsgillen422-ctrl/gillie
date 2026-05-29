@@ -4,20 +4,20 @@ import { useGetUser, useGetMe, useGetPosts, useGetPins, useFollowUser, useUnfoll
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Fish, Tent, Sailboat, Mountain, Droplet, TriangleAlert, Lock, Globe, Users } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/UserAvatar";
 
-function pinIcon(type: string) {
+function pinEmoji(type: string) {
   switch (type) {
-    case "fishing_spot": return Fish;
-    case "marina": return Sailboat;
-    case "waterfall": return Droplet;
-    case "cliff": return Mountain;
-    case "campsite": return Tent;
-    case "hazard": return TriangleAlert;
-    default: return MapPin;
+    case "fishing_spot": return "🎣";
+    case "marina": return "⛵";
+    case "waterfall": return "💧";
+    case "cliff": return "🏔️";
+    case "campsite": return "🏕️";
+    case "hazard": return "⚠️";
+    default: return "📍";
   }
 }
 
@@ -197,13 +197,12 @@ export function ProfilePage() {
               <Skeleton className="h-24 w-full rounded-xl" />
             ) : userPins?.length ? (
               userPins.map((pin) => {
-                const Icon = pinIcon(pin.type);
                 const window = pinWindow(pin.startTime, pin.endTime);
                 return (
                   <Card key={pin.id} className="border-border/50">
                     <CardContent className="p-4 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
-                        <Icon className="w-5 h-5 text-primary" />
+                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0 text-xl">
+                        {pinEmoji(pin.type)}
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">

@@ -9,7 +9,7 @@ import {
 } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, Navigation, Fish, Tent, Sailboat, Mountain, Droplet, TriangleAlert, Check, Lock, Globe, Users } from "lucide-react";
+import { Search, MapPin, Navigation, Check, Lock, Globe, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -20,17 +20,17 @@ import { toast } from "sonner";
 const OWNER_ID = 1;
 
 const PIN_TYPES = [
-  { value: 'all', label: 'All', Icon: MapPin },
-  { value: 'fishing_spot', label: 'Fishing', Icon: Fish },
-  { value: 'campsite', label: 'Camping', Icon: Tent },
-  { value: 'marina', label: 'Marinas', Icon: Sailboat },
-  { value: 'cliff', label: 'Cliffs', Icon: Mountain },
-  { value: 'waterfall', label: 'Falls', Icon: Droplet },
-  { value: 'hazard', label: 'Hazards', Icon: TriangleAlert },
+  { value: 'all', label: 'All', emoji: '📍' },
+  { value: 'fishing_spot', label: 'Fishing', emoji: '🎣' },
+  { value: 'campsite', label: 'Camping', emoji: '🏕️' },
+  { value: 'marina', label: 'Marinas', emoji: '⛵' },
+  { value: 'cliff', label: 'Cliffs', emoji: '🏔️' },
+  { value: 'waterfall', label: 'Falls', emoji: '💧' },
+  { value: 'hazard', label: 'Hazards', emoji: '⚠️' },
 ];
 
-function pinIcon(type: string) {
-  return PIN_TYPES.find(t => t.value === type)?.Icon || MapPin;
+function pinEmoji(type: string) {
+  return PIN_TYPES.find(t => t.value === type)?.emoji || '📍';
 }
 
 function VisibilityBadge({ visibility }: { visibility?: string }) {
@@ -114,19 +114,16 @@ export function PinsPage() {
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-          {PIN_TYPES.map(type => {
-            const Icon = type.Icon;
-            return (
-              <Badge
-                key={type.value}
-                variant={filter === type.value ? "default" : "secondary"}
-                className="cursor-pointer whitespace-nowrap px-3 py-1.5 text-sm gap-1.5"
-                onClick={() => setFilter(type.value)}
-              >
-                <Icon className="w-3.5 h-3.5" /> {type.label}
-              </Badge>
-            );
-          })}
+          {PIN_TYPES.map(type => (
+            <Badge
+              key={type.value}
+              variant={filter === type.value ? "default" : "secondary"}
+              className="cursor-pointer whitespace-nowrap px-3 py-1.5 text-sm"
+              onClick={() => setFilter(type.value)}
+            >
+              <span className="mr-1.5">{type.emoji}</span> {type.label}
+            </Badge>
+          ))}
         </div>
       </div>
 
@@ -137,12 +134,11 @@ export function PinsPage() {
               Pending Approval ({pendingPins.length})
             </h2>
             {pendingPins.map(pin => {
-              const Icon = pinIcon(pin.type);
               return (
                 <Card key={pin.id} className="border-amber-300/60 bg-amber-50/50 dark:bg-amber-950/20 overflow-hidden">
                   <CardContent className="p-4 flex gap-4 items-center">
-                    <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0">
-                      <Icon className="w-5 h-5 text-amber-700 dark:text-amber-400" />
+                    <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center shrink-0 text-2xl">
+                      {pinEmoji(pin.type)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-base truncate">{pin.title}</h3>
@@ -172,13 +168,12 @@ export function PinsPage() {
           ))
         ) : filteredPins.length ? (
           filteredPins.map(pin => {
-            const Icon = pinIcon(pin.type);
             const window = formatWindow(pin.startTime, pin.endTime);
             return (
               <Card key={pin.id} className="hover-elevate overflow-hidden border-border/50">
                 <CardContent className="p-4 flex gap-4 items-center">
-                  <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center shrink-0 shadow-inner">
-                    <Icon className="w-6 h-6 text-primary" />
+                  <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center text-3xl shrink-0 shadow-inner">
+                    {pinEmoji(pin.type)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
