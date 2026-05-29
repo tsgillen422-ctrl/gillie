@@ -179,11 +179,12 @@ const scaleForZoom = (zoom: number) => {
   return Math.max(0.55, Math.min(1.75, s));
 };
 
-// Text labels should shrink as you zoom into a location (opposite of the
-// marker scale, so wording stays subtle when you're up close).
+// Text labels stay compact: largest around the base zoom and shrinking in
+// both directions, so wording doesn't dominate the map when zoomed out and
+// stays subtle when you're zoomed right in.
 const textScaleForZoom = (zoom: number) => {
-  const t = 1.22 - (zoom - BASE_ZOOM) * 0.12;
-  return Math.max(0.5, Math.min(1.3, t));
+  const t = 1.0 - Math.abs(zoom - BASE_ZOOM) * 0.08;
+  return Math.max(0.5, Math.min(1.0, t));
 };
 
 type Selected =
