@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, pinsTable, pinLikesTable, friendRequestsTable } from "@workspace/db";
-import { eq, and, or, sql } from "drizzle-orm";
+import { eq, and, or, sql, inArray } from "drizzle-orm";
 
 const router = Router();
 const SESSION_USER_ID = 1;
@@ -97,7 +97,7 @@ router.get("/", async (req, res) => {
   if (profileUserId !== undefined) {
     // Pins shown on a user's profile: their friends-only pins are visible to
     // anyone viewing the profile, plus their approved public/community pins.
-    // Unapproved community pins are only shown to the creator themselves.
+    // Unapproved public/community pins are only shown to the creator themselves.
     visiblePins = pins.filter((pin) => {
       if (pin.userId !== profileUserId) return false;
       if (pin.userId === SESSION_USER_ID) return true;
@@ -114,7 +114,6 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   const { lat, lng, type, title, description, visibility, startTime, endTime } = req.body;
   const vis = visibility === "public" || visibility === "community" ? visibility : "friends";
-  const approved = vis === "community" ? false : true;
 
   const start = startTime ? new Date(startTime) : null;
   const end = endTime ? new Date(endTime) : null;
@@ -127,6 +126,15 @@ router.post("/", async (req, res) => {
   if (start && end && end.getTime() < start.getTime()) {
     return res.status(400).json({ error: "End time must be after start time" });
   }
+
+  // Approval rules:
+  // - Friends-only pins are always auto-approved.
+  // - For public/community: timed pins (with a start/end window) skip approval,
+  //   while untimed pins and landmarks require approval.
+  const isTimed = !!(start || end);
+  const isLandmark = type === "landmark";
+  const needsApproval = (vis === "public" || vis === "community") && (!isTimed || isLandmark);
+  const approved = !needsApproval;
 
   const [pin] = await db
     .insert(pinsTable)
@@ -153,7 +161,12 @@ router.get("/pending/approval", async (_req, res) => {
   const pending = await db
     .select()
     .from(pinsTable)
-    .where(and(eq(pinsTable.visibility, "community"), eq(pinsTable.approved, false)));
+    .where(
+      and(
+        inArray(pinsTable.visibility, ["community", "public"]),
+        eq(pinsTable.approved, false)
+      )
+    );
   res.json(await Promise.all(pending.map(formatPin)));
 });
 
@@ -187,8 +200,8 @@ router.post("/:pinId/approve", async (req, res) => {
   const pinId = parseInt(req.params.pinId);
   const pin = await db.query.pinsTable.findFirst({ where: eq(pinsTable.id, pinId) });
   if (!pin) return res.status(404).json({ error: "Pin not found" });
-  if (pin.visibility !== "community") {
-    return res.status(400).json({ error: "Only community pins require approval" });
+  if (pin.visibility !== "community" && pin.visibility !== "public") {
+    return res.status(400).json({ error: "Only public and community pins require approval" });
   }
   const [updated] = await db
     .update(pinsTable)

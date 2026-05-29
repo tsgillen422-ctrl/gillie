@@ -809,10 +809,12 @@ export function MapPage() {
       {
         onSuccess: () => {
           toast.success(
-            isLandmark
+            pinNeedsApproval
+              ? isLandmark
+                ? "Landmark submitted for approval."
+                : "Pin submitted for approval."
+              : isLandmark
               ? "Landmark added!"
-              : pinVisibility === "community"
-              ? "Community pin submitted for approval."
               : "Pin dropped successfully!"
           );
           closePinDialog();
@@ -821,6 +823,13 @@ export function MapPage() {
       }
     );
   };
+
+  // Mirrors the server approval rules: public/community pins need approval
+  // unless they are timed; landmarks always need approval for public/community.
+  const pinIsTimed = !!(pinStart || pinEnd);
+  const pinNeedsApproval =
+    (pinVisibility === "public" || pinVisibility === "community") &&
+    (pinMode === "landmark" || !pinIsTimed);
 
   return (
     <div className="h-full w-full relative bg-blue-50">
@@ -976,17 +985,24 @@ export function MapPage() {
                 <SelectContent>
                   <SelectItem value="friends">Friends only</SelectItem>
                   <SelectItem value="public">Public</SelectItem>
-                  <SelectItem value="community">Community (needs approval)</SelectItem>
+                  <SelectItem value="community">Community</SelectItem>
                 </SelectContent>
               </Select>
               {pinVisibility === "friends" && (
                 <p className="text-xs text-muted-foreground">Only your friends and people viewing your profile will see this pin.</p>
               )}
-              {pinVisibility === "public" && (
+              {pinVisibility === "public" && !pinNeedsApproval && (
                 <p className="text-xs text-muted-foreground">Everyone on the lake can see this pin.</p>
               )}
-              {pinVisibility === "community" && (
-                <p className="text-xs text-muted-foreground">Goes live for everyone once an admin approves it.</p>
+              {pinVisibility === "community" && !pinNeedsApproval && (
+                <p className="text-xs text-muted-foreground">Goes live for everyone on the lake.</p>
+              )}
+              {pinNeedsApproval && (
+                <p className="text-xs text-muted-foreground">
+                  {pinMode === "landmark"
+                    ? "Landmarks go live for everyone once an admin approves them."
+                    : "Goes live for everyone once an admin approves it. Add a start or end time to skip approval."}
+                </p>
               )}
             </div>
 
@@ -1007,10 +1023,12 @@ export function MapPage() {
           <DialogFooter>
             <Button variant="outline" onClick={closePinDialog}>Cancel</Button>
             <Button onClick={submitPin} disabled={!pinTitle || createPin.isPending}>
-              {pinMode === "landmark"
+              {pinNeedsApproval
+                ? pinMode === "landmark"
+                  ? "Submit Landmark"
+                  : "Submit Pin"
+                : pinMode === "landmark"
                 ? "Add Landmark"
-                : pinVisibility === "community"
-                ? "Submit Pin"
                 : "Drop Pin"}
             </Button>
           </DialogFooter>
