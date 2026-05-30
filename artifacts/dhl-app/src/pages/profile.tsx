@@ -562,7 +562,7 @@ export function ProfilePage() {
                           <Button
                             variant="secondary"
                             size="icon"
-                            className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="absolute top-1 right-1 h-7 w-7"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>

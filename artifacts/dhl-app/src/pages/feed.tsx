@@ -1015,7 +1015,7 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
                   </div>
                 </div>
                 {currentUserId != null && c.userId === currentUserId && (
-                  <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100" onClick={() => removeComment(c.id)}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={() => removeComment(c.id)}>
                     <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 )}
