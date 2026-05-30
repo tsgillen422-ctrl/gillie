@@ -978,6 +978,7 @@ export function MapPage() {
       )}
 
       {/* Search bar */}
+      {!pinDialog.open && (
       <div className="absolute top-3 left-4 right-20 z-[400]">
         {searchOpen ? (
           <div className="rounded-2xl bg-card shadow-lg border border-border overflow-hidden">
@@ -1029,6 +1030,7 @@ export function MapPage() {
           </button>
         )}
       </div>
+      )}
 
       {/* Floating map controls */}
       <div className="absolute top-[80px] right-4 z-[400] flex flex-col items-center gap-3">
