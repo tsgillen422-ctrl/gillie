@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useCreatePostComment, useDeletePostComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useShareToProfile, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey } from "@workspace/api-client-react";
+import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useGetPostLikes, useCreatePostComment, useDeletePostComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useShareToProfile, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey } from "@workspace/api-client-react";
 import { PostInputPostType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ConditionsWidget } from "@/components/ConditionsWidget";
@@ -488,9 +488,50 @@ function ReactionButton({ post, onReact }: { post: any, onReact: (reaction: Reac
   );
 }
 
+function LikesDialog({ postId, open, onOpenChange }: { postId: number, open: boolean, onOpenChange: (v: boolean) => void }) {
+  const { data: likes, isLoading } = useGetPostLikes(postId, { query: { enabled: open } });
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Likes</DialogTitle>
+          <DialogDescription className="sr-only">People who liked this post</DialogDescription>
+        </DialogHeader>
+        <div className="max-h-80 overflow-y-auto -mx-2">
+          {isLoading ? (
+            <p className="px-2 py-4 text-center text-sm text-muted-foreground">Loading…</p>
+          ) : likes && likes.length > 0 ? (
+            likes.map((l) => (
+              <div key={l.userId} className="flex items-center gap-3 px-2 py-2">
+                <div className="relative shrink-0">
+                  <UserAvatar name={l.user?.displayName || "User"} username={l.user?.username || ""} avatarUrl={l.user?.avatarUrl} className="w-9 h-9" />
+                  <span className="absolute -bottom-1 -right-1 text-sm leading-none">{REACTION_MAP[l.reaction]?.emoji || "❤️"}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">{l.user?.displayName || "User"}</p>
+                  {l.user?.username && <p className="truncate text-xs text-muted-foreground">@{l.user.username}</p>}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="px-2 py-4 text-center text-sm text-muted-foreground">No likes yet.</p>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post: any, onReact: (reaction: ReactionKey) => void, canDelete?: boolean, onDelete?: () => void, currentUserId?: number }) {
   const isEvent = post.postType === "event";
   const [showComments, setShowComments] = React.useState(false);
+  const [showLikes, setShowLikes] = React.useState(false);
+  const likeTotal = post.likeCount || 0;
+  const likeReactionCounts: Record<string, number> = post.reactionCounts || {};
+  const topLikeEmojis = REACTIONS.filter((r) => (likeReactionCounts[r.key] || 0) > 0)
+    .sort((a, b) => (likeReactionCounts[b.key] || 0) - (likeReactionCounts[a.key] || 0))
+    .slice(0, 3)
+    .map((r) => r.emoji);
   const { data: comments } = useGetPostComments(post.id, { query: { enabled: showComments } });
   const createComment = useCreatePostComment();
   const deleteComment = useDeletePostComment();
@@ -818,7 +859,20 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
           </>
         )}
       </CardContent>
-      
+
+      {likeTotal > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowLikes(true)}
+          className="flex items-center gap-1.5 px-4 pb-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+          data-testid={`button-view-likes-${post.id}`}
+        >
+          {topLikeEmojis.length > 0 && <span className="text-sm leading-none">{topLikeEmojis.join("")}</span>}
+          <span>{likeTotal} {likeTotal === 1 ? "like" : "likes"}</span>
+        </button>
+      )}
+      <LikesDialog postId={post.id} open={showLikes} onOpenChange={setShowLikes} />
+
       <CardFooter className="p-2 border-t border-border/40 flex justify-between bg-muted/10">
         <ReactionButton post={post} onReact={onReact} />
         <Button variant="ghost" size="sm" className={`flex-1 text-muted-foreground ${showComments ? 'text-primary' : ''}`} onClick={() => setShowComments(v => !v)}>

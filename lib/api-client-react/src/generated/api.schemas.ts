@@ -607,6 +607,12 @@ export interface RsvpUser {
   user?: User;
 }
 
+export interface PostLikeUser {
+  userId: number;
+  reaction: string;
+  user?: User;
+}
+
 export interface SosInput {
   message?: string;
 }

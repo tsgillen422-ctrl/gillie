@@ -51,6 +51,7 @@ export * from './pinVisibility';
 export * from './post';
 export * from './postInput';
 export * from './postInputPostType';
+export * from './postLikeUser';
 export * from './postMyReaction';
 export * from './postPostType';
 export * from './postsSummary';

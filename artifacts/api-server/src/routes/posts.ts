@@ -326,6 +326,22 @@ router.get("/:postId/rsvps", async (req, res) => {
   res.json(formatted);
 });
 
+router.get("/:postId/likes", async (req, res) => {
+  const postId = parseInt(req.params.postId);
+  const likes = await db
+    .select()
+    .from(postLikesTable)
+    .where(eq(postLikesTable.postId, postId))
+    .orderBy(postLikesTable.createdAt);
+  const formatted = await Promise.all(
+    likes.map(async (l) => {
+      const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, l.userId) });
+      return { userId: l.userId, reaction: l.reaction, user: user ? formatUser(user) : null };
+    })
+  );
+  res.json(formatted);
+});
+
 router.get("/:postId/comments", async (req, res) => {
   const postId = parseInt(req.params.postId);
   const comments = await db

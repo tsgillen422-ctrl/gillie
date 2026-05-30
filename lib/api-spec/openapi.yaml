@@ -759,6 +759,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/Post"
 
+  /posts/{postId}/likes:
+    get:
+      operationId: getPostLikes
+      tags: [posts]
+      summary: Get the users who liked a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of users who liked the post
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PostLikeUser"
+
   /posts/{postId}/comments:
     get:
       operationId: getPostComments
@@ -2059,6 +2080,17 @@ components:
       properties:
         userId:
           type: integer
+        user:
+          $ref: "#/components/schemas/User"
+
+    PostLikeUser:
+      type: object
+      required: [userId, reaction]
+      properties:
+        userId:
+          type: integer
+        reaction:
+          type: string
         user:
           $ref: "#/components/schemas/User"
 

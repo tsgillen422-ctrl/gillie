@@ -47,6 +47,7 @@ import type {
   PinInput,
   Post,
   PostInput,
+  PostLikeUser,
   PostsSummary,
   ReactionInput,
   Report,
@@ -3043,6 +3044,83 @@ export const useReactToPost = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getReactToPostMutationOptions(options));
     }
+
+export const getGetPostLikesUrl = (postId: number,) => {
+
+
+
+
+  return `/api/posts/${postId}/likes`
+}
+
+/**
+ * @summary Get the users who liked a post
+ */
+export const getPostLikes = async (postId: number, options?: RequestInit): Promise<PostLikeUser[]> => {
+
+  return customFetch<PostLikeUser[]>(getGetPostLikesUrl(postId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPostLikesQueryKey = (postId: number,) => {
+    return [
+    `/api/posts/${postId}/likes`
+    ] as const;
+    }
+
+
+export const getGetPostLikesQueryOptions = <TData = Awaited<ReturnType<typeof getPostLikes>>, TError = ErrorType<unknown>>(postId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPostLikes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPostLikesQueryKey(postId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPostLikes>>> = ({ signal }) => getPostLikes(postId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(postId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPostLikes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPostLikesQueryResult = NonNullable<Awaited<ReturnType<typeof getPostLikes>>>
+export type GetPostLikesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the users who liked a post
+ */
+
+export function useGetPostLikes<TData = Awaited<ReturnType<typeof getPostLikes>>, TError = ErrorType<unknown>>(
+ postId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPostLikes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPostLikesQueryOptions(postId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getGetPostCommentsUrl = (postId: number,) => {
 
