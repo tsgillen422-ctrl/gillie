@@ -386,7 +386,7 @@ function ReactionButton({ post, onReact }: { post: any, onReact: (reaction: Reac
       {pickerOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setPickerOpen(false)} />
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 flex gap-1.5 rounded-full border border-border bg-card px-3 py-2 shadow-xl">
+          <div className="absolute bottom-full left-0 mb-2 z-50 flex gap-1.5 rounded-full border border-border bg-card px-3 py-2 shadow-xl">
             {REACTIONS.map((r) => (
               <button
                 key={r.key}
