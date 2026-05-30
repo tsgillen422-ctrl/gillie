@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Link, useSearch } from "wouter";
 import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users } from "lucide-react";
-import dhlLogo from "@/assets/dhl-logo.jpeg";
+import dhlLogo from "@/assets/dhl-logo.png";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -177,12 +177,12 @@ export function FeedPage() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-muted/30">
+    <div className="flex flex-col h-full min-w-0 bg-muted/30">
       <div className="p-4 bg-card border-b border-border shadow-sm sticky top-0 z-10">
         <img
           src={dhlLogo}
           alt="DHL — Dale Hollow Lake"
-          className="h-12 w-auto mb-2 mix-blend-multiply select-none"
+          className="-mx-4 -mt-4 mb-1 block w-[calc(100%+2rem)] max-w-none h-auto object-contain select-none [-webkit-mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)] [mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)]"
           draggable={false}
         />
         
