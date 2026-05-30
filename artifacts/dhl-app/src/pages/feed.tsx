@@ -78,6 +78,8 @@ export function FeedPage() {
   const queryClient = useQueryClient();
 
   const [composerOpen, setComposerOpen] = React.useState(false);
+  const [openPostId, setOpenPostId] = React.useState<number | null>(null);
+  const openPost = openPostId != null ? posts?.find((p) => p.id === openPostId) ?? null : null;
   const [newTitle, setNewTitle] = React.useState("");
   const [newContent, setNewContent] = React.useState("");
   const [newType, setNewType] = React.useState<"post" | "event" | "business">("post");
@@ -283,6 +285,7 @@ export function FeedPage() {
                 canDelete={me != null && post.userId === me.id}
                 onDelete={() => handleDeletePost(post.id)}
                 currentUserId={me?.id}
+                onOpen={() => setOpenPostId(post.id)}
               />
             </div>
           ))
@@ -300,6 +303,24 @@ export function FeedPage() {
         </div>
       </div>
 
+
+      <Dialog open={!!openPost} onOpenChange={(o) => { if (!o) setOpenPostId(null); }}>
+        <DialogContent className="max-w-md p-0 gap-0 max-h-[85vh] overflow-y-auto border-0 bg-transparent shadow-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{openPost?.title || "Post"}</DialogTitle>
+            <DialogDescription>Post details and comments</DialogDescription>
+          </DialogHeader>
+          {openPost && (
+            <PostCard
+              post={openPost}
+              onReact={(reaction) => reactPost.mutate({ postId: openPost.id, data: { reaction } }, { onSuccess: refreshPosts })}
+              canDelete={me != null && openPost.userId === me.id}
+              onDelete={() => handleDeletePost(openPost.id)}
+              currentUserId={me?.id}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={composerOpen} onOpenChange={(open) => { setComposerOpen(open); if (!open) resetComposer(); }}>
         <DialogContent className="max-w-md">
@@ -609,7 +630,7 @@ function LikesDialog({ postId, open, onOpenChange }: { postId: number, open: boo
   );
 }
 
-export function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post: any, onReact: (reaction: ReactionKey) => void, canDelete?: boolean, onDelete?: () => void, currentUserId?: number }) {
+export function PostCard({ post, onReact, canDelete, onDelete, currentUserId, onOpen }: { post: any, onReact: (reaction: ReactionKey) => void, canDelete?: boolean, onDelete?: () => void, currentUserId?: number, onOpen?: () => void }) {
   const isEvent = post.postType === "event";
   const [showComments, setShowComments] = React.useState(false);
   const [showLikes, setShowLikes] = React.useState(false);
@@ -873,7 +894,13 @@ export function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: 
         </div>
       </CardHeader>
       
-      <CardContent className="p-4 pt-2">
+      <CardContent
+        className={`p-4 pt-2${onOpen ? " cursor-pointer" : ""}`}
+        onClick={onOpen ? (e) => {
+          if ((e.target as HTMLElement).closest('a, button, video, input, textarea')) return;
+          onOpen();
+        } : undefined}
+      >
         {post.sharedPostId && (
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-2">
             <Repeat2 className="w-3.5 h-3.5" />
