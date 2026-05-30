@@ -209,14 +209,16 @@ export function CatchesPage() {
       </div>
 
       {me && (
-        <Button
-          onClick={() => setOpen(true)}
-          size="icon"
-          className="absolute bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-20"
-          aria-label="Log a catch"
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
+        <div className="absolute bottom-6 right-6 z-20">
+          <Button
+            onClick={() => setOpen(true)}
+            size="icon"
+            className="h-14 w-14 rounded-full shadow-lg"
+            aria-label="Log a catch"
+          >
+            <Plus className="w-6 h-6" />
+          </Button>
+        </div>
       )}
 
       <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
