@@ -178,9 +178,9 @@ export function MessagesPage() {
                 if (!isGroup && !others[0]) return null;
 
                 return (
-                  <div key={conv.id} className="relative group">
-                    <Link href={`/messages/${conv.id}`}>
-                      <div className="flex items-center gap-3 p-3 pr-12 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer">
+                  <div key={conv.id} className="flex items-center rounded-xl hover:bg-muted/50 transition-colors group">
+                    <Link href={`/messages/${conv.id}`} className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 p-3 cursor-pointer">
                         {isGroup ? (
                           <div className="w-14 h-14 rounded-full bg-primary/15 border border-border flex items-center justify-center text-primary shrink-0">
                             <Users className="w-6 h-6" />
@@ -221,7 +221,7 @@ export function MessagesPage() {
                           variant="ghost"
                           size="icon"
                           aria-label="Delete conversation"
-                          className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-destructive"
+                          className="mr-1.5 h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
