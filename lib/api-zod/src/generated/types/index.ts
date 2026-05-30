@@ -12,6 +12,7 @@ export * from './catch';
 export * from './catchInput';
 export * from './comment';
 export * from './commentInput';
+export * from './commentMyReaction';
 export * from './conditions';
 export * from './conversation';
 export * from './conversationInput';

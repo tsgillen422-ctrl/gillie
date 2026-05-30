@@ -36,8 +36,19 @@ export const postCommentsTable = pgTable("post_comments", {
   content: text("content").notNull().default(""),
   imageUrl: text("image_url"),
   videoUrl: text("video_url"),
+  likeCount: integer("like_count").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
+export const commentLikesTable = pgTable("comment_likes", {
+  id: serial("id").primaryKey(),
+  commentId: integer("comment_id").notNull().references(() => postCommentsTable.id),
+  userId: integer("user_id").notNull().references(() => usersTable.id),
+  reaction: text("reaction").notNull().default("heart"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => ({
+  userCommentUnique: uniqueIndex("comment_likes_comment_user_unique").on(t.commentId, t.userId),
+}));
 
 export const eventRsvpsTable = pgTable("event_rsvps", {
   id: serial("id").primaryKey(),

@@ -1803,6 +1803,17 @@ export const GetPostCommentsResponseItem = zod.object({
   "content": zod.string(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
+  "likeCount": zod.number(),
+  "likedByMe": zod.boolean(),
+  "myReaction": zod.union([zod.literal('thumbsup'),zod.literal('thumbsdown'),zod.literal('heart'),zod.literal('laugh'),zod.literal('sad'),zod.literal('angry'),zod.literal(null)]).nullish(),
+  "reactionCounts": zod.object({
+  "thumbsup": zod.number().optional(),
+  "thumbsdown": zod.number().optional(),
+  "heart": zod.number().optional(),
+  "laugh": zod.number().optional(),
+  "sad": zod.number().optional(),
+  "angry": zod.number().optional()
+}),
   "createdAt": zod.string()
 })
 export const GetPostCommentsResponse = zod.array(GetPostCommentsResponseItem)
@@ -1828,6 +1839,76 @@ export const CreatePostCommentBody = zod.object({
 export const DeletePostCommentParams = zod.object({
   "postId": zod.coerce.number(),
   "commentId": zod.coerce.number()
+})
+
+
+/**
+ * @summary React to a comment
+ */
+export const ReactToCommentParams = zod.object({
+  "postId": zod.coerce.number(),
+  "commentId": zod.coerce.number()
+})
+
+export const ReactToCommentBody = zod.object({
+  "reaction": zod.enum(['thumbsup', 'thumbsdown', 'heart', 'laugh', 'sad', 'angry'])
+})
+
+export const ReactToCommentResponse = zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "relationshipStatus": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
+  "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
+  "createdAt": zod.string()
+}).optional(),
+  "content": zod.string(),
+  "imageUrl": zod.string().nullish(),
+  "videoUrl": zod.string().nullish(),
+  "likeCount": zod.number(),
+  "likedByMe": zod.boolean(),
+  "myReaction": zod.union([zod.literal('thumbsup'),zod.literal('thumbsdown'),zod.literal('heart'),zod.literal('laugh'),zod.literal('sad'),zod.literal('angry'),zod.literal(null)]).nullish(),
+  "reactionCounts": zod.object({
+  "thumbsup": zod.number().optional(),
+  "thumbsdown": zod.number().optional(),
+  "heart": zod.number().optional(),
+  "laugh": zod.number().optional(),
+  "sad": zod.number().optional(),
+  "angry": zod.number().optional()
+}),
+  "createdAt": zod.string()
 })
 
 

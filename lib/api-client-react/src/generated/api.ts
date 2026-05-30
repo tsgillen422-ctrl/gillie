@@ -3343,6 +3343,80 @@ export const useDeletePostComment = <TError = ErrorType<unknown>,
       return useMutation(getDeletePostCommentMutationOptions(options));
     }
 
+export const getReactToCommentUrl = (postId: number,
+    commentId: number,) => {
+
+
+
+
+  return `/api/posts/${postId}/comments/${commentId}/react`
+}
+
+/**
+ * @summary React to a comment
+ */
+export const reactToComment = async (postId: number,
+    commentId: number,
+    reactionInput: ReactionInput, options?: RequestInit): Promise<Comment> => {
+
+  return customFetch<Comment>(getReactToCommentUrl(postId,commentId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reactionInput,)
+  }
+);}
+
+
+
+
+export const getReactToCommentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactToComment>>, TError,{postId: number;commentId: number;data: BodyType<ReactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reactToComment>>, TError,{postId: number;commentId: number;data: BodyType<ReactionInput>}, TContext> => {
+
+const mutationKey = ['reactToComment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reactToComment>>, {postId: number;commentId: number;data: BodyType<ReactionInput>}> = (props) => {
+          const {postId,commentId,data} = props ?? {};
+
+          return  reactToComment(postId,commentId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReactToCommentMutationResult = NonNullable<Awaited<ReturnType<typeof reactToComment>>>
+    export type ReactToCommentMutationBody = BodyType<ReactionInput>
+    export type ReactToCommentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary React to a comment
+ */
+export const useReactToComment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactToComment>>, TError,{postId: number;commentId: number;data: BodyType<ReactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reactToComment>>,
+        TError,
+        {postId: number;commentId: number;data: BodyType<ReactionInput>},
+        TContext
+      > => {
+      return useMutation(getReactToCommentMutationOptions(options));
+    }
+
 export const getGetPostsSummaryUrl = () => {
 
 

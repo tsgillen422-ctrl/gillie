@@ -474,6 +474,21 @@ export interface ErrorEnvelope {
   error: string;
 }
 
+/**
+ * @nullable
+ */
+export type CommentMyReaction = typeof CommentMyReaction[keyof typeof CommentMyReaction] | null;
+
+
+export const CommentMyReaction = {
+  thumbsup: 'thumbsup',
+  thumbsdown: 'thumbsdown',
+  heart: 'heart',
+  laugh: 'laugh',
+  sad: 'sad',
+  angry: 'angry',
+} as const;
+
 export interface Comment {
   id: number;
   postId: number;
@@ -484,6 +499,11 @@ export interface Comment {
   imageUrl?: string | null;
   /** @nullable */
   videoUrl?: string | null;
+  likeCount: number;
+  likedByMe: boolean;
+  /** @nullable */
+  myReaction?: CommentMyReaction;
+  reactionCounts: ReactionCounts;
   createdAt: string;
 }
 

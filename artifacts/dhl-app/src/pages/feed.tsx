@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useGetPostLikes, useCreatePostComment, useDeletePostComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useShareToProfile, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey } from "@workspace/api-client-react";
+import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useGetPostLikes, useCreatePostComment, useDeletePostComment, useReactToComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useShareToProfile, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey } from "@workspace/api-client-react";
 import { PostInputPostType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ConditionsWidget } from "@/components/ConditionsWidget";
@@ -488,6 +488,93 @@ function ReactionButton({ post, onReact }: { post: any, onReact: (reaction: Reac
   );
 }
 
+function CommentReactionButton({ comment, onReact }: { comment: any, onReact: (reaction: ReactionKey) => void }) {
+  const [pickerOpen, setPickerOpen] = React.useState(false);
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressed = React.useRef(false);
+
+  const current = comment.myReaction ? REACTION_MAP[comment.myReaction] : null;
+  const counts: Record<string, number> = comment.reactionCounts || {};
+  const total = comment.likeCount || 0;
+  const topEmojis = REACTIONS.filter((r) => (counts[r.key] || 0) > 0)
+    .sort((a, b) => (counts[b.key] || 0) - (counts[a.key] || 0))
+    .slice(0, 3)
+    .map((r) => r.emoji);
+
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+  const startPress = () => {
+    longPressed.current = false;
+    clearTimer();
+    timerRef.current = setTimeout(() => {
+      longPressed.current = true;
+      setPickerOpen(true);
+    }, 350);
+  };
+  const handleClick = () => {
+    clearTimer();
+    if (longPressed.current) {
+      longPressed.current = false;
+      return;
+    }
+    onReact((comment.myReaction as ReactionKey) || DEFAULT_REACTION);
+  };
+  const choose = (key: ReactionKey) => {
+    setPickerOpen(false);
+    longPressed.current = false;
+    onReact(key);
+  };
+  React.useEffect(() => () => clearTimer(), []);
+
+  return (
+    <div className="relative inline-flex items-center">
+      {pickerOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setPickerOpen(false)} />
+          <div className="absolute bottom-full left-0 mb-1 z-50 flex gap-1.5 rounded-full border border-border bg-card px-2.5 py-1.5 shadow-xl">
+            {REACTIONS.map((r) => (
+              <button
+                key={r.key}
+                type="button"
+                onClick={() => choose(r.key)}
+                aria-label={r.label}
+                title={r.label}
+                className={`text-xl leading-none transition-transform hover:scale-125 active:scale-110 ${comment.myReaction === r.key ? "scale-110" : ""}`}
+              >
+                {r.emoji}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <button
+        type="button"
+        className={`inline-flex select-none items-center gap-1 text-xs font-medium transition-colors ${current ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+        onPointerDown={startPress}
+        onPointerUp={clearTimer}
+        onPointerLeave={clearTimer}
+        onPointerCancel={clearTimer}
+        onContextMenu={(e) => e.preventDefault()}
+        onClick={handleClick}
+        aria-label="Like comment"
+      >
+        {current ? (
+          <span className="text-sm leading-none">{current.emoji}</span>
+        ) : topEmojis.length > 0 ? (
+          <span className="text-sm leading-none">{topEmojis.join("")}</span>
+        ) : (
+          <Heart className="w-3.5 h-3.5" />
+        )}
+        <span>{current ? current.label : "Like"}{total > 0 ? ` · ${total}` : ""}</span>
+      </button>
+    </div>
+  );
+}
+
 function LikesDialog({ postId, open, onOpenChange }: { postId: number, open: boolean, onOpenChange: (v: boolean) => void }) {
   const { data: likes, isLoading } = useGetPostLikes(postId, { query: { enabled: open } });
   return (
@@ -536,6 +623,7 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
   const createComment = useCreatePostComment();
   const deleteComment = useDeletePostComment();
   const toggleRsvp = useToggleRsvp();
+  const reactToComment = useReactToComment();
   const queryClient = useQueryClient();
   const savePost = useSavePost();
   const unsavePost = useUnsavePost();
@@ -696,6 +784,13 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
     deleteComment.mutate(
       { postId: post.id, commentId },
       { onSuccess: refreshComments, onError: () => toast.error("Couldn't delete that comment.") }
+    );
+  };
+
+  const handleReactComment = (commentId: number, reaction: ReactionKey) => {
+    reactToComment.mutate(
+      { postId: post.id, commentId, data: { reaction } },
+      { onSuccess: refreshComments, onError: () => toast.error("Couldn't react to that comment.") }
     );
   };
 
@@ -914,6 +1009,9 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
                         <video src={c.videoUrl} controls className="w-full h-full" />
                       </div>
                     )}
+                  </div>
+                  <div className="mt-1 pl-3">
+                    <CommentReactionButton comment={c} onReact={(r) => handleReactComment(c.id, r)} />
                   </div>
                 </div>
                 {currentUserId != null && c.userId === currentUserId && (

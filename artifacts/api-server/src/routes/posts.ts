@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, postsTable, postLikesTable, postCommentsTable, pinsTable, eventRsvpsTable, mutesTable, savedPostsTable } from "@workspace/db";
+import { usersTable, postsTable, postLikesTable, postCommentsTable, commentLikesTable, pinsTable, eventRsvpsTable, mutesTable, savedPostsTable } from "@workspace/db";
 import { eq, and, sql, desc, count, inArray, notInArray } from "drizzle-orm";
 
 const router = Router();
@@ -227,6 +227,13 @@ router.delete("/:postId", async (req, res) => {
     return res.status(403).json({ error: "You can only delete your own posts" });
   }
   await db.delete(postLikesTable).where(eq(postLikesTable.postId, postId));
+  const postComments = await db
+    .select({ id: postCommentsTable.id })
+    .from(postCommentsTable)
+    .where(eq(postCommentsTable.postId, postId));
+  if (postComments.length > 0) {
+    await db.delete(commentLikesTable).where(inArray(commentLikesTable.commentId, postComments.map((c) => c.id)));
+  }
   await db.delete(postCommentsTable).where(eq(postCommentsTable.postId, postId));
   await db.delete(eventRsvpsTable).where(eq(eventRsvpsTable.postId, postId));
   await db.delete(savedPostsTable).where(eq(savedPostsTable.postId, postId));
@@ -342,6 +349,34 @@ router.get("/:postId/likes", async (req, res) => {
   res.json(formatted);
 });
 
+async function formatComment(c: typeof postCommentsTable.$inferSelect): Promise<any> {
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, c.userId) });
+  const like = await db.query.commentLikesTable.findFirst({
+    where: and(eq(commentLikesTable.commentId, c.id), eq(commentLikesTable.userId, SESSION_USER_ID)),
+  });
+  const reactionRows = await db
+    .select({ reaction: commentLikesTable.reaction, value: count() })
+    .from(commentLikesTable)
+    .where(eq(commentLikesTable.commentId, c.id))
+    .groupBy(commentLikesTable.reaction);
+  const reactionCounts: Record<string, number> = {};
+  for (const row of reactionRows) reactionCounts[row.reaction] = row.value;
+  return {
+    id: c.id,
+    postId: c.postId,
+    userId: c.userId,
+    user: user ? formatUser(user) : null,
+    content: c.content,
+    imageUrl: c.imageUrl,
+    videoUrl: c.videoUrl,
+    likeCount: c.likeCount,
+    likedByMe: !!like,
+    myReaction: like?.reaction ?? null,
+    reactionCounts,
+    createdAt: c.createdAt.toISOString(),
+  };
+}
+
 router.get("/:postId/comments", async (req, res) => {
   const postId = parseInt(req.params.postId);
   const comments = await db
@@ -349,21 +384,7 @@ router.get("/:postId/comments", async (req, res) => {
     .from(postCommentsTable)
     .where(eq(postCommentsTable.postId, postId))
     .orderBy(postCommentsTable.createdAt);
-  const formatted = await Promise.all(
-    comments.map(async (c) => {
-      const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, c.userId) });
-      return {
-        id: c.id,
-        postId: c.postId,
-        userId: c.userId,
-        user: user ? formatUser(user) : null,
-        content: c.content,
-        imageUrl: c.imageUrl,
-        videoUrl: c.videoUrl,
-        createdAt: c.createdAt.toISOString(),
-      };
-    })
-  );
+  const formatted = await Promise.all(comments.map((c) => formatComment(c)));
   res.json(formatted);
 });
 
@@ -382,17 +403,44 @@ router.post("/:postId/comments", async (req, res) => {
     .insert(postCommentsTable)
     .values({ postId, userId: SESSION_USER_ID, content: trimmedContent, imageUrl: trimmedImageUrl || null, videoUrl: trimmedVideoUrl || null })
     .returning();
-  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, comment.userId) });
-  res.status(201).json({
-    id: comment.id,
-    postId: comment.postId,
-    userId: comment.userId,
-    user: user ? formatUser(user) : null,
-    content: comment.content,
-    imageUrl: comment.imageUrl,
-    videoUrl: comment.videoUrl,
-    createdAt: comment.createdAt.toISOString(),
+  res.status(201).json(await formatComment(comment));
+});
+
+router.post("/:postId/comments/:commentId/react", async (req, res) => {
+  const postId = parseInt(req.params.postId);
+  const commentId = parseInt(req.params.commentId);
+  if (Number.isNaN(postId) || Number.isNaN(commentId)) return res.status(400).json({ error: "Invalid id" });
+  const reaction = String(req.body?.reaction || "");
+  if (!ALLOWED_REACTIONS.includes(reaction)) {
+    return res.status(400).json({ error: "Invalid reaction" });
+  }
+  const comment = await db.query.postCommentsTable.findFirst({ where: eq(postCommentsTable.id, commentId) });
+  if (!comment || comment.postId !== postId) return res.status(404).json({ error: "Comment not found" });
+
+  const existing = await db.query.commentLikesTable.findFirst({
+    where: and(eq(commentLikesTable.commentId, commentId), eq(commentLikesTable.userId, SESSION_USER_ID)),
   });
+  let delta = 0;
+  if (existing && existing.reaction === reaction) {
+    await db.delete(commentLikesTable).where(eq(commentLikesTable.id, existing.id));
+    delta = -1;
+  } else if (existing) {
+    await db.update(commentLikesTable).set({ reaction }).where(eq(commentLikesTable.id, existing.id));
+  } else {
+    await db
+      .insert(commentLikesTable)
+      .values({ commentId, userId: SESSION_USER_ID, reaction })
+      .onConflictDoUpdate({ target: [commentLikesTable.commentId, commentLikesTable.userId], set: { reaction } });
+    delta = 1;
+  }
+  if (delta !== 0) {
+    await db
+      .update(postCommentsTable)
+      .set({ likeCount: sql`GREATEST(${postCommentsTable.likeCount} + ${delta}, 0)` })
+      .where(eq(postCommentsTable.id, commentId));
+  }
+  const updated = await db.query.postCommentsTable.findFirst({ where: eq(postCommentsTable.id, commentId) });
+  res.json(await formatComment(updated!));
 });
 
 router.delete("/:postId/comments/:commentId", async (req, res) => {
@@ -402,6 +450,7 @@ router.delete("/:postId/comments/:commentId", async (req, res) => {
   if (comment.userId !== SESSION_USER_ID) {
     return res.status(403).json({ error: "You can only delete your own comments" });
   }
+  await db.delete(commentLikesTable).where(eq(commentLikesTable.commentId, commentId));
   await db.delete(postCommentsTable).where(eq(postCommentsTable.id, commentId));
   res.json({ success: true });
 });

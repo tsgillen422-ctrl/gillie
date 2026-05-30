@@ -5,6 +5,8 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { CommentMyReaction } from './commentMyReaction';
+import type { ReactionCounts } from './reactionCounts';
 import type { User } from './user';
 
 export interface Comment {
@@ -17,5 +19,10 @@ export interface Comment {
   imageUrl?: string | null;
   /** @nullable */
   videoUrl?: string | null;
+  likeCount: number;
+  likedByMe: boolean;
+  /** @nullable */
+  myReaction?: CommentMyReaction;
+  reactionCounts: ReactionCounts;
   createdAt: string;
 }

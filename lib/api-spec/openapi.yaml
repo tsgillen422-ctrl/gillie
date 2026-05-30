@@ -844,6 +844,36 @@ paths:
         "200":
           description: Deleted
 
+  /posts/{postId}/comments/{commentId}/react:
+    post:
+      operationId: reactToComment
+      tags: [posts]
+      summary: React to a comment
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReactionInput"
+      responses:
+        "200":
+          description: Reacted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Comment"
+
   /posts/summary:
     get:
       operationId: getPostsSummary
@@ -1911,7 +1941,7 @@ components:
 
     Comment:
       type: object
-      required: [id, postId, userId, content, createdAt]
+      required: [id, postId, userId, content, createdAt, likeCount, likedByMe, reactionCounts]
       properties:
         id:
           type: integer
@@ -1927,6 +1957,15 @@ components:
           type: ["string", "null"]
         videoUrl:
           type: ["string", "null"]
+        likeCount:
+          type: integer
+        likedByMe:
+          type: boolean
+        myReaction:
+          type: ["string", "null"]
+          enum: [thumbsup, thumbsdown, heart, laugh, sad, angry, null]
+        reactionCounts:
+          $ref: "#/components/schemas/ReactionCounts"
         createdAt:
           type: string
 
