@@ -5,7 +5,9 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { PostMyReaction } from './postMyReaction';
 import type { PostPostType } from './postPostType';
+import type { ReactionCounts } from './reactionCounts';
 import type { User } from './user';
 
 export interface Post {
@@ -27,6 +29,9 @@ export interface Post {
   pinLng?: number | null;
   likeCount?: number;
   likedByMe?: boolean;
+  /** @nullable */
+  myReaction?: PostMyReaction;
+  reactionCounts?: ReactionCounts;
   rsvpCount?: number;
   rsvpByMe?: boolean;
   createdAt: string;

@@ -1,1 +1,2 @@
 - [DHL app scroll layout](dhl-app-scroll-layout.md) — page owns scroll (AppLayout main stays overflow-hidden); Button's hover-elevate forces position:relative and breaks absolute-positioned buttons — wrap in a plain div instead.
+- [DHL api-spec codegen + counts](dhl-app-api-codegen.md) — use named $ref schemas for request bodies (inline bodies collide in zod re-export); maintain seeded like/reaction counts with deltas, not COUNT(*) recompute.

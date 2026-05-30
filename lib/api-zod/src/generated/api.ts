@@ -1054,6 +1054,15 @@ export const GetPostsResponseItem = zod.object({
   "pinLng": zod.number().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "myReaction": zod.union([zod.literal('thumbsup'),zod.literal('thumbsdown'),zod.literal('heart'),zod.literal('laugh'),zod.literal('sad'),zod.literal('angry'),zod.literal(null)]).nullish(),
+  "reactionCounts": zod.object({
+  "thumbsup": zod.number().optional(),
+  "thumbsdown": zod.number().optional(),
+  "heart": zod.number().optional(),
+  "laugh": zod.number().optional(),
+  "sad": zod.number().optional(),
+  "angry": zod.number().optional()
+}).optional(),
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
   "createdAt": zod.string()
@@ -1120,6 +1129,15 @@ export const GetPostResponse = zod.object({
   "pinLng": zod.number().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "myReaction": zod.union([zod.literal('thumbsup'),zod.literal('thumbsdown'),zod.literal('heart'),zod.literal('laugh'),zod.literal('sad'),zod.literal('angry'),zod.literal(null)]).nullish(),
+  "reactionCounts": zod.object({
+  "thumbsup": zod.number().optional(),
+  "thumbsdown": zod.number().optional(),
+  "heart": zod.number().optional(),
+  "laugh": zod.number().optional(),
+  "sad": zod.number().optional(),
+  "angry": zod.number().optional()
+}).optional(),
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
   "createdAt": zod.string()
@@ -1135,13 +1153,17 @@ export const DeletePostParams = zod.object({
 
 
 /**
- * @summary Like a post
+ * @summary React to a post
  */
-export const LikePostParams = zod.object({
+export const ReactToPostParams = zod.object({
   "postId": zod.coerce.number()
 })
 
-export const LikePostResponse = zod.object({
+export const ReactToPostBody = zod.object({
+  "reaction": zod.enum(['thumbsup', 'thumbsdown', 'heart', 'laugh', 'sad', 'angry'])
+})
+
+export const ReactToPostResponse = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
   "user": zod.object({
@@ -1178,6 +1200,15 @@ export const LikePostResponse = zod.object({
   "pinLng": zod.number().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "myReaction": zod.union([zod.literal('thumbsup'),zod.literal('thumbsdown'),zod.literal('heart'),zod.literal('laugh'),zod.literal('sad'),zod.literal('angry'),zod.literal(null)]).nullish(),
+  "reactionCounts": zod.object({
+  "thumbsup": zod.number().optional(),
+  "thumbsdown": zod.number().optional(),
+  "heart": zod.number().optional(),
+  "laugh": zod.number().optional(),
+  "sad": zod.number().optional(),
+  "angry": zod.number().optional()
+}).optional(),
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
   "createdAt": zod.string()
@@ -1293,6 +1324,15 @@ export const GetPostsSummaryResponse = zod.object({
   "pinLng": zod.number().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "myReaction": zod.union([zod.literal('thumbsup'),zod.literal('thumbsdown'),zod.literal('heart'),zod.literal('laugh'),zod.literal('sad'),zod.literal('angry'),zod.literal(null)]).nullish(),
+  "reactionCounts": zod.object({
+  "thumbsup": zod.number().optional(),
+  "thumbsdown": zod.number().optional(),
+  "heart": zod.number().optional(),
+  "laugh": zod.number().optional(),
+  "sad": zod.number().optional(),
+  "angry": zod.number().optional()
+}).optional(),
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
   "createdAt": zod.string()
@@ -1524,6 +1564,15 @@ export const ToggleRsvpResponse = zod.object({
   "pinLng": zod.number().nullish(),
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
+  "myReaction": zod.union([zod.literal('thumbsup'),zod.literal('thumbsdown'),zod.literal('heart'),zod.literal('laugh'),zod.literal('sad'),zod.literal('angry'),zod.literal(null)]).nullish(),
+  "reactionCounts": zod.object({
+  "thumbsup": zod.number().optional(),
+  "thumbsdown": zod.number().optional(),
+  "heart": zod.number().optional(),
+  "laugh": zod.number().optional(),
+  "sad": zod.number().optional(),
+  "angry": zod.number().optional()
+}).optional(),
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
   "createdAt": zod.string()

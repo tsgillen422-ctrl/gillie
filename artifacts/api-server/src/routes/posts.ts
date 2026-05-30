@@ -5,6 +5,7 @@ import { eq, and, sql, desc, count } from "drizzle-orm";
 
 const router = Router();
 const SESSION_USER_ID = 1;
+const ALLOWED_REACTIONS = ["thumbsup", "thumbsdown", "heart", "laugh", "sad", "angry"];
 
 function formatUser(u: typeof usersTable.$inferSelect) {
   return {
@@ -32,6 +33,13 @@ async function formatPost(post: typeof postsTable.$inferSelect) {
   const like = await db.query.postLikesTable.findFirst({
     where: and(eq(postLikesTable.postId, post.id), eq(postLikesTable.userId, SESSION_USER_ID)),
   });
+  const reactionRows = await db
+    .select({ reaction: postLikesTable.reaction, value: count() })
+    .from(postLikesTable)
+    .where(eq(postLikesTable.postId, post.id))
+    .groupBy(postLikesTable.reaction);
+  const reactionCounts: Record<string, number> = {};
+  for (const row of reactionRows) reactionCounts[row.reaction] = row.value;
   let rsvpCount = 0;
   let rsvpByMe = false;
   if (post.postType === "event") {
@@ -59,6 +67,8 @@ async function formatPost(post: typeof postsTable.$inferSelect) {
     pinLng: post.pinLng,
     likeCount: post.likeCount,
     likedByMe: !!like,
+    myReaction: like?.reaction ?? null,
+    reactionCounts,
     rsvpCount,
     rsvpByMe,
     createdAt: post.createdAt.toISOString(),
@@ -156,20 +166,41 @@ router.delete("/:postId", async (req, res) => {
   res.json({ success: true });
 });
 
-router.post("/:postId/like", async (req, res) => {
+router.post("/:postId/react", async (req, res) => {
   const postId = parseInt(req.params.postId);
+  if (Number.isNaN(postId)) return res.status(400).json({ error: "Invalid post id" });
+  const reaction = String(req.body?.reaction || "");
+  if (!ALLOWED_REACTIONS.includes(reaction)) {
+    return res.status(400).json({ error: "Invalid reaction" });
+  }
+  const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
+  if (!post) return res.status(404).json({ error: "Post not found" });
+
   const existing = await db.query.postLikesTable.findFirst({
     where: and(eq(postLikesTable.postId, postId), eq(postLikesTable.userId, SESSION_USER_ID)),
   });
-  if (existing) {
+  let delta = 0;
+  if (existing && existing.reaction === reaction) {
     await db.delete(postLikesTable).where(eq(postLikesTable.id, existing.id));
-    await db.update(postsTable).set({ likeCount: sql`${postsTable.likeCount} - 1` }).where(eq(postsTable.id, postId));
+    delta = -1;
+  } else if (existing) {
+    await db.update(postLikesTable).set({ reaction }).where(eq(postLikesTable.id, existing.id));
   } else {
-    await db.insert(postLikesTable).values({ postId, userId: SESSION_USER_ID });
-    await db.update(postsTable).set({ likeCount: sql`${postsTable.likeCount} + 1` }).where(eq(postsTable.id, postId));
+    await db
+      .insert(postLikesTable)
+      .values({ postId, userId: SESSION_USER_ID, reaction })
+      .onConflictDoUpdate({ target: [postLikesTable.postId, postLikesTable.userId], set: { reaction } });
+    delta = 1;
   }
-  const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
-  res.json(await formatPost(post!));
+  if (delta !== 0) {
+    await db
+      .update(postsTable)
+      .set({ likeCount: sql`GREATEST(${postsTable.likeCount} + ${delta}, 0)` })
+      .where(eq(postsTable.id, postId));
+  }
+
+  const updated = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
+  res.json(await formatPost(updated!));
 });
 
 router.post("/:postId/rsvp", async (req, res) => {

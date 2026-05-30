@@ -606,20 +606,26 @@ paths:
         "200":
           description: Deleted
 
-  /posts/{postId}/like:
+  /posts/{postId}/react:
     post:
-      operationId: likePost
+      operationId: reactToPost
       tags: [posts]
-      summary: Like a post
+      summary: React to a post
       parameters:
         - name: postId
           in: path
           required: true
           schema:
             type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReactionInput"
       responses:
         "200":
-          description: Liked
+          description: Reacted
           content:
             application/json:
               schema:
@@ -1414,12 +1420,44 @@ components:
           type: integer
         likedByMe:
           type: boolean
+        myReaction:
+          type: ["string", "null"]
+          enum: [thumbsup, thumbsdown, heart, laugh, sad, angry, null]
+        reactionCounts:
+          $ref: "#/components/schemas/ReactionCounts"
         rsvpCount:
           type: integer
         rsvpByMe:
           type: boolean
         createdAt:
           type: string
+
+    ReactionType:
+      type: string
+      enum: [thumbsup, thumbsdown, heart, laugh, sad, angry]
+
+    ReactionInput:
+      type: object
+      required: [reaction]
+      properties:
+        reaction:
+          $ref: "#/components/schemas/ReactionType"
+
+    ReactionCounts:
+      type: object
+      properties:
+        thumbsup:
+          type: integer
+        thumbsdown:
+          type: integer
+        heart:
+          type: integer
+        laugh:
+          type: integer
+        sad:
+          type: integer
+        angry:
+          type: integer
 
     PostInput:
       type: object

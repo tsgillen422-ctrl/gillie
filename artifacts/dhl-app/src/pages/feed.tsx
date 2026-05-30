@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetPosts, useGetPostsSummary, useLikePost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useCreatePostComment, useDeletePostComment, useToggleRsvp, getGetPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey } from "@workspace/api-client-react";
+import { useGetPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useCreatePostComment, useDeletePostComment, useToggleRsvp, getGetPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey } from "@workspace/api-client-react";
 import { PostInputPostType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ConditionsWidget } from "@/components/ConditionsWidget";
@@ -27,6 +27,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUpload } from "@workspace/object-storage-web";
 import { compressImage } from "@/lib/compress";
+import { REACTIONS, REACTION_MAP, DEFAULT_REACTION, type ReactionKey } from "@/lib/reactions";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -40,7 +41,7 @@ export function FeedPage() {
   
   const { data: summary } = useGetPostsSummary();
   const { data: me } = useGetMe();
-  const likePost = useLikePost();
+  const reactPost = useReactToPost();
   const deletePost = useDeletePost();
   const createPost = useCreatePost();
   const queryClient = useQueryClient();
@@ -206,7 +207,7 @@ export function FeedPage() {
             <PostCard
               key={post.id}
               post={post}
-              onLike={() => likePost.mutate({ postId: post.id })}
+              onReact={(reaction) => reactPost.mutate({ postId: post.id, data: { reaction } }, { onSuccess: refreshPosts })}
               canDelete={me != null && post.userId === me.id}
               onDelete={() => handleDeletePost(post.id)}
               currentUserId={me?.id}
@@ -334,7 +335,98 @@ export function FeedPage() {
   );
 }
 
-function PostCard({ post, onLike, canDelete, onDelete, currentUserId }: { post: any, onLike: () => void, canDelete?: boolean, onDelete?: () => void, currentUserId?: number }) {
+function ReactionButton({ post, onReact }: { post: any, onReact: (reaction: ReactionKey) => void }) {
+  const [pickerOpen, setPickerOpen] = React.useState(false);
+  const timerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressed = React.useRef(false);
+
+  const current = post.myReaction ? REACTION_MAP[post.myReaction] : null;
+  const counts: Record<string, number> = post.reactionCounts || {};
+  const total = post.likeCount || 0;
+  const topEmojis = REACTIONS.filter((r) => (counts[r.key] || 0) > 0)
+    .sort((a, b) => (counts[b.key] || 0) - (counts[a.key] || 0))
+    .slice(0, 3)
+    .map((r) => r.emoji);
+
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const startPress = () => {
+    longPressed.current = false;
+    clearTimer();
+    timerRef.current = setTimeout(() => {
+      longPressed.current = true;
+      setPickerOpen(true);
+    }, 350);
+  };
+
+  const handleClick = () => {
+    clearTimer();
+    if (longPressed.current) {
+      longPressed.current = false;
+      return;
+    }
+    onReact((post.myReaction as ReactionKey) || DEFAULT_REACTION);
+  };
+
+  const choose = (key: ReactionKey) => {
+    setPickerOpen(false);
+    longPressed.current = false;
+    onReact(key);
+  };
+
+  React.useEffect(() => () => clearTimer(), []);
+
+  return (
+    <div className="relative flex-1">
+      {pickerOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setPickerOpen(false)} />
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 flex gap-1.5 rounded-full border border-border bg-card px-3 py-2 shadow-xl">
+            {REACTIONS.map((r) => (
+              <button
+                key={r.key}
+                type="button"
+                onClick={() => choose(r.key)}
+                aria-label={r.label}
+                title={r.label}
+                className={`text-2xl leading-none transition-transform hover:scale-125 active:scale-110 ${post.myReaction === r.key ? "scale-110" : ""}`}
+              >
+                {r.emoji}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <Button
+        variant="ghost"
+        size="sm"
+        className={`w-full select-none text-muted-foreground ${current ? "text-primary font-medium" : ""}`}
+        onPointerDown={startPress}
+        onPointerUp={clearTimer}
+        onPointerLeave={clearTimer}
+        onPointerCancel={clearTimer}
+        onContextMenu={(e) => e.preventDefault()}
+        onClick={handleClick}
+      >
+        {current ? (
+          <span className="mr-2 text-base leading-none">{current.emoji}</span>
+        ) : topEmojis.length > 0 ? (
+          <span className="mr-2 text-base leading-none">{topEmojis.join("")}</span>
+        ) : (
+          <Heart className="w-4 h-4 mr-2" />
+        )}
+        {total}
+      </Button>
+    </div>
+  );
+}
+
+function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post: any, onReact: (reaction: ReactionKey) => void, canDelete?: boolean, onDelete?: () => void, currentUserId?: number }) {
   const isEvent = post.postType === "event";
   const [showComments, setShowComments] = React.useState(false);
   const { data: comments } = useGetPostComments(post.id, { query: { enabled: showComments } });
@@ -494,10 +586,7 @@ function PostCard({ post, onLike, canDelete, onDelete, currentUserId }: { post: 
       </CardContent>
       
       <CardFooter className="p-2 border-t border-border/40 flex justify-between bg-muted/10">
-        <Button variant="ghost" size="sm" className={`flex-1 text-muted-foreground ${post.likedByMe ? 'text-destructive' : ''}`} onClick={onLike}>
-          <Heart className={`w-4 h-4 mr-2 ${post.likedByMe ? 'fill-destructive text-destructive' : ''}`} /> 
-          {post.likeCount || 0}
-        </Button>
+        <ReactionButton post={post} onReact={onReact} />
         <Button variant="ghost" size="sm" className={`flex-1 text-muted-foreground ${showComments ? 'text-primary' : ''}`} onClick={() => setShowComments(v => !v)}>
           <MessageCircle className="w-4 h-4 mr-2" /> {commentCount > 0 ? commentCount : "Comment"}
         </Button>

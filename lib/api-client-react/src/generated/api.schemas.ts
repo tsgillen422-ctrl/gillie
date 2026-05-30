@@ -293,6 +293,30 @@ export const PostPostType = {
   business: 'business',
 } as const;
 
+/**
+ * @nullable
+ */
+export type PostMyReaction = typeof PostMyReaction[keyof typeof PostMyReaction] | null;
+
+
+export const PostMyReaction = {
+  thumbsup: 'thumbsup',
+  thumbsdown: 'thumbsdown',
+  heart: 'heart',
+  laugh: 'laugh',
+  sad: 'sad',
+  angry: 'angry',
+} as const;
+
+export interface ReactionCounts {
+  thumbsup?: number;
+  thumbsdown?: number;
+  heart?: number;
+  laugh?: number;
+  sad?: number;
+  angry?: number;
+}
+
 export interface Post {
   id: number;
   userId: number;
@@ -312,9 +336,28 @@ export interface Post {
   pinLng?: number | null;
   likeCount?: number;
   likedByMe?: boolean;
+  /** @nullable */
+  myReaction?: PostMyReaction;
+  reactionCounts?: ReactionCounts;
   rsvpCount?: number;
   rsvpByMe?: boolean;
   createdAt: string;
+}
+
+export type ReactionType = typeof ReactionType[keyof typeof ReactionType];
+
+
+export const ReactionType = {
+  thumbsup: 'thumbsup',
+  thumbsdown: 'thumbsdown',
+  heart: 'heart',
+  laugh: 'laugh',
+  sad: 'sad',
+  angry: 'angry',
+} as const;
+
+export interface ReactionInput {
+  reaction: ReactionType;
 }
 
 export type PostInputPostType = typeof PostInputPostType[keyof typeof PostInputPostType];

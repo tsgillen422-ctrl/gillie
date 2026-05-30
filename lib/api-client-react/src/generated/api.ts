@@ -47,6 +47,7 @@ import type {
   Post,
   PostInput,
   PostsSummary,
+  ReactionInput,
   RsvpUser,
   SearchParams,
   SearchResults,
@@ -2452,36 +2453,38 @@ export const useDeletePost = <TError = ErrorType<unknown>,
       return useMutation(getDeletePostMutationOptions(options));
     }
 
-export const getLikePostUrl = (postId: number,) => {
+export const getReactToPostUrl = (postId: number,) => {
 
 
 
 
-  return `/api/posts/${postId}/like`
+  return `/api/posts/${postId}/react`
 }
 
 /**
- * @summary Like a post
+ * @summary React to a post
  */
-export const likePost = async (postId: number, options?: RequestInit): Promise<Post> => {
+export const reactToPost = async (postId: number,
+    reactionInput: ReactionInput, options?: RequestInit): Promise<Post> => {
 
-  return customFetch<Post>(getLikePostUrl(postId),
+  return customFetch<Post>(getReactToPostUrl(postId),
   {
     ...options,
-    method: 'POST'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reactionInput,)
   }
 );}
 
 
 
 
-export const getLikePostMutationOptions = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof likePost>>, TError,{postId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
-): UseMutationOptions<Awaited<ReturnType<typeof likePost>>, TError,{postId: number}, TContext> => {
+export const getReactToPostMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactToPost>>, TError,{postId: number;data: BodyType<ReactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reactToPost>>, TError,{postId: number;data: BodyType<ReactionInput>}, TContext> => {
 
-const mutationKey = ['likePost'];
+const mutationKey = ['reactToPost'];
 const {mutation: mutationOptions, request: requestOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -2491,10 +2494,10 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof likePost>>, {postId: number}> = (props) => {
-          const {postId} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reactToPost>>, {postId: number;data: BodyType<ReactionInput>}> = (props) => {
+          const {postId,data} = props ?? {};
 
-          return  likePost(postId,requestOptions)
+          return  reactToPost(postId,data,requestOptions)
         }
 
 
@@ -2504,22 +2507,22 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type LikePostMutationResult = NonNullable<Awaited<ReturnType<typeof likePost>>>
-
-    export type LikePostMutationError = ErrorType<unknown>
+    export type ReactToPostMutationResult = NonNullable<Awaited<ReturnType<typeof reactToPost>>>
+    export type ReactToPostMutationBody = BodyType<ReactionInput>
+    export type ReactToPostMutationError = ErrorType<unknown>
 
     /**
- * @summary Like a post
+ * @summary React to a post
  */
-export const useLikePost = <TError = ErrorType<unknown>,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof likePost>>, TError,{postId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+export const useReactToPost = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactToPost>>, TError,{postId: number;data: BodyType<ReactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
  ): UseMutationResult<
-        Awaited<ReturnType<typeof likePost>>,
+        Awaited<ReturnType<typeof reactToPost>>,
         TError,
-        {postId: number},
+        {postId: number;data: BodyType<ReactionInput>},
         TContext
       > => {
-      return useMutation(getLikePostMutationOptions(options));
+      return useMutation(getReactToPostMutationOptions(options));
     }
 
 export const getGetPostCommentsUrl = (postId: number,) => {

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { Home, Users, MessageCircle, MapPin, Bell, Settings, User, Search } from "lucide-react";
+import { Home, Users, MessageCircle, MapPin, Bell, Settings, User, Search, Fish } from "lucide-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -8,6 +8,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: "/", icon: Home, label: "Map" },
     { href: "/feed", icon: Users, label: "Feed" },
+    { href: "/catches", icon: Fish, label: "Catches" },
     { href: "/pins", icon: MapPin, label: "Pins" },
     { href: "/messages", icon: MessageCircle, label: "Messages" },
     { href: "/profile/me", icon: User, label: "Profile" },

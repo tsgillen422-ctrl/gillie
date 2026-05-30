@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
+import { SosButton } from "@/components/SosButton";
 import { AnimatePresence, motion } from "framer-motion";
 import { useUpload } from "@workspace/object-storage-web";
 import { boatSvgFor, FLAG_SVG } from "../boats";
@@ -1036,6 +1037,9 @@ export function MapPage() {
             <Crosshair className="h-4 w-4" />
           </button>
         </div>
+
+        {/* Emergency SOS — alerts friends with your location */}
+        <SosButton />
       </div>
 
       {/* Who's on the lake panel */}
