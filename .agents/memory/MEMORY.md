@@ -1,2 +1,3 @@
 - [Follower counts](follower-counts.md) — schema's followerCount/followingCount serial columns are bogus; always compute from friend_requests.
 - [Realtime websockets](realtime-websockets.md) — ws works through the Replit proxy at /api/ws; keep polling as fallback.
+- [Static asset base path](static-asset-base-path.md) — public/ asset URLs must rebase on import.meta.env.BASE_URL; hardcoded /dhl-app/seed/... breaks in dev.

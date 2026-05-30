@@ -29,6 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUpload } from "@workspace/object-storage-web";
 import { compressImage } from "@/lib/compress";
+import { resolveImageSrc } from "@/lib/assets";
 import { REACTIONS, REACTION_MAP, DEFAULT_REACTION, type ReactionKey } from "@/lib/reactions";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -639,7 +640,7 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
         
         {post.imageUrl && (
           <div className="mt-3 rounded-xl overflow-hidden bg-muted relative aspect-video">
-            <img src={post.imageUrl} alt="Post content" className="object-cover w-full h-full" />
+            <img src={resolveImageSrc(post.imageUrl)} alt="Post content" className="object-cover w-full h-full" />
           </div>
         )}
 

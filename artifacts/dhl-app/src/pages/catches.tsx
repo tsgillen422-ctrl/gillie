@@ -37,6 +37,7 @@ import {
 import { Fish, Plus, ImagePlus, X, Trash2, Lock } from "lucide-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { compressImage } from "@/lib/compress";
+import { resolveImageSrc } from "@/lib/assets";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
@@ -184,7 +185,7 @@ export function CatchesPage() {
                 </div>
                 {c.imageUrl && (
                   <div className="rounded-xl overflow-hidden bg-muted aspect-video mb-2">
-                    <img src={c.imageUrl} alt={c.species} className="object-cover w-full h-full" />
+                    <img src={resolveImageSrc(c.imageUrl)} alt={c.species} className="object-cover w-full h-full" />
                   </div>
                 )}
                 <div className="flex items-baseline gap-2 flex-wrap">
