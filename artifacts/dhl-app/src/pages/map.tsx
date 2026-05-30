@@ -242,6 +242,7 @@ type Selected =
   | { kind: "friend"; data: any }
   | { kind: "pin"; data: any }
   | { kind: "me"; data: any }
+  | { kind: "place"; data: LakePlace }
   | null;
 
 const el = (tag: string, className?: string) => {
@@ -444,6 +445,7 @@ export function MapPage() {
   const friendMarkers = useRef<maplibregl.Marker[]>([]);
   const pinMarkers = useRef<maplibregl.Marker[]>([]);
   const meMarker = useRef<maplibregl.Marker | null>(null);
+  const placeMarker = useRef<maplibregl.Marker | null>(null);
   // Water fill layer ids, used to detect whether a marker sits on water or land.
   const waterLayerIds = useRef<string[]>([]);
   // Supercluster index over low-priority pins + the raw pin list it was built from.
@@ -962,14 +964,39 @@ export function MapPage() {
     setPresenceOpen(false);
   };
 
-  const flyToPlace = (lng: number, lat: number) => {
+  const flyToPlace = (place: LakePlace) => {
     const map = mapRef.current;
-    if (map) map.flyTo({ center: [lng, lat], zoom: 14, essential: true });
-    setSelected(null);
+    if (map) map.flyTo({ center: [place.lng, place.lat], zoom: 14, essential: true });
+    setSelected({ kind: "place", data: place });
     setSearchOpen(false);
     setSearchQuery("");
     setPresenceOpen(false);
   };
+
+  // --- Temporary marker for a searched place (no permanent pin exists) ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (placeMarker.current) {
+      placeMarker.current.remove();
+      placeMarker.current = null;
+    }
+    if (!map || !styleReady) return;
+    if (selected?.kind !== "place") return;
+    const place = selected.data;
+    const root = el("div");
+    root.style.cssText =
+      "width:40px;height:40px;border-radius:9999px;background:#fff;border:3px solid #0284c7;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 12px rgba(0,0,0,.3);";
+    root.textContent = placeEmoji(place.category);
+    placeMarker.current = new maplibregl.Marker({ element: root, anchor: "center" })
+      .setLngLat([place.lng, place.lat])
+      .addTo(map);
+    return () => {
+      if (placeMarker.current) {
+        placeMarker.current.remove();
+        placeMarker.current = null;
+      }
+    };
+  }, [selected, styleReady]);
 
   // Only people currently on the water (not on land at marinas, restaurants, etc.)
   // belong in the "Who's on the lake" presence list and its count. Businesses
@@ -1009,7 +1036,7 @@ export function MapPage() {
           icon: placeEmoji(pl.category),
           title: pl.name,
           subtitle: pl.category,
-          onSelect: () => flyToPlace(pl.lng, pl.lat),
+          onSelect: () => flyToPlace(pl),
         });
       }
     }
@@ -1533,6 +1560,33 @@ function DetailCard({ selected, onClose }: { selected: NonNullable<Selected>; on
   const favoritePin = useToggleFavoritePin();
   const deletePin = useDeletePin();
   const { data: freshPins } = useGetPins({});
+
+  if (selected.kind === "place") {
+    const place = selected.data;
+    return (
+      <div className="mx-auto w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
+        <div className="flex items-start gap-3 p-4">
+          <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-2xl shrink-0">
+            {placeEmoji(place.category)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-lg leading-tight truncate">{place.name}</h3>
+            <p className="text-xs text-muted-foreground uppercase tracking-wide">{place.category}</p>
+          </div>
+          <Button size="icon" variant="ghost" className="h-8 w-8 -mr-1 -mt-1" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <div className="flex items-center gap-2 p-4 pt-0">
+          <Button className="flex-1 bg-primary hover:bg-primary/90" asChild>
+            <a href={`https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`} target="_blank" rel="noreferrer">
+              <Navigation className="w-4 h-4 mr-2" /> Navigate here
+            </a>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (selected.kind === "pin") {
     const pin = freshPins?.find((p) => p.id === selected.data.id) ?? selected.data;
