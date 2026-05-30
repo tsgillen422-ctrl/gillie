@@ -14,6 +14,7 @@ export const postsTable = pgTable("posts", {
   videoUrl: text("video_url"),
   pinLat: real("pin_lat"),
   pinLng: real("pin_lng"),
+  sharedPostId: integer("shared_post_id"),
   likeCount: integer("like_count").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

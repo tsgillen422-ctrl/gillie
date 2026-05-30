@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useCreatePostComment, useDeletePostComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey } from "@workspace/api-client-react";
+import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useCreatePostComment, useDeletePostComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useShareToProfile, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey } from "@workspace/api-client-react";
 import { PostInputPostType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ConditionsWidget } from "@/components/ConditionsWidget";
@@ -9,7 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Link, useSearch } from "wouter";
-import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, Flag, Bookmark, BookmarkCheck, VolumeX, Link2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, Flag, Bookmark, BookmarkCheck, VolumeX, Link2, Repeat2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -498,17 +498,40 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
   const savePost = useSavePost();
   const unsavePost = useUnsavePost();
   const muteUser = useMuteUser();
+  const shareToProfile = useShareToProfile();
   const [reportOpen, setReportOpen] = React.useState(false);
   const isOwnPost = currentUserId != null && post.userId === currentUserId;
 
-  const handleShare = async () => {
-    const url = `${window.location.origin}/profile/${post.userId}`;
+  const handleShareExternal = async () => {
+    const url = `${window.location.origin}${import.meta.env.BASE_URL}feed?post=${post.id}`;
+    const title = post.title || post.user?.displayName || "DHL post";
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text: post.content || title, url });
+        return;
+      } catch (err) {
+        if ((err as Error)?.name === "AbortError") return;
+      }
+    }
     try {
       await navigator.clipboard.writeText(url);
       toast.success("Link copied to clipboard.");
     } catch {
-      toast.error("Couldn't copy the link.");
+      toast.error("Couldn't share this post.");
     }
+  };
+
+  const handleShareToProfile = () => {
+    shareToProfile.mutate(
+      { postId: post.id, data: {} },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetPostsQueryKey() });
+          toast.success("Shared to your profile.");
+        },
+        onError: () => toast.error("Couldn't share to your profile."),
+      }
+    );
   };
 
   const handleToggleSave = () => {
@@ -687,9 +710,13 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
                       Report Post
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem onClick={handleShare}>
-                    <Link2 className="w-4 h-4" />
-                    Share
+                  <DropdownMenuItem onClick={handleShareToProfile}>
+                    <Repeat2 className="w-4 h-4" />
+                    Share to your profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleShareExternal}>
+                    <Share2 className="w-4 h-4" />
+                    Share to other apps
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleToggleSave}>
                     {post.savedByMe ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
@@ -710,6 +737,12 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
       </CardHeader>
       
       <CardContent className="p-4 pt-2">
+        {post.sharedPostId && (
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-2">
+            <Repeat2 className="w-3.5 h-3.5" />
+            Shared a post
+          </div>
+        )}
         {post.title && <h4 className="font-bold text-lg mb-1">{post.title}</h4>}
         
         {isEvent && post.eventDate && (
@@ -738,18 +771,50 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
           </div>
         )}
         
-        <p className="text-sm whitespace-pre-wrap">{post.content}</p>
-        
-        {post.imageUrl && (
-          <div className="mt-3 rounded-xl overflow-hidden bg-muted relative aspect-video">
-            <img src={resolveImageSrc(post.imageUrl)} alt="Post content" className="object-cover w-full h-full" />
-          </div>
-        )}
+        {post.content && <p className="text-sm whitespace-pre-wrap">{post.content}</p>}
 
-        {post.videoUrl && (
-          <div className="mt-3 rounded-xl overflow-hidden bg-black relative aspect-video">
-            <video src={post.videoUrl} controls className="w-full h-full" />
-          </div>
+        {post.sharedPostId ? (
+          post.sharedPost ? (
+            <Link href={`/feed?post=${post.sharedPost.id}`} className="block mt-3">
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-3 hover-elevate">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <UserAvatar name={post.sharedPost.user?.displayName || "User"} username={post.sharedPost.user?.username || ""} avatarUrl={post.sharedPost.user?.avatarUrl} className="w-6 h-6" />
+                  <span className="font-semibold text-xs truncate">{post.sharedPost.user?.displayName}</span>
+                  <span className="text-[10px] text-muted-foreground whitespace-nowrap">{formatDistanceToNow(new Date(post.sharedPost.createdAt), { addSuffix: true })}</span>
+                </div>
+                {post.sharedPost.title && <h4 className="font-bold text-sm mb-0.5">{post.sharedPost.title}</h4>}
+                {post.sharedPost.content && <p className="text-sm whitespace-pre-wrap line-clamp-6">{post.sharedPost.content}</p>}
+                {post.sharedPost.imageUrl && (
+                  <div className="mt-2 rounded-lg overflow-hidden bg-muted relative aspect-video">
+                    <img src={resolveImageSrc(post.sharedPost.imageUrl)} alt="Shared post" className="object-cover w-full h-full" />
+                  </div>
+                )}
+                {post.sharedPost.videoUrl && (
+                  <div className="mt-2 rounded-lg overflow-hidden bg-black relative aspect-video">
+                    <video src={post.sharedPost.videoUrl} controls className="w-full h-full" />
+                  </div>
+                )}
+              </div>
+            </Link>
+          ) : (
+            <div className="mt-3 rounded-xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground text-center">
+              This post is no longer available.
+            </div>
+          )
+        ) : (
+          <>
+            {post.imageUrl && (
+              <div className="mt-3 rounded-xl overflow-hidden bg-muted relative aspect-video">
+                <img src={resolveImageSrc(post.imageUrl)} alt="Post content" className="object-cover w-full h-full" />
+              </div>
+            )}
+
+            {post.videoUrl && (
+              <div className="mt-3 rounded-xl overflow-hidden bg-black relative aspect-video">
+                <video src={post.videoUrl} controls className="w-full h-full" />
+              </div>
+            )}
+          </>
         )}
       </CardContent>
       

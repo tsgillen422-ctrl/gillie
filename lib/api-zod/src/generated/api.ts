@@ -1347,6 +1347,8 @@ export const GetPostsResponseItem = zod.object({
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
   "savedByMe": zod.boolean().optional(),
+  "sharedPostId": zod.number().nullish(),
+  "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
   "createdAt": zod.string()
 })
 export const GetPostsResponse = zod.array(GetPostsResponseItem)
@@ -1364,6 +1366,18 @@ export const CreatePostBody = zod.object({
   "videoUrl": zod.string().optional(),
   "pinLat": zod.number().optional(),
   "pinLng": zod.number().optional()
+})
+
+
+/**
+ * @summary Share a post to your profile (repost)
+ */
+export const ShareToProfileParams = zod.object({
+  "postId": zod.coerce.number()
+})
+
+export const ShareToProfileBody = zod.object({
+  "content": zod.string().optional()
 })
 
 
@@ -1429,6 +1443,8 @@ export const GetPostResponse = zod.object({
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
   "savedByMe": zod.boolean().optional(),
+  "sharedPostId": zod.number().nullish(),
+  "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
   "createdAt": zod.string()
 })
 
@@ -1507,6 +1523,8 @@ export const ReactToPostResponse = zod.object({
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
   "savedByMe": zod.boolean().optional(),
+  "sharedPostId": zod.number().nullish(),
+  "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
   "createdAt": zod.string()
 })
 
@@ -1646,6 +1664,8 @@ export const GetPostsSummaryResponse = zod.object({
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
   "savedByMe": zod.boolean().optional(),
+  "sharedPostId": zod.number().nullish(),
+  "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
   "createdAt": zod.string()
 })).optional(),
   "recentPins": zod.array(zod.object({
@@ -1913,6 +1933,8 @@ export const ToggleRsvpResponse = zod.object({
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
   "savedByMe": zod.boolean().optional(),
+  "sharedPostId": zod.number().nullish(),
+  "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
   "createdAt": zod.string()
 })
 
@@ -2310,6 +2332,8 @@ export const GetSavedPostsResponseItem = zod.object({
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
   "savedByMe": zod.boolean().optional(),
+  "sharedPostId": zod.number().nullish(),
+  "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
   "createdAt": zod.string()
 })
 export const GetSavedPostsResponse = zod.array(GetSavedPostsResponseItem)

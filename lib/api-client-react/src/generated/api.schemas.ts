@@ -365,7 +365,14 @@ export interface Post {
   rsvpCount?: number;
   rsvpByMe?: boolean;
   savedByMe?: boolean;
+  /** @nullable */
+  sharedPostId?: number | null;
+  sharedPost?: null | Post;
   createdAt: string;
+}
+
+export interface ShareInput {
+  content?: string;
 }
 
 export type ReactionType = typeof ReactionType[keyof typeof ReactionType];

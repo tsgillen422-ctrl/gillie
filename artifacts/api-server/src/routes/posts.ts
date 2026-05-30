@@ -28,7 +28,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
   };
 }
 
-async function formatPost(post: typeof postsTable.$inferSelect) {
+async function formatPost(post: typeof postsTable.$inferSelect, embedShared = true): Promise<any> {
   const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, post.userId) });
   const like = await db.query.postLikesTable.findFirst({
     where: and(eq(postLikesTable.postId, post.id), eq(postLikesTable.userId, SESSION_USER_ID)),
@@ -56,6 +56,16 @@ async function formatPost(post: typeof postsTable.$inferSelect) {
     });
     rsvpByMe = mine?.status === "going";
   }
+  let sharedPost = null;
+  if (post.sharedPostId && embedShared) {
+    const orig = await db.query.postsTable.findFirst({ where: eq(postsTable.id, post.sharedPostId) });
+    if (orig) {
+      const muted = await db.query.mutesTable.findFirst({
+        where: and(eq(mutesTable.muterId, SESSION_USER_ID), eq(mutesTable.mutedId, orig.userId)),
+      });
+      if (!muted) sharedPost = await formatPost(orig, false);
+    }
+  }
   return {
     id: post.id,
     userId: post.userId,
@@ -75,6 +85,8 @@ async function formatPost(post: typeof postsTable.$inferSelect) {
     rsvpCount,
     rsvpByMe,
     savedByMe: !!saved,
+    sharedPostId: post.sharedPostId ?? null,
+    sharedPost,
     createdAt: post.createdAt.toISOString(),
   };
 }
@@ -123,6 +135,30 @@ router.post("/", async (req, res) => {
       videoUrl,
       pinLat,
       pinLng,
+    })
+    .returning();
+  res.status(201).json(await formatPost(post));
+});
+
+router.post("/:postId/share", async (req, res) => {
+  const postId = Number(req.params.postId);
+  if (!Number.isInteger(postId)) return res.status(400).json({ error: "Invalid post id" });
+  const original = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
+  if (!original) return res.status(404).json({ error: "Post not found" });
+  const sourceId = original.sharedPostId ?? original.id;
+  if (sourceId !== original.id) {
+    const source = await db.query.postsTable.findFirst({ where: eq(postsTable.id, sourceId) });
+    if (!source) return res.status(404).json({ error: "Original post is no longer available" });
+  }
+  const content = typeof req.body?.content === "string" ? req.body.content : "";
+  const [post] = await db
+    .insert(postsTable)
+    .values({
+      userId: SESSION_USER_ID,
+      title: "",
+      content,
+      postType: "post",
+      sharedPostId: sourceId,
     })
     .returning();
   res.status(201).json(await formatPost(post));

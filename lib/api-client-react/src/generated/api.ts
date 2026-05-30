@@ -57,6 +57,7 @@ import type {
   SearchParams,
   SearchResults,
   SearchUsersParams,
+  ShareInput,
   SosInput,
   SosResult,
   UploadUrlRequest,
@@ -2750,6 +2751,78 @@ export const useCreatePost = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreatePostMutationOptions(options));
+    }
+
+export const getShareToProfileUrl = (postId: number,) => {
+
+
+
+
+  return `/api/posts/${postId}/share`
+}
+
+/**
+ * @summary Share a post to your profile (repost)
+ */
+export const shareToProfile = async (postId: number,
+    shareInput?: ShareInput, options?: RequestInit): Promise<Post> => {
+
+  return customFetch<Post>(getShareToProfileUrl(postId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      shareInput,)
+  }
+);}
+
+
+
+
+export const getShareToProfileMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shareToProfile>>, TError,{postId: number;data?: BodyType<ShareInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof shareToProfile>>, TError,{postId: number;data?: BodyType<ShareInput>}, TContext> => {
+
+const mutationKey = ['shareToProfile'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof shareToProfile>>, {postId: number;data?: BodyType<ShareInput>}> = (props) => {
+          const {postId,data} = props ?? {};
+
+          return  shareToProfile(postId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ShareToProfileMutationResult = NonNullable<Awaited<ReturnType<typeof shareToProfile>>>
+    export type ShareToProfileMutationBody = BodyType<ShareInput> | undefined
+    export type ShareToProfileMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Share a post to your profile (repost)
+ */
+export const useShareToProfile = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof shareToProfile>>, TError,{postId: number;data?: BodyType<ShareInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof shareToProfile>>,
+        TError,
+        {postId: number;data?: BodyType<ShareInput>},
+        TContext
+      > => {
+      return useMutation(getShareToProfileMutationOptions(options));
     }
 
 export const getGetPostUrl = (postId: number,) => {

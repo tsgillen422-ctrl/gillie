@@ -73,6 +73,7 @@ export * from './searchPin';
 export * from './searchPost';
 export * from './searchResults';
 export * from './searchUsersParams';
+export * from './shareInput';
 export * from './sosInput';
 export * from './sosResult';
 export * from './uploadUrlRequest';

@@ -35,5 +35,8 @@ export interface Post {
   rsvpCount?: number;
   rsvpByMe?: boolean;
   savedByMe?: boolean;
+  /** @nullable */
+  sharedPostId?: number | null;
+  sharedPost?: null | Post;
   createdAt: string;
 }
