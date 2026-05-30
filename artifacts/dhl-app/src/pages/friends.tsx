@@ -6,11 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, UserPlus, Check, X, UserMinus, Navigation, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export function FriendsPage() {
   const [search, setSearch] = React.useState("");
+  const searchParams = useSearch();
+  const [tab, setTab] = React.useState("friends");
+
+  React.useEffect(() => {
+    const t = new URLSearchParams(searchParams).get("tab");
+    if (t === "requests" || t === "friends") setTab(t);
+  }, [searchParams]);
   const { data: friends, isLoading: loadingFriends } = useGetFriends();
   const { data: requests, isLoading: loadingRequests } = useGetFriendRequests();
   const { data: searchResults, isLoading: loadingSearch } = useSearchUsers({ q: search }, { query: { enabled: search.length > 2 } });
@@ -55,7 +62,7 @@ export function FriendsPage() {
             )}
           </div>
         ) : (
-          <Tabs defaultValue="friends" className="w-full">
+          <Tabs value={tab} onValueChange={setTab} className="w-full">
             <TabsList className="w-full mb-4">
               <TabsTrigger value="friends" className="flex-1">My Crew</TabsTrigger>
               <TabsTrigger value="requests" className="flex-1 relative">

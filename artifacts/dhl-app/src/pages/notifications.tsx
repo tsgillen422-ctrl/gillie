@@ -6,6 +6,7 @@ import { Bell, UserPlus, MessageSquare, Heart, Calendar, Trash2 } from "lucide-r
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "wouter";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +25,25 @@ export function NotificationsPage() {
   const markRead = useMarkNotificationRead();
   const deleteNotif = useDeleteNotification();
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
+
+  const getTarget = (notif: { type: string; relatedId?: number | null }): string | null => {
+    switch (notif.type) {
+      case 'friend_request': return '/friends?tab=requests';
+      case 'message': return notif.relatedId != null ? `/messages/${notif.relatedId}` : '/messages';
+      case 'post_like':
+      case 'event': return '/feed';
+      case 'pin_like': return '/pins';
+      case 'system': return '/settings';
+      default: return null;
+    }
+  };
+
+  const handleOpen = (notif: { id: number; type: string; relatedId?: number | null; read: boolean }) => {
+    if (!notif.read) markRead.mutate({ notificationId: notif.id });
+    const target = getTarget(notif);
+    if (target) navigate(target);
+  };
 
   const handleDelete = (notificationId: number) => {
     deleteNotif.mutate(
@@ -70,10 +90,8 @@ export function NotificationsPage() {
             {notifications.map(notif => (
               <div 
                 key={notif.id} 
-                className={`p-4 flex gap-4 items-center transition-colors ${!notif.read ? 'bg-primary/5' : 'bg-card'}`}
-                onClick={() => {
-                  if (!notif.read) markRead.mutate({ notificationId: notif.id });
-                }}
+                className={`p-4 flex gap-4 items-center transition-colors hover:bg-muted/40 cursor-pointer ${!notif.read ? 'bg-primary/5' : 'bg-card'}`}
+                onClick={() => handleOpen(notif)}
               >
                 <div className="shrink-0 p-2 bg-background rounded-full shadow-sm border border-border/50">
                   {getIcon(notif.type)}
