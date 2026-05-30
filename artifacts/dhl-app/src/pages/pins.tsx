@@ -4,16 +4,29 @@ import {
   useGetFavoritePins,
   useGetPendingPins,
   useApprovePin,
+  useDeletePin,
   useGetMe,
   getGetPinsQueryKey,
+  getGetFavoritePinsQueryKey,
   getGetPendingPinsQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, Navigation, Check, Lock, Globe, Users, Bookmark } from "lucide-react";
+import { Search, MapPin, Navigation, Check, Lock, Globe, Users, Bookmark, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -82,7 +95,20 @@ export function PinsPage() {
   });
   const { data: pendingPins } = useGetPendingPins({ query: { enabled: isOwner } });
   const approvePin = useApprovePin();
+  const deletePin = useDeletePin();
   const queryClient = useQueryClient();
+
+  const handleDelete = (pinId: number, isLandmark: boolean) => {
+    deletePin.mutate({ pinId }, {
+      onSuccess: () => {
+        toast.success(`${isLandmark ? "Landmark" : "Pin"} deleted.`);
+        queryClient.invalidateQueries({ queryKey: getGetPinsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetFavoritePinsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetPendingPinsQueryKey() });
+      },
+      onError: () => toast.error("Couldn't delete that. Please try again."),
+    });
+  };
 
   const handleApprove = (pinId: number) => {
     approvePin.mutate({ pinId }, {
@@ -206,11 +232,45 @@ export function PinsPage() {
                       Added by {pin.user?.displayName || 'Unknown'}
                     </p>
                   </div>
-                  <Button size="icon" variant="ghost" className="shrink-0 text-primary hover:bg-primary/10" asChild>
-                    <Link href={`/map?lat=${pin.lat}&lng=${pin.lng}`}>
-                      <Navigation className="w-5 h-5" />
-                    </Link>
-                  </Button>
+                  <div className="flex flex-col items-center gap-1 shrink-0">
+                    <Button size="icon" variant="ghost" className="text-primary hover:bg-primary/10" asChild>
+                      <Link href={`/map?lat=${pin.lat}&lng=${pin.lng}`}>
+                        <Navigation className="w-5 h-5" />
+                      </Link>
+                    </Button>
+                    {me != null && pin.userId === me.id && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            aria-label={`Delete ${pin.type === "landmark" ? "landmark" : "pin"}`}
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete this {pin.type === "landmark" ? "landmark" : "pin"}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              "{pin.title}" will be permanently removed from the map. This can't be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(pin.id, pin.type === "landmark")}
+                              disabled={deletePin.isPending}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             );

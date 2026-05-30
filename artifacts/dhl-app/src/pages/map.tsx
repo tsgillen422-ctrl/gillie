@@ -2,12 +2,23 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Supercluster from "supercluster";
-import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey } from "@workspace/api-client-react";
+import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey } from "@workspace/api-client-react";
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
-import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X, ImagePlus, Heart, Star, Search } from "lucide-react";
+import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X, ImagePlus, Heart, Star, Search, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -1332,15 +1343,32 @@ export function MapPage() {
 // --- Slide-up social-style detail card ---
 function DetailCard({ selected, onClose }: { selected: NonNullable<Selected>; onClose: () => void }) {
   const queryClient = useQueryClient();
+  const { data: me } = useGetMe();
   const likePin = useLikePin();
   const favoritePin = useToggleFavoritePin();
+  const deletePin = useDeletePin();
   const { data: freshPins } = useGetPins({});
 
   if (selected.kind === "pin") {
     const pin = freshPins?.find((p) => p.id === selected.data.id) ?? selected.data;
+    const isOwner = me != null && pin.userId === me.id;
+    const isLandmark = pin.type === "landmark";
     const refreshPins = () => {
       queryClient.invalidateQueries({ queryKey: getGetPinsQueryKey() });
       queryClient.invalidateQueries({ queryKey: getGetFavoritePinsQueryKey() });
+    };
+    const handleDelete = () => {
+      deletePin.mutate(
+        { pinId: pin.id },
+        {
+          onSuccess: () => {
+            toast.success(`${isLandmark ? "Landmark" : "Pin"} deleted.`);
+            refreshPins();
+            onClose();
+          },
+          onError: () => toast.error("Couldn't delete that. Please try again."),
+        }
+      );
     };
     return (
       <div className="mx-auto w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
@@ -1387,12 +1415,44 @@ function DetailCard({ selected, onClose }: { selected: NonNullable<Selected>; on
             <Star className={`w-4 h-4 mr-1.5 ${pin.favoritedByMe ? "fill-current" : ""}`} /> {pin.favoritedByMe ? "Saved" : "Save"}
           </Button>
         </div>
-        <div className="p-4 pt-3">
-          <Button className="w-full bg-primary hover:bg-primary/90" asChild>
+        <div className="flex items-center gap-2 p-4 pt-3">
+          <Button className="flex-1 bg-primary hover:bg-primary/90" asChild>
             <a href={`https://www.google.com/maps/dir/?api=1&destination=${pin.lat},${pin.lng}`} target="_blank" rel="noreferrer">
               <Navigation className="w-4 h-4 mr-2" /> Navigate here
             </a>
           </Button>
+          {isOwner && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  aria-label={`Delete ${isLandmark ? "landmark" : "pin"}`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this {isLandmark ? "landmark" : "pin"}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    "{pin.title}" will be permanently removed from the map. This can't be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    disabled={deletePin.isPending}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </div>
       </div>
     );
