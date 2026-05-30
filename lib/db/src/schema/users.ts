@@ -22,6 +22,7 @@ export const usersTable = pgTable("users", {
   boatAccent: text("boat_accent"),
   shareLocation: boolean("share_location").notNull().default(true),
   requireFollowApproval: boolean("require_follow_approval").notNull().default(false),
+  showFollowers: boolean("show_followers").notNull().default(true),
   followerCount: serial("follower_count"),
   followingCount: serial("following_count"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

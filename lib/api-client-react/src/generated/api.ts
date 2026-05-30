@@ -977,6 +977,160 @@ export function useGetBlockedUsers<TData = Awaited<ReturnType<typeof getBlockedU
 
 
 
+export const getGetFollowersUrl = (userId: number,) => {
+
+
+
+
+  return `/api/friends/${userId}/followers`
+}
+
+/**
+ * @summary Get users who follow this user
+ */
+export const getFollowers = async (userId: number, options?: RequestInit): Promise<User[]> => {
+
+  return customFetch<User[]>(getGetFollowersUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFollowersQueryKey = (userId: number,) => {
+    return [
+    `/api/friends/${userId}/followers`
+    ] as const;
+    }
+
+
+export const getGetFollowersQueryOptions = <TData = Awaited<ReturnType<typeof getFollowers>>, TError = ErrorType<void>>(userId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFollowers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFollowersQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFollowers>>> = ({ signal }) => getFollowers(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(userId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFollowers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFollowersQueryResult = NonNullable<Awaited<ReturnType<typeof getFollowers>>>
+export type GetFollowersQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get users who follow this user
+ */
+
+export function useGetFollowers<TData = Awaited<ReturnType<typeof getFollowers>>, TError = ErrorType<void>>(
+ userId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFollowers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFollowersQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetFollowingUrl = (userId: number,) => {
+
+
+
+
+  return `/api/friends/${userId}/following`
+}
+
+/**
+ * @summary Get users this user follows
+ */
+export const getFollowing = async (userId: number, options?: RequestInit): Promise<User[]> => {
+
+  return customFetch<User[]>(getGetFollowingUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetFollowingQueryKey = (userId: number,) => {
+    return [
+    `/api/friends/${userId}/following`
+    ] as const;
+    }
+
+
+export const getGetFollowingQueryOptions = <TData = Awaited<ReturnType<typeof getFollowing>>, TError = ErrorType<void>>(userId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFollowing>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetFollowingQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFollowing>>> = ({ signal }) => getFollowing(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(userId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getFollowing>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetFollowingQueryResult = NonNullable<Awaited<ReturnType<typeof getFollowing>>>
+export type GetFollowingQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get users this user follows
+ */
+
+export function useGetFollowing<TData = Awaited<ReturnType<typeof getFollowing>>, TError = ErrorType<void>>(
+ userId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFollowing>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetFollowingQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getBlockUserUrl = (userId: number,) => {
 
 

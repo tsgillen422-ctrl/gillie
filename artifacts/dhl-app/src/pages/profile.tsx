@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams, Link } from "wouter";
-import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useGetFriends, getGetUserQueryKey, getGetGalleryQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey } from "@workspace/api-client-react";
+import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useGetFriends, useGetFollowers, useGetFollowing, getGetUserQueryKey, getGetGalleryQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -186,12 +186,17 @@ export function ProfilePage() {
     queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(id) });
     queryClient.invalidateQueries({ queryKey: getGetFriendsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetBlockedUsersQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetFollowersQueryKey(id) });
+    queryClient.invalidateQueries({ queryKey: getGetFollowingQueryKey(id) });
   };
 
+  const [followList, setFollowList] = React.useState<"followers" | "following" | null>(null);
   const friendStatus = (otherUser as any)?.friendStatus as string | undefined;
   const isFriend = friendStatus ? friendStatus === "accepted" : friends?.some((f) => f.id === id);
   const isBlocked = friendStatus === "blocked";
   const isPending = friendStatus === "pending_out";
+  const showFollowers = (otherUser as any)?.showFollowers;
+  const canViewFollows = isSelf || showFollowers !== false;
   const userPosts = posts?.filter((p) => p.userId === id);
   const userPins = pins?.filter((p) => p.userId === id);
 
@@ -255,16 +260,36 @@ export function ProfilePage() {
           <p className="text-muted-foreground mb-4">@{user.username}</p>
 
           <div className="flex items-center gap-4 mb-6 text-sm">
-            <div className="text-center">
-              <div className="font-bold">{user.followerCount || 0}</div>
-              <div className="text-muted-foreground text-xs uppercase tracking-wider">Followers</div>
-            </div>
+            {canViewFollows ? (
+              <button type="button" className="text-center transition-opacity hover:opacity-70" onClick={() => setFollowList("followers")}>
+                <div className="font-bold">{user.followerCount || 0}</div>
+                <div className="text-muted-foreground text-xs uppercase tracking-wider">Followers</div>
+              </button>
+            ) : (
+              <div className="text-center">
+                <div className="font-bold">{user.followerCount || 0}</div>
+                <div className="text-muted-foreground text-xs uppercase tracking-wider">Followers</div>
+              </div>
+            )}
             <div className="w-px h-8 bg-border" />
-            <div className="text-center">
-              <div className="font-bold">{user.followingCount || 0}</div>
-              <div className="text-muted-foreground text-xs uppercase tracking-wider">Following</div>
-            </div>
+            {canViewFollows ? (
+              <button type="button" className="text-center transition-opacity hover:opacity-70" onClick={() => setFollowList("following")}>
+                <div className="font-bold">{user.followingCount || 0}</div>
+                <div className="text-muted-foreground text-xs uppercase tracking-wider">Following</div>
+              </button>
+            ) : (
+              <div className="text-center">
+                <div className="font-bold">{user.followingCount || 0}</div>
+                <div className="text-muted-foreground text-xs uppercase tracking-wider">Following</div>
+              </div>
+            )}
           </div>
+
+          <FollowListDialog
+            userId={id}
+            mode={followList}
+            onOpenChange={(open) => { if (!open) setFollowList(null); }}
+          />
 
           <div className="flex flex-col gap-2 w-full max-w-xs">
             {isSelf ? (
@@ -552,5 +577,73 @@ export function ProfilePage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function FollowListDialog({
+  userId,
+  mode,
+  onOpenChange,
+}: {
+  userId: number;
+  mode: "followers" | "following" | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const followers = useGetFollowers(userId, { query: { enabled: mode === "followers" } });
+  const following = useGetFollowing(userId, { query: { enabled: mode === "following" } });
+  const active = mode === "followers" ? followers : following;
+  const list = active.data;
+  const isLoading = active.isLoading;
+  const isError = active.isError;
+
+  return (
+    <Dialog open={mode !== null} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{mode === "followers" ? "Followers" : "Following"}</DialogTitle>
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-y-auto -mx-2 px-2">
+          {isLoading ? (
+            <div className="space-y-3 py-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <Skeleton className="w-10 h-10 rounded-full" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3 w-28" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : isError ? (
+            <p className="text-sm text-muted-foreground text-center py-8">This list is private.</p>
+          ) : !list || list.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              {mode === "followers" ? "No followers yet." : "Not following anyone yet."}
+            </p>
+          ) : (
+            <div className="space-y-1 py-1">
+              {list.map((u) => (
+                <Link
+                  key={u.id}
+                  href={`/profile/${u.id}`}
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors"
+                  onClick={() => onOpenChange(false)}
+                >
+                  <UserAvatar name={u.displayName} username={u.username} avatarUrl={u.avatarUrl ?? undefined} className="w-10 h-10" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate flex items-center gap-1">
+                      {u.displayName}
+                      {u.isBusiness && <BadgeCheck className="w-3.5 h-3.5 text-primary shrink-0" />}
+                    </p>
+                    <p className="text-xs text-muted-foreground truncate">@{u.username}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

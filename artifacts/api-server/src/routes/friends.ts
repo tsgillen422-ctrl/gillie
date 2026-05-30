@@ -151,6 +151,58 @@ router.get("/blocks", async (_req, res) => {
   res.json(users.map((u) => formatUser(u)));
 });
 
+router.get("/:userId/followers", async (req, res) => {
+  const targetId = parseInt(req.params.userId);
+  const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
+  if (!target) return res.status(404).json({ error: "User not found" });
+  if (targetId !== SESSION_USER_ID) {
+    const blocked = await db.query.blocksTable.findFirst({
+      where: or(
+        and(eq(blocksTable.blockerId, SESSION_USER_ID), eq(blocksTable.blockedId, targetId)),
+        and(eq(blocksTable.blockerId, targetId), eq(blocksTable.blockedId, SESSION_USER_ID))
+      ),
+    });
+    if (blocked) return res.status(403).json({ error: "This user has hidden their followers" });
+    if (!target.showFollowers) {
+      return res.status(403).json({ error: "This user has hidden their followers" });
+    }
+  }
+  const rows = await db.query.friendRequestsTable.findMany({
+    where: and(eq(friendRequestsTable.followeeId, targetId), eq(friendRequestsTable.status, "accepted")),
+  });
+  const blockedIds = await getBlockedUserIds(SESSION_USER_ID);
+  const ids = rows.map((r) => r.followerId).filter((id) => !blockedIds.includes(id));
+  if (!ids.length) return res.json([]);
+  const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, ids) });
+  res.json(users.map(formatUser));
+});
+
+router.get("/:userId/following", async (req, res) => {
+  const targetId = parseInt(req.params.userId);
+  const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
+  if (!target) return res.status(404).json({ error: "User not found" });
+  if (targetId !== SESSION_USER_ID) {
+    const blocked = await db.query.blocksTable.findFirst({
+      where: or(
+        and(eq(blocksTable.blockerId, SESSION_USER_ID), eq(blocksTable.blockedId, targetId)),
+        and(eq(blocksTable.blockerId, targetId), eq(blocksTable.blockedId, SESSION_USER_ID))
+      ),
+    });
+    if (blocked) return res.status(403).json({ error: "This user has hidden who they follow" });
+    if (!target.showFollowers) {
+      return res.status(403).json({ error: "This user has hidden who they follow" });
+    }
+  }
+  const rows = await db.query.friendRequestsTable.findMany({
+    where: and(eq(friendRequestsTable.followerId, targetId), eq(friendRequestsTable.status, "accepted")),
+  });
+  const blockedIds = await getBlockedUserIds(SESSION_USER_ID);
+  const ids = rows.map((r) => r.followeeId).filter((id) => !blockedIds.includes(id));
+  if (!ids.length) return res.json([]);
+  const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, ids) });
+  res.json(users.map(formatUser));
+});
+
 router.post("/:userId/follow", async (req, res) => {
   const targetId = parseInt(req.params.userId);
   if (targetId === SESSION_USER_ID) {
@@ -267,6 +319,9 @@ router.post("/:requestId/accept", async (req, res) => {
     where: eq(friendRequestsTable.id, requestId),
   });
   if (!existing) return res.status(404).json({ error: "Request not found" });
+  if (existing.followeeId !== SESSION_USER_ID) {
+    return res.status(403).json({ error: "You can't respond to this request" });
+  }
 
   if (status === "rejected") {
     await db.delete(friendRequestsTable).where(eq(friendRequestsTable.id, requestId));

@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff } from "lucide-react";
+import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { compressImage } from "@/lib/compress";
 import { boatSvgFor, FLAG_SVG } from "../boats";
@@ -97,6 +97,7 @@ export function SettingsPage() {
   const [bio, setBio] = React.useState("");
   const [shareLocation, setShareLocation] = React.useState(true);
   const [requireFollowApproval, setRequireFollowApproval] = React.useState(false);
+  const [showFollowers, setShowFollowers] = React.useState(true);
   const [avatarUrl, setAvatarUrl] = React.useState<string | undefined>(undefined);
   const [coverUrl, setCoverUrl] = React.useState<string | undefined>(undefined);
 
@@ -123,6 +124,7 @@ export function SettingsPage() {
       setBio(me.bio || "");
       setShareLocation(me.shareLocation ?? true);
       setRequireFollowApproval((me as any).requireFollowApproval ?? false);
+      setShowFollowers((me as any).showFollowers ?? true);
       setAvatarUrl(me.avatarUrl ?? undefined);
       setCoverUrl(me.coverUrl ?? undefined);
     }
@@ -203,6 +205,24 @@ export function SettingsPage() {
     });
   };
 
+  const handleToggleShowFollowers = (checked: boolean) => {
+    setShowFollowers(checked);
+    updateMe.mutate({ data: { showFollowers: checked } }, {
+      onSuccess: () => {
+        toast({
+          title: checked ? "Followers Visible" : "Followers Hidden",
+          description: checked
+            ? "Others can see your followers and following."
+            : "Only you can see your followers and following.",
+        });
+      },
+      onError: () => {
+        setShowFollowers(!checked);
+        toast({ title: "Error", description: "Failed to update setting.", variant: "destructive" });
+      },
+    });
+  };
+
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
 
   return (
@@ -249,6 +269,24 @@ export function SettingsPage() {
                 </div>
               </div>
               <Switch checked={requireFollowApproval} onCheckedChange={handleToggleApproval} className="data-[state=checked]:bg-primary" />
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Followers Visibility */}
+        <Card className="border-border shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-full ${showFollowers ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                  {showFollowers ? <Users className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Show Followers & Following</CardTitle>
+                  <CardDescription>Let others see who follows you and who you follow</CardDescription>
+                </div>
+              </div>
+              <Switch checked={showFollowers} onCheckedChange={handleToggleShowFollowers} className="data-[state=checked]:bg-primary" />
             </div>
           </CardHeader>
         </Card>

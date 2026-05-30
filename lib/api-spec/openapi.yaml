@@ -226,6 +226,52 @@ paths:
                 items:
                   $ref: "#/components/schemas/User"
 
+  /friends/{userId}/followers:
+    get:
+      operationId: getFollowers
+      tags: [friends]
+      summary: Get users who follow this user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of followers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "403":
+          description: Followers are hidden
+
+  /friends/{userId}/following:
+    get:
+      operationId: getFollowing
+      tags: [friends]
+      summary: Get users this user follows
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of followed users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "403":
+          description: Following list is hidden
+
   /friends/{userId}/block:
     post:
       operationId: blockUser
@@ -1183,6 +1229,8 @@ components:
           type: boolean
         requireFollowApproval:
           type: boolean
+        showFollowers:
+          type: boolean
         friendStatus:
           type: string
           enum: [none, self, accepted, pending_out, pending_in, blocked, blocked_by]
@@ -1225,6 +1273,8 @@ components:
         shareLocation:
           type: boolean
         requireFollowApproval:
+          type: boolean
+        showFollowers:
           type: boolean
 
     LocationUpdate:

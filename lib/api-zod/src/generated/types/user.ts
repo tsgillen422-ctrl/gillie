@@ -39,6 +39,7 @@ export interface User {
   boatAccent?: string | null;
   shareLocation?: boolean;
   requireFollowApproval?: boolean;
+  showFollowers?: boolean;
   friendStatus?: UserFriendStatus;
   followerCount?: number;
   followingCount?: number;

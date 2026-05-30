@@ -21,4 +21,5 @@ export interface UserUpdate {
   isBusiness?: boolean;
   shareLocation?: boolean;
   requireFollowApproval?: boolean;
+  showFollowers?: boolean;
 }

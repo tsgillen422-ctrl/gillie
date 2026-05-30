@@ -39,6 +39,7 @@ export const GetMeResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -63,7 +64,8 @@ export const UpdateMeBody = zod.object({
   "boatAccent": zod.string().nullish(),
   "isBusiness": zod.boolean().optional(),
   "shareLocation": zod.boolean().optional(),
-  "requireFollowApproval": zod.boolean().optional()
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional()
 })
 
 export const UpdateMeResponse = zod.object({
@@ -86,6 +88,7 @@ export const UpdateMeResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -122,6 +125,7 @@ export const UpdateMyLocationResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -157,6 +161,7 @@ export const SearchUsersResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -193,6 +198,7 @@ export const GetUserResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -224,6 +230,7 @@ export const GetFriendsResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -283,6 +290,7 @@ export const GetFriendRequestsResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -309,6 +317,7 @@ export const GetFriendRequestsResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -352,6 +361,7 @@ export const FollowUserResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -378,6 +388,7 @@ export const FollowUserResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -419,6 +430,7 @@ export const GetBlockedUsersResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -426,6 +438,80 @@ export const GetBlockedUsersResponseItem = zod.object({
   "createdAt": zod.string()
 })
 export const GetBlockedUsersResponse = zod.array(GetBlockedUsersResponseItem)
+
+
+/**
+ * @summary Get users who follow this user
+ */
+export const GetFollowersParams = zod.object({
+  "userId": zod.coerce.number()
+})
+
+export const GetFollowersResponseItem = zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
+  "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
+  "createdAt": zod.string()
+})
+export const GetFollowersResponse = zod.array(GetFollowersResponseItem)
+
+
+/**
+ * @summary Get users this user follows
+ */
+export const GetFollowingParams = zod.object({
+  "userId": zod.coerce.number()
+})
+
+export const GetFollowingResponseItem = zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
+  "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
+  "createdAt": zod.string()
+})
+export const GetFollowingResponse = zod.array(GetFollowingResponseItem)
 
 
 /**
@@ -476,6 +562,7 @@ export const AcceptFriendRequestResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -502,6 +589,7 @@ export const AcceptFriendRequestResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -539,6 +627,7 @@ export const GetConversationsResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -569,6 +658,7 @@ export const GetConversationsResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -626,6 +716,7 @@ export const GetConversationMessagesResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -727,6 +818,7 @@ export const GetPinsResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -801,6 +893,7 @@ export const GetPinResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -864,6 +957,7 @@ export const LikePinResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -915,6 +1009,7 @@ export const GetFavoritePinsResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -971,6 +1066,7 @@ export const ToggleFavoritePinResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1022,6 +1118,7 @@ export const GetPendingPinsResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1078,6 +1175,7 @@ export const ApprovePinResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1133,6 +1231,7 @@ export const GetPostsResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1210,6 +1309,7 @@ export const GetPostResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1283,6 +1383,7 @@ export const ReactToPostResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1345,6 +1446,7 @@ export const GetPostCommentsResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1413,6 +1515,7 @@ export const GetPostsSummaryResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1465,6 +1568,7 @@ export const GetPostsSummaryResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1603,6 +1707,7 @@ export const GetActiveHazardsResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1659,6 +1764,7 @@ export const ToggleRsvpResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1719,6 +1825,7 @@ export const GetRsvpsResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1759,6 +1866,7 @@ export const GetCatchesResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1833,6 +1941,7 @@ export const GetGalleryResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1893,6 +2002,7 @@ export const SearchResponse = zod.object({
   "boatAccent": zod.string().nullish(),
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),

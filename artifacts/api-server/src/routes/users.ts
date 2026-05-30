@@ -55,10 +55,23 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     boatAccent: u.boatAccent,
     shareLocation: u.shareLocation,
     requireFollowApproval: u.requireFollowApproval,
+    showFollowers: u.showFollowers,
     followerCount: 0,
     followingCount: 0,
     createdAt: u.createdAt.toISOString(),
   };
+}
+
+async function getFollowCounts(userId: number): Promise<{ followerCount: number; followingCount: number }> {
+  const [followers] = await db
+    .select({ value: count() })
+    .from(friendRequestsTable)
+    .where(and(eq(friendRequestsTable.followeeId, userId), eq(friendRequestsTable.status, "accepted")));
+  const [following] = await db
+    .select({ value: count() })
+    .from(friendRequestsTable)
+    .where(and(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.status, "accepted")));
+  return { followerCount: followers?.value ?? 0, followingCount: following?.value ?? 0 };
 }
 
 async function getBlockedUserIds(userId: number): Promise<number[]> {
@@ -148,6 +161,12 @@ router.patch("/me", async (req, res) => {
     }
     updates.requireFollowApproval = req.body.requireFollowApproval;
   }
+  if (req.body.showFollowers !== undefined) {
+    if (typeof req.body.showFollowers !== "boolean") {
+      return res.status(400).json({ error: "showFollowers must be a boolean" });
+    }
+    updates.showFollowers = req.body.showFollowers;
+  }
   const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, SESSION_USER_ID)).returning();
   res.json(formatUser(updated));
 });
@@ -207,7 +226,8 @@ router.get("/:userId", async (req, res) => {
     }
   }
 
-  res.json({ ...formatUser(user), badges: await computeBadges(user.id), friendStatus });
+  const counts = await getFollowCounts(user.id);
+  res.json({ ...formatUser(user), ...counts, badges: await computeBadges(user.id), friendStatus });
 });
 
 export default router;
