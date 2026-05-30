@@ -226,6 +226,20 @@ export function FeedPage() {
         </div>
 
         <div className="p-4 space-y-4">
+        {me && (
+          <button
+            type="button"
+            onClick={() => setComposerOpen(true)}
+            className="flex w-full items-center gap-3 rounded-full border border-border bg-card px-3 py-2.5 text-left shadow-sm hover-elevate active:scale-[0.99] transition-transform"
+            aria-label="Create a new post"
+          >
+            <UserAvatar name={me.displayName || "You"} username={me.username || ""} avatarUrl={me.avatarUrl} className="w-9 h-9 shrink-0" />
+            <span className="flex-1 truncate text-sm text-muted-foreground">Share something on the lake…</span>
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <Plus className="h-4 w-4" />
+            </span>
+          </button>
+        )}
         <HazardBanner />
         <ConditionsWidget />
         <TrendingSection />
@@ -263,25 +277,13 @@ export function FeedPage() {
             </div>
             <h3 className="font-semibold text-lg mb-1">Nothing here yet</h3>
             <p className="text-sm text-muted-foreground max-w-xs">
-              Be the first to share what's happening on the lake. Tap the + button to post.
+              Be the first to share what's happening on the lake. Use the box above to post.
             </p>
           </div>
         )}
         </div>
       </div>
 
-      {me && (
-        <div className="absolute bottom-6 right-6 z-20">
-          <Button
-            onClick={() => setComposerOpen(true)}
-            size="icon"
-            className="h-14 w-14 rounded-full shadow-lg"
-            aria-label="New post"
-          >
-            <Plus className="w-6 h-6" />
-          </Button>
-        </div>
-      )}
 
       <Dialog open={composerOpen} onOpenChange={(open) => { setComposerOpen(open); if (!open) resetComposer(); }}>
         <DialogContent className="max-w-md">
