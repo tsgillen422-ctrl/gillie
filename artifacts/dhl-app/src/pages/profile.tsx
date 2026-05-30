@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams, Link } from "wouter";
-import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useGetFriends, useGetFollowers, useGetFollowing, getGetUserQueryKey, getGetGalleryQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey } from "@workspace/api-client-react";
+import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useReactToPost, useDeletePost, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useGetFriends, useGetFollowers, useGetFollowing, getGetUserQueryKey, getGetGalleryQueryKey, getGetPostsQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar, resolveAvatarUrl } from "@/components/UserAvatar";
 import { ImageLightbox } from "@/components/ImageLightbox";
+import { PostCard } from "./feed";
 import {
   Dialog,
   DialogContent,
@@ -131,6 +132,20 @@ export function ProfilePage() {
   );
 
   const queryClient = useQueryClient();
+  const reactPost = useReactToPost();
+  const deletePost = useDeletePost();
+  const [openPostId, setOpenPostId] = React.useState<number | null>(null);
+  const openPost = openPostId != null ? posts?.find((p) => p.id === openPostId) ?? null : null;
+  const refreshPosts = () => queryClient.invalidateQueries({ queryKey: getGetPostsQueryKey() });
+  const handleDeletePost = (postId: number) => {
+    deletePost.mutate(
+      { postId },
+      {
+        onSuccess: () => { toast.success("Post deleted."); setOpenPostId(null); refreshPosts(); },
+        onError: () => toast.error("Couldn't delete that post."),
+      }
+    );
+  };
   const createGalleryItem = useCreateGalleryItem();
   const deleteGalleryItem = useDeleteGalleryItem();
   const { uploadFile, isUploading } = useUpload();
@@ -464,10 +479,18 @@ export function ProfilePage() {
               <Skeleton className="h-32 w-full rounded-xl" />
             ) : userPosts?.length ? (
               userPosts.map((post) => (
-                <Card key={post.id} className="border-border/50">
+                <Card
+                  key={post.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open post${post.title ? `: ${post.title}` : ""}`}
+                  onClick={() => setOpenPostId(post.id)}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenPostId(post.id); } }}
+                  className="border-border/50 hover-elevate cursor-pointer"
+                >
                   <CardContent className="p-4">
-                    <h3 className="font-bold">{post.title}</h3>
-                    <p className="text-sm mt-1">{post.content}</p>
+                    {post.title && <h3 className="font-bold">{post.title}</h3>}
+                    {post.content && <p className="text-sm mt-1 line-clamp-3">{post.content}</p>}
                   </CardContent>
                 </Card>
               ))
@@ -585,6 +608,24 @@ export function ProfilePage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={!!openPost} onOpenChange={(o) => { if (!o) setOpenPostId(null); }}>
+        <DialogContent className="max-w-md p-0 gap-0 max-h-[85vh] overflow-y-auto border-0 bg-transparent shadow-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{openPost?.title || "Post"}</DialogTitle>
+            <DialogDescription>Post details and comments</DialogDescription>
+          </DialogHeader>
+          {openPost && (
+            <PostCard
+              post={openPost}
+              onReact={(reaction) => reactPost.mutate({ postId: openPost.id, data: { reaction } }, { onSuccess: refreshPosts })}
+              canDelete={isSelf}
+              onDelete={() => handleDeletePost(openPost.id)}
+              currentUserId={me?.id}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={galleryOpen} onOpenChange={(o) => { setGalleryOpen(o); if (!o) resetGallery(); }}>
         <DialogContent className="max-w-md">

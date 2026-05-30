@@ -609,7 +609,7 @@ function LikesDialog({ postId, open, onOpenChange }: { postId: number, open: boo
   );
 }
 
-function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post: any, onReact: (reaction: ReactionKey) => void, canDelete?: boolean, onDelete?: () => void, currentUserId?: number }) {
+export function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post: any, onReact: (reaction: ReactionKey) => void, canDelete?: boolean, onDelete?: () => void, currentUserId?: number }) {
   const isEvent = post.postType === "event";
   const [showComments, setShowComments] = React.useState(false);
   const [showLikes, setShowLikes] = React.useState(false);
