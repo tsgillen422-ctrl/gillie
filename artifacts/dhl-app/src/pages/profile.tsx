@@ -9,6 +9,7 @@ import { BadgeRow } from "@/components/Badges";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/UserAvatar";
+import { SosButton } from "@/components/SosButton";
 import {
   Dialog,
   DialogContent,
@@ -424,6 +425,13 @@ export function ProfilePage() {
             )}
           </TabsContent>
         </Tabs>
+      </div>
+
+      <div className="px-4 pb-8 pt-4 mt-2 border-t border-border flex flex-col items-center gap-2">
+        <SosButton />
+        <p className="text-xs text-muted-foreground text-center">
+          Emergency SOS — instantly alert your friends with your location
+        </p>
       </div>
 
       <Dialog open={galleryOpen} onOpenChange={(o) => { setGalleryOpen(o); if (!o) resetGallery(); }}>
