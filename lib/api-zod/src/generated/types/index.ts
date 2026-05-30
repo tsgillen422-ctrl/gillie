@@ -66,4 +66,5 @@ export * from './sosResult';
 export * from './uploadUrlRequest';
 export * from './uploadUrlResponse';
 export * from './user';
+export * from './userFriendStatus';
 export * from './userUpdate';

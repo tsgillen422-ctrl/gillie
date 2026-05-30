@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, friendRequestsTable, notificationsTable, postsTable, pinsTable, catchesTable } from "@workspace/db";
-import { eq, ilike, or, and, count } from "drizzle-orm";
+import { usersTable, friendRequestsTable, blocksTable, notificationsTable, postsTable, pinsTable, catchesTable } from "@workspace/db";
+import { eq, ilike, or, and, count, notInArray } from "drizzle-orm";
 
 const router = Router();
 
@@ -54,10 +54,18 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     boatFlag: u.boatFlag,
     boatAccent: u.boatAccent,
     shareLocation: u.shareLocation,
+    requireFollowApproval: u.requireFollowApproval,
     followerCount: 0,
     followingCount: 0,
     createdAt: u.createdAt.toISOString(),
   };
+}
+
+async function getBlockedUserIds(userId: number): Promise<number[]> {
+  const rows = await db.query.blocksTable.findMany({
+    where: or(eq(blocksTable.blockerId, userId), eq(blocksTable.blockedId, userId)),
+  });
+  return rows.map((b) => (b.blockerId === userId ? b.blockedId : b.blockerId));
 }
 
 router.get("/me", async (req, res) => {
@@ -134,6 +142,12 @@ router.patch("/me", async (req, res) => {
   }
   if (isBusiness !== undefined) updates.isBusiness = isBusiness;
   if (shareLocation !== undefined) updates.shareLocation = shareLocation;
+  if (req.body.requireFollowApproval !== undefined) {
+    if (typeof req.body.requireFollowApproval !== "boolean") {
+      return res.status(400).json({ error: "requireFollowApproval must be a boolean" });
+    }
+    updates.requireFollowApproval = req.body.requireFollowApproval;
+  }
   const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, SESSION_USER_ID)).returning();
   res.json(formatUser(updated));
 });
@@ -151,11 +165,12 @@ router.patch("/me/location", async (req, res) => {
 router.get("/search", async (req, res) => {
   const q = String(req.query.q || "");
   if (!q) return res.json([]);
-  const users = await db
-    .select()
-    .from(usersTable)
-    .where(or(ilike(usersTable.username, `%${q}%`), ilike(usersTable.displayName, `%${q}%`)))
-    .limit(20);
+  const blockedIds = await getBlockedUserIds(SESSION_USER_ID);
+  const matchClause = or(ilike(usersTable.username, `%${q}%`), ilike(usersTable.displayName, `%${q}%`));
+  const where = blockedIds.length
+    ? and(matchClause, notInArray(usersTable.id, blockedIds))
+    : matchClause;
+  const users = await db.select().from(usersTable).where(where).limit(20);
   res.json(users.map(formatUser));
 });
 
@@ -163,7 +178,36 @@ router.get("/:userId", async (req, res) => {
   const userId = parseInt(req.params.userId);
   const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, userId) });
   if (!user) return res.status(404).json({ error: "User not found" });
-  res.json({ ...formatUser(user), badges: await computeBadges(user.id) });
+
+  let friendStatus = "none";
+  if (userId === SESSION_USER_ID) {
+    friendStatus = "self";
+  } else {
+    const blockedByMe = await db.query.blocksTable.findFirst({
+      where: and(eq(blocksTable.blockerId, SESSION_USER_ID), eq(blocksTable.blockedId, userId)),
+    });
+    const blockedMe = await db.query.blocksTable.findFirst({
+      where: and(eq(blocksTable.blockerId, userId), eq(blocksTable.blockedId, SESSION_USER_ID)),
+    });
+    if (blockedByMe) {
+      friendStatus = "blocked";
+    } else if (blockedMe) {
+      friendStatus = "blocked_by";
+    } else {
+      const rel = await db.query.friendRequestsTable.findFirst({
+        where: or(
+          and(eq(friendRequestsTable.followerId, SESSION_USER_ID), eq(friendRequestsTable.followeeId, userId)),
+          and(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.followeeId, SESSION_USER_ID))
+        ),
+      });
+      if (rel) {
+        if (rel.status === "accepted") friendStatus = "accepted";
+        else if (rel.status === "pending") friendStatus = rel.followerId === SESSION_USER_ID ? "pending_out" : "pending_in";
+      }
+    }
+  }
+
+  res.json({ ...formatUser(user), badges: await computeBadges(user.id), friendStatus });
 });
 
 export default router;

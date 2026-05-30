@@ -20,4 +20,5 @@ export interface UserUpdate {
   boatAccent?: string | null;
   isBusiness?: boolean;
   shareLocation?: boolean;
+  requireFollowApproval?: boolean;
 }

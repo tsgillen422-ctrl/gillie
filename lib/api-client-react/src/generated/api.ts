@@ -900,6 +900,223 @@ export const useUnfollowUser = <TError = ErrorType<unknown>,
       return useMutation(getUnfollowUserMutationOptions(options));
     }
 
+export const getGetBlockedUsersUrl = () => {
+
+
+
+
+  return `/api/friends/blocks`
+}
+
+/**
+ * @summary Get users you have blocked
+ */
+export const getBlockedUsers = async ( options?: RequestInit): Promise<User[]> => {
+
+  return customFetch<User[]>(getGetBlockedUsersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetBlockedUsersQueryKey = () => {
+    return [
+    `/api/friends/blocks`
+    ] as const;
+    }
+
+
+export const getGetBlockedUsersQueryOptions = <TData = Awaited<ReturnType<typeof getBlockedUsers>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBlockedUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetBlockedUsersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getBlockedUsers>>> = ({ signal }) => getBlockedUsers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getBlockedUsers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetBlockedUsersQueryResult = NonNullable<Awaited<ReturnType<typeof getBlockedUsers>>>
+export type GetBlockedUsersQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get users you have blocked
+ */
+
+export function useGetBlockedUsers<TData = Awaited<ReturnType<typeof getBlockedUsers>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getBlockedUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetBlockedUsersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getBlockUserUrl = (userId: number,) => {
+
+
+
+
+  return `/api/friends/${userId}/block`
+}
+
+/**
+ * @summary Block a user
+ */
+export const blockUser = async (userId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getBlockUserUrl(userId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getBlockUserMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockUser>>, TError,{userId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof blockUser>>, TError,{userId: number}, TContext> => {
+
+const mutationKey = ['blockUser'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof blockUser>>, {userId: number}> = (props) => {
+          const {userId} = props ?? {};
+
+          return  blockUser(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BlockUserMutationResult = NonNullable<Awaited<ReturnType<typeof blockUser>>>
+
+    export type BlockUserMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Block a user
+ */
+export const useBlockUser = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof blockUser>>, TError,{userId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof blockUser>>,
+        TError,
+        {userId: number},
+        TContext
+      > => {
+      return useMutation(getBlockUserMutationOptions(options));
+    }
+
+export const getUnblockUserUrl = (userId: number,) => {
+
+
+
+
+  return `/api/friends/${userId}/block`
+}
+
+/**
+ * @summary Unblock a user
+ */
+export const unblockUser = async (userId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getUnblockUserUrl(userId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getUnblockUserMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockUser>>, TError,{userId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unblockUser>>, TError,{userId: number}, TContext> => {
+
+const mutationKey = ['unblockUser'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unblockUser>>, {userId: number}> = (props) => {
+          const {userId} = props ?? {};
+
+          return  unblockUser(userId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnblockUserMutationResult = NonNullable<Awaited<ReturnType<typeof unblockUser>>>
+
+    export type UnblockUserMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Unblock a user
+ */
+export const useUnblockUser = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unblockUser>>, TError,{userId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unblockUser>>,
+        TError,
+        {userId: number},
+        TContext
+      > => {
+      return useMutation(getUnblockUserMutationOptions(options));
+    }
+
 export const getAcceptFriendRequestUrl = (requestId: number,) => {
 
 

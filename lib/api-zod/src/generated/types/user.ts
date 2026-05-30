@@ -5,6 +5,7 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { UserFriendStatus } from './userFriendStatus';
 
 export interface User {
   id: number;
@@ -37,6 +38,8 @@ export interface User {
   /** @nullable */
   boatAccent?: string | null;
   shareLocation?: boolean;
+  requireFollowApproval?: boolean;
+  friendStatus?: UserFriendStatus;
   followerCount?: number;
   followingCount?: number;
   badges?: string[];

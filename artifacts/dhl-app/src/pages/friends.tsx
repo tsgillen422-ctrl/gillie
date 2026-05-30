@@ -4,7 +4,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, UserPlus, Check, X, UserMinus, Navigation } from "lucide-react";
+import { Search, UserPlus, Check, X, UserMinus, Navigation, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -146,5 +146,3 @@ function UserCard({ user, action }: { user: any, action?: React.ReactNode }) {
     </Card>
   );
 }
-// added Users icon to the import above, wait need to add to import
-import { Users } from "lucide-react";

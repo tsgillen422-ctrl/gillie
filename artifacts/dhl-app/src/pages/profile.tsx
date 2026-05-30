@@ -1,10 +1,10 @@
 import React from "react";
 import { useParams, Link } from "wouter";
-import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useFollowUser, useUnfollowUser, useGetFriends, getGetUserQueryKey, getGetGalleryQueryKey } from "@workspace/api-client-react";
+import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useGetFriends, getGetUserQueryKey, getGetGalleryQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, Trash2, X } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, Trash2, X, Clock, Ban, ShieldOff } from "lucide-react";
 import { BadgeRow } from "@/components/Badges";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -179,10 +179,36 @@ export function ProfilePage() {
 
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
+  const blockUser = useBlockUser();
+  const unblockUser = useUnblockUser();
 
-  const isFriend = friends?.some((f) => f.id === id);
+  const refreshRelationship = () => {
+    queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(id) });
+    queryClient.invalidateQueries({ queryKey: getGetFriendsQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetBlockedUsersQueryKey() });
+  };
+
+  const friendStatus = (otherUser as any)?.friendStatus as string | undefined;
+  const isFriend = friendStatus ? friendStatus === "accepted" : friends?.some((f) => f.id === id);
+  const isBlocked = friendStatus === "blocked";
+  const isPending = friendStatus === "pending_out";
   const userPosts = posts?.filter((p) => p.userId === id);
   const userPins = pins?.filter((p) => p.userId === id);
+
+  const handleFollow = () =>
+    followUser.mutate({ userId: id }, { onSuccess: refreshRelationship });
+  const handleUnfollow = () =>
+    unfollowUser.mutate({ userId: id }, { onSuccess: refreshRelationship, onError: () => toast.error("Couldn't update.") });
+  const handleBlock = () =>
+    blockUser.mutate({ userId: id }, {
+      onSuccess: () => { toast.success("User blocked."); refreshRelationship(); },
+      onError: () => toast.error("Couldn't block this user."),
+    });
+  const handleUnblock = () =>
+    unblockUser.mutate({ userId: id }, {
+      onSuccess: () => { toast.success("User unblocked."); refreshRelationship(); },
+      onError: () => toast.error("Couldn't unblock this user."),
+    });
 
   return (
     <div className="flex flex-col h-full bg-background overflow-y-auto">
@@ -240,25 +266,70 @@ export function ProfilePage() {
             </div>
           </div>
 
-          <div className="flex gap-2 w-full max-w-xs">
+          <div className="flex flex-col gap-2 w-full max-w-xs">
             {isSelf ? (
               <Button variant="outline" className="flex-1" asChild>
                 <Link href="/settings"><Settings className="w-4 h-4 mr-2" /> Edit Profile</Link>
               </Button>
+            ) : isBlocked ? (
+              <Button variant="outline" className="flex-1" onClick={handleUnblock} disabled={unblockUser.isPending}>
+                <ShieldOff className="w-4 h-4 mr-2" /> Unblock
+              </Button>
             ) : (
               <>
-                {isFriend ? (
-                  <Button variant="outline" className="flex-1" onClick={() => unfollowUser.mutate({ userId: id })}>
-                    <UserMinus className="w-4 h-4 mr-2" /> Unfollow
+                <div className="flex gap-2 w-full">
+                  {isFriend ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="flex-1">
+                          <UserMinus className="w-4 h-4 mr-2" /> Unfriend
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Unfriend {user.displayName}?</AlertDialogTitle>
+                          <AlertDialogDescription>You'll no longer be connected on the lake.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleUnfollow}>Unfriend</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : isPending ? (
+                    <Button variant="outline" className="flex-1" onClick={handleUnfollow} disabled={unfollowUser.isPending}>
+                      <Clock className="w-4 h-4 mr-2" /> Requested
+                    </Button>
+                  ) : (
+                    <Button className="flex-1" onClick={handleFollow} disabled={followUser.isPending}>
+                      <UserPlus className="w-4 h-4 mr-2" /> Follow
+                    </Button>
+                  )}
+                  <Button variant="secondary" className="flex-1" asChild>
+                    <Link href={`/messages?user=${id}`}><MessageSquare className="w-4 h-4 mr-2" /> Message</Link>
                   </Button>
-                ) : (
-                  <Button className="flex-1" onClick={() => followUser.mutate({ userId: id })}>
-                    <UserPlus className="w-4 h-4 mr-2" /> Follow
-                  </Button>
-                )}
-                <Button variant="secondary" className="flex-1" asChild>
-                  <Link href={`/messages?user=${id}`}><MessageSquare className="w-4 h-4 mr-2" /> Message</Link>
-                </Button>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                      <Ban className="w-4 h-4 mr-2" /> Block
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Block {user.displayName}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        They won't be able to follow you, and you'll remove any existing connection. You can unblock them later from Settings.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleBlock} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Block
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </>
             )}
           </div>

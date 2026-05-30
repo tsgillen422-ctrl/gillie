@@ -211,6 +211,49 @@ paths:
         "200":
           description: Unfollowed
 
+  /friends/blocks:
+    get:
+      operationId: getBlockedUsers
+      tags: [friends]
+      summary: Get users you have blocked
+      responses:
+        "200":
+          description: List of blocked users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /friends/{userId}/block:
+    post:
+      operationId: blockUser
+      tags: [friends]
+      summary: Block a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User blocked
+    delete:
+      operationId: unblockUser
+      tags: [friends]
+      summary: Unblock a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User unblocked
+
   /friends/{requestId}/accept:
     post:
       operationId: acceptFriendRequest
@@ -1138,6 +1181,11 @@ components:
           type: ["string", "null"]
         shareLocation:
           type: boolean
+        requireFollowApproval:
+          type: boolean
+        friendStatus:
+          type: string
+          enum: [none, self, accepted, pending_out, pending_in, blocked, blocked_by]
         followerCount:
           type: integer
         followingCount:
@@ -1175,6 +1223,8 @@ components:
         isBusiness:
           type: boolean
         shareLocation:
+          type: boolean
+        requireFollowApproval:
           type: boolean
 
     LocationUpdate:

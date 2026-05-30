@@ -9,6 +9,19 @@ export interface HealthStatus {
   status: string;
 }
 
+export type UserFriendStatus = typeof UserFriendStatus[keyof typeof UserFriendStatus];
+
+
+export const UserFriendStatus = {
+  none: 'none',
+  self: 'self',
+  accepted: 'accepted',
+  pending_out: 'pending_out',
+  pending_in: 'pending_in',
+  blocked: 'blocked',
+  blocked_by: 'blocked_by',
+} as const;
+
 export interface User {
   id: number;
   username: string;
@@ -40,6 +53,8 @@ export interface User {
   /** @nullable */
   boatAccent?: string | null;
   shareLocation?: boolean;
+  requireFollowApproval?: boolean;
+  friendStatus?: UserFriendStatus;
   followerCount?: number;
   followingCount?: number;
   badges?: string[];
@@ -60,6 +75,7 @@ export interface UserUpdate {
   boatAccent?: string | null;
   isBusiness?: boolean;
   shareLocation?: boolean;
+  requireFollowApproval?: boolean;
 }
 
 export interface LocationUpdate {

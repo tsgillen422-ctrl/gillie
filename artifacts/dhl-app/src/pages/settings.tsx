@@ -1,5 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import { useGetMe, useUpdateMe } from "@workspace/api-client-react";
+import { Link } from "wouter";
+import { useGetMe, useUpdateMe, useGetBlockedUsers, useUnblockUser, getGetBlockedUsersQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useUpload } from "@workspace/object-storage-web";
 import { UserAvatar } from "@/components/UserAvatar";
 import { SosButton } from "@/components/SosButton";
@@ -9,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2 } from "lucide-react";
+import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { compressImage } from "@/lib/compress";
 import { boatSvgFor, FLAG_SVG } from "../boats";
@@ -94,6 +96,7 @@ export function SettingsPage() {
   const [boatAccent, setBoatAccent] = React.useState("");
   const [bio, setBio] = React.useState("");
   const [shareLocation, setShareLocation] = React.useState(true);
+  const [requireFollowApproval, setRequireFollowApproval] = React.useState(false);
   const [avatarUrl, setAvatarUrl] = React.useState<string | undefined>(undefined);
   const [coverUrl, setCoverUrl] = React.useState<string | undefined>(undefined);
 
@@ -119,6 +122,7 @@ export function SettingsPage() {
       setBoatAccent(me.boatAccent || "");
       setBio(me.bio || "");
       setShareLocation(me.shareLocation ?? true);
+      setRequireFollowApproval((me as any).requireFollowApproval ?? false);
       setAvatarUrl(me.avatarUrl ?? undefined);
       setCoverUrl(me.coverUrl ?? undefined);
     }
@@ -181,6 +185,24 @@ export function SettingsPage() {
     });
   };
 
+  const handleToggleApproval = (checked: boolean) => {
+    setRequireFollowApproval(checked);
+    updateMe.mutate({ data: { requireFollowApproval: checked } }, {
+      onSuccess: () => {
+        toast({
+          title: checked ? "Follow Approval On" : "Follow Approval Off",
+          description: checked
+            ? "New followers will need your approval first."
+            : "Anyone can follow you instantly.",
+        });
+      },
+      onError: () => {
+        setRequireFollowApproval(!checked);
+        toast({ title: "Error", description: "Failed to update setting.", variant: "destructive" });
+      },
+    });
+  };
+
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
 
   return (
@@ -212,6 +234,26 @@ export function SettingsPage() {
             </div>
           </CardHeader>
         </Card>
+
+        {/* Follow Approval */}
+        <Card className="border-border shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-full ${requireFollowApproval ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                  {requireFollowApproval ? <Lock className="w-5 h-5" /> : <Globe className="w-5 h-5" />}
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Approve New Followers</CardTitle>
+                  <CardDescription>Require approval before someone can follow you</CardDescription>
+                </div>
+              </div>
+              <Switch checked={requireFollowApproval} onCheckedChange={handleToggleApproval} className="data-[state=checked]:bg-primary" />
+            </div>
+          </CardHeader>
+        </Card>
+
+        <BlockedUsersCard />
 
         {/* Profile Settings */}
         <Card className="border-border shadow-sm">
@@ -403,5 +445,69 @@ export function SettingsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function BlockedUsersCard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: blocked, isLoading } = useGetBlockedUsers();
+  const unblockUser = useUnblockUser();
+
+  const handleUnblock = (userId: number) => {
+    unblockUser.mutate({ userId }, {
+      onSuccess: () => {
+        toast({ title: "User unblocked", description: "They can interact with you again." });
+        queryClient.invalidateQueries({ queryKey: getGetBlockedUsersQueryKey() });
+      },
+      onError: () => {
+        toast({ title: "Error", description: "Couldn't unblock this user.", variant: "destructive" });
+      },
+    });
+  };
+
+  return (
+    <Card className="border-border shadow-sm">
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-full bg-muted text-muted-foreground">
+            <Ban className="w-5 h-5" />
+          </div>
+          <div>
+            <CardTitle className="text-lg">Blocked Users</CardTitle>
+            <CardDescription>People you've blocked from following you</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground py-2">Loading...</p>
+        ) : !blocked || blocked.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-2">You haven't blocked anyone.</p>
+        ) : (
+          <div className="space-y-2">
+            {blocked.map((u) => (
+              <div key={u.id} className="flex items-center justify-between gap-3">
+                <Link href={`/profile/${u.id}`} className="flex items-center gap-3 min-w-0">
+                  <UserAvatar name={u.displayName} username={u.username} avatarUrl={u.avatarUrl ?? undefined} className="w-9 h-9" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{u.displayName}</p>
+                    <p className="text-xs text-muted-foreground truncate">@{u.username}</p>
+                  </div>
+                </Link>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleUnblock(u.id)}
+                  disabled={unblockUser.isPending}
+                >
+                  <ShieldOff className="w-4 h-4 mr-2" /> Unblock
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -11,6 +11,14 @@ export const friendRequestsTable = pgTable("friend_requests", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+export const blocksTable = pgTable("blocks", {
+  id: serial("id").primaryKey(),
+  blockerId: integer("blocker_id").notNull().references(() => usersTable.id),
+  blockedId: integer("blocked_id").notNull().references(() => usersTable.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 export const insertFriendRequestSchema = createInsertSchema(friendRequestsTable).omit({ id: true, createdAt: true });
 export type InsertFriendRequest = z.infer<typeof insertFriendRequestSchema>;
 export type FriendRequest = typeof friendRequestsTable.$inferSelect;
+export type Block = typeof blocksTable.$inferSelect;
