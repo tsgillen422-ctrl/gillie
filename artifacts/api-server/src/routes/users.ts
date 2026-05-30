@@ -42,6 +42,12 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     avatarUrl: u.avatarUrl,
     coverUrl: u.coverUrl,
     bio: u.bio,
+    location: u.location,
+    hometown: u.hometown,
+    birthday: u.birthday,
+    relationshipStatus: u.relationshipStatus,
+    gender: u.gender,
+    work: u.work,
     isOnline: u.isOnline,
     isBusiness: u.isBusiness,
     currentLat: u.shareLocation ? u.currentLat : null,
@@ -123,10 +129,16 @@ router.post("/me/sos", async (req, res) => {
 });
 
 router.patch("/me", async (req, res) => {
-  const { displayName, bio, avatarUrl, coverUrl, boatName, boatColor, boatType, boatNeon, boatFlag, boatAccent, isBusiness, shareLocation } = req.body;
+  const { displayName, bio, location, hometown, birthday, relationshipStatus, gender, work, avatarUrl, coverUrl, boatName, boatColor, boatType, boatNeon, boatFlag, boatAccent, isBusiness, shareLocation } = req.body;
   const updates: Partial<typeof usersTable.$inferInsert> = {};
   if (displayName !== undefined) updates.displayName = displayName;
   if (bio !== undefined) updates.bio = bio;
+  if (location !== undefined) updates.location = location;
+  if (hometown !== undefined) updates.hometown = hometown;
+  if (birthday !== undefined) updates.birthday = birthday;
+  if (relationshipStatus !== undefined) updates.relationshipStatus = relationshipStatus;
+  if (gender !== undefined) updates.gender = gender;
+  if (work !== undefined) updates.work = work;
   if (avatarUrl !== undefined) updates.avatarUrl = avatarUrl;
   if (coverUrl !== undefined) updates.coverUrl = coverUrl;
   if (boatName !== undefined) updates.boatName = boatName;

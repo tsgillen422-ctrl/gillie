@@ -96,6 +96,12 @@ export function SettingsPage() {
   const [boatFlag, setBoatFlag] = React.useState(false);
   const [boatAccent, setBoatAccent] = React.useState("");
   const [bio, setBio] = React.useState("");
+  const [location, setLocation] = React.useState("");
+  const [hometown, setHometown] = React.useState("");
+  const [birthday, setBirthday] = React.useState("");
+  const [relationshipStatus, setRelationshipStatus] = React.useState("");
+  const [gender, setGender] = React.useState("");
+  const [work, setWork] = React.useState("");
   const [shareLocation, setShareLocation] = React.useState(true);
   const [requireFollowApproval, setRequireFollowApproval] = React.useState(false);
   const [showFollowers, setShowFollowers] = React.useState(true);
@@ -123,6 +129,12 @@ export function SettingsPage() {
       setBoatFlag(me.boatFlag ?? false);
       setBoatAccent(me.boatAccent || "");
       setBio(me.bio || "");
+      setLocation((me as any).location || "");
+      setHometown((me as any).hometown || "");
+      setBirthday((me as any).birthday || "");
+      setRelationshipStatus((me as any).relationshipStatus || "");
+      setGender((me as any).gender || "");
+      setWork((me as any).work || "");
       setShareLocation(me.shareLocation ?? true);
       setRequireFollowApproval((me as any).requireFollowApproval ?? false);
       setShowFollowers((me as any).showFollowers ?? true);
@@ -163,6 +175,12 @@ export function SettingsPage() {
         boatFlag,
         boatAccent: boatAccent || null,
         bio,
+        location: location || null,
+        hometown: hometown || null,
+        birthday: birthday || null,
+        relationshipStatus: relationshipStatus || null,
+        gender: gender || null,
+        work: work || null,
         shareLocation
       }
     }, {
@@ -370,6 +388,64 @@ export function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="bio">Bio</Label>
               <Textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} placeholder="What's your lake story?" className="bg-background resize-none" rows={3} />
+            </div>
+
+            <div className="pt-2">
+              <p className="text-sm font-medium text-foreground">About You</p>
+              <p className="text-xs text-muted-foreground">Optional details shown on your profile. Leave any blank to hide them.</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input id="location" value={location} onChange={e => setLocation(e.target.value)} placeholder="Where you live now" className="bg-background" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hometown">Born In</Label>
+              <Input id="hometown" value={hometown} onChange={e => setHometown(e.target.value)} placeholder="Where you were born" className="bg-background" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="work">Work</Label>
+              <Input id="work" value={work} onChange={e => setWork(e.target.value)} placeholder="What you do for work" className="bg-background" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="birthday">Birthday</Label>
+              <Input id="birthday" type="date" value={birthday} onChange={e => setBirthday(e.target.value)} className="bg-background" />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="relationshipStatus">Relationship Status</Label>
+              <select
+                id="relationshipStatus"
+                value={relationshipStatus}
+                onChange={e => setRelationshipStatus(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="">Prefer not to say</option>
+                <option value="Single">Single</option>
+                <option value="In a relationship">In a relationship</option>
+                <option value="Engaged">Engaged</option>
+                <option value="Married">Married</option>
+                <option value="It's complicated">It's complicated</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="gender">Gender</Label>
+              <select
+                id="gender"
+                value={gender}
+                onChange={e => setGender(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="">Prefer not to say</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Non-binary">Non-binary</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
           </CardContent>
         </Card>

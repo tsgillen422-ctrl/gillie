@@ -4,7 +4,7 @@ import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreate
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, Trash2, X, Clock, Ban, ShieldOff, Flag } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, Trash2, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2 } from "lucide-react";
 import { ReportDialog } from "@/components/ReportDialog";
 import { BadgeRow } from "@/components/Badges";
 import { Badge } from "@/components/ui/badge";
@@ -66,6 +66,35 @@ function PinVisibility({ visibility }: { visibility?: string }) {
     return <Badge variant="secondary" className="gap-1 text-[10px]"><Users className="w-3 h-3" /> Community</Badge>;
   }
   return <Badge variant="secondary" className="gap-1 text-[10px]"><Lock className="w-3 h-3" /> Friends</Badge>;
+}
+
+function formatBirthday(value?: string | null) {
+  if (!value) return null;
+  const d = new Date(`${value}T00:00:00`);
+  if (isNaN(d.getTime())) return value;
+  return d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
+}
+
+function ProfileDetails({ user }: { user: any }) {
+  const items: { icon: React.ReactNode; label: string }[] = [];
+  if (user.location) items.push({ icon: <MapPin className="w-4 h-4 text-primary" />, label: `Lives in ${user.location}` });
+  if (user.hometown) items.push({ icon: <Home className="w-4 h-4 text-primary" />, label: `From ${user.hometown}` });
+  if (user.work) items.push({ icon: <Briefcase className="w-4 h-4 text-primary" />, label: user.work });
+  const bday = formatBirthday(user.birthday);
+  if (bday) items.push({ icon: <Cake className="w-4 h-4 text-primary" />, label: bday });
+  if (user.relationshipStatus) items.push({ icon: <Heart className="w-4 h-4 text-primary" />, label: user.relationshipStatus });
+  if (user.gender) items.push({ icon: <User2 className="w-4 h-4 text-primary" />, label: user.gender });
+  if (items.length === 0) return null;
+  return (
+    <div className="mt-6 w-full max-w-sm mx-auto flex flex-col gap-2 px-4">
+      {items.map((item, i) => (
+        <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+          {item.icon}
+          <span>{item.label}</span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function pinWindow(startTime?: string | null, endTime?: string | null) {
@@ -400,6 +429,8 @@ export function ProfilePage() {
           {user.bio && (
             <p className="mt-6 text-center text-sm px-4 whitespace-pre-wrap">{user.bio}</p>
           )}
+
+          <ProfileDetails user={user} />
 
           {user.boatName && (
             <div className="mt-6 flex items-center justify-center gap-2 text-sm bg-muted/50 px-4 py-2 rounded-full border border-border/50">

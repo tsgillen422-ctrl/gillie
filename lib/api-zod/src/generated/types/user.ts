@@ -17,6 +17,18 @@ export interface User {
   coverUrl?: string | null;
   /** @nullable */
   bio?: string | null;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  hometown?: string | null;
+  /** @nullable */
+  birthday?: string | null;
+  /** @nullable */
+  relationshipStatus?: string | null;
+  /** @nullable */
+  gender?: string | null;
+  /** @nullable */
+  work?: string | null;
   isOnline?: boolean;
   isBusiness?: boolean;
   /** @nullable */

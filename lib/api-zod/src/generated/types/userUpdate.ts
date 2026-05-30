@@ -9,6 +9,18 @@
 export interface UserUpdate {
   displayName?: string;
   bio?: string;
+  /** @nullable */
+  location?: string | null;
+  /** @nullable */
+  hometown?: string | null;
+  /** @nullable */
+  birthday?: string | null;
+  /** @nullable */
+  relationshipStatus?: string | null;
+  /** @nullable */
+  gender?: string | null;
+  /** @nullable */
+  work?: string | null;
   avatarUrl?: string;
   coverUrl?: string;
   boatName?: string;
