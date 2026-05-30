@@ -178,50 +178,54 @@ export function FeedPage() {
 
   return (
     <div className="flex flex-col h-full min-w-0 bg-muted/30">
-      <div className="p-4 bg-card border-b border-border shadow-sm sticky top-0 z-10">
-        <img
-          src={dhlLogo}
-          alt="DHL — Dale Hollow Lake"
-          className="-mx-4 -mt-4 mb-1 block w-[calc(100%+2rem)] max-w-none h-auto object-contain select-none [-webkit-mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)] [mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)]"
-          draggable={false}
-        />
-        
-        {/* Quick stats / vibe setter */}
-        {summary && (
-          <div className="flex gap-2.5 mb-4 overflow-x-auto pb-1 no-scrollbar whitespace-nowrap">
-            <Link
-              href="/map?presence=1"
-              className="flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover-elevate active:scale-[0.97] transition-transform"
-            >
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {summary.activeUsersToday} on the lake
-            </Link>
-            <button
-              type="button"
-              onClick={() => setActiveTab("event")}
-              className="flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover-elevate active:scale-[0.97] transition-transform"
-            >
-              📅 {summary.totalEvents} events this week
-            </button>
-            <Link
-              href="/map"
-              className="flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover-elevate active:scale-[0.97] transition-transform"
-            >
-              📍 {summary.totalPins} active pins
-            </Link>
-          </div>
-        )}
+      <div className="flex-1 overflow-y-auto">
+        {/* Logo + quick stats: scrolls away with the page */}
+        <div className="bg-card">
+          <img
+            src={dhlLogo}
+            alt="DHL — Dale Hollow Lake"
+            className="block w-full h-auto mb-1 object-contain select-none [-webkit-mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)] [mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)]"
+            draggable={false}
+          />
 
-        <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
-          <TabsList className="w-full bg-muted">
-            <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-            <TabsTrigger value="post" className="flex-1">Social</TabsTrigger>
-            <TabsTrigger value="event" className="flex-1">Events</TabsTrigger>
-            <TabsTrigger value="business" className="flex-1">Local</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+          {summary && (
+            <div className="flex gap-2.5 px-4 pb-3 overflow-x-auto no-scrollbar whitespace-nowrap">
+              <Link
+                href="/map?presence=1"
+                className="flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover-elevate active:scale-[0.97] transition-transform"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {summary.activeUsersToday} on the lake
+              </Link>
+              <button
+                type="button"
+                onClick={() => setActiveTab("event")}
+                className="flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover-elevate active:scale-[0.97] transition-transform"
+              >
+                📅 {summary.totalEvents} events this week
+              </button>
+              <Link
+                href="/map"
+                className="flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover-elevate active:scale-[0.97] transition-transform"
+              >
+                📍 {summary.totalPins} active pins
+              </Link>
+            </div>
+          )}
+        </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Filter tabs: stick to the top once the logo scrolls away */}
+        <div className="sticky top-0 z-10 bg-card border-b border-border shadow-sm px-4 py-2">
+          <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
+            <TabsList className="w-full bg-muted">
+              <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
+              <TabsTrigger value="post" className="flex-1">Social</TabsTrigger>
+              <TabsTrigger value="event" className="flex-1">Events</TabsTrigger>
+              <TabsTrigger value="business" className="flex-1">Local</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        <div className="p-4 space-y-4">
         <HazardBanner />
         <ConditionsWidget />
         <TrendingSection />
@@ -263,6 +267,7 @@ export function FeedPage() {
             </p>
           </div>
         )}
+        </div>
       </div>
 
       {me && (
