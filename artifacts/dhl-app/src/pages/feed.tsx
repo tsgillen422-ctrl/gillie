@@ -445,12 +445,36 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
     );
   };
   const [commentText, setCommentText] = React.useState("");
+  const [commentImageUrl, setCommentImageUrl] = React.useState<string | null>(null);
   const [commentVideoUrl, setCommentVideoUrl] = React.useState<string | null>(null);
+  const commentImageInputRef = React.useRef<HTMLInputElement>(null);
   const commentVideoInputRef = React.useRef<HTMLInputElement>(null);
   const { uploadFile: uploadCommentFile, isUploading: isUploadingComment } = useUpload();
 
   const refreshComments = () => {
     queryClient.invalidateQueries({ queryKey: getGetPostCommentsQueryKey(post.id) });
+  };
+
+  const handleCommentImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose a photo.");
+      return;
+    }
+    try {
+      const compressed = await compressImage(file);
+      const res = await uploadCommentFile(compressed);
+      if (res?.objectPath) {
+        setCommentImageUrl(res.objectPath);
+        setCommentVideoUrl(null);
+        if (commentVideoInputRef.current) commentVideoInputRef.current.value = "";
+      } else {
+        toast.error("Couldn't upload that photo.");
+      }
+    } catch {
+      toast.error("Couldn't upload that photo.");
+    }
   };
 
   const handleCommentVideoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -464,6 +488,8 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
       const res = await uploadCommentFile(file);
       if (res?.objectPath) {
         setCommentVideoUrl(res.objectPath);
+        setCommentImageUrl(null);
+        if (commentImageInputRef.current) commentImageInputRef.current.value = "";
       } else {
         toast.error("Couldn't upload that video.");
       }
@@ -473,19 +499,22 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
   };
 
   const submitComment = () => {
-    if (!commentText.trim() && !commentVideoUrl) return;
+    if (!commentText.trim() && !commentImageUrl && !commentVideoUrl) return;
     createComment.mutate(
       {
         postId: post.id,
         data: {
           content: commentText.trim() || undefined,
+          imageUrl: commentImageUrl ? `/api/storage${commentImageUrl}` : undefined,
           videoUrl: commentVideoUrl ? `/api/storage${commentVideoUrl}` : undefined,
         },
       },
       {
         onSuccess: () => {
           setCommentText("");
+          setCommentImageUrl(null);
           setCommentVideoUrl(null);
+          if (commentImageInputRef.current) commentImageInputRef.current.value = "";
           if (commentVideoInputRef.current) commentVideoInputRef.current.value = "";
           refreshComments();
         },
@@ -610,6 +639,11 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
                       <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}</span>
                     </div>
                     {c.content && <p className="text-sm whitespace-pre-wrap break-words">{c.content}</p>}
+                    {c.imageUrl && (
+                      <div className="mt-2 rounded-lg overflow-hidden bg-muted">
+                        <img src={c.imageUrl} alt="Comment attachment" className="w-full h-auto" />
+                      </div>
+                    )}
                     {c.videoUrl && (
                       <div className="mt-2 rounded-lg overflow-hidden bg-black aspect-video">
                         <video src={c.videoUrl} controls className="w-full h-full" />
@@ -628,6 +662,21 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
             <p className="text-xs text-muted-foreground text-center py-2">No comments yet. Be the first to say something.</p>
           )}
 
+          {commentImageUrl && (
+            <div className="relative rounded-lg overflow-hidden bg-muted">
+              <img src={`/api/storage${commentImageUrl}`} alt="Comment attachment" className="w-full h-auto" />
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                className="absolute top-2 right-2 h-7 w-7"
+                onClick={() => { setCommentImageUrl(null); if (commentImageInputRef.current) commentImageInputRef.current.value = ""; }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+
           {commentVideoUrl && (
             <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
               <video src={`/api/storage${commentVideoUrl}`} controls className="w-full h-full" />
@@ -644,7 +693,19 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
           )}
 
           <div className="flex items-center gap-2 pt-1">
+            <input ref={commentImageInputRef} type="file" accept="image/*" className="hidden" onChange={handleCommentImageSelect} />
             <input ref={commentVideoInputRef} type="file" accept="video/*" className="hidden" onChange={handleCommentVideoSelect} />
+            <Button
+              type="button"
+              size="icon"
+              variant="outline"
+              className="rounded-full shrink-0"
+              disabled={isUploadingComment}
+              onClick={() => commentImageInputRef.current?.click()}
+              title="Add a photo"
+            >
+              <ImagePlus className="w-4 h-4" />
+            </Button>
             <Button
               type="button"
               size="icon"
@@ -660,10 +721,10 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); submitComment(); } }}
-              placeholder={isUploadingComment ? "Uploading video..." : "Add a comment..."}
+              placeholder={isUploadingComment ? "Uploading..." : "Add a comment..."}
               className="rounded-full"
             />
-            <Button size="icon" className="rounded-full shrink-0" onClick={submitComment} disabled={(!commentText.trim() && !commentVideoUrl) || createComment.isPending || isUploadingComment}>
+            <Button size="icon" className="rounded-full shrink-0" onClick={submitComment} disabled={(!commentText.trim() && !commentImageUrl && !commentVideoUrl) || createComment.isPending || isUploadingComment}>
               <Send className="w-4 h-4" />
             </Button>
           </div>

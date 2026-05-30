@@ -33,6 +33,7 @@ export const postCommentsTable = pgTable("post_comments", {
   postId: integer("post_id").notNull().references(() => postsTable.id),
   userId: integer("user_id").notNull().references(() => usersTable.id),
   content: text("content").notNull().default(""),
+  imageUrl: text("image_url"),
   videoUrl: text("video_url"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

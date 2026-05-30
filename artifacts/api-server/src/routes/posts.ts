@@ -253,6 +253,7 @@ router.get("/:postId/comments", async (req, res) => {
         userId: c.userId,
         user: user ? formatUser(user) : null,
         content: c.content,
+        imageUrl: c.imageUrl,
         videoUrl: c.videoUrl,
         createdAt: c.createdAt.toISOString(),
       };
@@ -263,17 +264,18 @@ router.get("/:postId/comments", async (req, res) => {
 
 router.post("/:postId/comments", async (req, res) => {
   const postId = parseInt(req.params.postId);
-  const { content, videoUrl } = req.body;
+  const { content, imageUrl, videoUrl } = req.body;
   const trimmedContent = content ? String(content).trim() : "";
+  const trimmedImageUrl = imageUrl ? String(imageUrl).trim() : "";
   const trimmedVideoUrl = videoUrl ? String(videoUrl).trim() : "";
-  if (!trimmedContent && !trimmedVideoUrl) {
-    return res.status(400).json({ error: "Add a message or a video to comment" });
+  if (!trimmedContent && !trimmedImageUrl && !trimmedVideoUrl) {
+    return res.status(400).json({ error: "Add a message, photo, or video to comment" });
   }
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!post) return res.status(404).json({ error: "Post not found" });
   const [comment] = await db
     .insert(postCommentsTable)
-    .values({ postId, userId: SESSION_USER_ID, content: trimmedContent, videoUrl: trimmedVideoUrl || null })
+    .values({ postId, userId: SESSION_USER_ID, content: trimmedContent, imageUrl: trimmedImageUrl || null, videoUrl: trimmedVideoUrl || null })
     .returning();
   const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, comment.userId) });
   res.status(201).json({
@@ -282,6 +284,7 @@ router.post("/:postId/comments", async (req, res) => {
     userId: comment.userId,
     user: user ? formatUser(user) : null,
     content: comment.content,
+    imageUrl: comment.imageUrl,
     videoUrl: comment.videoUrl,
     createdAt: comment.createdAt.toISOString(),
   });

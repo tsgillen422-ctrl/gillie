@@ -14,6 +14,8 @@ export interface Comment {
   user?: User;
   content: string;
   /** @nullable */
+  imageUrl?: string | null;
+  /** @nullable */
   videoUrl?: string | null;
   createdAt: string;
 }

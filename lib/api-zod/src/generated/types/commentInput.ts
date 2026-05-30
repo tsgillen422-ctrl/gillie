@@ -8,5 +8,6 @@
 
 export interface CommentInput {
   content?: string;
+  imageUrl?: string;
   videoUrl?: string;
 }

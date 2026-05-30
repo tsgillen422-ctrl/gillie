@@ -1251,6 +1251,7 @@ export const GetPostCommentsResponseItem = zod.object({
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
+  "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
   "createdAt": zod.string()
 })
@@ -1266,6 +1267,7 @@ export const CreatePostCommentParams = zod.object({
 
 export const CreatePostCommentBody = zod.object({
   "content": zod.string().optional(),
+  "imageUrl": zod.string().optional(),
   "videoUrl": zod.string().optional()
 })
 

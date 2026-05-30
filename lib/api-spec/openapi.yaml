@@ -1552,6 +1552,8 @@ components:
           $ref: "#/components/schemas/User"
         content:
           type: string
+        imageUrl:
+          type: ["string", "null"]
         videoUrl:
           type: ["string", "null"]
         createdAt:
@@ -1561,6 +1563,8 @@ components:
       type: object
       properties:
         content:
+          type: string
+        imageUrl:
           type: string
         videoUrl:
           type: string
