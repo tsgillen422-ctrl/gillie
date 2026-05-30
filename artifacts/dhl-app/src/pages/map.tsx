@@ -6,7 +6,7 @@ import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCr
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
 import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X, ImagePlus, Heart, Star, Search, Trash2 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -389,6 +389,8 @@ export function MapPage() {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const mapLoaded = useRef(false);
   const [styleReady, setStyleReady] = useState(false);
+  const search = useSearch();
+  const handledFocusRef = useRef<string | null>(null);
 
   // Track scalable marker elements so we can resize on zoom.
   const scaleEls = useRef<Set<HTMLDivElement>>(new Set());
@@ -594,6 +596,23 @@ export function MapPage() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // --- Fly to a location passed via ?lat=&lng= (e.g. from a feed post or pin link) ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    const params = new URLSearchParams(search);
+    const latStr = params.get("lat");
+    const lngStr = params.get("lng");
+    if (latStr == null || lngStr == null) return;
+    const lat = Number(latStr);
+    const lng = Number(lngStr);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    const key = `${lat},${lng}`;
+    if (handledFocusRef.current === key) return;
+    handledFocusRef.current = key;
+    map.flyTo({ center: [lng, lat], zoom: 15, essential: true });
+  }, [search, styleReady]);
 
   // --- Share my location ---
   useEffect(() => {

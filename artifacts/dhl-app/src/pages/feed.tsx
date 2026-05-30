@@ -7,6 +7,7 @@ import { HazardBanner } from "@/components/HazardBanner";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -619,9 +620,11 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
         <Button variant="ghost" size="sm" className={`flex-1 text-muted-foreground ${showComments ? 'text-primary' : ''}`} onClick={() => setShowComments(v => !v)}>
           <MessageCircle className="w-4 h-4 mr-2" /> {commentCount > 0 ? commentCount : "Comment"}
         </Button>
-        {post.pinLat && post.pinLng && (
-          <Button variant="ghost" size="sm" className="flex-1 text-primary">
-            <MapPin className="w-4 h-4 mr-2" /> Map
+        {post.pinLat != null && post.pinLng != null && (
+          <Button asChild variant="ghost" size="sm" className="flex-1 text-primary">
+            <Link href={`/map?lat=${post.pinLat}&lng=${post.pinLng}`}>
+              <MapPin className="w-4 h-4 mr-2" /> Map
+            </Link>
           </Button>
         )}
       </CardFooter>
