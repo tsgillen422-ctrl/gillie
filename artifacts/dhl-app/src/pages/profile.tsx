@@ -557,33 +557,34 @@ export function ProfilePage() {
                       <ClickableImage src={item.mediaUrl} alt={item.caption ?? "Gallery item"} className="w-full h-full object-cover" />
                     )}
                     {isSelf && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            aria-label="Delete photo"
-                            className="absolute top-1.5 right-1.5 h-8 w-8 rounded-full shadow-md"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Remove this item?</AlertDialogTitle>
-                            <AlertDialogDescription>This can't be undone.</AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleGalleryDelete(item.id)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      <div className="absolute top-1.5 right-1.5 z-20">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="icon"
+                              aria-label="Delete photo"
+                              className="h-8 w-8 rounded-full border-0 bg-red-600 text-white shadow-md hover:bg-red-700"
                             >
-                              Remove
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove this item?</AlertDialogTitle>
+                              <AlertDialogDescription>This can't be undone.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleGalleryDelete(item.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Remove
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -614,15 +615,17 @@ export function ProfilePage() {
                   ) : (
                     <img src={`/api/storage${mediaUrl}`} alt="Preview" className="object-cover w-full h-full" />
                   )}
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    className="absolute top-2 right-2 h-7 w-7"
-                    onClick={() => { setMediaUrl(null); if (mediaInputRef.current) mediaInputRef.current.value = ""; }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                  <div className="absolute top-2 right-2 z-10">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => { setMediaUrl(null); if (mediaInputRef.current) mediaInputRef.current.value = ""; }}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <Button

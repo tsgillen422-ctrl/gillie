@@ -1,5 +1,4 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "GPt8OAjxWz884L6sod-8s"
@@ -30,3 +29,15 @@ id = "Vls7-8i619RThSNOEcd-L"
 uri = "file://artifacts/dhl-app/public/seed/wakeboard.png"
 type = "image"
 title = "generated_image"
+
+[[outputs]]
+id = "T5YDjCAIoQUUwTlifm7eU"
+uri = "file://screenshots/gallery-fixed.jpg"
+type = "image"
+title = "Gallery photos with delete buttons"
+
+[[outputs]]
+id = "3C3qQcrdLBGgII4Wl5fPg"
+uri = "file://screenshots/delete-btn-zoom.png"
+type = "image"
+title = "Close-up of the delete buttons"
