@@ -468,6 +468,39 @@ export interface CatchInput {
   caughtAt?: string;
 }
 
+export type GalleryItemMediaType = typeof GalleryItemMediaType[keyof typeof GalleryItemMediaType];
+
+
+export const GalleryItemMediaType = {
+  image: 'image',
+  video: 'video',
+} as const;
+
+export interface GalleryItem {
+  id: number;
+  userId: number;
+  user?: User;
+  mediaUrl: string;
+  mediaType: GalleryItemMediaType;
+  /** @nullable */
+  caption?: string | null;
+  createdAt: string;
+}
+
+export type GalleryItemInputMediaType = typeof GalleryItemInputMediaType[keyof typeof GalleryItemInputMediaType];
+
+
+export const GalleryItemInputMediaType = {
+  image: 'image',
+  video: 'video',
+} as const;
+
+export interface GalleryItemInput {
+  mediaUrl: string;
+  mediaType?: GalleryItemInputMediaType;
+  caption?: string;
+}
+
 export interface RsvpUser {
   userId: number;
   user?: User;
@@ -577,6 +610,13 @@ export const GetPostsType = {
 export type GetCatchesParams = {
 /**
  * When set, returns the given user's catches (public only unless it's the current user).
+ */
+profileUserId?: number;
+};
+
+export type GetGalleryParams = {
+/**
+ * When set, returns the given user's gallery. Defaults to the current user.
  */
 profileUserId?: number;
 };

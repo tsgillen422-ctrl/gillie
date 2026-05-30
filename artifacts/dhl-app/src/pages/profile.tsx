@@ -1,14 +1,39 @@
 import React from "react";
 import { useParams, Link } from "wouter";
-import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetCatches, useFollowUser, useUnfollowUser, useGetFriends, getGetUserQueryKey } from "@workspace/api-client-react";
+import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useFollowUser, useUnfollowUser, useGetFriends, getGetUserQueryKey, getGetGalleryQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, Fish } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, Trash2, X } from "lucide-react";
 import { BadgeRow } from "@/components/Badges";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/UserAvatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useUpload } from "@workspace/object-storage-web";
+import { compressImage } from "@/lib/compress";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const BOAT_TYPE_LABELS: Record<string, string> = {
   speedboat: "Speed Boat",
@@ -69,10 +94,88 @@ export function ProfilePage() {
     { query: { enabled: !!id } }
   );
   const { data: friends } = useGetFriends();
-  const { data: catches, isLoading: loadingCatches } = useGetCatches(
+  const { data: gallery, isLoading: loadingGallery } = useGetGallery(
     id ? { profileUserId: id } : {},
     { query: { enabled: !!id } }
   );
+
+  const queryClient = useQueryClient();
+  const createGalleryItem = useCreateGalleryItem();
+  const deleteGalleryItem = useDeleteGalleryItem();
+  const { uploadFile, isUploading } = useUpload();
+  const mediaInputRef = React.useRef<HTMLInputElement>(null);
+  const [galleryOpen, setGalleryOpen] = React.useState(false);
+  const [caption, setCaption] = React.useState("");
+  const [mediaUrl, setMediaUrl] = React.useState<string | null>(null);
+  const [mediaType, setMediaType] = React.useState<"image" | "video">("image");
+
+  const refreshGallery = () =>
+    queryClient.invalidateQueries({ queryKey: getGetGalleryQueryKey(id ? { profileUserId: id } : {}) });
+
+  const resetGallery = () => {
+    setCaption("");
+    setMediaUrl(null);
+    setMediaType("image");
+    if (mediaInputRef.current) mediaInputRef.current.value = "";
+  };
+
+  const handleMedia = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const isVideo = file.type.startsWith("video/");
+    const isImage = file.type.startsWith("image/");
+    if (!isVideo && !isImage) {
+      toast.error("Please choose a photo or video file.");
+      return;
+    }
+    try {
+      const toUpload = isImage ? await compressImage(file) : file;
+      const res = await uploadFile(toUpload);
+      if (res?.objectPath) {
+        setMediaUrl(res.objectPath);
+        setMediaType(isVideo ? "video" : "image");
+      } else {
+        toast.error("Couldn't upload that file.");
+      }
+    } catch {
+      toast.error("Couldn't upload that file.");
+    }
+  };
+
+  const handleGallerySubmit = () => {
+    if (!mediaUrl) {
+      toast.error("Add a photo or video first.");
+      return;
+    }
+    createGalleryItem.mutate(
+      {
+        data: {
+          mediaUrl: `/api/storage${mediaUrl}`,
+          mediaType,
+          caption: caption.trim() || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Added to your gallery!");
+          setGalleryOpen(false);
+          resetGallery();
+          refreshGallery();
+        },
+        onError: () => toast.error("Couldn't add that to your gallery."),
+      }
+    );
+  };
+
+  const handleGalleryDelete = (itemId: number) => {
+    deleteGalleryItem.mutate(
+      { itemId },
+      {
+        onSuccess: () => { toast.success("Removed."); refreshGallery(); },
+        onError: () => toast.error("Couldn't remove that item."),
+      }
+    );
+  };
 
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
@@ -188,7 +291,7 @@ export function ProfilePage() {
           <TabsList className="w-full mb-4">
             <TabsTrigger value="posts" className="flex-1">Posts</TabsTrigger>
             <TabsTrigger value="pins" className="flex-1">Pins</TabsTrigger>
-            <TabsTrigger value="catches" className="flex-1">Catches</TabsTrigger>
+            <TabsTrigger value="gallery" className="flex-1">Gallery</TabsTrigger>
           </TabsList>
 
           <TabsContent value="posts" className="space-y-4">
@@ -241,43 +344,142 @@ export function ProfilePage() {
             )}
           </TabsContent>
 
-          <TabsContent value="catches" className="space-y-4">
-            {loadingCatches ? (
-              <Skeleton className="h-24 w-full rounded-xl" />
-            ) : catches?.length ? (
-              catches.map((c) => (
-                <Card key={c.id} className="border-border/50 overflow-hidden">
-                  <CardContent className="p-4 flex items-center gap-3">
-                    {c.imageUrl ? (
-                      <img src={c.imageUrl} alt={c.species} className="w-14 h-14 rounded-lg object-cover shrink-0" />
+          <TabsContent value="gallery" className="space-y-4">
+            {isSelf && (
+              <>
+                <input
+                  ref={mediaInputRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  className="hidden"
+                  onChange={handleMedia}
+                />
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setGalleryOpen(true)}
+                >
+                  <ImagePlus className="w-4 h-4 mr-2" /> Add photos and videos
+                </Button>
+              </>
+            )}
+
+            {loadingGallery ? (
+              <div className="grid grid-cols-3 gap-1.5">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="aspect-square w-full rounded-lg" />
+                ))}
+              </div>
+            ) : gallery?.length ? (
+              <div className="grid grid-cols-3 gap-1.5">
+                {gallery.map((item) => (
+                  <div key={item.id} className="relative group aspect-square rounded-lg overflow-hidden bg-muted">
+                    {item.mediaType === "video" ? (
+                      <>
+                        <video src={item.mediaUrl} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <div className="bg-black/40 rounded-full p-2">
+                            <Play className="w-5 h-5 text-white fill-white" />
+                          </div>
+                        </div>
+                      </>
                     ) : (
-                      <div className="w-14 h-14 rounded-lg bg-cyan-500/10 flex items-center justify-center shrink-0">
-                        <Fish className="w-6 h-6 text-cyan-500" />
-                      </div>
+                      <img src={item.mediaUrl} alt={item.caption ?? "Gallery item"} className="w-full h-full object-cover" />
                     )}
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-bold text-sm">{c.species}</h3>
-                      <p className="text-xs text-muted-foreground">
-                        {[c.weight != null ? `${c.weight} lb` : null, c.length != null ? `${c.length} in` : null]
-                          .filter(Boolean)
-                          .join(" · ") || "No measurements"}
-                      </p>
-                      {c.notes && <p className="text-xs mt-0.5 line-clamp-1">{c.notes}</p>}
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        {new Date(c.caughtAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
+                    {isSelf && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remove this item?</AlertDialogTitle>
+                            <AlertDialogDescription>This can't be undone.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleGalleryDelete(item.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Remove
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="text-center py-10 text-muted-foreground">
-                {isSelf ? "You haven't logged any catches yet." : "No catches logged."}
+                {isSelf ? "Add your first photos and videos." : "No photos or videos yet."}
               </div>
             )}
           </TabsContent>
         </Tabs>
       </div>
+
+      <Dialog open={galleryOpen} onOpenChange={(o) => { setGalleryOpen(o); if (!o) resetGallery(); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add to gallery</DialogTitle>
+            <DialogDescription>Share a photo or video on your profile.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Photo or video</Label>
+              {mediaUrl ? (
+                <div className="relative rounded-lg overflow-hidden bg-muted aspect-video">
+                  {mediaType === "video" ? (
+                    <video src={`/api/storage${mediaUrl}`} className="object-cover w-full h-full" controls playsInline />
+                  ) : (
+                    <img src={`/api/storage${mediaUrl}`} alt="Preview" className="object-cover w-full h-full" />
+                  )}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="absolute top-2 right-2 h-7 w-7"
+                    onClick={() => { setMediaUrl(null); if (mediaInputRef.current) mediaInputRef.current.value = ""; }}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={isUploading}
+                  onClick={() => mediaInputRef.current?.click()}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {isUploading ? "Uploading..." : "Choose photo or video"}
+                </Button>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Caption</Label>
+              <Input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption (optional)" />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => { setGalleryOpen(false); resetGallery(); }}>Cancel</Button>
+            <Button onClick={handleGallerySubmit} disabled={createGalleryItem.isPending || isUploading || !mediaUrl}>
+              {createGalleryItem.isPending ? "Saving..." : "Add"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -17,8 +17,6 @@ import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
 import { AnimatePresence, motion } from "framer-motion";
 import { useUpload } from "@workspace/object-storage-web";
-import { HazardBanner } from "@/components/HazardBanner";
-import { SosButton } from "@/components/SosButton";
 import { boatSvgFor, FLAG_SVG } from "../boats";
 
 const LAKE_CENTER: [number, number] = [-85.37, 36.53]; // [lng, lat]
@@ -931,7 +929,7 @@ export function MapPage() {
       )}
 
       {/* Search bar */}
-      <div className="absolute top-[80px] left-4 right-20 z-[400]">
+      <div className="absolute top-3 left-4 right-20 z-[400]">
         {searchOpen ? (
           <div className="rounded-2xl bg-card shadow-lg border border-border overflow-hidden">
             <div className="flex items-center gap-2 px-3 py-2">
@@ -980,11 +978,6 @@ export function MapPage() {
           >
             <Search className="h-4 w-4" /> Search the lake
           </button>
-        )}
-        {!searchOpen && (
-          <div className="mt-3">
-            <HazardBanner />
-          </div>
         )}
       </div>
 
@@ -1043,12 +1036,6 @@ export function MapPage() {
             <Crosshair className="h-4 w-4" />
           </button>
         </div>
-      </div>
-
-      {/* Emergency SOS */}
-      <div className="absolute bottom-4 left-4 z-[400] flex flex-col items-center gap-1">
-        <SosButton />
-        <span className="text-[10px] font-bold text-red-600 bg-card/90 rounded px-1.5 py-0.5 shadow-sm">SOS</span>
       </div>
 
       {/* Who's on the lake panel */}

@@ -10,6 +10,7 @@ import storageRouter from "./storage";
 import conditionsRouter from "./conditions";
 import catchesRouter from "./catches";
 import searchRouter from "./search";
+import galleryRouter from "./gallery";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use("/notifications", notificationsRouter);
 router.use("/conditions", conditionsRouter);
 router.use("/catches", catchesRouter);
 router.use("/search", searchRouter);
+router.use("/gallery", galleryRouter);
 
 export default router;

@@ -5,3 +5,4 @@ export * from "./pins";
 export * from "./posts";
 export * from "./notifications";
 export * from "./catches";
+export * from "./gallery";

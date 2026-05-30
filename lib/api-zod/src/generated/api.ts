@@ -1640,6 +1640,66 @@ export const DeleteCatchParams = zod.object({
 
 
 /**
+ * @summary Get a user's gallery of photos and videos
+ */
+export const GetGalleryQueryParams = zod.object({
+  "profileUserId": zod.coerce.number().optional().describe('When set, returns the given user\'s gallery. Defaults to the current user.')
+})
+
+export const GetGalleryResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
+  "createdAt": zod.string()
+}).optional(),
+  "mediaUrl": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "caption": zod.string().nullish(),
+  "createdAt": zod.string()
+})
+export const GetGalleryResponse = zod.array(GetGalleryResponseItem)
+
+
+/**
+ * @summary Add a photo or video to the gallery
+ */
+export const CreateGalleryItemBody = zod.object({
+  "mediaUrl": zod.string(),
+  "mediaType": zod.enum(['image', 'video']).optional(),
+  "caption": zod.string().optional()
+})
+
+
+/**
+ * @summary Delete a gallery item
+ */
+export const DeleteGalleryItemParams = zod.object({
+  "itemId": zod.coerce.number()
+})
+
+
+/**
  * @summary Unified search across users, pins, and posts
  */
 export const SearchQueryParams = zod.object({

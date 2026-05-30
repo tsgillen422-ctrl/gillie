@@ -978,6 +978,72 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /gallery:
+    get:
+      operationId: getGallery
+      tags: [gallery]
+      summary: Get a user's gallery of photos and videos
+      parameters:
+        - name: profileUserId
+          in: query
+          required: false
+          description: When set, returns the given user's gallery. Defaults to the current user.
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of gallery items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GalleryItem"
+    post:
+      operationId: createGalleryItem
+      tags: [gallery]
+      summary: Add a photo or video to the gallery
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GalleryItemInput"
+      responses:
+        "201":
+          description: Gallery item created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GalleryItem"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /gallery/{itemId}:
+    delete:
+      operationId: deleteGalleryItem
+      tags: [gallery]
+      summary: Delete a gallery item
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+        "403":
+          description: Not the owner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /search:
     get:
       operationId: search
@@ -1561,6 +1627,38 @@ components:
         isPrivate:
           type: boolean
         caughtAt:
+          type: string
+
+    GalleryItem:
+      type: object
+      required: [id, userId, mediaUrl, mediaType, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        user:
+          $ref: "#/components/schemas/User"
+        mediaUrl:
+          type: string
+        mediaType:
+          type: string
+          enum: [image, video]
+        caption:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    GalleryItemInput:
+      type: object
+      required: [mediaUrl]
+      properties:
+        mediaUrl:
+          type: string
+        mediaType:
+          type: string
+          enum: [image, video]
+        caption:
           type: string
 
     RsvpUser:
