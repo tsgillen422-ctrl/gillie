@@ -247,7 +247,6 @@ export function SettingsPage() {
                 </div>
                 <div>
                   <CardTitle className="text-lg">Location Sharing</CardTitle>
-                  <CardDescription>Show my boat on the lake map</CardDescription>
                 </div>
               </div>
               <Switch checked={shareLocation} onCheckedChange={handleToggleLocation} className="data-[state=checked]:bg-primary" />
