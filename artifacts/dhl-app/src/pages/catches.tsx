@@ -7,6 +7,7 @@ import {
   getGetCatchesQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { ClickableImage } from "@/components/ClickableImage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -185,7 +186,7 @@ export function CatchesPage() {
                 </div>
                 {c.imageUrl && (
                   <div className="rounded-xl overflow-hidden bg-muted aspect-video mb-2">
-                    <img src={resolveImageSrc(c.imageUrl)} alt={c.species} className="object-cover w-full h-full" />
+                    <ClickableImage src={resolveImageSrc(c.imageUrl)} alt={c.species} className="object-cover w-full h-full" />
                   </div>
                 )}
                 <div className="flex items-baseline gap-2 flex-wrap">

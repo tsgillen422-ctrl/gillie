@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar, resolveAvatarUrl } from "@/components/UserAvatar";
 import { ImageLightbox } from "@/components/ImageLightbox";
+import { ClickableImage } from "@/components/ClickableImage";
 import {
   Dialog,
   DialogContent,
@@ -553,7 +554,7 @@ export function ProfilePage() {
                         </div>
                       </>
                     ) : (
-                      <img src={item.mediaUrl} alt={item.caption ?? "Gallery item"} className="w-full h-full object-cover" />
+                      <ClickableImage src={item.mediaUrl} alt={item.caption ?? "Gallery item"} className="w-full h-full object-cover" />
                     )}
                     {isSelf && (
                       <AlertDialog>

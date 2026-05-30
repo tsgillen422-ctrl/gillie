@@ -5,6 +5,7 @@ import Supercluster from "supercluster";
 import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey } from "@workspace/api-client-react";
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
+import { ClickableImage } from "@/components/ClickableImage";
 import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X, ImagePlus, Heart, Star, Search, Trash2 } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -1505,7 +1506,7 @@ function DetailCard({ selected, onClose }: { selected: NonNullable<Selected>; on
         </div>
         {pin.description && <p className="px-4 -mt-1 text-sm text-muted-foreground">{pin.description}</p>}
         {pin.imageUrl && (
-          <img src={`/api/storage${pin.imageUrl}`} alt={pin.title} className="mt-3 w-full max-h-60 object-cover" />
+          <ClickableImage src={`/api/storage${pin.imageUrl}`} alt={pin.title} className="mt-3 w-full max-h-60 object-cover" />
         )}
         {(pin.startTime || pin.endTime) && (
           <p className="px-4 mt-2 text-xs text-primary font-medium">{formatPinWindow(pin.startTime, pin.endTime)}</p>

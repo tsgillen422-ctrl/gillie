@@ -38,6 +38,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useUpload } from "@workspace/object-storage-web";
 import { compressImage } from "@/lib/compress";
 import { resolveImageSrc } from "@/lib/assets";
+import { ClickableImage } from "@/components/ClickableImage";
 import { REACTIONS, REACTION_MAP, DEFAULT_REACTION, type ReactionKey } from "@/lib/reactions";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -805,7 +806,7 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
           <>
             {post.imageUrl && (
               <div className="mt-3 rounded-xl overflow-hidden bg-muted relative aspect-video">
-                <img src={resolveImageSrc(post.imageUrl)} alt="Post content" className="object-cover w-full h-full" />
+                <ClickableImage src={resolveImageSrc(post.imageUrl)} alt="Post content" className="object-cover w-full h-full" />
               </div>
             )}
 
@@ -851,7 +852,7 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
                     {c.content && <p className="text-sm whitespace-pre-wrap break-words">{c.content}</p>}
                     {c.imageUrl && (
                       <div className="mt-2 rounded-lg overflow-hidden bg-muted">
-                        <img src={c.imageUrl} alt="Comment attachment" className="w-full h-auto" />
+                        <ClickableImage src={c.imageUrl} alt="Comment attachment" className="w-full h-auto" />
                       </div>
                     )}
                     {c.videoUrl && (

@@ -6,6 +6,7 @@ import { useUpload } from "@workspace/object-storage-web";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/UserAvatar";
+import { ClickableImage } from "@/components/ClickableImage";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
@@ -233,7 +234,7 @@ export function MessageThreadPage() {
                         : 'bg-muted/80 text-foreground rounded-tl-sm border border-border/50'
                     }`}>
                       {msg.mediaUrl && msg.mediaType === "image" && (
-                        <img src={mediaSrc(msg.mediaUrl)} alt="" className={`max-w-full max-h-72 object-cover ${hasText ? 'rounded-xl mb-2 mt-1' : ''}`} />
+                        <ClickableImage src={mediaSrc(msg.mediaUrl)} alt="Photo" className={`max-w-full max-h-72 object-cover ${hasText ? 'rounded-xl mb-2 mt-1' : ''}`} />
                       )}
                       {msg.mediaUrl && msg.mediaType === "video" && (
                         <video src={mediaSrc(msg.mediaUrl)} controls className={`max-w-full max-h-72 ${hasText ? 'rounded-xl mb-2 mt-1' : ''}`} />

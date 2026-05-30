@@ -3,3 +3,4 @@
 - [Post/pin deletion cleanup](post-pin-deletion-cleanup.md) — no FK onDelete cascade; delete child rows (likes/comments/rsvps/saved, pin likes/favorites) before the parent.
 - [DHL layout shell](dhl-layout-shell.md) — AppLayout `<main>` must stay `grid` so page `h-full` resolves; FABs wrap absolute on a div, not the Button.
 - [Static asset base path](static-asset-base-path.md) — public/ asset URLs must rebase on import.meta.env.BASE_URL; hardcoded /dhl-app/seed/... breaks in dev.
+- [esbuild undefined JSX refs](esbuild-undefined-jsx.md) — vite build passes even when a JSX component is used without importing it; grep imports, don't trust a green build.
