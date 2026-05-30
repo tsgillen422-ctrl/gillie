@@ -536,10 +536,14 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
   return (
     <Card className="border-border/60 hover-elevate overflow-hidden bg-card">
       <CardHeader className="flex flex-row items-start gap-3 p-4 pb-2">
-        <UserAvatar name={post.user?.displayName || "User"} username={post.user?.username || ""} avatarUrl={post.user?.avatarUrl} className="w-10 h-10" />
+        <Link href={`/profile/${post.userId}`} className="shrink-0">
+          <UserAvatar name={post.user?.displayName || "User"} username={post.user?.username || ""} avatarUrl={post.user?.avatarUrl} className="w-10 h-10 cursor-pointer" />
+        </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-sm truncate">{post.user?.displayName}</h3>
+            <Link href={`/profile/${post.userId}`}>
+              <h3 className="font-semibold text-sm truncate hover:underline cursor-pointer">{post.user?.displayName}</h3>
+            </Link>
             <div className="flex items-center gap-1 ml-2 shrink-0">
               <span className="text-[10px] text-muted-foreground whitespace-nowrap">
                 {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
@@ -634,11 +638,15 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
           {comments && comments.length > 0 ? (
             comments.map((c) => (
               <div key={c.id} className="flex items-start gap-2.5 group">
-                <UserAvatar name={c.user?.displayName || "User"} username={c.user?.username || ""} avatarUrl={c.user?.avatarUrl} className="w-7 h-7 mt-0.5" />
+                <Link href={`/profile/${c.userId}`} className="shrink-0">
+                  <UserAvatar name={c.user?.displayName || "User"} username={c.user?.username || ""} avatarUrl={c.user?.avatarUrl} className="w-7 h-7 mt-0.5 cursor-pointer" />
+                </Link>
                 <div className="flex-1 min-w-0">
                   <div className="bg-muted rounded-2xl px-3 py-2">
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold text-xs">{c.user?.displayName || "User"}</span>
+                      <Link href={`/profile/${c.userId}`}>
+                        <span className="font-semibold text-xs hover:underline cursor-pointer">{c.user?.displayName || "User"}</span>
+                      </Link>
                       <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}</span>
                     </div>
                     {c.content && <p className="text-sm whitespace-pre-wrap break-words">{c.content}</p>}

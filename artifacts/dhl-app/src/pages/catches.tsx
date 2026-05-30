@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/UserAvatar";
+import { Link } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -137,9 +138,13 @@ export function CatchesPage() {
             <Card key={c.id} className="border-border/50 overflow-hidden">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <UserAvatar name={c.user?.displayName || "User"} username={c.user?.username || ""} avatarUrl={c.user?.avatarUrl} className="w-9 h-9" />
+                  <Link href={`/profile/${c.userId}`} className="shrink-0">
+                    <UserAvatar name={c.user?.displayName || "User"} username={c.user?.username || ""} avatarUrl={c.user?.avatarUrl} className="w-9 h-9 cursor-pointer" />
+                  </Link>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm truncate">{c.user?.displayName || "Angler"}</h3>
+                    <Link href={`/profile/${c.userId}`}>
+                      <h3 className="font-semibold text-sm truncate hover:underline cursor-pointer">{c.user?.displayName || "Angler"}</h3>
+                    </Link>
                     <p className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(c.caughtAt), { addSuffix: true })}</p>
                   </div>
                   {c.isPrivate && <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
