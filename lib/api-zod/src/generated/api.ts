@@ -1690,6 +1690,14 @@ export const MarkNotificationReadParams = zod.object({
 
 
 /**
+ * @summary Delete a notification
+ */
+export const DeleteNotificationParams = zod.object({
+  "notificationId": zod.coerce.number()
+})
+
+
+/**
  * @summary Get active (non-expired) hazard pins
  */
 export const GetActiveHazardsResponseItem = zod.object({

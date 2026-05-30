@@ -960,6 +960,21 @@ paths:
         "200":
           description: Marked read
 
+  /notifications/{notificationId}:
+    delete:
+      operationId: deleteNotification
+      tags: [notifications]
+      summary: Delete a notification
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Notification deleted
+
   /pins/hazards/active:
     get:
       operationId: getActiveHazards

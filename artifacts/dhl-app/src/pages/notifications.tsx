@@ -1,13 +1,42 @@
 import React from "react";
-import { useGetNotifications, useMarkNotificationRead } from "@workspace/api-client-react";
+import { useGetNotifications, useMarkNotificationRead, useDeleteNotification, getGetNotificationsQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
-import { Bell, UserPlus, MessageSquare, Heart, Calendar } from "lucide-react";
+import { Bell, UserPlus, MessageSquare, Heart, Calendar, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 export function NotificationsPage() {
   const { data: notifications, isLoading } = useGetNotifications();
   const markRead = useMarkNotificationRead();
+  const deleteNotif = useDeleteNotification();
+  const queryClient = useQueryClient();
+
+  const handleDelete = (notificationId: number) => {
+    deleteNotif.mutate(
+      { notificationId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetNotificationsQueryKey() });
+          toast.success("Alert deleted.");
+        },
+        onError: () => toast.error("Couldn't delete that alert."),
+      }
+    );
+  };
 
   const getIcon = (type: string) => {
     switch (type) {
@@ -41,12 +70,12 @@ export function NotificationsPage() {
             {notifications.map(notif => (
               <div 
                 key={notif.id} 
-                className={`p-4 flex gap-4 transition-colors ${!notif.read ? 'bg-primary/5' : 'bg-card'}`}
+                className={`p-4 flex gap-4 items-center transition-colors ${!notif.read ? 'bg-primary/5' : 'bg-card'}`}
                 onClick={() => {
                   if (!notif.read) markRead.mutate({ notificationId: notif.id });
                 }}
               >
-                <div className="mt-1 shrink-0 p-2 bg-background rounded-full shadow-sm border border-border/50">
+                <div className="shrink-0 p-2 bg-background rounded-full shadow-sm border border-border/50">
                   {getIcon(notif.type)}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -58,8 +87,38 @@ export function NotificationsPage() {
                   </p>
                 </div>
                 {!notif.read && (
-                  <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0 shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                  <div className="w-2 h-2 rounded-full bg-primary shrink-0 shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
                 )}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Delete alert"
+                      className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete this alert?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently remove this alert. This can't be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDelete(notif.id)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             ))}
           </div>
