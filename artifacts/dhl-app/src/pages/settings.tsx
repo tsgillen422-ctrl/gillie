@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { useGetMe, useUpdateMe } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { UserAvatar } from "@/components/UserAvatar";
+import { SosButton } from "@/components/SosButton";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -394,9 +395,12 @@ export function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Button variant="outline" className="w-full mt-8 text-destructive hover:text-destructive">
-          <LogOut className="w-4 h-4 mr-2" /> Log Out
-        </Button>
+        <div className="flex items-center gap-3 mt-8">
+          <Button variant="outline" className="flex-1 text-destructive hover:text-destructive">
+            <LogOut className="w-4 h-4 mr-2" /> Log Out
+          </Button>
+          <SosButton />
+        </div>
       </div>
     </div>
   );

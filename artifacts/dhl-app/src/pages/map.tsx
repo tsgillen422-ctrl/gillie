@@ -26,7 +26,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
-import { SosButton } from "@/components/SosButton";
 import { AnimatePresence, motion } from "framer-motion";
 import { useUpload } from "@workspace/object-storage-web";
 import { boatSvgFor, FLAG_SVG } from "../boats";
@@ -1033,9 +1032,6 @@ export function MapPage() {
 
       {/* Floating map controls */}
       <div className="absolute top-[80px] right-4 z-[400] flex flex-col items-center gap-3">
-        {/* Emergency SOS */}
-        <SosButton />
-
         {/* Who's on the lake */}
         <Button
           size="icon"
