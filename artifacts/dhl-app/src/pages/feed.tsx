@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Link, useSearch } from "wouter";
 import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users } from "lucide-react";
+import dhlLogo from "@/assets/dhl-logo.jpeg";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -178,7 +179,12 @@ export function FeedPage() {
   return (
     <div className="flex flex-col h-full bg-muted/30">
       <div className="p-4 bg-card border-b border-border shadow-sm sticky top-0 z-10">
-        <h1 className="text-2xl font-bold text-primary mb-2">DHL</h1>
+        <img
+          src={dhlLogo}
+          alt="DHL — Dale Hollow Lake"
+          className="h-12 w-auto mb-2 mix-blend-multiply select-none"
+          draggable={false}
+        />
         
         {/* Quick stats / vibe setter */}
         {summary && (
