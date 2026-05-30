@@ -4,6 +4,7 @@ import { PostInputPostType } from "@workspace/api-client-react/src/generated/api
 import { UserAvatar } from "@/components/UserAvatar";
 import { ConditionsWidget } from "@/components/ConditionsWidget";
 import { HazardBanner } from "@/components/HazardBanner";
+import { TrendingSection } from "@/components/TrendingSection";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -188,6 +189,7 @@ export function FeedPage() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <HazardBanner />
         <ConditionsWidget />
+        <TrendingSection />
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <Card key={i} className="border-border/50">
