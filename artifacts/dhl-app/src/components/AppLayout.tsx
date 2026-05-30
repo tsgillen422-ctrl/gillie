@@ -52,7 +52,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="flex-1 relative overflow-y-auto">
+      <main className="flex-1 relative overflow-hidden min-h-0">
         {children}
       </main>
 
