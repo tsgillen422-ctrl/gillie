@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import { Link } from "wouter";
-import { useGetMe, useUpdateMe, useGetBlockedUsers, useUnblockUser, getGetBlockedUsersQueryKey } from "@workspace/api-client-react";
+import { useGetMe, useUpdateMe, useGetBlockedUsers, useUnblockUser, useGetMutedUsers, useUnmuteUser, getGetBlockedUsersQueryKey, getGetMutedUsersQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUpload } from "@workspace/object-storage-web";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor } from "lucide-react";
+import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor, VolumeX, Volume2, ShieldCheck, Bookmark, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { compressImage } from "@/lib/compress";
 import { boatSvgFor, FLAG_SVG } from "../boats";
@@ -295,6 +295,29 @@ export function SettingsPage() {
         </Card>
 
         <BlockedUsersCard />
+
+        <MutedUsersCard />
+
+        {me?.isAdmin && (
+          <Link href="/admin">
+            <Card className="border-border shadow-sm hover-elevate cursor-pointer">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-primary/10 text-primary">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Moderation Dashboard</CardTitle>
+                      <CardDescription>Review reported content and take action</CardDescription>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                </div>
+              </CardHeader>
+            </Card>
+          </Link>
+        )}
 
         {/* Profile Settings */}
         <Card className="border-border shadow-sm">
@@ -604,6 +627,70 @@ function BlockedUsersCard() {
                   disabled={unblockUser.isPending}
                 >
                   <ShieldOff className="w-4 h-4 mr-2" /> Unblock
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function MutedUsersCard() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: muted, isLoading } = useGetMutedUsers();
+  const unmuteUser = useUnmuteUser();
+
+  const handleUnmute = (userId: number) => {
+    unmuteUser.mutate({ userId }, {
+      onSuccess: () => {
+        toast({ title: "User unmuted", description: "Their posts will show in your feed again." });
+        queryClient.invalidateQueries({ queryKey: getGetMutedUsersQueryKey() });
+      },
+      onError: () => {
+        toast({ title: "Error", description: "Couldn't unmute this user.", variant: "destructive" });
+      },
+    });
+  };
+
+  return (
+    <Card className="border-border shadow-sm">
+      <CardHeader className="pb-2">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-full bg-muted text-muted-foreground">
+            <VolumeX className="w-5 h-5" />
+          </div>
+          <div>
+            <CardTitle className="text-lg">Muted Users</CardTitle>
+            <CardDescription>People whose posts are hidden from your feed</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground py-2">Loading...</p>
+        ) : !muted || muted.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-2">You haven't muted anyone.</p>
+        ) : (
+          <div className="space-y-2">
+            {muted.map((u) => (
+              <div key={u.id} className="flex items-center justify-between gap-3">
+                <Link href={`/profile/${u.id}`} className="flex items-center gap-3 min-w-0">
+                  <UserAvatar name={u.displayName} username={u.username} avatarUrl={u.avatarUrl ?? undefined} className="w-9 h-9" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{u.displayName}</p>
+                    <p className="text-xs text-muted-foreground truncate">@{u.username}</p>
+                  </div>
+                </Link>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleUnmute(u.id)}
+                  disabled={unmuteUser.isPending}
+                >
+                  <Volume2 className="w-4 h-4 mr-2" /> Unmute
                 </Button>
               </div>
             ))}

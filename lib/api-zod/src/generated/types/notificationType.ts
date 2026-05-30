@@ -18,4 +18,5 @@ export const NotificationType = {
   system: 'system',
   sos: 'sos',
   rsvp: 'rsvp',
+  warning: 'warning',
 } as const;

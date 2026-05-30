@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, friendRequestsTable, blocksTable, notificationsTable } from "@workspace/db";
+import { usersTable, friendRequestsTable, blocksTable, notificationsTable, mutesTable } from "@workspace/db";
 import { eq, or, and, inArray, count } from "drizzle-orm";
 
 const router = Router();
@@ -294,6 +294,41 @@ router.delete("/:userId/unfollow", async (req, res) => {
         and(eq(friendRequestsTable.followerId, targetId), eq(friendRequestsTable.followeeId, SESSION_USER_ID))
       )
     );
+  res.json({ success: true });
+});
+
+router.get("/mutes", async (_req, res) => {
+  const rows = await db.query.mutesTable.findMany({
+    where: eq(mutesTable.muterId, SESSION_USER_ID),
+  });
+  if (!rows.length) return res.json([]);
+  const users = await db.query.usersTable.findMany({
+    where: inArray(usersTable.id, rows.map((r) => r.mutedId)),
+  });
+  res.json(await Promise.all(users.map((u) => formatUserWithCounts(u))));
+});
+
+router.post("/:userId/mute", async (req, res) => {
+  const targetId = parseInt(req.params.userId);
+  if (targetId === SESSION_USER_ID) {
+    return res.status(400).json({ error: "You can't mute yourself" });
+  }
+  const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
+  if (!target) return res.status(404).json({ error: "User not found" });
+  const existing = await db.query.mutesTable.findFirst({
+    where: and(eq(mutesTable.muterId, SESSION_USER_ID), eq(mutesTable.mutedId, targetId)),
+  });
+  if (!existing) {
+    await db.insert(mutesTable).values({ muterId: SESSION_USER_ID, mutedId: targetId });
+  }
+  res.json({ success: true });
+});
+
+router.delete("/:userId/mute", async (req, res) => {
+  const targetId = parseInt(req.params.userId);
+  await db
+    .delete(mutesTable)
+    .where(and(eq(mutesTable.muterId, SESSION_USER_ID), eq(mutesTable.mutedId, targetId)));
   res.json({ success: true });
 });
 

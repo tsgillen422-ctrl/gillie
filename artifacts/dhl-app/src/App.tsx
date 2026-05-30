@@ -17,6 +17,7 @@ import { NotificationsPage } from "@/pages/notifications";
 import { ProfilePage } from "@/pages/profile";
 import { CatchesPage } from "@/pages/catches";
 import { SearchPage } from "@/pages/search";
+import { AdminPage } from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -43,6 +44,7 @@ function Router() {
         <Route path="/search" component={SearchPage} />
         <Route path="/notifications" component={NotificationsPage} />
         <Route path="/settings" component={SettingsPage} />
+        <Route path="/admin" component={AdminPage} />
         <Route path="/profile/:userId" component={ProfilePage} />
         <Route component={NotFound} />
       </Switch>

@@ -1206,6 +1206,156 @@ paths:
               schema:
                 $ref: "#/components/schemas/SosResult"
 
+  /reports:
+    post:
+      operationId: createReport
+      tags: [reports]
+      summary: Submit a report about a post, user, or pin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportInput"
+      responses:
+        "201":
+          description: Report submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+    get:
+      operationId: getReports
+      tags: [reports]
+      summary: List reports (admin only)
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, dismissed, resolved]
+      responses:
+        "200":
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ReportDetail"
+
+  /reports/{id}:
+    patch:
+      operationId: resolveReport
+      tags: [reports]
+      summary: Take moderation action on a report (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportResolveInput"
+      responses:
+        "200":
+          description: Report resolved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+
+  /posts/saved:
+    get:
+      operationId: getSavedPosts
+      tags: [posts]
+      summary: Get the current user's saved posts
+      responses:
+        "200":
+          description: List of saved posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Post"
+
+  /posts/{postId}/save:
+    post:
+      operationId: savePost
+      tags: [posts]
+      summary: Save (bookmark) a post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Saved
+    delete:
+      operationId: unsavePost
+      tags: [posts]
+      summary: Remove a post from saved
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unsaved
+
+  /friends/mutes:
+    get:
+      operationId: getMutedUsers
+      tags: [friends]
+      summary: Get the current user's muted users
+      responses:
+        "200":
+          description: List of muted users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /friends/{userId}/mute:
+    post:
+      operationId: muteUser
+      tags: [friends]
+      summary: Mute a user (hide their posts)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Muted
+    delete:
+      operationId: unmuteUser
+      tags: [friends]
+      summary: Unmute a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unmuted
+
 components:
   schemas:
     HealthStatus:
@@ -1260,6 +1410,12 @@ components:
           type: boolean
         showFollowers:
           type: boolean
+        isAdmin:
+          type: boolean
+        isSuspended:
+          type: boolean
+        warningCount:
+          type: integer
         friendStatus:
           type: string
           enum: [none, self, accepted, pending_out, pending_in, blocked, blocked_by]
@@ -1559,6 +1715,8 @@ components:
         rsvpCount:
           type: integer
         rsvpByMe:
+          type: boolean
+        savedByMe:
           type: boolean
         createdAt:
           type: string
@@ -1921,7 +2079,7 @@ components:
           type: integer
         type:
           type: string
-          enum: [friend_request, message, post_like, pin_like, event, system, sos, rsvp]
+          enum: [friend_request, message, post_like, pin_like, event, system, sos, rsvp, warning]
         message:
           type: string
         read:
@@ -1930,3 +2088,88 @@ components:
           type: ["integer", "null"]
         createdAt:
           type: string
+
+    ReportInput:
+      type: object
+      required: [targetType, targetId, reason]
+      properties:
+        targetType:
+          type: string
+          enum: [post, user, pin]
+        targetId:
+          type: integer
+        reason:
+          type: string
+        details:
+          type: string
+
+    ReportResolveInput:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [dismiss, remove, warn, suspend]
+
+    Report:
+      type: object
+      required: [id, reporterId, targetType, targetId, reason, status, createdAt]
+      properties:
+        id:
+          type: integer
+        reporterId:
+          type: integer
+        targetType:
+          type: string
+          enum: [post, user, pin]
+        targetId:
+          type: integer
+        reason:
+          type: string
+        details:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, dismissed, resolved]
+        action:
+          type: ["string", "null"]
+          enum: [dismissed, removed, warned, suspended, null]
+        createdAt:
+          type: string
+        resolvedAt:
+          type: ["string", "null"]
+
+    ReportTargetUser:
+      type: object
+      required: [id, username, displayName]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        isSuspended:
+          type: boolean
+        warningCount:
+          type: integer
+
+    ReportDetail:
+      allOf:
+        - $ref: "#/components/schemas/Report"
+        - type: object
+          properties:
+            reporter:
+              oneOf:
+                - $ref: "#/components/schemas/ReportTargetUser"
+                - type: "null"
+            targetOwner:
+              oneOf:
+                - $ref: "#/components/schemas/ReportTargetUser"
+                - type: "null"
+            targetSummary:
+              type: ["string", "null"]
+            targetExists:
+              type: boolean

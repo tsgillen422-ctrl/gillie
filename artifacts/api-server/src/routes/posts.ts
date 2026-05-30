@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, postsTable, postLikesTable, postCommentsTable, pinsTable, eventRsvpsTable } from "@workspace/db";
-import { eq, and, sql, desc, count } from "drizzle-orm";
+import { usersTable, postsTable, postLikesTable, postCommentsTable, pinsTable, eventRsvpsTable, mutesTable, savedPostsTable } from "@workspace/db";
+import { eq, and, sql, desc, count, inArray, notInArray } from "drizzle-orm";
 
 const router = Router();
 const SESSION_USER_ID = 1;
@@ -32,6 +32,9 @@ async function formatPost(post: typeof postsTable.$inferSelect) {
   const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, post.userId) });
   const like = await db.query.postLikesTable.findFirst({
     where: and(eq(postLikesTable.postId, post.id), eq(postLikesTable.userId, SESSION_USER_ID)),
+  });
+  const saved = await db.query.savedPostsTable.findFirst({
+    where: and(eq(savedPostsTable.postId, post.id), eq(savedPostsTable.userId, SESSION_USER_ID)),
   });
   const reactionRows = await db
     .select({ reaction: postLikesTable.reaction, value: count() })
@@ -71,18 +74,38 @@ async function formatPost(post: typeof postsTable.$inferSelect) {
     reactionCounts,
     rsvpCount,
     rsvpByMe,
+    savedByMe: !!saved,
     createdAt: post.createdAt.toISOString(),
   };
 }
 
+async function getMutedUserIds(userId: number): Promise<number[]> {
+  const rows = await db.query.mutesTable.findMany({ where: eq(mutesTable.muterId, userId) });
+  return rows.map((r) => r.mutedId);
+}
+
 router.get("/", async (req, res) => {
   const type = req.query.type as string | undefined;
-  let posts;
-  if (type) {
-    posts = await db.select().from(postsTable).where(eq(postsTable.postType, type)).orderBy(desc(postsTable.createdAt));
-  } else {
-    posts = await db.select().from(postsTable).orderBy(desc(postsTable.createdAt));
-  }
+  const mutedIds = await getMutedUserIds(SESSION_USER_ID);
+  const conditions = [];
+  if (type) conditions.push(eq(postsTable.postType, type));
+  if (mutedIds.length) conditions.push(notInArray(postsTable.userId, mutedIds));
+  const where = conditions.length ? and(...conditions) : undefined;
+  const posts = await db.select().from(postsTable).where(where).orderBy(desc(postsTable.createdAt));
+  res.json(await Promise.all(posts.map(formatPost)));
+});
+
+router.get("/saved", async (_req, res) => {
+  const rows = await db.query.savedPostsTable.findMany({
+    where: eq(savedPostsTable.userId, SESSION_USER_ID),
+    orderBy: (t, { desc: d }) => [d(t.createdAt)],
+  });
+  if (!rows.length) return res.json([]);
+  const posts = await db.query.postsTable.findMany({
+    where: inArray(postsTable.id, rows.map((r) => r.postId)),
+  });
+  const orderMap = new Map(rows.map((r, i) => [r.postId, i]));
+  posts.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
   res.json(await Promise.all(posts.map(formatPost)));
 });
 
@@ -163,6 +186,27 @@ router.get("/:postId", async (req, res) => {
 router.delete("/:postId", async (req, res) => {
   const postId = parseInt(req.params.postId);
   await db.delete(postsTable).where(eq(postsTable.id, postId));
+  res.json({ success: true });
+});
+
+router.post("/:postId/save", async (req, res) => {
+  const postId = parseInt(req.params.postId);
+  const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
+  if (!post) return res.status(404).json({ error: "Post not found" });
+  const existing = await db.query.savedPostsTable.findFirst({
+    where: and(eq(savedPostsTable.postId, postId), eq(savedPostsTable.userId, SESSION_USER_ID)),
+  });
+  if (!existing) {
+    await db.insert(savedPostsTable).values({ postId, userId: SESSION_USER_ID });
+  }
+  res.json({ success: true });
+});
+
+router.delete("/:postId/save", async (req, res) => {
+  const postId = parseInt(req.params.postId);
+  await db
+    .delete(savedPostsTable)
+    .where(and(eq(savedPostsTable.postId, postId), eq(savedPostsTable.userId, SESSION_USER_ID)));
   res.json({ success: true });
 });
 

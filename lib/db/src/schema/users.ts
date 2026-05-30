@@ -1,4 +1,4 @@
-import { pgTable, text, serial, boolean, real, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, boolean, real, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -25,6 +25,9 @@ export const usersTable = pgTable("users", {
   showFollowers: boolean("show_followers").notNull().default(true),
   followerCount: serial("follower_count"),
   followingCount: serial("following_count"),
+  isAdmin: boolean("is_admin").notNull().default(false),
+  isSuspended: boolean("is_suspended").notNull().default(false),
+  warningCount: integer("warning_count").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

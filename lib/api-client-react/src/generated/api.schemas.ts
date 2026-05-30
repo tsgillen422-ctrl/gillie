@@ -55,6 +55,9 @@ export interface User {
   shareLocation?: boolean;
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
+  isAdmin?: boolean;
+  isSuspended?: boolean;
+  warningCount?: number;
   friendStatus?: UserFriendStatus;
   followerCount?: number;
   followingCount?: number;
@@ -361,6 +364,7 @@ export interface Post {
   reactionCounts?: ReactionCounts;
   rsvpCount?: number;
   rsvpByMe?: boolean;
+  savedByMe?: boolean;
   createdAt: string;
 }
 
@@ -621,6 +625,7 @@ export const NotificationType = {
   system: 'system',
   sos: 'sos',
   rsvp: 'rsvp',
+  warning: 'warning',
 } as const;
 
 export interface Notification {
@@ -633,6 +638,101 @@ export interface Notification {
   relatedId?: number | null;
   createdAt: string;
 }
+
+export type ReportInputTargetType = typeof ReportInputTargetType[keyof typeof ReportInputTargetType];
+
+
+export const ReportInputTargetType = {
+  post: 'post',
+  user: 'user',
+  pin: 'pin',
+} as const;
+
+export interface ReportInput {
+  targetType: ReportInputTargetType;
+  targetId: number;
+  reason: string;
+  details?: string;
+}
+
+export type ReportResolveInputAction = typeof ReportResolveInputAction[keyof typeof ReportResolveInputAction];
+
+
+export const ReportResolveInputAction = {
+  dismiss: 'dismiss',
+  remove: 'remove',
+  warn: 'warn',
+  suspend: 'suspend',
+} as const;
+
+export interface ReportResolveInput {
+  action: ReportResolveInputAction;
+}
+
+export type ReportTargetType = typeof ReportTargetType[keyof typeof ReportTargetType];
+
+
+export const ReportTargetType = {
+  post: 'post',
+  user: 'user',
+  pin: 'pin',
+} as const;
+
+export type ReportStatus = typeof ReportStatus[keyof typeof ReportStatus];
+
+
+export const ReportStatus = {
+  pending: 'pending',
+  dismissed: 'dismissed',
+  resolved: 'resolved',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ReportAction = typeof ReportAction[keyof typeof ReportAction] | null;
+
+
+export const ReportAction = {
+  dismissed: 'dismissed',
+  removed: 'removed',
+  warned: 'warned',
+  suspended: 'suspended',
+} as const;
+
+export interface Report {
+  id: number;
+  reporterId: number;
+  targetType: ReportTargetType;
+  targetId: number;
+  reason: string;
+  /** @nullable */
+  details?: string | null;
+  status: ReportStatus;
+  /** @nullable */
+  action?: ReportAction;
+  createdAt: string;
+  /** @nullable */
+  resolvedAt?: string | null;
+}
+
+export interface ReportTargetUser {
+  id: number;
+  username: string;
+  displayName: string;
+  /** @nullable */
+  avatarUrl?: string | null;
+  isSuspended?: boolean;
+  warningCount?: number;
+}
+
+export type ReportDetail = Report & ({
+  reporter?: ReportTargetUser | null;
+  targetOwner?: ReportTargetUser | null;
+  /** @nullable */
+  targetSummary?: string | null;
+  targetExists?: boolean;
+});
 
 export type SearchUsersParams = {
 q: string;
@@ -690,4 +790,17 @@ profileUserId?: number;
 export type SearchParams = {
 q: string;
 };
+
+export type GetReportsParams = {
+status?: GetReportsStatus;
+};
+
+export type GetReportsStatus = typeof GetReportsStatus[keyof typeof GetReportsStatus];
+
+
+export const GetReportsStatus = {
+  pending: 'pending',
+  dismissed: 'dismissed',
+  resolved: 'resolved',
+} as const;
 

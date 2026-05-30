@@ -34,5 +34,6 @@ export interface Post {
   reactionCounts?: ReactionCounts;
   rsvpCount?: number;
   rsvpByMe?: boolean;
+  savedByMe?: boolean;
   createdAt: string;
 }

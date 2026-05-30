@@ -12,7 +12,8 @@ import {
 } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, Navigation, Check, Lock, Globe, Users, Bookmark, Trash2 } from "lucide-react";
+import { Search, MapPin, Navigation, Check, Lock, Globe, Users, Bookmark, Trash2, Flag } from "lucide-react";
+import { ReportDialog } from "@/components/ReportDialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,7 @@ export function PinsPage() {
 
   const { data: me } = useGetMe();
   const isOwner = me?.id === OWNER_ID;
+  const [reportPinId, setReportPinId] = React.useState<number | null>(null);
 
   const isSaved = filter === "saved";
   const { data: pins, isLoading } = useGetPins(
@@ -270,6 +272,17 @@ export function PinsPage() {
                         </AlertDialogContent>
                       </AlertDialog>
                     )}
+                    {me != null && pin.userId !== me.id && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="text-muted-foreground hover:text-destructive"
+                        aria-label="Report pin"
+                        onClick={() => setReportPinId(pin.id)}
+                      >
+                        <Flag className="w-5 h-5" />
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -293,6 +306,13 @@ export function PinsPage() {
           </div>
         )}
       </div>
+
+      <ReportDialog
+        open={reportPinId !== null}
+        onOpenChange={(o) => { if (!o) setReportPinId(null); }}
+        targetType="pin"
+        targetId={reportPinId ?? 0}
+      />
     </div>
   );
 }

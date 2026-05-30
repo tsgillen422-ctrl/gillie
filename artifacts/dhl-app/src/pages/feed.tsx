@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useCreatePostComment, useDeletePostComment, useToggleRsvp, getGetPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey } from "@workspace/api-client-react";
+import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useCreatePostComment, useDeletePostComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey } from "@workspace/api-client-react";
 import { PostInputPostType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ConditionsWidget } from "@/components/ConditionsWidget";
@@ -9,7 +9,14 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Link, useSearch } from "wouter";
-import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users } from "lucide-react";
+import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, Flag, Bookmark, BookmarkCheck, VolumeX, Link2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ReportDialog } from "@/components/ReportDialog";
 import dhlLogo from "@/assets/dhl-logo.png";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -37,11 +44,18 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
 export function FeedPage() {
-  const [activeTab, setActiveTab] = React.useState<"all" | "post" | "event" | "business">("all");
-  
-  const { data: posts, isLoading } = useGetPosts(
-    activeTab !== "all" ? { type: activeTab } : {}
+  const [activeTab, setActiveTab] = React.useState<"all" | "post" | "event" | "business" | "saved">("all");
+
+  const isSavedTab = activeTab === "saved";
+  const { data: feedPosts, isLoading: feedLoading } = useGetPosts(
+    activeTab !== "all" && !isSavedTab ? { type: activeTab } : {},
+    { query: { enabled: !isSavedTab } }
   );
+  const { data: savedPosts, isLoading: savedLoading } = useGetSavedPosts({
+    query: { enabled: isSavedTab },
+  });
+  const posts = isSavedTab ? savedPosts : feedPosts;
+  const isLoading = isSavedTab ? savedLoading : feedLoading;
   
   const { data: summary } = useGetPostsSummary();
   const { data: me } = useGetMe();
@@ -221,6 +235,7 @@ export function FeedPage() {
               <TabsTrigger value="post" className="flex-1">Social</TabsTrigger>
               <TabsTrigger value="event" className="flex-1">Events</TabsTrigger>
               <TabsTrigger value="business" className="flex-1">Local</TabsTrigger>
+              <TabsTrigger value="saved" className="flex-1">Saved</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
@@ -480,6 +495,49 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
   const deleteComment = useDeletePostComment();
   const toggleRsvp = useToggleRsvp();
   const queryClient = useQueryClient();
+  const savePost = useSavePost();
+  const unsavePost = useUnsavePost();
+  const muteUser = useMuteUser();
+  const [reportOpen, setReportOpen] = React.useState(false);
+  const isOwnPost = currentUserId != null && post.userId === currentUserId;
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/profile/${post.userId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied to clipboard.");
+    } catch {
+      toast.error("Couldn't copy the link.");
+    }
+  };
+
+  const handleToggleSave = () => {
+    const mutation = post.savedByMe ? unsavePost : savePost;
+    mutation.mutate(
+      { postId: post.id },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetPostsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetSavedPostsQueryKey() });
+          toast.success(post.savedByMe ? "Removed from saved." : "Post saved.");
+        },
+        onError: () => toast.error("Couldn't update saved posts."),
+      }
+    );
+  };
+
+  const handleMute = () => {
+    muteUser.mutate(
+      { userId: post.userId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetPostsQueryKey() });
+          toast.success(`Muted ${post.user?.displayName || "user"}. You won't see their posts.`);
+        },
+        onError: () => toast.error("Couldn't mute that user."),
+      }
+    );
+  };
 
   const handleRsvp = () => {
     toggleRsvp.mutate(
@@ -579,6 +637,8 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
   const commentCount = comments?.length ?? 0;
 
   return (
+    <>
+    <ReportDialog open={reportOpen} onOpenChange={setReportOpen} targetType="post" targetId={post.id} />
     <Card className="border-border/60 hover-elevate overflow-hidden bg-card">
       <CardHeader className="flex flex-row items-start gap-3 p-4 pb-2">
         <Link href={`/profile/${post.userId}`} className="shrink-0">
@@ -614,6 +674,35 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
                   </AlertDialogContent>
                 </AlertDialog>
               )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" data-testid={`button-post-menu-${post.id}`}>
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  {!isOwnPost && (
+                    <DropdownMenuItem onClick={() => setReportOpen(true)} data-testid={`menu-report-${post.id}`}>
+                      <Flag className="w-4 h-4" />
+                      Report Post
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={handleShare}>
+                    <Link2 className="w-4 h-4" />
+                    Share
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleToggleSave}>
+                    {post.savedByMe ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                    {post.savedByMe ? "Unsave" : "Save"}
+                  </DropdownMenuItem>
+                  {!isOwnPost && (
+                    <DropdownMenuItem onClick={handleMute} className="text-destructive focus:text-destructive">
+                      <VolumeX className="w-4 h-4" />
+                      Mute User
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
           {post.user?.boatName && <p className="text-xs text-muted-foreground truncate">{post.user.boatName}</p>}
@@ -787,5 +876,6 @@ function PostCard({ post, onReact, canDelete, onDelete, currentUserId }: { post:
         </div>
       )}
     </Card>
+    </>
   );
 }

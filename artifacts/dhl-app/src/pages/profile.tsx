@@ -4,7 +4,8 @@ import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreate
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, Trash2, X, Clock, Ban, ShieldOff } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, Trash2, X, Clock, Ban, ShieldOff, Flag } from "lucide-react";
+import { ReportDialog } from "@/components/ReportDialog";
 import { BadgeRow } from "@/components/Badges";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -180,6 +181,7 @@ export function ProfilePage() {
   const followUser = useFollowUser();
   const unfollowUser = useUnfollowUser();
   const blockUser = useBlockUser();
+  const [reportOpen, setReportOpen] = React.useState(false);
   const unblockUser = useUnblockUser();
 
   const refreshRelationship = () => {
@@ -334,27 +336,32 @@ export function ProfilePage() {
                     <Link href={`/messages?user=${id}`}><MessageSquare className="w-4 h-4 mr-2" /> Message</Link>
                   </Button>
                 </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
-                      <Ban className="w-4 h-4 mr-2" /> Block
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Block {user.displayName}?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        They won't be able to follow you, and you'll remove any existing connection. You can unblock them later from Settings.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleBlock} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                        Block
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" onClick={() => setReportOpen(true)}>
+                    <Flag className="w-4 h-4 mr-2" /> Report
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                        <Ban className="w-4 h-4 mr-2" /> Block
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Block {user.displayName}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          They won't be able to follow you, and you'll remove any existing connection. You can unblock them later from Settings.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleBlock} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Block
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </>
             )}
           </div>
@@ -582,6 +589,8 @@ export function ProfilePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ReportDialog open={reportOpen} onOpenChange={setReportOpen} targetType="user" targetId={id} />
     </div>
   );
 }

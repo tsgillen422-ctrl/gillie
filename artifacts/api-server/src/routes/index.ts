@@ -11,6 +11,7 @@ import conditionsRouter from "./conditions";
 import catchesRouter from "./catches";
 import searchRouter from "./search";
 import galleryRouter from "./gallery";
+import reportsRouter from "./reports";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use("/conditions", conditionsRouter);
 router.use("/catches", catchesRouter);
 router.use("/search", searchRouter);
 router.use("/gallery", galleryRouter);
+router.use("/reports", reportsRouter);
 
 export default router;

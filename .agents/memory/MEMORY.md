@@ -1,4 +1,5 @@
 - [Follower counts](follower-counts.md) — schema's followerCount/followingCount serial columns are bogus; always compute from friend_requests.
 - [Realtime websockets](realtime-websockets.md) — ws works through the Replit proxy at /api/ws; keep polling as fallback.
+- [Post/pin deletion cleanup](post-pin-deletion-cleanup.md) — no FK onDelete cascade; delete child rows (likes/comments/rsvps/saved, pin likes/favorites) before the parent.
 - [DHL layout shell](dhl-layout-shell.md) — AppLayout `<main>` must stay `grid` so page `h-full` resolves; FABs wrap absolute on a div, not the Button.
 - [Static asset base path](static-asset-base-path.md) — public/ asset URLs must rebase on import.meta.env.BASE_URL; hardcoded /dhl-app/seed/... breaks in dev.

@@ -40,6 +40,9 @@ export const GetMeResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -89,6 +92,9 @@ export const UpdateMeResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -126,6 +132,9 @@ export const UpdateMyLocationResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -162,6 +171,9 @@ export const SearchUsersResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -199,6 +211,9 @@ export const GetUserResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -231,6 +246,9 @@ export const GetFriendsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -292,6 +310,9 @@ export const GetFriendRequestsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -319,6 +340,9 @@ export const GetFriendRequestsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -363,6 +387,9 @@ export const FollowUserResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -390,6 +417,9 @@ export const FollowUserResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -432,6 +462,9 @@ export const GetBlockedUsersResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -469,6 +502,9 @@ export const GetFollowersResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -506,6 +542,9 @@ export const GetFollowingResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -564,6 +603,9 @@ export const AcceptFriendRequestResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -591,6 +633,9 @@ export const AcceptFriendRequestResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -629,6 +674,9 @@ export const GetConversationsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -660,6 +708,9 @@ export const GetConversationsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -718,6 +769,9 @@ export const GetConversationMessagesResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -828,6 +882,9 @@ export const GetPinsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -903,6 +960,9 @@ export const GetPinResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -967,6 +1027,9 @@ export const LikePinResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1019,6 +1082,9 @@ export const GetFavoritePinsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1076,6 +1142,9 @@ export const ToggleFavoritePinResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1128,6 +1197,9 @@ export const GetPendingPinsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1185,6 +1257,9 @@ export const ApprovePinResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1241,6 +1316,9 @@ export const GetPostsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1268,6 +1346,7 @@ export const GetPostsResponseItem = zod.object({
 }).optional(),
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 export const GetPostsResponse = zod.array(GetPostsResponseItem)
@@ -1319,6 +1398,9 @@ export const GetPostResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1346,6 +1428,7 @@ export const GetPostResponse = zod.object({
 }).optional(),
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -1393,6 +1476,9 @@ export const ReactToPostResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1420,6 +1506,7 @@ export const ReactToPostResponse = zod.object({
 }).optional(),
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -1456,6 +1543,9 @@ export const GetPostCommentsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1525,6 +1615,9 @@ export const GetPostsSummaryResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1552,6 +1645,7 @@ export const GetPostsSummaryResponse = zod.object({
 }).optional(),
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })).optional(),
   "recentPins": zod.array(zod.object({
@@ -1578,6 +1672,9 @@ export const GetPostsSummaryResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1610,7 +1707,7 @@ export const GetPostsSummaryResponse = zod.object({
 export const GetNotificationsResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
-  "type": zod.enum(['friend_request', 'message', 'post_like', 'pin_like', 'event', 'system', 'sos', 'rsvp']),
+  "type": zod.enum(['friend_request', 'message', 'post_like', 'pin_like', 'event', 'system', 'sos', 'rsvp', 'warning']),
   "message": zod.string(),
   "read": zod.boolean(),
   "relatedId": zod.number().nullish(),
@@ -1725,6 +1822,9 @@ export const GetActiveHazardsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1782,6 +1882,9 @@ export const ToggleRsvpResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1809,6 +1912,7 @@ export const ToggleRsvpResponse = zod.object({
 }).optional(),
   "rsvpCount": zod.number().optional(),
   "rsvpByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -1843,6 +1947,9 @@ export const GetRsvpsResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1884,6 +1991,9 @@ export const GetCatchesResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -1959,6 +2069,9 @@ export const GetGalleryResponseItem = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -2020,6 +2133,9 @@ export const SearchResponse = zod.object({
   "shareLocation": zod.boolean().optional(),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
@@ -2056,6 +2172,214 @@ export const SendSosResponse = zod.object({
   "notified": zod.number(),
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish()
+})
+
+
+/**
+ * @summary Submit a report about a post, user, or pin
+ */
+export const CreateReportBody = zod.object({
+  "targetType": zod.enum(['post', 'user', 'pin']),
+  "targetId": zod.number(),
+  "reason": zod.string(),
+  "details": zod.string().optional()
+})
+
+
+/**
+ * @summary List reports (admin only)
+ */
+export const GetReportsQueryParams = zod.object({
+  "status": zod.enum(['pending', 'dismissed', 'resolved']).optional()
+})
+
+export const GetReportsResponseItem = zod.object({
+  "id": zod.number(),
+  "reporterId": zod.number(),
+  "targetType": zod.enum(['post', 'user', 'pin']),
+  "targetId": zod.number(),
+  "reason": zod.string(),
+  "details": zod.string().nullish(),
+  "status": zod.enum(['pending', 'dismissed', 'resolved']),
+  "action": zod.union([zod.literal('dismissed'),zod.literal('removed'),zod.literal('warned'),zod.literal('suspended'),zod.literal(null)]).nullish(),
+  "createdAt": zod.string(),
+  "resolvedAt": zod.string().nullish()
+}).and(zod.object({
+  "reporter": zod.union([zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional()
+}),zod.null()]).optional(),
+  "targetOwner": zod.union([zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional()
+}),zod.null()]).optional(),
+  "targetSummary": zod.string().nullish(),
+  "targetExists": zod.boolean().optional()
+}))
+export const GetReportsResponse = zod.array(GetReportsResponseItem)
+
+
+/**
+ * @summary Take moderation action on a report (admin only)
+ */
+export const ResolveReportParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const ResolveReportBody = zod.object({
+  "action": zod.enum(['dismiss', 'remove', 'warn', 'suspend'])
+})
+
+export const ResolveReportResponse = zod.object({
+  "id": zod.number(),
+  "reporterId": zod.number(),
+  "targetType": zod.enum(['post', 'user', 'pin']),
+  "targetId": zod.number(),
+  "reason": zod.string(),
+  "details": zod.string().nullish(),
+  "status": zod.enum(['pending', 'dismissed', 'resolved']),
+  "action": zod.union([zod.literal('dismissed'),zod.literal('removed'),zod.literal('warned'),zod.literal('suspended'),zod.literal(null)]).nullish(),
+  "createdAt": zod.string(),
+  "resolvedAt": zod.string().nullish()
+})
+
+
+/**
+ * @summary Get the current user's saved posts
+ */
+export const GetSavedPostsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
+  "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
+  "createdAt": zod.string()
+}).optional(),
+  "title": zod.string(),
+  "content": zod.string(),
+  "postType": zod.enum(['post', 'event', 'business']),
+  "eventDate": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "videoUrl": zod.string().nullish(),
+  "pinLat": zod.number().nullish(),
+  "pinLng": zod.number().nullish(),
+  "likeCount": zod.number().optional(),
+  "likedByMe": zod.boolean().optional(),
+  "myReaction": zod.union([zod.literal('thumbsup'),zod.literal('thumbsdown'),zod.literal('heart'),zod.literal('laugh'),zod.literal('sad'),zod.literal('angry'),zod.literal(null)]).nullish(),
+  "reactionCounts": zod.object({
+  "thumbsup": zod.number().optional(),
+  "thumbsdown": zod.number().optional(),
+  "heart": zod.number().optional(),
+  "laugh": zod.number().optional(),
+  "sad": zod.number().optional(),
+  "angry": zod.number().optional()
+}).optional(),
+  "rsvpCount": zod.number().optional(),
+  "rsvpByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
+  "createdAt": zod.string()
+})
+export const GetSavedPostsResponse = zod.array(GetSavedPostsResponseItem)
+
+
+/**
+ * @summary Save (bookmark) a post
+ */
+export const SavePostParams = zod.object({
+  "postId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Remove a post from saved
+ */
+export const UnsavePostParams = zod.object({
+  "postId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Get the current user's muted users
+ */
+export const GetMutedUsersResponseItem = zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "shareLocation": zod.boolean().optional(),
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
+  "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.string()).optional(),
+  "createdAt": zod.string()
+})
+export const GetMutedUsersResponse = zod.array(GetMutedUsersResponseItem)
+
+
+/**
+ * @summary Mute a user (hide their posts)
+ */
+export const MuteUserParams = zod.object({
+  "userId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Unmute a user
+ */
+export const UnmuteUserParams = zod.object({
+  "userId": zod.coerce.number()
 })
 
 
