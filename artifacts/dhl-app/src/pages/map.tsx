@@ -26,6 +26,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
+import { SosButton } from "@/components/SosButton";
 import { AnimatePresence, motion } from "framer-motion";
 import { useUpload } from "@workspace/object-storage-web";
 import { boatSvgFor, FLAG_SVG } from "../boats";
@@ -395,6 +396,8 @@ export function MapPage() {
   const friendMarkers = useRef<maplibregl.Marker[]>([]);
   const pinMarkers = useRef<maplibregl.Marker[]>([]);
   const meMarker = useRef<maplibregl.Marker | null>(null);
+  // Water fill layer ids, used to detect whether a marker sits on water or land.
+  const waterLayerIds = useRef<string[]>([]);
   // Supercluster index over low-priority pins + the raw pin list it was built from.
   const clusterIndex = useRef<Supercluster | null>(null);
   const pinsRef = useRef<any[]>([]);
@@ -449,6 +452,35 @@ export function MapPage() {
     });
   }, []);
 
+  // Toggle the boat on/off for every person marker: a boat (with profile photo
+  // above) when on the water, just the circular profile photo when on land.
+  // Land/water is read from the basemap's water fill layers at each marker's
+  // pixel. When a point is off-screen or the layers aren't ready we leave the
+  // marker's last known state untouched so it never flickers.
+  const updateLandStates = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const ids = waterLayerIds.current.filter((id) => map.getLayer(id));
+    if (!ids.length) return;
+    const canvas = map.getCanvas();
+    const apply = (m: maplibregl.Marker) => {
+      const { lng, lat } = m.getLngLat();
+      const p = map.project([lng, lat]);
+      if (p.x < 0 || p.y < 0 || p.x > canvas.clientWidth || p.y > canvas.clientHeight) {
+        return; // off-screen — keep last known state
+      }
+      let onWater: boolean;
+      try {
+        onWater = map.queryRenderedFeatures(p, { layers: ids }).length > 0;
+      } catch {
+        return;
+      }
+      m.getElement().classList.toggle("on-land", !onWater);
+    };
+    friendMarkers.current.forEach(apply);
+    if (meMarker.current) apply(meMarker.current);
+  }, []);
+
   // --- Initialize the map once ---
   useEffect(() => {
     if (mapRef.current || !mapContainer.current) return;
@@ -492,6 +524,7 @@ export function MapPage() {
       const waterLayers = allLayers
         .filter((l) => /water|lake|river|reservoir|bay/i.test(l.id) && l.type === "fill")
         .map((l) => l.id);
+      waterLayerIds.current = waterLayers;
       const landLayers = allLayers
         .filter(
           (l) =>
@@ -613,7 +646,8 @@ export function MapPage() {
     });
 
     applyZoomScale(map.getZoom());
-  }, [friends, styleReady, applyZoomScale]);
+    updateLandStates();
+  }, [friends, styleReady, applyZoomScale, updateLandStates]);
 
   // --- Render pin markers (with clustering + tiering) ---
   // Re-runs on every map move/zoom so clusters re-form for the current view.
@@ -737,11 +771,15 @@ export function MapPage() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !styleReady) return;
-    map.on("moveend", renderPins);
-    return () => {
-      map.off("moveend", renderPins);
+    const onMoveEnd = () => {
+      renderPins();
+      updateLandStates();
     };
-  }, [styleReady, renderPins]);
+    map.on("moveend", onMoveEnd);
+    return () => {
+      map.off("moveend", onMoveEnd);
+    };
+  }, [styleReady, renderPins, updateLandStates]);
 
   // --- Render my own marker ---
   useEffect(() => {
@@ -778,8 +816,9 @@ export function MapPage() {
       meMarker.current = marker;
       scaleEls.current.add(scale);
       applyZoomScale(map.getZoom());
+      updateLandStates();
     }
-  }, [me, styleReady, applyZoomScale]);
+  }, [me, styleReady, applyZoomScale, updateLandStates]);
 
   const zoomBy = (delta: number) => {
     const map = mapRef.current;
@@ -994,6 +1033,9 @@ export function MapPage() {
 
       {/* Floating map controls */}
       <div className="absolute top-[80px] right-4 z-[400] flex flex-col items-center gap-3">
+        {/* Emergency SOS */}
+        <SosButton />
+
         {/* Who's on the lake */}
         <Button
           size="icon"
@@ -1645,6 +1687,24 @@ const MAP_CSS = `
   @keyframes snapRipple {
     0% { transform: scale(0.5); opacity: 0.6; }
     100% { transform: scale(2.6); opacity: 0; }
+  }
+
+  /* ---- On land: hide the boat + all water effects, show only the profile photo ---- */
+  .snap-marker.on-land .snap-boat,
+  .snap-marker.on-land .snap-wake,
+  .snap-marker.on-land .snap-ring,
+  .snap-marker.on-land .snap-underglow,
+  .snap-marker.on-land .snap-flag {
+    display: none !important;
+  }
+  /* drop the floating "captain above the boat" offset and stop the water bob so
+     the circular photo sits centered right on the person's spot on shore */
+  .snap-marker.on-land .snap-bob {
+    bottom: -7px;
+    animation: none;
+  }
+  .snap-marker.on-land .snap-photo {
+    bottom: 0;
   }
 
   /* ================= Lake place label (Snap Map style) ================= */
