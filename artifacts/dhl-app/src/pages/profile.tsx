@@ -560,11 +560,12 @@ export function ProfilePage() {
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
-                            variant="secondary"
+                            variant="destructive"
                             size="icon"
-                            className="absolute top-1 right-1 h-7 w-7"
+                            aria-label="Delete photo"
+                            className="absolute top-1.5 right-1.5 h-8 w-8 rounded-full shadow-md"
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
