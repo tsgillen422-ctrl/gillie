@@ -1,0 +1,1 @@
+- [Storage URL convention](storage-url-convention.md) — dhl-app stores raw `/objects/...` paths; must render with `/api/storage` prefix or they 404.

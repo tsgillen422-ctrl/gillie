@@ -1,5 +1,12 @@
 import React from "react";
 
+function resolveAvatarUrl(url?: string | null) {
+  if (!url) return url ?? undefined;
+  if (/^(https?:|data:|blob:)/.test(url) || url.startsWith("/api/storage")) return url;
+  if (url.startsWith("/objects/") || url.startsWith("/public-objects/")) return `/api/storage${url}`;
+  return url;
+}
+
 function initials(name: string) {
   return name
     .split(" ")
@@ -36,7 +43,7 @@ export function UserAvatar({
     <div className={`relative shrink-0 ${className}`}>
       {avatarUrl ? (
         <img
-          src={avatarUrl}
+          src={resolveAvatarUrl(avatarUrl)}
           alt={name}
           className="w-full h-full rounded-full object-cover border border-border/50"
         />

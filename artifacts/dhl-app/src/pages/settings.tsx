@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { compressImage } from "@/lib/compress";
 import { boatSvgFor, FLAG_SVG } from "../boats";
 
 const BOAT_COLORS = [
@@ -134,7 +135,7 @@ export function SettingsPage() {
       return;
     }
     const uploader = kind === "avatar" ? avatarUpload : coverUpload;
-    const res = await uploader.uploadFile(file);
+    const res = await uploader.uploadFile(await compressImage(file));
     if (!res?.objectPath) return;
     if (kind === "avatar") setAvatarUrl(res.objectPath);
     else setCoverUrl(res.objectPath);
@@ -393,7 +394,7 @@ export function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Button variant="destructive" className="w-full mt-8" variant="outline">
+        <Button variant="outline" className="w-full mt-8 text-destructive hover:text-destructive">
           <LogOut className="w-4 h-4 mr-2" /> Log Out
         </Button>
       </div>

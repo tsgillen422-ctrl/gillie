@@ -17,6 +17,8 @@ import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
 import { AnimatePresence, motion } from "framer-motion";
 import { useUpload } from "@workspace/object-storage-web";
+import { HazardBanner } from "@/components/HazardBanner";
+import { SosButton } from "@/components/SosButton";
 import { boatSvgFor, FLAG_SVG } from "../boats";
 
 const LAKE_CENTER: [number, number] = [-85.37, 36.53]; // [lng, lat]
@@ -402,6 +404,8 @@ export function MapPage() {
   const [pinVisibility, setPinVisibility] = useState<"friends" | "public" | "community">("friends");
   const [pinStart, setPinStart] = useState("");
   const [pinEnd, setPinEnd] = useState("");
+  const [pinSeverity, setPinSeverity] = useState<"low" | "medium" | "high">("medium");
+  const [pinExpiresHours, setPinExpiresHours] = useState<string>("24");
   const [pinImageUrl, setPinImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadFile, isUploading } = useUpload();
@@ -855,6 +859,8 @@ export function MapPage() {
     setPinVisibility("friends");
     setPinStart("");
     setPinEnd("");
+    setPinSeverity("medium");
+    setPinExpiresHours("24");
     setPinImageUrl(null);
   };
 
@@ -874,6 +880,11 @@ export function MapPage() {
           // Landmarks are permanent places, not time-bound events.
           startTime: !isLandmark && pinStart ? new Date(pinStart).toISOString() : null,
           endTime: !isLandmark && pinEnd ? new Date(pinEnd).toISOString() : null,
+          severity: !isLandmark && pinType === "hazard" ? pinSeverity : undefined,
+          expiresAt:
+            !isLandmark && pinType === "hazard" && pinExpiresHours !== "0"
+              ? new Date(Date.now() + parseInt(pinExpiresHours, 10) * 3600 * 1000).toISOString()
+              : undefined,
         },
       },
       {
@@ -970,6 +981,11 @@ export function MapPage() {
             <Search className="h-4 w-4" /> Search the lake
           </button>
         )}
+        {!searchOpen && (
+          <div className="mt-3">
+            <HazardBanner />
+          </div>
+        )}
       </div>
 
       {/* Floating map controls */}
@@ -1027,6 +1043,12 @@ export function MapPage() {
             <Crosshair className="h-4 w-4" />
           </button>
         </div>
+      </div>
+
+      {/* Emergency SOS */}
+      <div className="absolute bottom-4 left-4 z-[400] flex flex-col items-center gap-1">
+        <SosButton />
+        <span className="text-[10px] font-bold text-red-600 bg-card/90 rounded px-1.5 py-0.5 shadow-sm">SOS</span>
       </div>
 
       {/* Who's on the lake panel */}
@@ -1168,6 +1190,42 @@ export function MapPage() {
                     <SelectItem value="hazard">⚠️ Hazard</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {pinMode === "pin" && pinType === "hazard" && (
+              <div className="grid grid-cols-2 gap-3 rounded-xl border border-red-500/30 bg-red-500/5 p-3">
+                <div className="grid gap-2">
+                  <Label>Severity</Label>
+                  <Select value={pinSeverity} onValueChange={(v: "low" | "medium" | "high") => setPinSeverity(v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">🟡 Low — heads up</SelectItem>
+                      <SelectItem value="medium">🟠 Medium — caution</SelectItem>
+                      <SelectItem value="high">🔴 High — danger</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Clears after</Label>
+                  <Select value={pinExpiresHours} onValueChange={(v) => setPinExpiresHours(v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3">3 hours</SelectItem>
+                      <SelectItem value="12">12 hours</SelectItem>
+                      <SelectItem value="24">1 day</SelectItem>
+                      <SelectItem value="72">3 days</SelectItem>
+                      <SelectItem value="0">Until removed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="col-span-2 text-xs text-muted-foreground">
+                  High-severity hazards alert everyone on the lake right away.
+                </p>
               </div>
             )}
 
