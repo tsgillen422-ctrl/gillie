@@ -178,7 +178,7 @@ export function FeedPage() {
   return (
     <div className="flex flex-col h-full bg-muted/30">
       <div className="p-4 bg-card border-b border-border shadow-sm sticky top-0 z-10">
-        <h1 className="text-2xl font-bold text-primary mb-2">The Hollow</h1>
+        <h1 className="text-2xl font-bold text-primary mb-2">DHL</h1>
         
         {/* Quick stats / vibe setter */}
         {summary && (
