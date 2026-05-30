@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/UserAvatar";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +49,18 @@ export function CatchesPage() {
   const queryClient = useQueryClient();
   const { uploadFile, isUploading } = useUpload();
   const imageInputRef = React.useRef<HTMLInputElement>(null);
+
+  const search = useSearch();
+  React.useEffect(() => {
+    const targetId = new URLSearchParams(search).get("catch");
+    if (!targetId || !catches?.length) return;
+    const el = document.getElementById(`catch-${targetId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-2", "ring-primary");
+    const t = setTimeout(() => el.classList.remove("ring-2", "ring-primary"), 2000);
+    return () => clearTimeout(t);
+  }, [search, catches]);
 
   const [open, setOpen] = React.useState(false);
   const [species, setSpecies] = React.useState("");
@@ -135,7 +147,7 @@ export function CatchesPage() {
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
         ) : catches?.length ? (
           catches.map((c) => (
-            <Card key={c.id} className="border-border/50 overflow-hidden">
+            <Card key={c.id} id={`catch-${c.id}`} className="border-border/50 overflow-hidden">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3 mb-2">
                   <Link href={`/profile/${c.userId}`} className="shrink-0">

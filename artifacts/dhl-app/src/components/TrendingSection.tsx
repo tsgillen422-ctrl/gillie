@@ -32,7 +32,7 @@ export function TrendingSection() {
       subtitle: `${biggestCatch.weight} lb · ${biggestCatch.user?.displayName ?? "Angler"}`,
       imageUrl: biggestCatch.imageUrl,
       accent: "from-amber-400/20 to-amber-500/5 text-amber-600",
-      href: "/catches",
+      href: `/catches?catch=${biggestCatch.id}`,
     });
   }
 
@@ -48,6 +48,7 @@ export function TrendingSection() {
       subtitle: `${mostLikedPhoto.likeCount ?? 0} ${(mostLikedPhoto.likeCount ?? 0) === 1 ? "like" : "likes"} · ${mostLikedPhoto.user?.displayName ?? ""}`,
       imageUrl: mostLikedPhoto.imageUrl,
       accent: "from-rose-400/20 to-rose-500/5 text-rose-600",
+      href: `/feed?post=${mostLikedPhoto.id}`,
     });
   }
 
@@ -62,7 +63,10 @@ export function TrendingSection() {
       title: popularPin.title,
       subtitle: `${popularPin.likeCount ?? 0} ${(popularPin.likeCount ?? 0) === 1 ? "like" : "likes"} · ${(popularPin.type || "").replace(/_/g, " ")}`,
       accent: "from-sky-400/20 to-sky-500/5 text-sky-600",
-      href: "/pins",
+      href:
+        popularPin.lat != null && popularPin.lng != null
+          ? `/map?lat=${popularPin.lat}&lng=${popularPin.lng}`
+          : "/pins",
     });
   }
 
@@ -78,6 +82,7 @@ export function TrendingSection() {
       title: upcomingEvent.title || "Event",
       subtitle: format(new Date(upcomingEvent.eventDate), "EEE, MMM d · h:mm a"),
       accent: "from-violet-400/20 to-violet-500/5 text-violet-600",
+      href: `/feed?post=${upcomingEvent.id}`,
     });
   }
 
@@ -86,7 +91,6 @@ export function TrendingSection() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-2 px-0.5">
-        <span className="text-base">🔥</span>
         <h2 className="text-sm font-bold tracking-tight">Trending This Week</h2>
       </div>
       <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar -mx-4 px-4">

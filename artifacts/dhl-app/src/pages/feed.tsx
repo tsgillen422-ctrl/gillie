@@ -8,7 +8,7 @@ import { TrendingSection } from "@/components/TrendingSection";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -43,6 +43,18 @@ export function FeedPage() {
   
   const { data: summary } = useGetPostsSummary();
   const { data: me } = useGetMe();
+
+  const search = useSearch();
+  React.useEffect(() => {
+    const targetId = new URLSearchParams(search).get("post");
+    if (!targetId || !posts?.length) return;
+    const el = document.getElementById(`post-${targetId}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-2", "ring-primary", "rounded-2xl");
+    const t = setTimeout(() => el.classList.remove("ring-2", "ring-primary", "rounded-2xl"), 2000);
+    return () => clearTimeout(t);
+  }, [search, posts]);
   const reactPost = useReactToPost();
   const deletePost = useDeletePost();
   const createPost = useCreatePost();
@@ -207,14 +219,15 @@ export function FeedPage() {
           ))
         ) : posts?.length ? (
           posts.map(post => (
-            <PostCard
-              key={post.id}
-              post={post}
-              onReact={(reaction) => reactPost.mutate({ postId: post.id, data: { reaction } }, { onSuccess: refreshPosts })}
-              canDelete={me != null && post.userId === me.id}
-              onDelete={() => handleDeletePost(post.id)}
-              currentUserId={me?.id}
-            />
+            <div key={post.id} id={`post-${post.id}`}>
+              <PostCard
+                post={post}
+                onReact={(reaction) => reactPost.mutate({ postId: post.id, data: { reaction } }, { onSuccess: refreshPosts })}
+                canDelete={me != null && post.userId === me.id}
+                onDelete={() => handleDeletePost(post.id)}
+                currentUserId={me?.id}
+              />
+            </div>
           ))
         ) : (
           <div className="text-center py-16 px-6 flex flex-col items-center">
