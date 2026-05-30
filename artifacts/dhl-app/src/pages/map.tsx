@@ -26,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { UserAvatar } from "@/components/UserAvatar";
+import { UserAvatar, resolveAvatarUrl } from "@/components/UserAvatar";
 import { AnimatePresence, motion } from "framer-motion";
 import { useUpload } from "@workspace/object-storage-web";
 import { boatSvgFor, FLAG_SVG } from "../boats";
@@ -269,16 +269,25 @@ function buildFriendEl(opts: {
   // profile photo mounted on the boat like a captain at the helm
   const photo = el("div", "snap-photo");
   photo.style.borderColor = color;
-  if (avatarUrl) {
-    const img = el("img") as HTMLImageElement;
-    img.src = avatarUrl;
-    img.alt = "";
-    photo.appendChild(img);
-  } else {
+  const resolvedAvatar = resolveAvatarUrl(avatarUrl);
+  const showInitials = () => {
     const initials = el("div", "snap-initials");
     initials.style.background = color;
     initials.textContent = initialsOf(name);
     photo.appendChild(initials);
+  };
+  if (resolvedAvatar) {
+    const img = el("img") as HTMLImageElement;
+    img.src = resolvedAvatar;
+    img.alt = "";
+    // If the photo fails to load, fall back to the initials circle.
+    img.onerror = () => {
+      img.remove();
+      if (!photo.querySelector(".snap-initials")) showInitials();
+    };
+    photo.appendChild(img);
+  } else {
+    showInitials();
   }
   if (online) photo.appendChild(el("div", "snap-online"));
   bob.appendChild(photo);
