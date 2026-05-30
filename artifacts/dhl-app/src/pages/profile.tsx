@@ -415,8 +415,9 @@ export function ProfilePage() {
             ) : userPins?.length ? (
               userPins.map((pin) => {
                 const window = pinWindow(pin.startTime, pin.endTime);
-                return (
-                  <Card key={pin.id} className="border-border/50">
+                const canLocate = pin.lat != null && pin.lng != null;
+                const card = (
+                  <Card key={pin.id} className={`border-border/50 ${canLocate ? "transition-colors hover:bg-muted/40 cursor-pointer" : ""}`}>
                     <CardContent className="p-4 flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0 text-xl">
                         {pinEmoji(pin.type)}
@@ -432,6 +433,11 @@ export function ProfilePage() {
                     </CardContent>
                   </Card>
                 );
+                return canLocate ? (
+                  <Link key={pin.id} href={`/map?lat=${pin.lat}&lng=${pin.lng}`} className="block">
+                    {card}
+                  </Link>
+                ) : card;
               })
             ) : (
               <div className="text-center py-10 text-muted-foreground">
