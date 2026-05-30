@@ -4,14 +4,13 @@ import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreate
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, Trash2, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2 } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2 } from "lucide-react";
 import { ReportDialog } from "@/components/ReportDialog";
 import { BadgeRow } from "@/components/Badges";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar, resolveAvatarUrl } from "@/components/UserAvatar";
 import { ImageLightbox } from "@/components/ImageLightbox";
-import { ClickableImage } from "@/components/ClickableImage";
 import {
   Dialog,
   DialogContent,
@@ -198,6 +197,8 @@ export function ProfilePage() {
       }
     );
   };
+
+  const [viewerItem, setViewerItem] = React.useState<{ id: number; mediaUrl: string; mediaType: string; caption?: string | null } | null>(null);
 
   const handleGalleryDelete = (itemId: number) => {
     deleteGalleryItem.mutate(
@@ -544,48 +545,27 @@ export function ProfilePage() {
               <div className="grid grid-cols-3 gap-1.5">
                 {gallery.map((item) => (
                   <div key={item.id} className="relative group aspect-square rounded-lg overflow-hidden bg-muted">
-                    {item.mediaType === "video" ? (
-                      <>
-                        <video src={item.mediaUrl} className="w-full h-full object-cover" muted playsInline preload="metadata" />
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <div className="bg-black/40 rounded-full p-2">
-                            <Play className="w-5 h-5 text-white fill-white" />
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      aria-label={item.mediaType === "video" ? "View video" : "View photo"}
+                      className="w-full h-full cursor-zoom-in"
+                      onClick={() => setViewerItem(item)}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewerItem(item); } }}
+                    >
+                      {item.mediaType === "video" ? (
+                        <>
+                          <video src={item.mediaUrl} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="bg-black/40 rounded-full p-2">
+                              <Play className="w-5 h-5 text-white fill-white" />
+                            </div>
                           </div>
-                        </div>
-                      </>
-                    ) : (
-                      <ClickableImage src={item.mediaUrl} alt={item.caption ?? "Gallery item"} className="w-full h-full object-cover" />
-                    )}
-                    {isSelf && (
-                      <div className="absolute top-1.5 right-1.5 z-20">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              size="icon"
-                              aria-label="Delete photo"
-                              className="h-8 w-8 rounded-full border-0 bg-red-600 text-white shadow-md hover:bg-red-700"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Remove this item?</AlertDialogTitle>
-                              <AlertDialogDescription>This can't be undone.</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleGalleryDelete(item.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Remove
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    )}
+                        </>
+                      ) : (
+                        <img src={item.mediaUrl} alt={item.caption ?? "Gallery item"} className="w-full h-full object-cover" />
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -594,6 +574,14 @@ export function ProfilePage() {
                 {isSelf ? "Add your first photos and videos." : "No photos or videos yet."}
               </div>
             )}
+            <ImageLightbox
+              src={viewerItem?.mediaUrl ?? null}
+              alt={viewerItem?.caption ?? "Gallery item"}
+              mediaType={viewerItem?.mediaType === "video" ? "video" : "image"}
+              open={!!viewerItem}
+              onClose={() => setViewerItem(null)}
+              onDelete={isSelf && viewerItem ? () => handleGalleryDelete(viewerItem.id) : undefined}
+            />
           </TabsContent>
         </Tabs>
       </div>

@@ -1,5 +1,6 @@
 - [Follower counts](follower-counts.md) — schema's followerCount/followingCount serial columns are bogus; always compute from friend_requests.
 - [Realtime websockets](realtime-websockets.md) — ws works through the Replit proxy at /api/ws; keep polling as fallback.
+- [ImageLightbox modal menus](imagelightbox-modal-menus.md) — no Radix portals inside the z-[100] lightbox; keep body-scroll/focus effect keyed on `open` only.
 - [hover-elevate vs absolute](elevate-overrides-absolute.md) — never put `absolute` on a ui Button; elevate's `:not()` rule forces position:relative. Wrap in an absolute div.
 - [Post/pin deletion cleanup](post-pin-deletion-cleanup.md) — no FK onDelete cascade; delete child rows (likes/comments/rsvps/saved, pin likes/favorites) before the parent.
 - [DHL layout shell](dhl-layout-shell.md) — AppLayout `<main>` must stay `grid` so page `h-full` resolves; FABs wrap absolute on a div, not the Button.
