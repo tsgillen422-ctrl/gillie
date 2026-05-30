@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from "react";
+import { useTheme } from "next-themes";
 import { Link } from "wouter";
 import { useGetMe, useUpdateMe, useGetBlockedUsers, useUnblockUser, getGetBlockedUsersQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -11,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff } from "lucide-react";
+import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { compressImage } from "@/lib/compress";
 import { boatSvgFor, FLAG_SVG } from "../boats";
@@ -235,7 +236,10 @@ export function SettingsPage() {
       </div>
 
       <div className="p-4 space-y-6 max-w-md mx-auto w-full pb-20">
-        
+
+        {/* Appearance */}
+        <AppearanceCard />
+
         {/* Main Setting: Location */}
         <Card className="border-border shadow-md border-primary/20 overflow-hidden relative">
           <div className={`absolute inset-0 opacity-10 pointer-events-none transition-colors duration-500 ${shareLocation ? 'bg-primary' : 'bg-muted'}`} />
@@ -482,6 +486,67 @@ export function SettingsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function AppearanceCard() {
+  const { theme, resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+
+  const isDark = mounted && resolvedTheme === "dark";
+  const current = mounted ? (theme ?? "system") : "system";
+
+  const options = [
+    { value: "light", label: "Light", icon: Sun },
+    { value: "dark", label: "Dark", icon: Moon },
+    { value: "system", label: "System", icon: Monitor },
+  ] as const;
+
+  return (
+    <Card className="border-border shadow-sm">
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-full ${isDark ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              {isDark ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            </div>
+            <div>
+              <CardTitle className="text-lg">Dark Mode</CardTitle>
+              <CardDescription>
+                {current === "system" ? "Following your device setting" : "Switch between light and dark themes"}
+              </CardDescription>
+            </div>
+          </div>
+          <Switch
+            checked={isDark}
+            onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+            className="data-[state=checked]:bg-primary"
+            aria-label="Toggle dark mode"
+          />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-3 gap-2.5">
+          {options.map((opt) => {
+            const Icon = opt.icon;
+            const active = current === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setTheme(opt.value)}
+                className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 transition-all ${active ? 'border-primary ring-2 ring-primary/30 bg-primary/5 shadow-sm' : 'border-border hover:border-primary/40 hover:bg-muted/40'}`}
+                aria-pressed={active}
+              >
+                <Icon className={`w-5 h-5 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
+                <span className="text-xs font-semibold leading-tight">{opt.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
