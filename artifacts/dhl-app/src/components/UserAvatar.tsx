@@ -1,6 +1,6 @@
 import React from "react";
 
-function resolveAvatarUrl(url?: string | null) {
+export function resolveAvatarUrl(url?: string | null) {
   if (!url) return url ?? undefined;
   if (/^(https?:|data:|blob:)/.test(url) || url.startsWith("/api/storage")) return url;
   if (url.startsWith("/objects/") || url.startsWith("/public-objects/")) return `/api/storage${url}`;

@@ -9,7 +9,8 @@ import { ReportDialog } from "@/components/ReportDialog";
 import { BadgeRow } from "@/components/Badges";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UserAvatar } from "@/components/UserAvatar";
+import { UserAvatar, resolveAvatarUrl } from "@/components/UserAvatar";
+import { ImageLightbox } from "@/components/ImageLightbox";
 import {
   Dialog,
   DialogContent,
@@ -193,6 +194,7 @@ export function ProfilePage() {
   };
 
   const [followList, setFollowList] = React.useState<"followers" | "following" | null>(null);
+  const [photoView, setPhotoView] = React.useState<{ src: string; alt: string } | null>(null);
   const friendStatus = (otherUser as any)?.friendStatus as string | undefined;
   const isFriend = friendStatus ? friendStatus === "accepted" : friends?.some((f) => f.id === id);
   const isBlocked = friendStatus === "blocked";
@@ -243,17 +245,44 @@ export function ProfilePage() {
         <div className="flex flex-col items-center bg-card border-b border-border shadow-sm">
           <div className="w-full h-36 bg-gradient-to-br from-primary/30 to-primary/10 relative">
             {user.coverUrl && (
-              <img src={`/api/storage${user.coverUrl}`} alt="" className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => setPhotoView({ src: `/api/storage${user.coverUrl}`, alt: "Cover photo" })}
+                className="w-full h-full cursor-zoom-in"
+                aria-label="View cover photo"
+              >
+                <img src={`/api/storage${user.coverUrl}`} alt="Cover photo" className="w-full h-full object-cover" />
+              </button>
             )}
           </div>
           <div className="flex flex-col items-center px-6 pb-6 -mt-12 w-full">
-          <UserAvatar
-            name={user.displayName}
-            username={user.username}
-            avatarUrl={user.avatarUrl}
-            online={user.isOnline}
-            className="w-24 h-24 mb-4 ring-4 ring-card"
-          />
+          {user.avatarUrl ? (
+            <button
+              type="button"
+              onClick={() => {
+                const src = resolveAvatarUrl(user.avatarUrl);
+                if (src) setPhotoView({ src, alt: "Profile photo" });
+              }}
+              className="cursor-zoom-in rounded-full"
+              aria-label="View profile photo"
+            >
+              <UserAvatar
+                name={user.displayName}
+                username={user.username}
+                avatarUrl={user.avatarUrl}
+                online={user.isOnline}
+                className="w-24 h-24 mb-4 ring-4 ring-card"
+              />
+            </button>
+          ) : (
+            <UserAvatar
+              name={user.displayName}
+              username={user.username}
+              avatarUrl={user.avatarUrl}
+              online={user.isOnline}
+              className="w-24 h-24 mb-4 ring-4 ring-card"
+            />
+          )}
 
           <h2 className="text-2xl font-bold flex items-center gap-1.5">
             {user.displayName}
@@ -591,6 +620,8 @@ export function ProfilePage() {
       </Dialog>
 
       <ReportDialog open={reportOpen} onOpenChange={setReportOpen} targetType="user" targetId={id} />
+
+      <ImageLightbox src={photoView?.src ?? null} alt={photoView?.alt ?? ""} open={!!photoView} onClose={() => setPhotoView(null)} />
     </div>
   );
 }
