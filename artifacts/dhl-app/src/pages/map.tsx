@@ -408,6 +408,13 @@ export function MapPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [presenceOpen, setPresenceOpen] = useState(false);
+  // Who is geospatially over water (vs. on land), keyed by friend userId.
+  // Off-screen markers keep their last known state, so unverified people
+  // default to "on water" (shown) rather than being hidden incorrectly.
+  const [onLandIds, setOnLandIds] = useState<Set<number>>(new Set());
+  const onLandRef = useRef<Set<number>>(new Set());
+  const [meOnLand, setMeOnLand] = useState(false);
+  const meOnLandRef = useRef(false);
 
   const [pinDialog, setPinDialog] = useState<{ open: boolean; lat?: number; lng?: number }>({ open: false });
   const [pinTitle, setPinTitle] = useState("");
@@ -464,7 +471,10 @@ export function MapPage() {
     const ids = waterLayerIds.current.filter((id) => map.getLayer(id));
     if (!ids.length) return;
     const canvas = map.getCanvas();
-    const apply = (m: maplibregl.Marker) => {
+    // Start from last known states so off-screen markers are preserved.
+    const nextOnLand = new Set(onLandRef.current);
+    let meLand = meOnLandRef.current;
+    const apply = (m: maplibregl.Marker, userId: number | null) => {
       const { lng, lat } = m.getLngLat();
       const p = map.project([lng, lat]);
       if (p.x < 0 || p.y < 0 || p.x > canvas.clientWidth || p.y > canvas.clientHeight) {
@@ -477,9 +487,41 @@ export function MapPage() {
         return;
       }
       m.getElement().classList.toggle("on-land", !onWater);
+      if (userId == null) {
+        meLand = !onWater;
+      } else if (onWater) {
+        nextOnLand.delete(userId);
+      } else {
+        nextOnLand.add(userId);
+      }
     };
-    friendMarkers.current.forEach(apply);
-    if (meMarker.current) apply(meMarker.current);
+    friendMarkers.current.forEach((m) => {
+      const raw = m.getElement().dataset.userId;
+      const uid = raw != null ? Number(raw) : NaN;
+      apply(m, Number.isNaN(uid) ? null : uid);
+    });
+    if (meMarker.current) apply(meMarker.current, null);
+
+    // Commit to state only when something actually changed (avoids re-render churn
+    // from frequent move/render events).
+    const prev = onLandRef.current;
+    let changed = prev.size !== nextOnLand.size;
+    if (!changed) {
+      for (const id of nextOnLand) {
+        if (!prev.has(id)) {
+          changed = true;
+          break;
+        }
+      }
+    }
+    if (changed) {
+      onLandRef.current = nextOnLand;
+      setOnLandIds(nextOnLand);
+    }
+    if (meLand !== meOnLandRef.current) {
+      meOnLandRef.current = meLand;
+      setMeOnLand(meLand);
+    }
   }, []);
 
   // --- Initialize the map once ---
@@ -652,6 +694,7 @@ export function MapPage() {
         boatFlag: friend.boatFlag,
         boatAccent: friend.boatAccent,
       });
+      root.dataset.userId = String(friend.userId);
       root.addEventListener("click", (ev) => {
         ev.stopPropagation();
         setSelected({ kind: "friend", data: friend });
@@ -865,8 +908,16 @@ export function MapPage() {
     setPresenceOpen(false);
   };
 
-  const onlineFriends = (friends ?? []).filter((f: any) => f.isOnline);
-  const onlineCount = onlineFriends.length + (me?.currentLat != null ? 1 : 0);
+  // Only people currently on the water (not on land at marinas, restaurants, etc.)
+  // belong in the "Who's on the lake" presence list and its count. Businesses
+  // (marinas, restaurants, shops) are fixed land places and are always excluded;
+  // regular people are additionally hidden when the map detects them over land.
+  const onWaterFriends = (friends ?? []).filter(
+    (f: any) => f.lat != null && f.lng != null && !f.isBusiness && !onLandIds.has(f.userId)
+  );
+  const onlineFriends = onWaterFriends.filter((f: any) => f.isOnline);
+  const meOnWater = me?.currentLat != null && me?.currentLng != null && !meOnLand;
+  const onlineCount = onlineFriends.length + (meOnWater ? 1 : 0);
 
   const searchResults = (() => {
     const q = searchQuery.trim().toLowerCase();
@@ -1138,26 +1189,26 @@ export function MapPage() {
                 </Button>
               </div>
               <div className="flex-1 overflow-y-auto p-2">
-                {me?.currentLat != null && me?.currentLng != null && (
+                {meOnWater && (
                   <button
-                    onClick={() => flyToLocation(me.currentLng!, me.currentLat!, { kind: "me", data: me })}
+                    onClick={() => flyToLocation(me!.currentLng!, me!.currentLat!, { kind: "me", data: me })}
                     className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted text-left transition-colors"
                   >
-                    <UserAvatar name={me.displayName} username={me.username} avatarUrl={me.avatarUrl} online className="w-11 h-11" />
+                    <UserAvatar name={me!.displayName} username={me!.username} avatarUrl={me!.avatarUrl} online className="w-11 h-11" />
                     <div className="min-w-0">
                       <p className="text-sm font-semibold truncate">You</p>
-                      <p className="text-xs text-muted-foreground truncate">{me.boatName ? `🚤 ${me.boatName}` : "On the lake"}</p>
+                      <p className="text-xs text-muted-foreground truncate">{me!.boatName ? `🚤 ${me!.boatName}` : "On the lake"}</p>
                     </div>
                   </button>
                 )}
-                {(friends ?? []).length === 0 ? (
+                {onWaterFriends.length === 0 ? (
                   <div className="text-center py-12 px-6 flex flex-col items-center">
                     <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3 text-2xl">⚓</div>
                     <p className="font-semibold text-sm mb-1">Quiet waters</p>
-                    <p className="text-xs text-muted-foreground max-w-[200px]">None of your friends are sharing their location yet.</p>
+                    <p className="text-xs text-muted-foreground max-w-[200px]">No one's out on the water right now.</p>
                   </div>
                 ) : (
-                  [...(friends ?? [])]
+                  [...onWaterFriends]
                     .sort((a: any, b: any) => Number(b.isOnline) - Number(a.isOnline))
                     .map((f: any) => (
                       <button

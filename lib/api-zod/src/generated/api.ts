@@ -256,6 +256,7 @@ export const GetFriendLocationsResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish(),
+  "isBusiness": zod.boolean().nullish(),
   "isOnline": zod.boolean().optional(),
   "lastSeen": zod.string().nullish()
 })

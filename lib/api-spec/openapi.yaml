@@ -1343,6 +1343,8 @@ components:
           type: ["number", "null"]
         lng:
           type: ["number", "null"]
+        isBusiness:
+          type: ["boolean", "null"]
         isOnline:
           type: boolean
         lastSeen:

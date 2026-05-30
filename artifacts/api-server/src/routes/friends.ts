@@ -107,6 +107,7 @@ router.get("/locations", async (_req, res) => {
       boatAccent: u!.boatAccent,
       lat: u!.shareLocation ? u!.currentLat : null,
       lng: u!.shareLocation ? u!.currentLng : null,
+      isBusiness: u!.isBusiness,
       isOnline: u!.isOnline,
       lastSeen: u!.lastSeen ? u!.lastSeen.toISOString() : null,
     }));

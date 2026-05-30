@@ -107,6 +107,8 @@ export interface FriendLocation {
   lat?: number | null;
   /** @nullable */
   lng?: number | null;
+  /** @nullable */
+  isBusiness?: boolean | null;
   isOnline?: boolean;
   /** @nullable */
   lastSeen?: string | null;
