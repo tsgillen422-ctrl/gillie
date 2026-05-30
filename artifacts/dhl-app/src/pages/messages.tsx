@@ -4,7 +4,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, MessageSquarePlus, Users, X, Check } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -23,9 +23,11 @@ export function MessagesPage() {
   const { data: conversations, isLoading } = useGetConversations();
   const { data: me } = useGetMe();
   const [, setLocation] = useLocation();
+  const searchParams = useSearch();
   const createConv = useCreateConversation();
   const createGroup = useCreateGroupConversation();
   const { data: searchResults } = useSearchUsers({ q: search }, { query: { enabled: search.length > 2 } });
+  const autoStartRef = React.useRef<string | null>(null);
 
   const [groupOpen, setGroupOpen] = React.useState(false);
   const [groupName, setGroupName] = React.useState("");
@@ -39,6 +41,30 @@ export function MessagesPage() {
       { onSuccess: (conv) => setLocation(`/messages/${conv.id}`) }
     );
   };
+
+  // When arriving via /messages?user=ID (e.g. from a profile's "Message" button),
+  // open (or create) the 1:1 conversation with that user automatically.
+  React.useEffect(() => {
+    const params = new URLSearchParams(searchParams);
+    const userIdStr = params.get("user");
+    if (!userIdStr) return;
+    const userId = Number(userIdStr);
+    if (!Number.isFinite(userId)) return;
+    if (autoStartRef.current === userIdStr) return;
+    autoStartRef.current = userIdStr;
+    createConv.mutate(
+      { data: { participantId: userId } },
+      {
+        onSuccess: (conv) => setLocation(`/messages/${conv.id}`),
+        onError: () => {
+          // Allow a retry if opening the conversation failed.
+          autoStartRef.current = null;
+          toast.error("Couldn't open that conversation.");
+        },
+      }
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const toggleMember = (user: { id: number; displayName: string; username: string; avatarUrl?: string | null }) => {
     setGroupMembers((prev) =>

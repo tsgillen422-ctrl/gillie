@@ -112,6 +112,45 @@ router.get("/conversations", async (_req, res) => {
 
 router.post("/conversations", async (req, res) => {
   const { participantId } = req.body;
+
+  // Reuse an existing 1:1 conversation between the two users if one exists,
+  // so repeatedly opening "Message" with someone doesn't spawn duplicates.
+  const myParticipations = await db
+    .select()
+    .from(conversationParticipantsTable)
+    .where(eq(conversationParticipantsTable.userId, SESSION_USER_ID));
+
+  for (const p of myParticipations) {
+    const conv = await db.query.conversationsTable.findFirst({
+      where: eq(conversationsTable.id, p.conversationId),
+    });
+    if (!conv || conv.isGroup) continue;
+    const members = await db
+      .select()
+      .from(conversationParticipantsTable)
+      .where(eq(conversationParticipantsTable.conversationId, conv.id));
+    const ids = members.map((m) => m.userId).sort((a, b) => a - b);
+    if (
+      ids.length === 2 &&
+      ids[0] === Math.min(SESSION_USER_ID, participantId) &&
+      ids[1] === Math.max(SESSION_USER_ID, participantId)
+    ) {
+      const participantUsers = await Promise.all([
+        db.query.usersTable.findFirst({ where: eq(usersTable.id, SESSION_USER_ID) }),
+        db.query.usersTable.findFirst({ where: eq(usersTable.id, participantId) }),
+      ]);
+      return res.status(200).json({
+        id: conv.id,
+        name: conv.name,
+        isGroup: conv.isGroup,
+        participants: participantUsers.filter(Boolean).map((u) => formatUser(u!)),
+        lastMessage: null,
+        unreadCount: 0,
+        createdAt: conv.createdAt.toISOString(),
+      });
+    }
+  }
+
   const [conv] = await db.insert(conversationsTable).values({}).returning();
   await db.insert(conversationParticipantsTable).values([
     { conversationId: conv.id, userId: SESSION_USER_ID },
