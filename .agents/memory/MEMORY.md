@@ -1,5 +1,2 @@
-- [DHL app scroll layout](dhl-app-scroll-layout.md) — page owns scroll (AppLayout main stays overflow-hidden); Button's hover-elevate forces position:relative and breaks absolute-positioned buttons — wrap in a plain div instead.
-- [DHL api-spec codegen + counts](dhl-app-api-codegen.md) — use named $ref schemas for request bodies (inline bodies collide in zod re-export); maintain seeded like/reaction counts with deltas, not COUNT(*) recompute.
-- [DHL data & API testing](dhl-app-data-and-testing.md) — dev DB seed is not in source (irreversible deletes); API at localhost:8080, user1=owner so DELETE returns 200 not 403.
-- [api-server typecheck noise](api-server-typecheck.md) — TS7030 errors across all route files are pre-existing style, not regressions; server runs via tsx (no typecheck).
-- [DB cascade deletes](db-cascade-deletes.md) — schema FKs have no ON DELETE CASCADE; delete children first, parent last, all in one transaction.
+- [Follower counts](follower-counts.md) — schema's followerCount/followingCount serial columns are bogus; always compute from friend_requests.
+- [Realtime websockets](realtime-websockets.md) — ws works through the Replit proxy at /api/ws; keep polling as fallback.

@@ -248,10 +248,24 @@ export function MessagesPage() {
                 );
               })
             ) : (
-              <div className="text-center py-16 px-4">
-                <MessageSquarePlus className="w-12 h-12 text-muted mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-1">No Messages</h3>
-                <p className="text-muted-foreground text-sm">Start a conversation with a friend on the lake.</p>
+              <div className="text-center py-16 px-6 flex flex-col items-center">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <MessageSquarePlus className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold mb-1">No messages yet</h3>
+                <p className="text-muted-foreground text-sm max-w-xs mb-5">
+                  Find people on the lake and start a conversation, or spin up a group chat for the whole crew.
+                </p>
+                <div className="flex flex-col gap-2 w-full max-w-[220px]">
+                  <Button asChild>
+                    <Link href="/search">
+                      <Search className="w-4 h-4 mr-2" /> Find people
+                    </Link>
+                  </Button>
+                  <Button variant="outline" onClick={() => setGroupOpen(true)}>
+                    <Users className="w-4 h-4 mr-2" /> New group chat
+                  </Button>
+                </div>
               </div>
             )}
           </div>

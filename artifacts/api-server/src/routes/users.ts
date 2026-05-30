@@ -86,7 +86,7 @@ router.get("/me", async (req, res) => {
     where: eq(usersTable.id, SESSION_USER_ID),
   });
   if (!user) return res.status(401).json({ error: "Not logged in" });
-  res.json({ ...formatUser(user), badges: await computeBadges(user.id) });
+  res.json({ ...formatUser(user), ...(await getFollowCounts(user.id)), badges: await computeBadges(user.id) });
 });
 
 router.post("/me/sos", async (req, res) => {
@@ -190,7 +190,10 @@ router.get("/search", async (req, res) => {
     ? and(matchClause, notInArray(usersTable.id, blockedIds))
     : matchClause;
   const users = await db.select().from(usersTable).where(where).limit(20);
-  res.json(users.map(formatUser));
+  const withCounts = await Promise.all(
+    users.map(async (u) => ({ ...formatUser(u), ...(await getFollowCounts(u.id)) }))
+  );
+  res.json(withCounts);
 });
 
 router.get("/:userId", async (req, res) => {

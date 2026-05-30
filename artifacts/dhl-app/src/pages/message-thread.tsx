@@ -6,6 +6,7 @@ import { useUpload } from "@workspace/object-storage-web";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/UserAvatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,6 +72,41 @@ export function MessageThreadPage() {
   }, [convId, me?.id, hasUnreadFromOthers]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: getGetConversationMessagesQueryKey(convId) });
+
+  // Real-time updates via websocket. Falls back to the 5s polling above if the
+  // socket can't connect (e.g. proxy doesn't support upgrades).
+  useEffect(() => {
+    if (!convId) return;
+    let ws: WebSocket | null = null;
+    try {
+      const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+      ws = new WebSocket(`${proto}//${window.location.host}/api/ws`);
+      ws.onopen = () => {
+        ws?.send(JSON.stringify({ type: "subscribe", conversationId: convId }));
+      };
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data?.type === "message" && data.conversationId === convId) {
+            queryClient.invalidateQueries({ queryKey: getGetConversationMessagesQueryKey(convId) });
+            queryClient.invalidateQueries({ queryKey: getGetConversationsQueryKey() });
+          }
+        } catch {
+          // ignore malformed payloads
+        }
+      };
+      // Swallow connection errors — polling keeps the thread up to date.
+      ws.onerror = () => {};
+    } catch {
+      // WebSocket unavailable; rely on polling.
+    }
+    return () => {
+      if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+        ws.close();
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [convId]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -151,7 +187,19 @@ export function MessageThreadPage() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col-reverse" ref={scrollRef}>
         <div className="space-y-4">
           {isLoading ? (
-            <div className="text-center text-muted-foreground text-sm py-4">Loading messages...</div>
+            <div className="space-y-4">
+              {[
+                { mine: false, w: "w-40" },
+                { mine: true, w: "w-28" },
+                { mine: false, w: "w-52" },
+                { mine: true, w: "w-36" },
+                { mine: false, w: "w-32" },
+              ].map((b, i) => (
+                <div key={i} className={`flex ${b.mine ? "justify-end" : "justify-start"}`}>
+                  <Skeleton className={`h-10 ${b.w} rounded-2xl ${b.mine ? "rounded-tr-sm" : "rounded-tl-sm"}`} />
+                </div>
+              ))}
+            </div>
           ) : messages?.length ? (
             messages.map((msg, idx) => {
               const isMe = msg.senderId === me?.id;

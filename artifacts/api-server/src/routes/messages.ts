@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, conversationsTable, conversationParticipantsTable, messagesTable } from "@workspace/db";
 import { eq, and, ne, desc, gt } from "drizzle-orm";
+import { broadcastToConversation } from "../lib/realtime";
 
 const router = Router();
 const SESSION_USER_ID = 1;
@@ -279,6 +280,12 @@ router.post("/conversations/:conversationId", async (req, res) => {
     .values({ conversationId, senderId: SESSION_USER_ID, content: content ?? "", mediaUrl: mediaUrl ?? null, mediaType: mediaType ?? null })
     .returning();
   const sender = await db.query.usersTable.findFirst({ where: eq(usersTable.id, SESSION_USER_ID) });
+  broadcastToConversation(conversationId, {
+    type: "message",
+    conversationId,
+    messageId: msg.id,
+    senderId: msg.senderId,
+  });
   res.status(201).json({
     id: msg.id,
     conversationId: msg.conversationId,

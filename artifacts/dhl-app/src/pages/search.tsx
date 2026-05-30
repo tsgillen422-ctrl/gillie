@@ -110,7 +110,7 @@ export function SearchPage() {
               <section className="space-y-2">
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Posts & Events</h2>
                 {data!.posts.map((p) => (
-                  <Link key={p.id} href="/feed">
+                  <Link key={p.id} href={`/feed?post=${p.id}`}>
                     <Card className="hover-elevate border-border/50">
                       <CardContent className="p-3 flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">

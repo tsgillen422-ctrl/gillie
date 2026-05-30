@@ -1,0 +1,32 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "GPt8OAjxWz884L6sod-8s"
+uri = "file://artifacts/dhl-app/public/seed/catch-striper.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "2xm702n4V_TKJvUb0xpv3"
+uri = "file://artifacts/dhl-app/public/seed/catch-largemouth.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "YDH_wxT6BtZP9JGLyklOE"
+uri = "file://artifacts/dhl-app/public/seed/catch-smallmouth.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "0c2Rjj6RTbQpMu6VgE7yb"
+uri = "file://artifacts/dhl-app/public/seed/lake-sunset.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "Vls7-8i619RThSNOEcd-L"
+uri = "file://artifacts/dhl-app/public/seed/wakeboard.png"
+type = "image"
+title = "generated_image"

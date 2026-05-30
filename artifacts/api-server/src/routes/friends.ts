@@ -1,10 +1,22 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, friendRequestsTable, blocksTable, notificationsTable } from "@workspace/db";
-import { eq, or, and, inArray } from "drizzle-orm";
+import { eq, or, and, inArray, count } from "drizzle-orm";
 
 const router = Router();
 const SESSION_USER_ID = 1;
+
+async function getFollowCounts(userId: number): Promise<{ followerCount: number; followingCount: number }> {
+  const [followers] = await db
+    .select({ value: count() })
+    .from(friendRequestsTable)
+    .where(and(eq(friendRequestsTable.followeeId, userId), eq(friendRequestsTable.status, "accepted")));
+  const [following] = await db
+    .select({ value: count() })
+    .from(friendRequestsTable)
+    .where(and(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.status, "accepted")));
+  return { followerCount: followers?.value ?? 0, followingCount: following?.value ?? 0 };
+}
 
 function formatUser(u: typeof usersTable.$inferSelect) {
   return {
@@ -30,6 +42,10 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     followingCount: 0,
     createdAt: u.createdAt.toISOString(),
   };
+}
+
+async function formatUserWithCounts(u: typeof usersTable.$inferSelect) {
+  return { ...formatUser(u), ...(await getFollowCounts(u.id)) };
 }
 
 function serializeRequest(r: typeof friendRequestsTable.$inferSelect) {
@@ -69,7 +85,7 @@ router.get("/", async (_req, res) => {
       db.query.usersTable.findFirst({ where: eq(usersTable.id, id) })
     )
   );
-  res.json(friends.filter(Boolean).map((u) => formatUser(u!)));
+  res.json(await Promise.all(friends.filter(Boolean).map((u) => formatUserWithCounts(u!))));
 });
 
 router.get("/locations", async (_req, res) => {
@@ -149,7 +165,7 @@ router.get("/blocks", async (_req, res) => {
   const users = await db.query.usersTable.findMany({
     where: inArray(usersTable.id, rows.map((r) => r.blockedId)),
   });
-  res.json(users.map((u) => formatUser(u)));
+  res.json(await Promise.all(users.map((u) => formatUserWithCounts(u))));
 });
 
 router.get("/:userId/followers", async (req, res) => {
@@ -175,7 +191,7 @@ router.get("/:userId/followers", async (req, res) => {
   const ids = rows.map((r) => r.followerId).filter((id) => !blockedIds.includes(id));
   if (!ids.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, ids) });
-  res.json(users.map(formatUser));
+  res.json(await Promise.all(users.map(formatUserWithCounts)));
 });
 
 router.get("/:userId/following", async (req, res) => {
@@ -201,7 +217,7 @@ router.get("/:userId/following", async (req, res) => {
   const ids = rows.map((r) => r.followeeId).filter((id) => !blockedIds.includes(id));
   if (!ids.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, ids) });
-  res.json(users.map(formatUser));
+  res.json(await Promise.all(users.map(formatUserWithCounts)));
 });
 
 router.post("/:userId/follow", async (req, res) => {

@@ -1,7 +1,7 @@
 import React from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { MapPin, Users, MessageSquare, Anchor, ChevronRight, Map, Fish } from "lucide-react";
+import { MapPin, Users, MessageSquare, Anchor, ChevronRight, Map, Fish, Newspaper, LifeBuoy } from "lucide-react";
 
 const ONBOARDING_KEY = "dhl-onboarding-complete-v1";
 
@@ -25,10 +25,22 @@ const SLIDES = [
     body: "Share your location with friends and see them out on the water in real time. Tap the anchor on the map anytime.",
   },
   {
+    icon: Newspaper,
+    emoji: "🎣",
+    title: "Share the catch",
+    body: "Post photos, log your catches, and see what the community is up to. The feed keeps you in the loop on events and the day's bite.",
+  },
+  {
     icon: MessageSquare,
     emoji: "💬",
     title: "Stay connected",
     body: "Message friends one-on-one or start a group chat for the whole crew. Share photos, plans, and the day's catch.",
+  },
+  {
+    icon: LifeBuoy,
+    emoji: "🆘",
+    title: "Help is one tap away",
+    body: "In an emergency, the SOS button shares your exact location with nearby boaters and your friends — so help can find you fast.",
   },
 ];
 
