@@ -1,1 +1,1 @@
-- [DHL app scroll layout](dhl-app-scroll-layout.md) — page owns scroll; AppLayout main stays overflow-hidden or the feed gets a bottom gap on iOS Safari.
+- [DHL app scroll layout](dhl-app-scroll-layout.md) — page owns scroll (AppLayout main stays overflow-hidden); Button's hover-elevate forces position:relative and breaks absolute-positioned buttons — wrap in a plain div instead.

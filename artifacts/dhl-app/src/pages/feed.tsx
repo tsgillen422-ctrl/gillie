@@ -226,14 +226,16 @@ export function FeedPage() {
       </div>
 
       {me && (
-        <Button
-          onClick={() => setComposerOpen(true)}
-          size="icon"
-          className="absolute bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-20"
-          aria-label="New post"
-        >
-          <Plus className="w-6 h-6" />
-        </Button>
+        <div className="absolute bottom-6 right-6 z-20">
+          <Button
+            onClick={() => setComposerOpen(true)}
+            size="icon"
+            className="h-14 w-14 rounded-full shadow-lg"
+            aria-label="New post"
+          >
+            <Plus className="w-6 h-6" />
+          </Button>
+        </div>
       )}
 
       <Dialog open={composerOpen} onOpenChange={(open) => { setComposerOpen(open); if (!open) resetComposer(); }}>
