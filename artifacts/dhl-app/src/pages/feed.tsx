@@ -181,10 +181,26 @@ export function FeedPage() {
         
         {/* Quick stats / vibe setter */}
         {summary && (
-          <div className="flex gap-4 mb-4 text-sm text-muted-foreground overflow-x-auto pb-1 no-scrollbar whitespace-nowrap">
-            <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {summary.activeUsersToday} on the lake</div>
-            <div className="flex items-center gap-1.5">📅 {summary.totalEvents} events this week</div>
-            <div className="flex items-center gap-1.5">📍 {summary.totalPins} active pins</div>
+          <div className="flex gap-2.5 mb-4 overflow-x-auto pb-1 no-scrollbar whitespace-nowrap">
+            <Link
+              href="/map?presence=1"
+              className="flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover-elevate active:scale-[0.97] transition-transform"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {summary.activeUsersToday} on the lake
+            </Link>
+            <button
+              type="button"
+              onClick={() => setActiveTab("event")}
+              className="flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover-elevate active:scale-[0.97] transition-transform"
+            >
+              📅 {summary.totalEvents} events this week
+            </button>
+            <Link
+              href="/map"
+              className="flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover-elevate active:scale-[0.97] transition-transform"
+            >
+              📍 {summary.totalPins} active pins
+            </Link>
           </div>
         )}
 

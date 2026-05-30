@@ -656,6 +656,13 @@ export function MapPage() {
     map.flyTo({ center: [lng, lat], zoom: 15, essential: true });
   }, [search, styleReady]);
 
+  // --- Open the "Who's on the lake" panel when arriving via ?presence=1 ---
+  useEffect(() => {
+    if (new URLSearchParams(search).get("presence") === "1") {
+      setPresenceOpen(true);
+    }
+  }, [search]);
+
   // --- Share my location ---
   useEffect(() => {
     if (!me || !me.shareLocation) return;
