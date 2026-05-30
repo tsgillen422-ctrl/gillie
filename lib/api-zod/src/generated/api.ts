@@ -747,6 +747,14 @@ export const SendMessageBody = zod.object({
 
 
 /**
+ * @summary Delete a conversation and all its messages
+ */
+export const DeleteConversationParams = zod.object({
+  "conversationId": zod.coerce.number()
+})
+
+
+/**
  * @summary Mark all messages in a conversation as read
  */
 export const MarkConversationReadParams = zod.object({

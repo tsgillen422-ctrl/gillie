@@ -1,9 +1,10 @@
 import React from "react";
-import { useGetConversations, useSearchUsers, useCreateConversation, useCreateGroupConversation, useGetMe } from "@workspace/api-client-react";
+import { useGetConversations, useSearchUsers, useCreateConversation, useCreateGroupConversation, useGetMe, useDeleteConversation, getGetConversationsQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, MessageSquarePlus, Users, X, Check } from "lucide-react";
+import { Search, MessageSquarePlus, Users, X, Check, Trash2 } from "lucide-react";
 import { Link, useLocation, useSearch } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +17,17 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
 export function MessagesPage() {
@@ -24,8 +36,23 @@ export function MessagesPage() {
   const { data: me } = useGetMe();
   const [, setLocation] = useLocation();
   const searchParams = useSearch();
+  const queryClient = useQueryClient();
   const createConv = useCreateConversation();
   const createGroup = useCreateGroupConversation();
+  const deleteConv = useDeleteConversation();
+
+  const handleDeleteConversation = (conversationId: number) => {
+    deleteConv.mutate(
+      { conversationId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetConversationsQueryKey() });
+          toast.success("Conversation deleted.");
+        },
+        onError: () => toast.error("Couldn't delete that conversation."),
+      }
+    );
+  };
   const { data: searchResults } = useSearchUsers({ q: search }, { query: { enabled: search.length > 2 } });
   const autoStartRef = React.useRef<string | null>(null);
 
@@ -151,41 +178,73 @@ export function MessagesPage() {
                 if (!isGroup && !others[0]) return null;
 
                 return (
-                  <Link key={conv.id} href={`/messages/${conv.id}`}>
-                    <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer group">
-                      {isGroup ? (
-                        <div className="w-14 h-14 rounded-full bg-primary/15 border border-border flex items-center justify-center text-primary shrink-0">
-                          <Users className="w-6 h-6" />
-                        </div>
-                      ) : (
-                        <UserAvatar name={others[0].displayName} username={others[0].username} avatarUrl={others[0].avatarUrl} online={others[0].isOnline} className="w-14 h-14 shrink-0" />
-                      )}
+                  <div key={conv.id} className="relative group">
+                    <Link href={`/messages/${conv.id}`}>
+                      <div className="flex items-center gap-3 p-3 pr-12 rounded-xl hover:bg-muted/50 transition-colors cursor-pointer">
+                        {isGroup ? (
+                          <div className="w-14 h-14 rounded-full bg-primary/15 border border-border flex items-center justify-center text-primary shrink-0">
+                            <Users className="w-6 h-6" />
+                          </div>
+                        ) : (
+                          <UserAvatar name={others[0].displayName} username={others[0].username} avatarUrl={others[0].avatarUrl} online={others[0].isOnline} className="w-14 h-14 shrink-0" />
+                        )}
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-baseline mb-0.5">
-                          <h4 className="font-semibold text-sm truncate pr-2">{title}</h4>
-                          <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">
-                            {conv.lastMessage ? formatDistanceToNow(new Date(conv.lastMessage.createdAt), { addSuffix: true }) : ''}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between gap-2">
-                          <p className={`text-sm truncate ${conv.unreadCount ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                            {conv.lastMessage ? (
-                              conv.lastMessage.senderId === me?.id ? `You: ${conv.lastMessage.content}` : conv.lastMessage.content
-                            ) : (
-                              <span className="italic">No messages yet</span>
-                            )}
-                          </p>
-                          {!!conv.unreadCount && (
-                            <span className="shrink-0 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
-                              {conv.unreadCount}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-baseline mb-0.5">
+                            <h4 className="font-semibold text-sm truncate pr-2">{title}</h4>
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap shrink-0">
+                              {conv.lastMessage ? formatDistanceToNow(new Date(conv.lastMessage.createdAt), { addSuffix: true }) : ''}
                             </span>
-                          )}
+                          </div>
+
+                          <div className="flex items-center justify-between gap-2">
+                            <p className={`text-sm truncate ${conv.unreadCount ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                              {conv.lastMessage ? (
+                                conv.lastMessage.senderId === me?.id ? `You: ${conv.lastMessage.content}` : conv.lastMessage.content
+                              ) : (
+                                <span className="italic">No messages yet</span>
+                              )}
+                            </p>
+                            {!!conv.unreadCount && (
+                              <span className="shrink-0 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+                                {conv.unreadCount}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </Link>
+                    </Link>
+
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Delete conversation"
+                          className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete this conversation?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently remove the conversation and all its messages for everyone. This can't be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteConversation(conv.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 );
               })
             ) : (

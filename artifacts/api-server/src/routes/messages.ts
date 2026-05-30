@@ -292,6 +292,33 @@ router.post("/conversations/:conversationId", async (req, res) => {
   });
 });
 
+router.delete("/conversations/:conversationId", async (req, res) => {
+  const conversationId = parseInt(req.params.conversationId);
+  if (Number.isNaN(conversationId)) {
+    res.status(400).json({ error: "Invalid conversation id" });
+    return;
+  }
+  const conv = await db.query.conversationsTable.findFirst({
+    where: eq(conversationsTable.id, conversationId),
+  });
+  if (!conv) {
+    res.status(404).json({ error: "Conversation not found" });
+    return;
+  }
+  if (!(await isParticipant(conversationId, SESSION_USER_ID))) {
+    res.status(403).json({ error: "You can only delete conversations you're part of" });
+    return;
+  }
+  await db.transaction(async (tx) => {
+    await tx.delete(messagesTable).where(eq(messagesTable.conversationId, conversationId));
+    await tx
+      .delete(conversationParticipantsTable)
+      .where(eq(conversationParticipantsTable.conversationId, conversationId));
+    await tx.delete(conversationsTable).where(eq(conversationsTable.id, conversationId));
+  });
+  res.json({ success: true });
+});
+
 router.delete("/:messageId", async (req, res) => {
   const messageId = parseInt(req.params.messageId);
   const msg = await db.query.messagesTable.findFirst({ where: eq(messagesTable.id, messageId) });
