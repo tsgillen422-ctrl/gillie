@@ -45,11 +45,12 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
 export function FeedPage() {
-  const [activeTab, setActiveTab] = React.useState<"all" | "post" | "event" | "business" | "tie_up" | "saved">("all");
+  const [activeTab, setActiveTab] = React.useState<"all" | "post" | "event" | "business" | "trending" | "saved">("all");
 
   const isSavedTab = activeTab === "saved";
+  const isTrendingTab = activeTab === "trending";
   const { data: feedPosts, isLoading: feedLoading } = useGetPosts(
-    activeTab !== "all" && !isSavedTab ? { type: activeTab } : {},
+    activeTab !== "all" && !isSavedTab && !isTrendingTab ? { type: activeTab } : {},
     { query: { enabled: !isSavedTab } }
   );
   const { data: savedPosts, isLoading: savedLoading } = useGetSavedPosts({
@@ -288,7 +289,7 @@ export function FeedPage() {
               <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
               <TabsTrigger value="post" className="flex-1">Social</TabsTrigger>
               <TabsTrigger value="event" className="flex-1">Events</TabsTrigger>
-              <TabsTrigger value="tie_up" className="flex-1">Tie-ups</TabsTrigger>
+              <TabsTrigger value="trending" className="flex-1">Trending</TabsTrigger>
               <TabsTrigger value="business" className="flex-1">Local</TabsTrigger>
               <TabsTrigger value="saved" className="flex-1">Saved</TabsTrigger>
             </TabsList>
@@ -312,8 +313,9 @@ export function FeedPage() {
         )}
         <HazardBanner />
         <ConditionsWidget />
-        <TrendingSection />
-        {isLoading ? (
+        {isTrendingTab ? (
+          <TrendingSection />
+        ) : isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <Card key={i} className="border-border/50">
               <CardHeader className="flex flex-row items-center gap-4 p-4 pb-2">
