@@ -63,15 +63,19 @@ export function FeedPage() {
   const { data: me } = useGetMe();
 
   const search = useSearch();
+  const handledPostRef = React.useRef<string | null>(null);
   React.useEffect(() => {
     const targetId = new URLSearchParams(search).get("post");
-    if (!targetId || !posts?.length) return;
-    const el = document.getElementById(`post-${targetId}`);
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    el.classList.add("ring-2", "ring-primary", "rounded-2xl");
-    const t = setTimeout(() => el.classList.remove("ring-2", "ring-primary", "rounded-2xl"), 2000);
-    return () => clearTimeout(t);
+    if (!targetId) {
+      handledPostRef.current = null;
+      return;
+    }
+    if (!posts?.length || handledPostRef.current === targetId) return;
+    const id = Number(targetId);
+    if (Number.isInteger(id) && posts.some((p) => p.id === id)) {
+      handledPostRef.current = targetId;
+      setOpenPostId(id);
+    }
   }, [search, posts]);
   const reactPost = useReactToPost();
   const deletePost = useDeletePost();
