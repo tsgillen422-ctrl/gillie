@@ -86,6 +86,25 @@ export function TrendingSection() {
     });
   }
 
+  const tieUps = (posts ?? []).filter((p: any) => p.postType === "tie_up");
+  const upcomingTieUp = tieUps
+    .filter((p: any) => p.eventDate && new Date(p.eventDate).getTime() >= now)
+    .sort((a: any, b: any) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())[0];
+  const tieUp = upcomingTieUp ?? [...tieUps].sort((a: any, b: any) => (b.id ?? 0) - (a.id ?? 0))[0];
+  if (tieUp) {
+    items.push({
+      key: "tieup",
+      label: "Tie-up",
+      emoji: "⚓",
+      title: tieUp.title || "Tie-up spot",
+      subtitle: tieUp.eventDate
+        ? format(new Date(tieUp.eventDate), "EEE, MMM d · h:mm a")
+        : "Rafting up on the lake",
+      accent: "from-teal-400/20 to-teal-500/5 text-teal-600",
+      href: `/feed?post=${tieUp.id}`,
+    });
+  }
+
   if (items.length === 0) return null;
 
   return (

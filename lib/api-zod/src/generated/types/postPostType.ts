@@ -13,4 +13,5 @@ export const PostPostType = {
   post: 'post',
   event: 'event',
   business: 'business',
+  tie_up: 'tie_up',
 } as const;

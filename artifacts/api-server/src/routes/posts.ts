@@ -45,7 +45,7 @@ async function formatPost(post: typeof postsTable.$inferSelect, viewerId: number
   for (const row of reactionRows) reactionCounts[row.reaction] = row.value;
   let rsvpCount = 0;
   let rsvpByMe = false;
-  if (post.postType === "event") {
+  if (post.postType === "event" || post.postType === "tie_up") {
     const [rsvpResult] = await db
       .select({ value: count() })
       .from(eventRsvpsTable)
@@ -314,8 +314,8 @@ router.post("/:postId/rsvp", async (req, res) => {
   const postId = parseInt(req.params.postId);
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!post) return res.status(404).json({ error: "Post not found" });
-  if (post.postType !== "event") {
-    return res.status(400).json({ error: "You can only RSVP to events" });
+  if (post.postType !== "event" && post.postType !== "tie_up") {
+    return res.status(400).json({ error: "You can only RSVP to events or tie-ups" });
   }
   const existing = await db.query.eventRsvpsTable.findFirst({
     where: and(eq(eventRsvpsTable.postId, postId), eq(eventRsvpsTable.userId, uid)),

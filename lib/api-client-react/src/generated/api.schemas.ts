@@ -338,6 +338,7 @@ export const PostPostType = {
   post: 'post',
   event: 'event',
   business: 'business',
+  tie_up: 'tie_up',
 } as const;
 
 /**
@@ -422,6 +423,7 @@ export const PostInputPostType = {
   post: 'post',
   event: 'event',
   business: 'business',
+  tie_up: 'tie_up',
 } as const;
 
 export interface PostInput {
@@ -832,6 +834,7 @@ export const GetPostsType = {
   post: 'post',
   event: 'event',
   business: 'business',
+  tie_up: 'tie_up',
 } as const;
 
 export type GetCatchesParams = {

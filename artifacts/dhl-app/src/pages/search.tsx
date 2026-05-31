@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/UserAvatar";
-import { Search as SearchIcon, MapPin, Navigation, FileText, Calendar } from "lucide-react";
+import { Search as SearchIcon, MapPin, Navigation, FileText, Calendar, Anchor } from "lucide-react";
 
 function pinEmoji(type: string) {
   switch (type) {
@@ -114,7 +114,7 @@ export function SearchPage() {
                     <Card className="hover-elevate border-border/50">
                       <CardContent className="p-3 flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          {p.postType === "event" ? <Calendar className="w-5 h-5 text-primary" /> : <FileText className="w-5 h-5 text-primary" />}
+                          {p.postType === "event" ? <Calendar className="w-5 h-5 text-primary" /> : p.postType === "tie_up" ? <Anchor className="w-5 h-5 text-primary" /> : <FileText className="w-5 h-5 text-primary" />}
                         </div>
                         <div className="min-w-0 flex-1">
                           <h3 className="font-semibold text-sm truncate">{p.title}</h3>

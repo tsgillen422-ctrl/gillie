@@ -9,7 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Link, useSearch } from "wouter";
-import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, Flag, Bookmark, BookmarkCheck, VolumeX, Link2, Repeat2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, Flag, Bookmark, BookmarkCheck, VolumeX, Link2, Repeat2, Anchor } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,7 +45,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 
 export function FeedPage() {
-  const [activeTab, setActiveTab] = React.useState<"all" | "post" | "event" | "business" | "saved">("all");
+  const [activeTab, setActiveTab] = React.useState<"all" | "post" | "event" | "business" | "tie_up" | "saved">("all");
 
   const isSavedTab = activeTab === "saved";
   const { data: feedPosts, isLoading: feedLoading } = useGetPosts(
@@ -82,7 +82,7 @@ export function FeedPage() {
   const openPost = openPostId != null ? posts?.find((p) => p.id === openPostId) ?? null : null;
   const [newTitle, setNewTitle] = React.useState("");
   const [newContent, setNewContent] = React.useState("");
-  const [newType, setNewType] = React.useState<"post" | "event" | "business">("post");
+  const [newType, setNewType] = React.useState<"post" | "event" | "business" | "tie_up">("post");
   const [newEventDate, setNewEventDate] = React.useState("");
   const [newImageUrl, setNewImageUrl] = React.useState<string | null>(null);
   const [newVideoUrl, setNewVideoUrl] = React.useState<string | null>(null);
@@ -173,10 +173,10 @@ export function FeedPage() {
     createPost.mutate(
       {
         data: {
-          title: newTitle.trim() || (newType === "event" ? "Event" : "Post"),
+          title: newTitle.trim() || (newType === "event" ? "Event" : newType === "tie_up" ? "Tie-up" : "Post"),
           content: newContent.trim(),
           postType: newType as PostInputPostType,
-          eventDate: newType === "event" && newEventDate ? new Date(newEventDate).toISOString() : undefined,
+          eventDate: (newType === "event" || newType === "tie_up") && newEventDate ? new Date(newEventDate).toISOString() : undefined,
           imageUrl: newImageUrl ? `/api/storage${newImageUrl}` : undefined,
           videoUrl: newVideoUrl ? `/api/storage${newVideoUrl}` : undefined,
         },
@@ -237,6 +237,7 @@ export function FeedPage() {
               <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
               <TabsTrigger value="post" className="flex-1">Social</TabsTrigger>
               <TabsTrigger value="event" className="flex-1">Events</TabsTrigger>
+              <TabsTrigger value="tie_up" className="flex-1">Tie-ups</TabsTrigger>
               <TabsTrigger value="business" className="flex-1">Local</TabsTrigger>
               <TabsTrigger value="saved" className="flex-1">Saved</TabsTrigger>
             </TabsList>
@@ -339,6 +340,7 @@ export function FeedPage() {
                 <SelectContent>
                   <SelectItem value="post">Social</SelectItem>
                   <SelectItem value="event">Event</SelectItem>
+                  <SelectItem value="tie_up">Tie-up</SelectItem>
                   <SelectItem value="business">Local</SelectItem>
                 </SelectContent>
               </Select>
@@ -350,13 +352,13 @@ export function FeedPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>What's happening?</Label>
-              <Textarea value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder="Share an update..." rows={4} />
+              <Label>{newType === "tie_up" ? "Where's the tie-up?" : "What's happening?"}</Label>
+              <Textarea value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder={newType === "tie_up" ? "Drop the spot where everyone's tying up…" : "Share an update..."} rows={4} />
             </div>
 
-            {newType === "event" && (
+            {(newType === "event" || newType === "tie_up") && (
               <div className="space-y-1.5">
-                <Label>Event date</Label>
+                <Label>{newType === "tie_up" ? "When (optional)" : "Event date"}</Label>
                 <Input type="datetime-local" value={newEventDate} onChange={(e) => setNewEventDate(e.target.value)} />
               </div>
             )}
@@ -667,6 +669,8 @@ function LikesDialog({ postId, open, onOpenChange }: { postId: number, open: boo
 
 export function PostCard({ post, onReact, canDelete, onDelete, currentUserId, onOpen }: { post: any, onReact: (reaction: ReactionKey) => void, canDelete?: boolean, onDelete?: () => void, currentUserId?: number, onOpen?: () => void }) {
   const isEvent = post.postType === "event";
+  const isTieUp = post.postType === "tie_up";
+  const isGathering = isEvent || isTieUp;
   const [showComments, setShowComments] = React.useState(false);
   const [showLikes, setShowLikes] = React.useState(false);
   const likeTotal = post.likeCount || 0;
@@ -942,16 +946,22 @@ export function PostCard({ post, onReact, canDelete, onDelete, currentUserId, on
             Shared a post
           </div>
         )}
+        {isTieUp && (
+          <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-teal-600 bg-teal-500/10 px-2 py-1 rounded-full mb-2">
+            <Anchor className="w-3.5 h-3.5" />
+            Tie-up
+          </div>
+        )}
         {post.title && <h4 className="font-bold text-lg mb-1">{post.title}</h4>}
         
-        {isEvent && post.eventDate && (
+        {isGathering && post.eventDate && (
           <div className="flex items-center gap-2 text-sm text-accent-foreground bg-accent/20 px-3 py-2 rounded-md mb-3 font-medium">
             <Calendar className="w-4 h-4 text-accent" />
             {new Date(post.eventDate).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
           </div>
         )}
 
-        {isEvent && (
+        {isGathering && (
           <div className="flex items-center gap-3 mb-3">
             <Button
               type="button"

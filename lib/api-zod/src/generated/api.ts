@@ -1536,7 +1536,7 @@ export const ApprovePinResponse = zod.object({
  * @summary Get community feed posts and events
  */
 export const GetPostsQueryParams = zod.object({
-  "type": zod.enum(['post', 'event', 'business']).optional()
+  "type": zod.enum(['post', 'event', 'business', 'tie_up']).optional()
 })
 
 export const GetPostsResponseItem = zod.object({
@@ -1580,7 +1580,7 @@ export const GetPostsResponseItem = zod.object({
 }).optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
@@ -1613,7 +1613,7 @@ export const GetPostsResponse = zod.array(GetPostsResponseItem)
 export const CreatePostBody = zod.object({
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up']),
   "eventDate": zod.string().optional(),
   "imageUrl": zod.string().optional(),
   "videoUrl": zod.string().optional(),
@@ -1682,7 +1682,7 @@ export const GetPostResponse = zod.object({
 }).optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
@@ -1768,7 +1768,7 @@ export const ReactToPostResponse = zod.object({
 }).optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
@@ -2052,7 +2052,7 @@ export const GetPostsSummaryResponse = zod.object({
 }).optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
@@ -2339,7 +2339,7 @@ export const ToggleRsvpResponse = zod.object({
 }).optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
@@ -2768,7 +2768,7 @@ export const GetSavedPostsResponseItem = zod.object({
 }).optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),

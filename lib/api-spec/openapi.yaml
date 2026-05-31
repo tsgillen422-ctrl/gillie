@@ -699,7 +699,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [post, event, business]
+            enum: [post, event, business, tie_up]
       responses:
         "200":
           description: Feed posts
@@ -1844,7 +1844,7 @@ components:
           type: string
         postType:
           type: string
-          enum: [post, event, business]
+          enum: [post, event, business, tie_up]
         eventDate:
           type: ["string", "null"]
         imageUrl:
@@ -1922,7 +1922,7 @@ components:
           type: string
         postType:
           type: string
-          enum: [post, event, business]
+          enum: [post, event, business, tie_up]
         eventDate:
           type: string
         imageUrl:
