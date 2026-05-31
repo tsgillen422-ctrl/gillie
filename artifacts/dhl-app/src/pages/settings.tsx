@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor, VolumeX, Volume2, ShieldCheck, Bookmark, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { compressImage } from "@/lib/compress";
+import { ImageCropDialog } from "@/components/ImageCropDialog";
+import { getCroppedImageFile, type CropArea } from "@/lib/cropImage";
 import { boatSvgFor, FLAG_SVG } from "../boats";
 
 const BOAT_COLORS = [
@@ -108,6 +110,8 @@ export function SettingsPage() {
   const [showFollowers, setShowFollowers] = React.useState(true);
   const [avatarUrl, setAvatarUrl] = React.useState<string | undefined>(undefined);
   const [coverUrl, setCoverUrl] = React.useState<string | undefined>(undefined);
+  const [cropState, setCropState] = React.useState<{ kind: "avatar" | "cover"; fileName: string; src: string } | null>(null);
+  const [cropping, setCropping] = React.useState(false);
 
   const avatarRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
@@ -144,7 +148,14 @@ export function SettingsPage() {
     }
   }, [me]);
 
-  const handleImage = async (
+  // Revoke any leftover object URL when leaving the page.
+  const cropSrcRef = useRef<string | null>(null);
+  cropSrcRef.current = cropState?.src ?? null;
+  useEffect(() => () => {
+    if (cropSrcRef.current) URL.revokeObjectURL(cropSrcRef.current);
+  }, []);
+
+  const handleImage = (
     e: React.ChangeEvent<HTMLInputElement>,
     kind: "avatar" | "cover"
   ) => {
@@ -155,14 +166,39 @@ export function SettingsPage() {
       toast({ title: "Unsupported file", description: "Please choose an image.", variant: "destructive" });
       return;
     }
-    const uploader = kind === "avatar" ? avatarUpload : coverUpload;
-    const res = await uploader.uploadFile(await compressImage(file));
-    if (!res?.objectPath) return;
-    if (kind === "avatar") setAvatarUrl(res.objectPath);
-    else setCoverUrl(res.objectPath);
-    updateMe.mutate({ data: kind === "avatar" ? { avatarUrl: res.objectPath } : { coverUrl: res.objectPath } }, {
-      onSuccess: () => toast({ title: kind === "avatar" ? "Photo updated" : "Cover updated" }),
+    setCropState((prev) => {
+      if (prev) URL.revokeObjectURL(prev.src);
+      return { kind, fileName: file.name, src: URL.createObjectURL(file) };
     });
+  };
+
+  const closeCrop = () => {
+    setCropState((prev) => {
+      if (prev) URL.revokeObjectURL(prev.src);
+      return null;
+    });
+  };
+
+  const handleCropConfirm = async (area: CropArea) => {
+    if (!cropState) return;
+    const { kind, src, fileName } = cropState;
+    setCropping(true);
+    try {
+      const cropped = await getCroppedImageFile(src, area, fileName);
+      const uploader = kind === "avatar" ? avatarUpload : coverUpload;
+      const res = await uploader.uploadFile(await compressImage(cropped));
+      if (!res?.objectPath) return;
+      if (kind === "avatar") setAvatarUrl(res.objectPath);
+      else setCoverUrl(res.objectPath);
+      updateMe.mutate({ data: kind === "avatar" ? { avatarUrl: res.objectPath } : { coverUrl: res.objectPath } }, {
+        onSuccess: () => toast({ title: kind === "avatar" ? "Photo updated" : "Cover updated" }),
+      });
+      closeCrop();
+    } catch {
+      toast({ title: "Could not process image", description: "Please try a different photo.", variant: "destructive" });
+    } finally {
+      setCropping(false);
+    }
   };
 
   const handleSave = () => {
@@ -347,6 +383,17 @@ export function SettingsPage() {
           <CardContent className="space-y-4">
             <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleImage(e, "avatar")} />
             <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleImage(e, "cover")} />
+
+            <ImageCropDialog
+              open={!!cropState}
+              imageSrc={cropState?.src ?? null}
+              aspect={cropState?.kind === "cover" ? 3 : 1}
+              cropShape={cropState?.kind === "cover" ? "rect" : "round"}
+              title={cropState?.kind === "cover" ? "Adjust cover photo" : "Adjust profile photo"}
+              busy={cropping}
+              onCancel={closeCrop}
+              onConfirm={handleCropConfirm}
+            />
 
             {/* Cover photo */}
             <div className="space-y-2">
