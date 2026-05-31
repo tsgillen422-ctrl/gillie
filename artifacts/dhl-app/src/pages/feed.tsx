@@ -63,20 +63,43 @@ export function FeedPage() {
   const { data: me } = useGetMe();
 
   const search = useSearch();
+  const resolveUrlTab = React.useCallback((s: string): typeof activeTab => {
+    const tab = new URLSearchParams(s).get("tab");
+    return tab && ["all", "post", "event", "business", "trending", "saved"].includes(tab)
+      ? (tab as typeof activeTab)
+      : "all";
+  }, []);
+
+  React.useEffect(() => {
+    setActiveTab(resolveUrlTab(search));
+  }, [search, resolveUrlTab]);
+
   const handledPostRef = React.useRef<string | null>(null);
   React.useEffect(() => {
-    const targetId = new URLSearchParams(search).get("post");
+    const params = new URLSearchParams(search);
+    const targetId = params.get("post");
     if (!targetId) {
       handledPostRef.current = null;
       return;
     }
-    if (!posts?.length || handledPostRef.current === targetId) return;
+    if (handledPostRef.current === targetId) return;
+    // Wait until the tab state is in sync with the URL so we read the right dataset.
+    if (activeTab !== resolveUrlTab(search)) return;
+    if (!posts?.length) return;
     const id = Number(targetId);
-    if (Number.isInteger(id) && posts.some((p) => p.id === id)) {
+    if (!Number.isInteger(id) || !posts.some((p) => p.id === id)) return;
+    if (params.get("tab")) {
+      const el = document.getElementById(`post-${id}`);
+      if (!el) return;
+      handledPostRef.current = targetId;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-primary", "rounded-2xl");
+      setTimeout(() => el.classList.remove("ring-2", "ring-primary", "rounded-2xl"), 2000);
+    } else {
       handledPostRef.current = targetId;
       setOpenPostId(id);
     }
-  }, [search, posts]);
+  }, [search, posts, activeTab, resolveUrlTab]);
   const reactPost = useReactToPost();
   const deletePost = useDeletePost();
   const createPost = useCreatePost();

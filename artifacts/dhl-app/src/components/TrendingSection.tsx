@@ -82,7 +82,7 @@ export function TrendingSection() {
       title: upcomingEvent.title || "Event",
       subtitle: format(new Date(upcomingEvent.eventDate), "EEE, MMM d · h:mm a"),
       accent: "from-violet-400/20 to-violet-500/5 text-violet-600",
-      href: `/feed?post=${upcomingEvent.id}`,
+      href: `/feed?tab=event&post=${upcomingEvent.id}`,
     });
   }
 
@@ -101,7 +101,7 @@ export function TrendingSection() {
         : `${boatOfWeek.likeCount ?? 0} ${(boatOfWeek.likeCount ?? 0) === 1 ? "like" : "likes"} · ${boatOfWeek.user?.displayName ?? ""}`,
       imageUrl: boatImg,
       accent: "from-sky-400/20 to-blue-500/5 text-sky-600",
-      href: `/feed?post=${boatOfWeek.id}`,
+      href: `/boats?post=${boatOfWeek.id}`,
     });
   }
 
