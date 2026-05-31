@@ -1,5 +1,6 @@
 - [Follower counts](follower-counts.md) — schema's followerCount/followingCount serial columns are bogus; always compute from friend_requests.
 - [Realtime websockets](realtime-websockets.md) — ws works through the Replit proxy at /api/ws; keep polling as fallback.
+- [Conditions data sources](conditions-data-sources.md) — /api/conditions real feeds (Open-Meteo, USACE CWMS water level) + which metrics are estimates; CWMS catalog quirks.
 - [Auth architecture](auth-architecture.md) — Clerk cookie-based same-origin (no Bearer); api-server has NO tsc gate so type errors won't catch runtime bugs.
 - [ImageLightbox modal menus](imagelightbox-modal-menus.md) — no Radix portals inside the z-[100] lightbox; keep body-scroll/focus effect keyed on `open` only.
 - [hover-elevate vs absolute](elevate-overrides-absolute.md) — never put `absolute` on a ui Button; elevate's `:not()` rule forces position:relative. Wrap in an absolute div.

@@ -515,6 +515,27 @@ export interface CommentInput {
   videoUrl?: string;
 }
 
+export interface MoonPhase {
+  name: string;
+  emoji: string;
+  /** Percent of the moon illuminated (0-100). */
+  illumination: number;
+}
+
+export type FishingPressureLevel = typeof FishingPressureLevel[keyof typeof FishingPressureLevel];
+
+
+export const FishingPressureLevel = {
+  low: 'low',
+  moderate: 'moderate',
+  high: 'high',
+} as const;
+
+export interface FishingPressure {
+  level: FishingPressureLevel;
+  detail: string;
+}
+
 export type AdvisoryLevel = typeof AdvisoryLevel[keyof typeof AdvisoryLevel];
 
 
@@ -540,6 +561,11 @@ export interface Conditions {
      * @nullable
      */
   waterTemperature?: number | null;
+  /**
+     * Lake pool elevation in feet (USACE Dale Hollow gauge).
+     * @nullable
+     */
+  waterLevel?: number | null;
   /** Wind speed in mph. */
   windSpeed: number;
   /** @nullable */
@@ -553,6 +579,18 @@ export interface Conditions {
   weatherCode: number;
   weatherLabel: string;
   isDay?: boolean;
+  /**
+     * Local sunrise time (ISO 8601, lake timezone).
+     * @nullable
+     */
+  sunrise?: string | null;
+  /**
+     * Local sunset time (ISO 8601, lake timezone).
+     * @nullable
+     */
+  sunset?: string | null;
+  moonPhase?: MoonPhase;
+  fishingPressure?: FishingPressure;
   advisories?: Advisory[];
   updatedAt: string;
 }

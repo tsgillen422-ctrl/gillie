@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Advisory } from './advisory';
+import type { FishingPressure } from './fishingPressure';
+import type { MoonPhase } from './moonPhase';
 
 export interface Conditions {
   /** Air temperature in Fahrenheit. */
@@ -17,6 +19,11 @@ export interface Conditions {
      * @nullable
      */
   waterTemperature?: number | null;
+  /**
+     * Lake pool elevation in feet (USACE Dale Hollow gauge).
+     * @nullable
+     */
+  waterLevel?: number | null;
   /** Wind speed in mph. */
   windSpeed: number;
   /** @nullable */
@@ -30,6 +37,18 @@ export interface Conditions {
   weatherCode: number;
   weatherLabel: string;
   isDay?: boolean;
+  /**
+     * Local sunrise time (ISO 8601, lake timezone).
+     * @nullable
+     */
+  sunrise?: string | null;
+  /**
+     * Local sunset time (ISO 8601, lake timezone).
+     * @nullable
+     */
+  sunset?: string | null;
+  moonPhase?: MoonPhase;
+  fishingPressure?: FishingPressure;
   advisories?: Advisory[];
   updatedAt: string;
 }

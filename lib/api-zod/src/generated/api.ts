@@ -1038,6 +1038,7 @@ export const GetConditionsResponse = zod.object({
   "temperature": zod.number().describe('Air temperature in Fahrenheit.'),
   "apparentTemperature": zod.number().nullish(),
   "waterTemperature": zod.number().nullish().describe('Estimated surface water temperature in Fahrenheit.'),
+  "waterLevel": zod.number().nullish().describe('Lake pool elevation in feet (USACE Dale Hollow gauge).'),
   "windSpeed": zod.number().describe('Wind speed in mph.'),
   "windGust": zod.number().nullish(),
   "windDirection": zod.number().nullish(),
@@ -1046,6 +1047,17 @@ export const GetConditionsResponse = zod.object({
   "weatherCode": zod.number(),
   "weatherLabel": zod.string(),
   "isDay": zod.boolean().optional(),
+  "sunrise": zod.string().nullish().describe('Local sunrise time (ISO 8601, lake timezone).'),
+  "sunset": zod.string().nullish().describe('Local sunset time (ISO 8601, lake timezone).'),
+  "moonPhase": zod.object({
+  "name": zod.string(),
+  "emoji": zod.string(),
+  "illumination": zod.number().describe('Percent of the moon illuminated (0-100).')
+}).optional(),
+  "fishingPressure": zod.object({
+  "level": zod.enum(['low', 'moderate', 'high']),
+  "detail": zod.string()
+}).optional(),
   "advisories": zod.array(zod.object({
   "level": zod.enum(['good', 'caution', 'warning']),
   "title": zod.string(),

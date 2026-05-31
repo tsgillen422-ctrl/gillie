@@ -2043,6 +2043,9 @@ components:
         waterTemperature:
           type: ["number", "null"]
           description: Estimated surface water temperature in Fahrenheit.
+        waterLevel:
+          type: ["number", "null"]
+          description: Lake pool elevation in feet (USACE Dale Hollow gauge).
         windSpeed:
           type: number
           description: Wind speed in mph.
@@ -2060,11 +2063,43 @@ components:
           type: string
         isDay:
           type: boolean
+        sunrise:
+          type: ["string", "null"]
+          description: Local sunrise time (ISO 8601, lake timezone).
+        sunset:
+          type: ["string", "null"]
+          description: Local sunset time (ISO 8601, lake timezone).
+        moonPhase:
+          $ref: "#/components/schemas/MoonPhase"
+        fishingPressure:
+          $ref: "#/components/schemas/FishingPressure"
         advisories:
           type: array
           items:
             $ref: "#/components/schemas/Advisory"
         updatedAt:
+          type: string
+
+    MoonPhase:
+      type: object
+      required: [name, emoji, illumination]
+      properties:
+        name:
+          type: string
+        emoji:
+          type: string
+        illumination:
+          type: integer
+          description: Percent of the moon illuminated (0-100).
+
+    FishingPressure:
+      type: object
+      required: [level, detail]
+      properties:
+        level:
+          type: string
+          enum: [low, moderate, high]
+        detail:
           type: string
 
     Advisory:
