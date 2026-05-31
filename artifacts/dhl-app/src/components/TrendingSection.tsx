@@ -101,7 +101,7 @@ export function TrendingSection() {
         ? format(new Date(tieUp.eventDate), "EEE, MMM d · h:mm a")
         : "Rafting up on the lake",
       accent: "from-teal-400/20 to-teal-500/5 text-teal-600",
-      href: `/feed?post=${tieUp.id}`,
+      href: `/tie-ups?post=${tieUp.id}`,
     });
   }
 
