@@ -75,6 +75,7 @@ export * from './searchPin';
 export * from './searchPost';
 export * from './searchResults';
 export * from './searchUsersParams';
+export * from './setAdminInput';
 export * from './shareInput';
 export * from './sosInput';
 export * from './sosResult';

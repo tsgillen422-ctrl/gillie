@@ -58,6 +58,7 @@ import type {
   SearchParams,
   SearchResults,
   SearchUsersParams,
+  SetAdminInput,
   ShareInput,
   SosInput,
   SosResult,
@@ -373,6 +374,155 @@ export const useUpdateMyLocation = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdateMyLocationMutationOptions(options));
+    }
+
+export const getGetAdminsUrl = () => {
+
+
+
+
+  return `/api/users/admins`
+}
+
+/**
+ * @summary List all admin users (admin only)
+ */
+export const getAdmins = async ( options?: RequestInit): Promise<User[]> => {
+
+  return customFetch<User[]>(getGetAdminsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAdminsQueryKey = () => {
+    return [
+    `/api/users/admins`
+    ] as const;
+    }
+
+
+export const getGetAdminsQueryOptions = <TData = Awaited<ReturnType<typeof getAdmins>>, TError = ErrorType<ErrorEnvelope>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdmins>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAdminsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAdmins>>> = ({ signal }) => getAdmins({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAdmins>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAdminsQueryResult = NonNullable<Awaited<ReturnType<typeof getAdmins>>>
+export type GetAdminsQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary List all admin users (admin only)
+ */
+
+export function useGetAdmins<TData = Awaited<ReturnType<typeof getAdmins>>, TError = ErrorType<ErrorEnvelope>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAdmins>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAdminsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getSetUserAdminUrl = (userId: number,) => {
+
+
+
+
+  return `/api/users/${userId}/admin`
+}
+
+/**
+ * @summary Grant or revoke admin access for a user (admin only)
+ */
+export const setUserAdmin = async (userId: number,
+    setAdminInput: SetAdminInput, options?: RequestInit): Promise<User> => {
+
+  return customFetch<User>(getSetUserAdminUrl(userId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      setAdminInput,)
+  }
+);}
+
+
+
+
+export const getSetUserAdminMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setUserAdmin>>, TError,{userId: number;data: BodyType<SetAdminInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setUserAdmin>>, TError,{userId: number;data: BodyType<SetAdminInput>}, TContext> => {
+
+const mutationKey = ['setUserAdmin'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setUserAdmin>>, {userId: number;data: BodyType<SetAdminInput>}> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  setUserAdmin(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetUserAdminMutationResult = NonNullable<Awaited<ReturnType<typeof setUserAdmin>>>
+    export type SetUserAdminMutationBody = BodyType<SetAdminInput>
+    export type SetUserAdminMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Grant or revoke admin access for a user (admin only)
+ */
+export const useSetUserAdmin = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setUserAdmin>>, TError,{userId: number;data: BodyType<SetAdminInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setUserAdmin>>,
+        TError,
+        {userId: number;data: BodyType<SetAdminInput>},
+        TContext
+      > => {
+      return useMutation(getSetUserAdminMutationOptions(options));
     }
 
 export const getSearchUsersUrl = (params: SearchUsersParams,) => {

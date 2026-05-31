@@ -726,6 +726,10 @@ export interface ReportResolveInput {
   action: ReportResolveInputAction;
 }
 
+export interface SetAdminInput {
+  isAdmin: boolean;
+}
+
 export type ReportTargetType = typeof ReportTargetType[keyof typeof ReportTargetType];
 
 

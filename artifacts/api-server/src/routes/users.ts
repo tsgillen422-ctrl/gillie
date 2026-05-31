@@ -89,6 +89,11 @@ async function getBlockedUserIds(userId: number): Promise<number[]> {
   return rows.map((b) => (b.blockerId === userId ? b.blockedId : b.blockerId));
 }
 
+async function isAdmin(userId: number): Promise<boolean> {
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, userId) });
+  return Boolean(user?.isAdmin);
+}
+
 router.get("/me", async (req, res) => {
   const uid = currentUserId(req);
   const user = await db.query.usersTable.findFirst({
@@ -213,6 +218,38 @@ router.get("/search", async (req, res) => {
     users.map(async (u) => ({ ...formatUser(u), ...(await getFollowCounts(u.id)) }))
   );
   res.json(withCounts);
+});
+
+router.get("/admins", async (req, res) => {
+  const uid = currentUserId(req);
+  if (!(await isAdmin(uid))) return res.status(403).json({ error: "Admin access required" });
+  const admins = await db.select().from(usersTable).where(eq(usersTable.isAdmin, true));
+  const withCounts = await Promise.all(
+    admins.map(async (u) => ({ ...formatUser(u), ...(await getFollowCounts(u.id)) }))
+  );
+  res.json(withCounts);
+});
+
+router.patch("/:userId/admin", async (req, res) => {
+  const uid = currentUserId(req);
+  if (!(await isAdmin(uid))) return res.status(403).json({ error: "Admin access required" });
+  const userId = parseInt(req.params.userId);
+  if (Number.isNaN(userId)) return res.status(400).json({ error: "Invalid user id" });
+  const { isAdmin: makeAdmin } = req.body ?? {};
+  if (typeof makeAdmin !== "boolean") {
+    return res.status(400).json({ error: "isAdmin must be a boolean" });
+  }
+  if (userId === uid && !makeAdmin) {
+    return res.status(400).json({ error: "You can't remove your own admin access" });
+  }
+  const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, userId) });
+  if (!target) return res.status(404).json({ error: "User not found" });
+  const [updated] = await db
+    .update(usersTable)
+    .set({ isAdmin: makeAdmin })
+    .where(eq(usersTable.id, userId))
+    .returning();
+  res.json({ ...formatUser(updated), ...(await getFollowCounts(updated.id)) });
 });
 
 router.get("/:userId", async (req, res) => {

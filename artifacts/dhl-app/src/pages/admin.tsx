@@ -1,13 +1,24 @@
 import React from "react";
-import { useGetMe, useGetReports, useResolveReport, getGetReportsQueryKey } from "@workspace/api-client-react";
+import {
+  useGetMe,
+  useGetReports,
+  useResolveReport,
+  getGetReportsQueryKey,
+  useGetAdmins,
+  useSearchUsers,
+  useSetUserAdmin,
+  getGetAdminsQueryKey,
+  getSearchUsersQueryKey,
+} from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
-import { ShieldCheck, ShieldAlert, Flag, Trash2, Ban, AlertTriangle, Check } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Flag, Trash2, Ban, AlertTriangle, Check, Search, ShieldPlus, ShieldMinus, Crown } from "lucide-react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -120,13 +131,150 @@ function ReportCard({ report }: { report: any }) {
   );
 }
 
+function MemberRow({
+  user,
+  myId,
+  onToggle,
+  pending,
+}: {
+  user: any;
+  myId?: number;
+  onToggle: (user: any, makeAdmin: boolean) => void;
+  pending: boolean;
+}) {
+  const isMe = user.id === myId;
+  return (
+    <div className="flex items-center justify-between gap-3 py-2">
+      <div className="flex items-center gap-2 min-w-0">
+        <UserAvatar name={user.displayName} username={user.username} avatarUrl={user.avatarUrl} className="w-8 h-8" />
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Link href={`/profile/${user.id}`} className="font-medium text-sm hover:underline truncate">
+              {user.displayName}
+            </Link>
+            {user.isAdmin && (
+              <Badge className="bg-amber-500 text-white hover:bg-amber-500 gap-1 text-[10px] px-1.5 py-0">
+                <Crown className="w-3 h-3" /> Admin
+              </Badge>
+            )}
+            {isMe && <span className="text-[10px] text-muted-foreground">(you)</span>}
+          </div>
+          <p className="text-xs text-muted-foreground truncate">@{user.username}</p>
+        </div>
+      </div>
+      {user.isAdmin ? (
+        <Button
+          size="sm"
+          variant="outline"
+          className="text-destructive shrink-0"
+          disabled={pending || isMe}
+          title={isMe ? "You can't remove your own admin access" : undefined}
+          onClick={() => onToggle(user, false)}
+        >
+          <ShieldMinus className="w-4 h-4" /> Remove admin
+        </Button>
+      ) : (
+        <Button size="sm" variant="outline" className="shrink-0" disabled={pending} onClick={() => onToggle(user, true)}>
+          <ShieldPlus className="w-4 h-4" /> Make admin
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function MembersManager({ enabled, myId }: { enabled: boolean; myId?: number }) {
+  const [query, setQuery] = React.useState("");
+  const q = query.trim();
+  const queryClient = useQueryClient();
+  const { data: admins, isLoading: adminsLoading } = useGetAdmins({ query: { enabled } });
+  const { data: results, isLoading: searching } = useSearchUsers(
+    { q },
+    { query: { enabled: enabled && q.length > 0 } }
+  );
+  const setAdmin = useSetUserAdmin();
+
+  const onToggle = (user: any, makeAdmin: boolean) => {
+    setAdmin.mutate(
+      { userId: user.id, data: { isAdmin: makeAdmin } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetAdminsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getSearchUsersQueryKey({ q }) });
+          toast.success(makeAdmin ? `${user.displayName} is now an admin.` : `Removed admin access from ${user.displayName}.`);
+        },
+        onError: () => toast.error("Couldn't update admin access."),
+      }
+    );
+  };
+
+  return (
+    <div className="space-y-5">
+      <Card className="border-border/60">
+        <CardHeader className="p-4 pb-2">
+          <h2 className="font-semibold text-sm">Add an admin</h2>
+          <p className="text-xs text-muted-foreground">Search for a member to grant or revoke admin access.</p>
+        </CardHeader>
+        <CardContent className="p-4 pt-2 space-y-2">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by name or username..."
+              className="pl-8"
+            />
+          </div>
+          {q.length > 0 && (
+            <div className="divide-y divide-border/60">
+              {searching ? (
+                <div className="py-3 space-y-2">
+                  {[0, 1].map((i) => <Skeleton key={i} className="h-10 w-full rounded" />)}
+                </div>
+              ) : !results || results.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-3">No members found for "{q}".</p>
+              ) : (
+                results.map((u: any) => (
+                  <MemberRow key={u.id} user={u} myId={myId} onToggle={onToggle} pending={setAdmin.isPending} />
+                ))
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/60">
+        <CardHeader className="p-4 pb-2">
+          <h2 className="font-semibold text-sm">Current admins</h2>
+          <p className="text-xs text-muted-foreground">Everyone with full admin access.</p>
+        </CardHeader>
+        <CardContent className="p-4 pt-2">
+          {adminsLoading ? (
+            <div className="space-y-2">
+              {[0, 1].map((i) => <Skeleton key={i} className="h-10 w-full rounded" />)}
+            </div>
+          ) : !admins || admins.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-2">No admins yet.</p>
+          ) : (
+            <div className="divide-y divide-border/60">
+              {admins.map((u: any) => (
+                <MemberRow key={u.id} user={u} myId={myId} onToggle={onToggle} pending={setAdmin.isPending} />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export function AdminPage() {
   const { data: me, isLoading: meLoading } = useGetMe();
+  const [view, setView] = React.useState<"reports" | "members">("reports");
   const [tab, setTab] = React.useState<"pending" | "resolved" | "dismissed" | "all">("pending");
   const statusParam = tab === "all" ? undefined : tab;
   const { data: reports, isLoading } = useGetReports(
     statusParam ? { status: statusParam as any } : undefined,
-    { query: { enabled: !!me?.isAdmin } }
+    { query: { enabled: !!me?.isAdmin && view === "reports" } }
   );
 
   if (!meLoading && !me?.isAdmin) {
@@ -149,38 +297,51 @@ export function AdminPage() {
       <div className="flex items-center gap-2">
         <ShieldCheck className="w-6 h-6 text-primary" />
         <div>
-          <h1 className="text-xl font-bold">Moderation</h1>
-          <p className="text-xs text-muted-foreground">Review reports and take action on content and accounts.</p>
+          <h1 className="text-xl font-bold">Admin</h1>
+          <p className="text-xs text-muted-foreground">Review reports and manage who has admin access.</p>
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="resolved">Resolved</TabsTrigger>
-          <TabsTrigger value="dismissed">Dismissed</TabsTrigger>
-          <TabsTrigger value="all">All</TabsTrigger>
+      <Tabs value={view} onValueChange={(v) => setView(v as any)}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="members">Members</TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-40 w-full rounded-lg" />)}
-        </div>
-      ) : !reports || reports.length === 0 ? (
-        <Empty>
-          <EmptyHeader>
-            <EmptyMedia variant="icon"><Flag /></EmptyMedia>
-            <EmptyTitle>Nothing here</EmptyTitle>
-            <EmptyDescription>
-              {tab === "pending" ? "No reports waiting for review. Nice work." : "No reports in this category."}
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
+      {view === "members" ? (
+        <MembersManager enabled={!!me?.isAdmin} myId={me?.id} />
       ) : (
-        <div className="space-y-3">
-          {reports.map((r: any) => <ReportCard key={r.id} report={r} />)}
-        </div>
+        <>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="pending">Pending</TabsTrigger>
+              <TabsTrigger value="resolved">Resolved</TabsTrigger>
+              <TabsTrigger value="dismissed">Dismissed</TabsTrigger>
+              <TabsTrigger value="all">All</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
+          {isLoading ? (
+            <div className="space-y-3">
+              {[0, 1, 2].map((i) => <Skeleton key={i} className="h-40 w-full rounded-lg" />)}
+            </div>
+          ) : !reports || reports.length === 0 ? (
+            <Empty>
+              <EmptyHeader>
+                <EmptyMedia variant="icon"><Flag /></EmptyMedia>
+                <EmptyTitle>Nothing here</EmptyTitle>
+                <EmptyDescription>
+                  {tab === "pending" ? "No reports waiting for review. Nice work." : "No reports in this category."}
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          ) : (
+            <div className="space-y-3">
+              {reports.map((r: any) => <ReportCard key={r.id} report={r} />)}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

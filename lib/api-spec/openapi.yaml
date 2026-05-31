@@ -90,6 +90,58 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
 
+  /users/admins:
+    get:
+      operationId: getAdmins
+      tags: [users]
+      summary: List all admin users (admin only)
+      responses:
+        "200":
+          description: List of admins
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /users/{userId}/admin:
+    patch:
+      operationId: setUserAdmin
+      tags: [users]
+      summary: Grant or revoke admin access for a user (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetAdminInput"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /users/search:
     get:
       operationId: searchUsers
@@ -2242,6 +2294,13 @@ components:
         action:
           type: string
           enum: [dismiss, remove, warn, suspend]
+
+    SetAdminInput:
+      type: object
+      required: [isAdmin]
+      properties:
+        isAdmin:
+          type: boolean
 
     Report:
       type: object
