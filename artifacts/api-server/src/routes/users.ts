@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, friendRequestsTable, blocksTable, notificationsTable, postsTable, pinsTable, catchesTable } from "@workspace/db";
+import { usersTable, friendRequestsTable, blocksTable, postsTable, pinsTable, catchesTable } from "@workspace/db";
 import { eq, ilike, or, and, count, notInArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
+import { createNotifications } from "../lib/notify";
 
 const router = Router();
 
@@ -117,7 +118,7 @@ router.post("/me/sos", async (req, res) => {
       ? ` Last known location: ${user.currentLat.toFixed(4)}, ${user.currentLng.toFixed(4)}.`
       : "";
   if (friendIds.length > 0) {
-    await db.insert(notificationsTable).values(
+    await createNotifications(
       friendIds.map((fid) => ({
         userId: fid,
         type: "sos",

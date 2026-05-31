@@ -37,3 +37,10 @@ externalPort = 3000
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+VAPID_PUBLIC_KEY = "BLKg4PDjtFy-vjwCCTLYIBoQc5hSNK3xqBNt_KGN97r4ygzPz3b0OwtV-VzWpSdxMeNGukVXu_IH4rgxqR5YjjM"
+VAPID_PRIVATE_KEY = "NUXzWXcTjNbFzA5O_Tr8anU6_jCr_nITFPuG9aGp6Go"
+VAPID_SUBJECT = "mailto:notifications@dalehollowlake.app"

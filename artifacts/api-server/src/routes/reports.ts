@@ -11,11 +11,11 @@ import {
   pinLikesTable,
   pinFavoritesTable,
   reportsTable,
-  notificationsTable,
 } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
 import type { Request } from "express";
 import { currentUserId } from "../middlewares/auth";
+import { createNotification } from "../lib/notify";
 
 const router = Router();
 
@@ -185,7 +185,7 @@ router.patch("/:id", async (req, res) => {
       .update(usersTable)
       .set({ warningCount: (owner?.warningCount ?? 0) + 1 })
       .where(eq(usersTable.id, ownerId));
-    await db.insert(notificationsTable).values({
+    await createNotification({
       userId: ownerId,
       type: "warning",
       message: "You have received a warning from a moderator for violating community guidelines.",
@@ -193,7 +193,7 @@ router.patch("/:id", async (req, res) => {
     });
   } else if (action === "suspend" && ownerId) {
     await db.update(usersTable).set({ isSuspended: true }).where(eq(usersTable.id, ownerId));
-    await db.insert(notificationsTable).values({
+    await createNotification({
       userId: ownerId,
       type: "warning",
       message: "Your account has been suspended by a moderator.",

@@ -768,6 +768,24 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface VapidPublicKey {
+  publicKey: string;
+}
+
+export type PushSubscriptionInputKeys = {
+  p256dh: string;
+  auth: string;
+};
+
+export interface PushSubscriptionInput {
+  endpoint: string;
+  keys: PushSubscriptionInputKeys;
+}
+
+export interface PushUnsubscribeInput {
+  endpoint: string;
+}
+
 export type ReportInputTargetType = typeof ReportInputTargetType[keyof typeof ReportInputTargetType];
 
 

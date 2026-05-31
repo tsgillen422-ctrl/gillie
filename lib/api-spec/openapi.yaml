@@ -1103,6 +1103,47 @@ paths:
         "200":
           description: Notification deleted
 
+  /push/vapid-public-key:
+    get:
+      operationId: getVapidPublicKey
+      tags: [notifications]
+      summary: Get the server VAPID public key for web push
+      responses:
+        "200":
+          description: VAPID public key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VapidPublicKey"
+  /push/subscribe:
+    post:
+      operationId: subscribePush
+      tags: [notifications]
+      summary: Register a web push subscription for the current user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushSubscriptionInput"
+      responses:
+        "200":
+          description: Subscribed
+  /push/unsubscribe:
+    post:
+      operationId: unsubscribePush
+      tags: [notifications]
+      summary: Remove a web push subscription for the current user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushUnsubscribeInput"
+      responses:
+        "200":
+          description: Unsubscribed
+
   /pins/hazards/active:
     get:
       operationId: getActiveHazards
@@ -2335,6 +2376,35 @@ components:
         relatedId:
           type: ["integer", "null"]
         createdAt:
+          type: string
+
+    VapidPublicKey:
+      type: object
+      required: [publicKey]
+      properties:
+        publicKey:
+          type: string
+
+    PushSubscriptionInput:
+      type: object
+      required: [endpoint, keys]
+      properties:
+        endpoint:
+          type: string
+        keys:
+          type: object
+          required: [p256dh, auth]
+          properties:
+            p256dh:
+              type: string
+            auth:
+              type: string
+
+    PushUnsubscribeInput:
+      type: object
+      required: [endpoint]
+      properties:
+        endpoint:
           type: string
 
     ReportInput:

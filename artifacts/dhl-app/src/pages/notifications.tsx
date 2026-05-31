@@ -19,6 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { PushToggle } from "@/components/push-toggle";
 
 export function NotificationsPage() {
   const { data: notifications, isLoading } = useGetNotifications();
@@ -79,6 +80,8 @@ export function NotificationsPage() {
           </span>
         )}
       </div>
+
+      <PushToggle />
 
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (

@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, friendRequestsTable, blocksTable, notificationsTable, mutesTable } from "@workspace/db";
+import { usersTable, friendRequestsTable, blocksTable, mutesTable } from "@workspace/db";
 import { eq, or, and, inArray, count } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
+import { createNotification } from "../lib/notify";
 
 const router = Router();
 
@@ -258,7 +259,7 @@ router.post("/:userId/follow", async (req, res) => {
       .set({ status: "accepted" })
       .where(eq(friendRequestsTable.id, incoming.id))
       .returning();
-    await db.insert(notificationsTable).values({
+    await createNotification({
       userId: targetId,
       type: "friend_request",
       message: `${me?.displayName ?? "Someone"} accepted your follow request`,
@@ -272,7 +273,7 @@ router.post("/:userId/follow", async (req, res) => {
     .insert(friendRequestsTable)
     .values({ followerId: currentUserId(req), followeeId: targetId, status })
     .returning();
-  await db.insert(notificationsTable).values({
+  await createNotification({
     userId: targetId,
     type: "friend_request",
     message:
@@ -392,7 +393,7 @@ router.post("/:requestId/accept", async (req, res) => {
     .where(eq(friendRequestsTable.id, requestId))
     .returning();
   const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, currentUserId(req)) });
-  await db.insert(notificationsTable).values({
+  await createNotification({
     userId: updated.followerId,
     type: "friend_request",
     message: `${me?.displayName ?? "Someone"} accepted your follow request`,

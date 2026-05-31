@@ -12,6 +12,7 @@ import catchesRouter from "./catches";
 import searchRouter from "./search";
 import galleryRouter from "./gallery";
 import reportsRouter from "./reports";
+import pushRouter from "./push";
 import { requireAuth } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -32,5 +33,6 @@ router.use("/catches", catchesRouter);
 router.use("/search", searchRouter);
 router.use("/gallery", galleryRouter);
 router.use("/reports", reportsRouter);
+router.use("/push", pushRouter);
 
 export default router;

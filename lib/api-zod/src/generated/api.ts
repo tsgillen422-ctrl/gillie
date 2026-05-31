@@ -2267,6 +2267,34 @@ export const DeleteNotificationParams = zod.object({
 
 
 /**
+ * @summary Get the server VAPID public key for web push
+ */
+export const GetVapidPublicKeyResponse = zod.object({
+  "publicKey": zod.string()
+})
+
+
+/**
+ * @summary Register a web push subscription for the current user
+ */
+export const SubscribePushBody = zod.object({
+  "endpoint": zod.string(),
+  "keys": zod.object({
+  "p256dh": zod.string(),
+  "auth": zod.string()
+})
+})
+
+
+/**
+ * @summary Remove a web push subscription for the current user
+ */
+export const UnsubscribePushBody = zod.object({
+  "endpoint": zod.string()
+})
+
+
+/**
  * @summary Get active (non-expired) hazard pins
  */
 export const GetActiveHazardsResponseItem = zod.object({
