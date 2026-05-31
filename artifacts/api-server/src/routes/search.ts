@@ -2,9 +2,9 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, pinsTable, postsTable } from "@workspace/db";
 import { eq, and, or, ilike, desc } from "drizzle-orm";
+import { currentUserId } from "../middlewares/auth";
 
 const router = Router();
-const SESSION_USER_ID = 1;
 
 function formatUser(u: typeof usersTable.$inferSelect) {
   return {
@@ -54,7 +54,7 @@ router.get("/", async (req, res) => {
   res.json({
     users: users.map(formatUser),
     pins: pins
-      .filter((p) => p.visibility !== "friends" || p.userId === SESSION_USER_ID)
+      .filter((p) => p.visibility !== "friends" || p.userId === currentUserId(req))
       .map((p) => ({
         id: p.id,
         title: p.title,

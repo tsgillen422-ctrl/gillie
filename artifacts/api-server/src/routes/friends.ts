@@ -2,9 +2,9 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, friendRequestsTable, blocksTable, notificationsTable, mutesTable } from "@workspace/db";
 import { eq, or, and, inArray, count } from "drizzle-orm";
+import { currentUserId } from "../middlewares/auth";
 
 const router = Router();
-const SESSION_USER_ID = 1;
 
 async function getFollowCounts(userId: number): Promise<{ followerCount: number; followingCount: number }> {
   const [followers] = await db
@@ -65,19 +65,19 @@ async function getBlockedUserIds(userId: number): Promise<number[]> {
   return rows.map((b) => (b.blockerId === userId ? b.blockedId : b.blockerId));
 }
 
-router.get("/", async (_req, res) => {
+router.get("/", async (req, res) => {
   const accepted = await db.query.friendRequestsTable.findMany({
     where: and(
       or(
-        eq(friendRequestsTable.followerId, SESSION_USER_ID),
-        eq(friendRequestsTable.followeeId, SESSION_USER_ID)
+        eq(friendRequestsTable.followerId, currentUserId(req)),
+        eq(friendRequestsTable.followeeId, currentUserId(req))
       ),
       eq(friendRequestsTable.status, "accepted")
     ),
   });
-  const blockedIds = await getBlockedUserIds(SESSION_USER_ID);
+  const blockedIds = await getBlockedUserIds(currentUserId(req));
   const friendIds = accepted
-    .map((r) => (r.followerId === SESSION_USER_ID ? r.followeeId : r.followerId))
+    .map((r) => (r.followerId === currentUserId(req) ? r.followeeId : r.followerId))
     .filter((id) => !blockedIds.includes(id));
   if (!friendIds.length) return res.json([]);
   const friends = await Promise.all(
@@ -88,19 +88,19 @@ router.get("/", async (_req, res) => {
   res.json(await Promise.all(friends.filter(Boolean).map((u) => formatUserWithCounts(u!))));
 });
 
-router.get("/locations", async (_req, res) => {
+router.get("/locations", async (req, res) => {
   const accepted = await db.query.friendRequestsTable.findMany({
     where: and(
       or(
-        eq(friendRequestsTable.followerId, SESSION_USER_ID),
-        eq(friendRequestsTable.followeeId, SESSION_USER_ID)
+        eq(friendRequestsTable.followerId, currentUserId(req)),
+        eq(friendRequestsTable.followeeId, currentUserId(req))
       ),
       eq(friendRequestsTable.status, "accepted")
     ),
   });
-  const blockedIds = await getBlockedUserIds(SESSION_USER_ID);
+  const blockedIds = await getBlockedUserIds(currentUserId(req));
   const friendIds = accepted
-    .map((r) => (r.followerId === SESSION_USER_ID ? r.followeeId : r.followerId))
+    .map((r) => (r.followerId === currentUserId(req) ? r.followeeId : r.followerId))
     .filter((id) => !blockedIds.includes(id));
   if (!friendIds.length) return res.json([]);
   const friends = await Promise.all(
@@ -130,11 +130,11 @@ router.get("/locations", async (_req, res) => {
   res.json(locations);
 });
 
-router.get("/requests", async (_req, res) => {
-  const blockedIds = await getBlockedUserIds(SESSION_USER_ID);
+router.get("/requests", async (req, res) => {
+  const blockedIds = await getBlockedUserIds(currentUserId(req));
   const requests = await db.query.friendRequestsTable.findMany({
     where: and(
-      eq(friendRequestsTable.followeeId, SESSION_USER_ID),
+      eq(friendRequestsTable.followeeId, currentUserId(req)),
       eq(friendRequestsTable.status, "pending")
     ),
   });
@@ -157,9 +157,9 @@ router.get("/requests", async (_req, res) => {
   res.json(formatted);
 });
 
-router.get("/blocks", async (_req, res) => {
+router.get("/blocks", async (req, res) => {
   const rows = await db.query.blocksTable.findMany({
-    where: eq(blocksTable.blockerId, SESSION_USER_ID),
+    where: eq(blocksTable.blockerId, currentUserId(req)),
   });
   if (!rows.length) return res.json([]);
   const users = await db.query.usersTable.findMany({
@@ -172,11 +172,11 @@ router.get("/:userId/followers", async (req, res) => {
   const targetId = parseInt(req.params.userId);
   const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
   if (!target) return res.status(404).json({ error: "User not found" });
-  if (targetId !== SESSION_USER_ID) {
+  if (targetId !== currentUserId(req)) {
     const blocked = await db.query.blocksTable.findFirst({
       where: or(
-        and(eq(blocksTable.blockerId, SESSION_USER_ID), eq(blocksTable.blockedId, targetId)),
-        and(eq(blocksTable.blockerId, targetId), eq(blocksTable.blockedId, SESSION_USER_ID))
+        and(eq(blocksTable.blockerId, currentUserId(req)), eq(blocksTable.blockedId, targetId)),
+        and(eq(blocksTable.blockerId, targetId), eq(blocksTable.blockedId, currentUserId(req)))
       ),
     });
     if (blocked) return res.status(403).json({ error: "This user has hidden their followers" });
@@ -187,7 +187,7 @@ router.get("/:userId/followers", async (req, res) => {
   const rows = await db.query.friendRequestsTable.findMany({
     where: and(eq(friendRequestsTable.followeeId, targetId), eq(friendRequestsTable.status, "accepted")),
   });
-  const blockedIds = await getBlockedUserIds(SESSION_USER_ID);
+  const blockedIds = await getBlockedUserIds(currentUserId(req));
   const ids = rows.map((r) => r.followerId).filter((id) => !blockedIds.includes(id));
   if (!ids.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, ids) });
@@ -198,11 +198,11 @@ router.get("/:userId/following", async (req, res) => {
   const targetId = parseInt(req.params.userId);
   const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
   if (!target) return res.status(404).json({ error: "User not found" });
-  if (targetId !== SESSION_USER_ID) {
+  if (targetId !== currentUserId(req)) {
     const blocked = await db.query.blocksTable.findFirst({
       where: or(
-        and(eq(blocksTable.blockerId, SESSION_USER_ID), eq(blocksTable.blockedId, targetId)),
-        and(eq(blocksTable.blockerId, targetId), eq(blocksTable.blockedId, SESSION_USER_ID))
+        and(eq(blocksTable.blockerId, currentUserId(req)), eq(blocksTable.blockedId, targetId)),
+        and(eq(blocksTable.blockerId, targetId), eq(blocksTable.blockedId, currentUserId(req)))
       ),
     });
     if (blocked) return res.status(403).json({ error: "This user has hidden who they follow" });
@@ -213,7 +213,7 @@ router.get("/:userId/following", async (req, res) => {
   const rows = await db.query.friendRequestsTable.findMany({
     where: and(eq(friendRequestsTable.followerId, targetId), eq(friendRequestsTable.status, "accepted")),
   });
-  const blockedIds = await getBlockedUserIds(SESSION_USER_ID);
+  const blockedIds = await getBlockedUserIds(currentUserId(req));
   const ids = rows.map((r) => r.followeeId).filter((id) => !blockedIds.includes(id));
   if (!ids.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, ids) });
@@ -222,24 +222,24 @@ router.get("/:userId/following", async (req, res) => {
 
 router.post("/:userId/follow", async (req, res) => {
   const targetId = parseInt(req.params.userId);
-  if (targetId === SESSION_USER_ID) {
+  if (targetId === currentUserId(req)) {
     return res.status(400).json({ error: "You can't follow yourself" });
   }
   const block = await db.query.blocksTable.findFirst({
     where: or(
-      and(eq(blocksTable.blockerId, SESSION_USER_ID), eq(blocksTable.blockedId, targetId)),
-      and(eq(blocksTable.blockerId, targetId), eq(blocksTable.blockedId, SESSION_USER_ID))
+      and(eq(blocksTable.blockerId, currentUserId(req)), eq(blocksTable.blockedId, targetId)),
+      and(eq(blocksTable.blockerId, targetId), eq(blocksTable.blockedId, currentUserId(req)))
     ),
   });
   if (block) return res.status(403).json({ error: "You can't follow this user" });
 
   const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
   if (!target) return res.status(404).json({ error: "User not found" });
-  const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, SESSION_USER_ID) });
+  const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, currentUserId(req)) });
 
   const outgoing = await db.query.friendRequestsTable.findFirst({
     where: and(
-      eq(friendRequestsTable.followerId, SESSION_USER_ID),
+      eq(friendRequestsTable.followerId, currentUserId(req)),
       eq(friendRequestsTable.followeeId, targetId)
     ),
   });
@@ -248,7 +248,7 @@ router.post("/:userId/follow", async (req, res) => {
   const incoming = await db.query.friendRequestsTable.findFirst({
     where: and(
       eq(friendRequestsTable.followerId, targetId),
-      eq(friendRequestsTable.followeeId, SESSION_USER_ID),
+      eq(friendRequestsTable.followeeId, currentUserId(req)),
       eq(friendRequestsTable.status, "pending")
     ),
   });
@@ -262,7 +262,7 @@ router.post("/:userId/follow", async (req, res) => {
       userId: targetId,
       type: "friend_request",
       message: `${me?.displayName ?? "Someone"} accepted your follow request`,
-      relatedId: SESSION_USER_ID,
+      relatedId: currentUserId(req),
     });
     return res.json(serializeRequest(updated));
   }
@@ -270,7 +270,7 @@ router.post("/:userId/follow", async (req, res) => {
   const status = target.requireFollowApproval ? "pending" : "accepted";
   const [request] = await db
     .insert(friendRequestsTable)
-    .values({ followerId: SESSION_USER_ID, followeeId: targetId, status })
+    .values({ followerId: currentUserId(req), followeeId: targetId, status })
     .returning();
   await db.insert(notificationsTable).values({
     userId: targetId,
@@ -279,7 +279,7 @@ router.post("/:userId/follow", async (req, res) => {
       status === "pending"
         ? `${me?.displayName ?? "Someone"} wants to follow you`
         : `${me?.displayName ?? "Someone"} started following you`,
-    relatedId: SESSION_USER_ID,
+    relatedId: currentUserId(req),
   });
   res.json(serializeRequest(request));
 });
@@ -290,16 +290,16 @@ router.delete("/:userId/unfollow", async (req, res) => {
     .delete(friendRequestsTable)
     .where(
       or(
-        and(eq(friendRequestsTable.followerId, SESSION_USER_ID), eq(friendRequestsTable.followeeId, targetId)),
-        and(eq(friendRequestsTable.followerId, targetId), eq(friendRequestsTable.followeeId, SESSION_USER_ID))
+        and(eq(friendRequestsTable.followerId, currentUserId(req)), eq(friendRequestsTable.followeeId, targetId)),
+        and(eq(friendRequestsTable.followerId, targetId), eq(friendRequestsTable.followeeId, currentUserId(req)))
       )
     );
   res.json({ success: true });
 });
 
-router.get("/mutes", async (_req, res) => {
+router.get("/mutes", async (req, res) => {
   const rows = await db.query.mutesTable.findMany({
-    where: eq(mutesTable.muterId, SESSION_USER_ID),
+    where: eq(mutesTable.muterId, currentUserId(req)),
   });
   if (!rows.length) return res.json([]);
   const users = await db.query.usersTable.findMany({
@@ -310,16 +310,16 @@ router.get("/mutes", async (_req, res) => {
 
 router.post("/:userId/mute", async (req, res) => {
   const targetId = parseInt(req.params.userId);
-  if (targetId === SESSION_USER_ID) {
+  if (targetId === currentUserId(req)) {
     return res.status(400).json({ error: "You can't mute yourself" });
   }
   const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
   if (!target) return res.status(404).json({ error: "User not found" });
   const existing = await db.query.mutesTable.findFirst({
-    where: and(eq(mutesTable.muterId, SESSION_USER_ID), eq(mutesTable.mutedId, targetId)),
+    where: and(eq(mutesTable.muterId, currentUserId(req)), eq(mutesTable.mutedId, targetId)),
   });
   if (!existing) {
-    await db.insert(mutesTable).values({ muterId: SESSION_USER_ID, mutedId: targetId });
+    await db.insert(mutesTable).values({ muterId: currentUserId(req), mutedId: targetId });
   }
   res.json({ success: true });
 });
@@ -328,13 +328,13 @@ router.delete("/:userId/mute", async (req, res) => {
   const targetId = parseInt(req.params.userId);
   await db
     .delete(mutesTable)
-    .where(and(eq(mutesTable.muterId, SESSION_USER_ID), eq(mutesTable.mutedId, targetId)));
+    .where(and(eq(mutesTable.muterId, currentUserId(req)), eq(mutesTable.mutedId, targetId)));
   res.json({ success: true });
 });
 
 router.post("/:userId/block", async (req, res) => {
   const targetId = parseInt(req.params.userId);
-  if (targetId === SESSION_USER_ID) {
+  if (targetId === currentUserId(req)) {
     return res.status(400).json({ error: "You can't block yourself" });
   }
   const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
@@ -343,15 +343,15 @@ router.post("/:userId/block", async (req, res) => {
     .delete(friendRequestsTable)
     .where(
       or(
-        and(eq(friendRequestsTable.followerId, SESSION_USER_ID), eq(friendRequestsTable.followeeId, targetId)),
-        and(eq(friendRequestsTable.followerId, targetId), eq(friendRequestsTable.followeeId, SESSION_USER_ID))
+        and(eq(friendRequestsTable.followerId, currentUserId(req)), eq(friendRequestsTable.followeeId, targetId)),
+        and(eq(friendRequestsTable.followerId, targetId), eq(friendRequestsTable.followeeId, currentUserId(req)))
       )
     );
   const existing = await db.query.blocksTable.findFirst({
-    where: and(eq(blocksTable.blockerId, SESSION_USER_ID), eq(blocksTable.blockedId, targetId)),
+    where: and(eq(blocksTable.blockerId, currentUserId(req)), eq(blocksTable.blockedId, targetId)),
   });
   if (!existing) {
-    await db.insert(blocksTable).values({ blockerId: SESSION_USER_ID, blockedId: targetId });
+    await db.insert(blocksTable).values({ blockerId: currentUserId(req), blockedId: targetId });
   }
   res.json({ success: true });
 });
@@ -360,7 +360,7 @@ router.delete("/:userId/block", async (req, res) => {
   const targetId = parseInt(req.params.userId);
   await db
     .delete(blocksTable)
-    .where(and(eq(blocksTable.blockerId, SESSION_USER_ID), eq(blocksTable.blockedId, targetId)));
+    .where(and(eq(blocksTable.blockerId, currentUserId(req)), eq(blocksTable.blockedId, targetId)));
   res.json({ success: true });
 });
 
@@ -371,7 +371,7 @@ router.post("/:requestId/accept", async (req, res) => {
     where: eq(friendRequestsTable.id, requestId),
   });
   if (!existing) return res.status(404).json({ error: "Request not found" });
-  if (existing.followeeId !== SESSION_USER_ID) {
+  if (existing.followeeId !== currentUserId(req)) {
     return res.status(403).json({ error: "You can't respond to this request" });
   }
 
@@ -391,12 +391,12 @@ router.post("/:requestId/accept", async (req, res) => {
     .set({ status: "accepted" })
     .where(eq(friendRequestsTable.id, requestId))
     .returning();
-  const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, SESSION_USER_ID) });
+  const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, currentUserId(req)) });
   await db.insert(notificationsTable).values({
     userId: updated.followerId,
     type: "friend_request",
     message: `${me?.displayName ?? "Someone"} accepted your follow request`,
-    relatedId: SESSION_USER_ID,
+    relatedId: currentUserId(req),
   });
   res.json(serializeRequest(updated));
 });

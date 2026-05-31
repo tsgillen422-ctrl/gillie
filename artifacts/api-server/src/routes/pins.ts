@@ -2,10 +2,14 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, pinsTable, pinLikesTable, pinFavoritesTable, friendRequestsTable } from "@workspace/db";
 import { eq, and, or, sql, inArray } from "drizzle-orm";
+import { currentUserId } from "../middlewares/auth";
 
 const router = Router();
-const SESSION_USER_ID = 1;
-const OWNER_ID = 1;
+
+async function isAdmin(userId: number): Promise<boolean> {
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, userId) });
+  return Boolean(user?.isAdmin);
+}
 
 function formatUser(u: typeof usersTable.$inferSelect) {
   return {
@@ -55,13 +59,13 @@ function canViewPin(
   return false;
 }
 
-async function formatPin(pin: typeof pinsTable.$inferSelect) {
+async function formatPin(pin: typeof pinsTable.$inferSelect, viewerId: number) {
   const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, pin.userId) });
   const like = await db.query.pinLikesTable.findFirst({
-    where: and(eq(pinLikesTable.pinId, pin.id), eq(pinLikesTable.userId, SESSION_USER_ID)),
+    where: and(eq(pinLikesTable.pinId, pin.id), eq(pinLikesTable.userId, viewerId)),
   });
   const favorite = await db.query.pinFavoritesTable.findFirst({
-    where: and(eq(pinFavoritesTable.pinId, pin.id), eq(pinFavoritesTable.userId, SESSION_USER_ID)),
+    where: and(eq(pinFavoritesTable.pinId, pin.id), eq(pinFavoritesTable.userId, viewerId)),
   });
   return {
     id: pin.id,
@@ -87,6 +91,7 @@ async function formatPin(pin: typeof pinsTable.$inferSelect) {
 }
 
 router.get("/", async (req, res) => {
+  const uid = currentUserId(req);
   const type = req.query.type as string | undefined;
   const profileUserId = req.query.profileUserId
     ? parseInt(req.query.profileUserId as string)
@@ -98,7 +103,7 @@ router.get("/", async (req, res) => {
     pins = await db.select().from(pinsTable);
   }
 
-  const friendIds = await getFriendIds(SESSION_USER_ID);
+  const friendIds = await getFriendIds(uid);
 
   let visiblePins;
   if (profileUserId !== undefined) {
@@ -107,18 +112,19 @@ router.get("/", async (req, res) => {
     // Unapproved public/community pins are only shown to the creator themselves.
     visiblePins = pins.filter((pin) => {
       if (pin.userId !== profileUserId) return false;
-      if (pin.userId === SESSION_USER_ID) return true;
+      if (pin.userId === uid) return true;
       if (pin.visibility === "friends") return true;
       return pin.approved;
     });
   } else {
-    visiblePins = pins.filter((pin) => canViewPin(pin, SESSION_USER_ID, friendIds));
+    visiblePins = pins.filter((pin) => canViewPin(pin, uid, friendIds));
   }
 
-  res.json(await Promise.all(visiblePins.map(formatPin)));
+  res.json(await Promise.all(visiblePins.map((p) => formatPin(p, uid))));
 });
 
 router.post("/", async (req, res) => {
+  const uid = currentUserId(req);
   const { lat, lng, type, title, description, visibility, imageUrl, startTime, endTime, severity, expiresAt } = req.body;
   const vis = visibility === "public" || visibility === "community" ? visibility : "friends";
   const expires = expiresAt ? new Date(expiresAt) : null;
@@ -151,7 +157,7 @@ router.post("/", async (req, res) => {
   const [pin] = await db
     .insert(pinsTable)
     .values({
-      userId: SESSION_USER_ID,
+      userId: uid,
       lat,
       lng,
       type,
@@ -166,24 +172,26 @@ router.post("/", async (req, res) => {
       endTime: end,
     })
     .returning();
-  res.status(201).json(await formatPin(pin));
+  res.status(201).json(await formatPin(pin, uid));
 });
 
-router.get("/hazards/active", async (_req, res) => {
+router.get("/hazards/active", async (req, res) => {
+  const uid = currentUserId(req);
   const now = new Date();
-  const friendIds = await getFriendIds(SESSION_USER_ID);
+  const friendIds = await getFriendIds(uid);
   const hazards = await db.select().from(pinsTable).where(eq(pinsTable.type, "hazard"));
   const active = hazards.filter((pin) => {
-    if (!canViewPin(pin, SESSION_USER_ID, friendIds)) return false;
+    if (!canViewPin(pin, uid, friendIds)) return false;
     if (pin.expiresAt && pin.expiresAt.getTime() < now.getTime()) return false;
     return true;
   });
   active.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  res.json(await Promise.all(active.map(formatPin)));
+  res.json(await Promise.all(active.map((p) => formatPin(p, uid))));
 });
 
-router.get("/pending/approval", async (_req, res) => {
-  if (SESSION_USER_ID !== OWNER_ID) {
+router.get("/pending/approval", async (req, res) => {
+  const uid = currentUserId(req);
+  if (!(await isAdmin(uid))) {
     return res.status(403).json({ error: "Only the app owner can view pending pins" });
   }
   const pending = await db
@@ -195,41 +203,44 @@ router.get("/pending/approval", async (_req, res) => {
         eq(pinsTable.approved, false)
       )
     );
-  res.json(await Promise.all(pending.map(formatPin)));
+  res.json(await Promise.all(pending.map((p) => formatPin(p, uid))));
 });
 
-router.get("/favorites", async (_req, res) => {
+router.get("/favorites", async (req, res) => {
+  const uid = currentUserId(req);
   const favorites = await db
     .select()
     .from(pinFavoritesTable)
-    .where(eq(pinFavoritesTable.userId, SESSION_USER_ID));
-  const friendIds = await getFriendIds(SESSION_USER_ID);
+    .where(eq(pinFavoritesTable.userId, uid));
+  const friendIds = await getFriendIds(uid);
   const pins = await Promise.all(
     favorites.map((f) => db.query.pinsTable.findFirst({ where: eq(pinsTable.id, f.pinId) }))
   );
   const visible = pins.filter(
     (pin): pin is typeof pinsTable.$inferSelect =>
-      !!pin && canViewPin(pin, SESSION_USER_ID, friendIds)
+      !!pin && canViewPin(pin, uid, friendIds)
   );
-  res.json(await Promise.all(visible.map(formatPin)));
+  res.json(await Promise.all(visible.map((p) => formatPin(p, uid))));
 });
 
 router.get("/:pinId", async (req, res) => {
+  const uid = currentUserId(req);
   const pinId = parseInt(req.params.pinId);
   const pin = await db.query.pinsTable.findFirst({ where: eq(pinsTable.id, pinId) });
   if (!pin) return res.status(404).json({ error: "Pin not found" });
-  const friendIds = await getFriendIds(SESSION_USER_ID);
-  if (!canViewPin(pin, SESSION_USER_ID, friendIds)) {
+  const friendIds = await getFriendIds(uid);
+  if (!canViewPin(pin, uid, friendIds)) {
     return res.status(404).json({ error: "Pin not found" });
   }
-  res.json(await formatPin(pin));
+  res.json(await formatPin(pin, uid));
 });
 
 router.delete("/:pinId", async (req, res) => {
+  const uid = currentUserId(req);
   const pinId = parseInt(req.params.pinId);
   const pin = await db.query.pinsTable.findFirst({ where: eq(pinsTable.id, pinId) });
   if (!pin) return res.status(404).json({ error: "Pin not found" });
-  if (pin.userId !== SESSION_USER_ID && SESSION_USER_ID !== OWNER_ID) {
+  if (pin.userId !== uid && !(await isAdmin(uid))) {
     return res.status(403).json({ error: "You can only delete your own pins" });
   }
   await db.delete(pinLikesTable).where(eq(pinLikesTable.pinId, pinId));
@@ -239,7 +250,8 @@ router.delete("/:pinId", async (req, res) => {
 });
 
 router.post("/:pinId/approve", async (req, res) => {
-  if (SESSION_USER_ID !== OWNER_ID) {
+  const uid = currentUserId(req);
+  if (!(await isAdmin(uid))) {
     return res.status(403).json({ error: "Only the app owner can approve pins" });
   }
   const pinId = parseInt(req.params.pinId);
@@ -253,48 +265,50 @@ router.post("/:pinId/approve", async (req, res) => {
     .set({ approved: true })
     .where(eq(pinsTable.id, pinId))
     .returning();
-  res.json(await formatPin(updated));
+  res.json(await formatPin(updated, uid));
 });
 
 router.post("/:pinId/like", async (req, res) => {
+  const uid = currentUserId(req);
   const pinId = parseInt(req.params.pinId);
   const pin = await db.query.pinsTable.findFirst({ where: eq(pinsTable.id, pinId) });
   if (!pin) return res.status(404).json({ error: "Pin not found" });
-  const friendIds = await getFriendIds(SESSION_USER_ID);
-  if (!canViewPin(pin, SESSION_USER_ID, friendIds)) {
+  const friendIds = await getFriendIds(uid);
+  if (!canViewPin(pin, uid, friendIds)) {
     return res.status(404).json({ error: "Pin not found" });
   }
   const existing = await db.query.pinLikesTable.findFirst({
-    where: and(eq(pinLikesTable.pinId, pinId), eq(pinLikesTable.userId, SESSION_USER_ID)),
+    where: and(eq(pinLikesTable.pinId, pinId), eq(pinLikesTable.userId, uid)),
   });
   if (existing) {
     await db.delete(pinLikesTable).where(eq(pinLikesTable.id, existing.id));
     await db.update(pinsTable).set({ likeCount: sql`${pinsTable.likeCount} - 1` }).where(eq(pinsTable.id, pinId));
   } else {
-    await db.insert(pinLikesTable).values({ pinId, userId: SESSION_USER_ID });
+    await db.insert(pinLikesTable).values({ pinId, userId: uid });
     await db.update(pinsTable).set({ likeCount: sql`${pinsTable.likeCount} + 1` }).where(eq(pinsTable.id, pinId));
   }
   const updated = await db.query.pinsTable.findFirst({ where: eq(pinsTable.id, pinId) });
-  res.json(await formatPin(updated!));
+  res.json(await formatPin(updated!, uid));
 });
 
 router.post("/:pinId/favorite", async (req, res) => {
+  const uid = currentUserId(req);
   const pinId = parseInt(req.params.pinId);
   const pin = await db.query.pinsTable.findFirst({ where: eq(pinsTable.id, pinId) });
   if (!pin) return res.status(404).json({ error: "Pin not found" });
-  const friendIds = await getFriendIds(SESSION_USER_ID);
-  if (!canViewPin(pin, SESSION_USER_ID, friendIds)) {
+  const friendIds = await getFriendIds(uid);
+  if (!canViewPin(pin, uid, friendIds)) {
     return res.status(404).json({ error: "Pin not found" });
   }
   const existing = await db.query.pinFavoritesTable.findFirst({
-    where: and(eq(pinFavoritesTable.pinId, pinId), eq(pinFavoritesTable.userId, SESSION_USER_ID)),
+    where: and(eq(pinFavoritesTable.pinId, pinId), eq(pinFavoritesTable.userId, uid)),
   });
   if (existing) {
     await db.delete(pinFavoritesTable).where(eq(pinFavoritesTable.id, existing.id));
   } else {
-    await db.insert(pinFavoritesTable).values({ pinId, userId: SESSION_USER_ID });
+    await db.insert(pinFavoritesTable).values({ pinId, userId: uid });
   }
-  res.json(await formatPin(pin));
+  res.json(await formatPin(pin, uid));
 });
 
 export default router;

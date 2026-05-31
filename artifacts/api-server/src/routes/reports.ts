@@ -14,9 +14,10 @@ import {
   notificationsTable,
 } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
+import type { Request } from "express";
+import { currentUserId } from "../middlewares/auth";
 
 const router = Router();
-const SESSION_USER_ID = 1;
 
 const POST_REASONS = ["spam", "harassment", "inappropriate", "false_information", "illegal", "other"];
 const USER_REASONS = ["spam", "harassment", "inappropriate", "impersonation", "other"];
@@ -56,8 +57,8 @@ function serializeReport(r: typeof reportsTable.$inferSelect) {
   };
 }
 
-async function requireAdmin(): Promise<boolean> {
-  const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, SESSION_USER_ID) });
+async function requireAdmin(req: Request): Promise<boolean> {
+  const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, currentUserId(req)) });
   return !!me?.isAdmin;
 }
 
@@ -99,7 +100,7 @@ router.post("/", async (req, res) => {
   const [report] = await db
     .insert(reportsTable)
     .values({
-      reporterId: SESSION_USER_ID,
+      reporterId: currentUserId(req),
       targetType,
       targetId,
       reason,
@@ -111,7 +112,7 @@ router.post("/", async (req, res) => {
 
 // GET /api/reports - admin: list reports (optional ?status= filter)
 router.get("/", async (req, res) => {
-  if (!(await requireAdmin())) return res.status(403).json({ error: "Admin access required" });
+  if (!(await requireAdmin(req))) return res.status(403).json({ error: "Admin access required" });
   const status = req.query.status as string | undefined;
   const rows = status
     ? await db.select().from(reportsTable).where(eq(reportsTable.status, status)).orderBy(desc(reportsTable.createdAt))
@@ -152,7 +153,7 @@ router.get("/", async (req, res) => {
 
 // PATCH /api/reports/:id - admin: take action on a report
 router.patch("/:id", async (req, res) => {
-  if (!(await requireAdmin())) return res.status(403).json({ error: "Admin access required" });
+  if (!(await requireAdmin(req))) return res.status(403).json({ error: "Admin access required" });
   const id = parseInt(req.params.id);
   const { action } = req.body ?? {};
   const VALID = ["dismiss", "remove", "warn", "suspend"];

@@ -2,9 +2,9 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, catchesTable } from "@workspace/db";
 import { eq, and, desc, or } from "drizzle-orm";
+import { currentUserId } from "../middlewares/auth";
 
 const router = Router();
-const SESSION_USER_ID = 1;
 
 function formatUser(u: typeof usersTable.$inferSelect) {
   return {
@@ -56,7 +56,7 @@ router.get("/", async (req, res) => {
       .select()
       .from(catchesTable)
       .where(
-        profileUserId === SESSION_USER_ID
+        profileUserId === currentUserId(req)
           ? eq(catchesTable.userId, profileUserId)
           : and(eq(catchesTable.userId, profileUserId), eq(catchesTable.isPrivate, false))
       )
@@ -65,7 +65,7 @@ router.get("/", async (req, res) => {
     rows = await db
       .select()
       .from(catchesTable)
-      .where(or(eq(catchesTable.isPrivate, false), eq(catchesTable.userId, SESSION_USER_ID)))
+      .where(or(eq(catchesTable.isPrivate, false), eq(catchesTable.userId, currentUserId(req))))
       .orderBy(desc(catchesTable.caughtAt));
   }
   res.json(await Promise.all(rows.map(formatCatch)));
@@ -83,7 +83,7 @@ router.post("/", async (req, res) => {
   const [row] = await db
     .insert(catchesTable)
     .values({
-      userId: SESSION_USER_ID,
+      userId: currentUserId(req),
       species: String(species).trim(),
       weight: weight ?? null,
       length: length ?? null,
@@ -102,7 +102,7 @@ router.delete("/:catchId", async (req, res) => {
   const catchId = parseInt(req.params.catchId);
   const row = await db.query.catchesTable.findFirst({ where: eq(catchesTable.id, catchId) });
   if (!row) return res.status(404).json({ error: "Catch not found" });
-  if (row.userId !== SESSION_USER_ID) {
+  if (row.userId !== currentUserId(req)) {
     return res.status(403).json({ error: "You can only delete your own catches" });
   }
   await db.delete(catchesTable).where(eq(catchesTable.id, catchId));

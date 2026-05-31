@@ -2,9 +2,9 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, postsTable, postLikesTable, postCommentsTable, commentLikesTable, pinsTable, eventRsvpsTable, mutesTable, savedPostsTable } from "@workspace/db";
 import { eq, and, sql, desc, count, inArray, notInArray } from "drizzle-orm";
+import { currentUserId } from "../middlewares/auth";
 
 const router = Router();
-const SESSION_USER_ID = 1;
 const ALLOWED_REACTIONS = ["thumbsup", "thumbsdown", "heart", "laugh", "sad", "angry"];
 
 function formatUser(u: typeof usersTable.$inferSelect) {
@@ -28,13 +28,13 @@ function formatUser(u: typeof usersTable.$inferSelect) {
   };
 }
 
-async function formatPost(post: typeof postsTable.$inferSelect, embedShared = true): Promise<any> {
+async function formatPost(post: typeof postsTable.$inferSelect, viewerId: number, embedShared = true): Promise<any> {
   const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, post.userId) });
   const like = await db.query.postLikesTable.findFirst({
-    where: and(eq(postLikesTable.postId, post.id), eq(postLikesTable.userId, SESSION_USER_ID)),
+    where: and(eq(postLikesTable.postId, post.id), eq(postLikesTable.userId, viewerId)),
   });
   const saved = await db.query.savedPostsTable.findFirst({
-    where: and(eq(savedPostsTable.postId, post.id), eq(savedPostsTable.userId, SESSION_USER_ID)),
+    where: and(eq(savedPostsTable.postId, post.id), eq(savedPostsTable.userId, viewerId)),
   });
   const reactionRows = await db
     .select({ reaction: postLikesTable.reaction, value: count() })
@@ -52,7 +52,7 @@ async function formatPost(post: typeof postsTable.$inferSelect, embedShared = tr
       .where(and(eq(eventRsvpsTable.postId, post.id), eq(eventRsvpsTable.status, "going")));
     rsvpCount = rsvpResult?.value ?? 0;
     const mine = await db.query.eventRsvpsTable.findFirst({
-      where: and(eq(eventRsvpsTable.postId, post.id), eq(eventRsvpsTable.userId, SESSION_USER_ID)),
+      where: and(eq(eventRsvpsTable.postId, post.id), eq(eventRsvpsTable.userId, viewerId)),
     });
     rsvpByMe = mine?.status === "going";
   }
@@ -61,9 +61,9 @@ async function formatPost(post: typeof postsTable.$inferSelect, embedShared = tr
     const orig = await db.query.postsTable.findFirst({ where: eq(postsTable.id, post.sharedPostId) });
     if (orig) {
       const muted = await db.query.mutesTable.findFirst({
-        where: and(eq(mutesTable.muterId, SESSION_USER_ID), eq(mutesTable.mutedId, orig.userId)),
+        where: and(eq(mutesTable.muterId, viewerId), eq(mutesTable.mutedId, orig.userId)),
       });
-      if (!muted) sharedPost = await formatPost(orig, false);
+      if (!muted) sharedPost = await formatPost(orig, viewerId, false);
     }
   }
   return {
@@ -97,19 +97,21 @@ async function getMutedUserIds(userId: number): Promise<number[]> {
 }
 
 router.get("/", async (req, res) => {
+  const uid = currentUserId(req);
   const type = req.query.type as string | undefined;
-  const mutedIds = await getMutedUserIds(SESSION_USER_ID);
+  const mutedIds = await getMutedUserIds(uid);
   const conditions = [];
   if (type) conditions.push(eq(postsTable.postType, type));
   if (mutedIds.length) conditions.push(notInArray(postsTable.userId, mutedIds));
   const where = conditions.length ? and(...conditions) : undefined;
   const posts = await db.select().from(postsTable).where(where).orderBy(desc(postsTable.createdAt));
-  res.json(await Promise.all(posts.map(formatPost)));
+  res.json(await Promise.all(posts.map((p) => formatPost(p, uid))));
 });
 
-router.get("/saved", async (_req, res) => {
+router.get("/saved", async (req, res) => {
+  const uid = currentUserId(req);
   const rows = await db.query.savedPostsTable.findMany({
-    where: eq(savedPostsTable.userId, SESSION_USER_ID),
+    where: eq(savedPostsTable.userId, uid),
     orderBy: (t, { desc: d }) => [d(t.createdAt)],
   });
   if (!rows.length) return res.json([]);
@@ -118,15 +120,16 @@ router.get("/saved", async (_req, res) => {
   });
   const orderMap = new Map(rows.map((r, i) => [r.postId, i]));
   posts.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
-  res.json(await Promise.all(posts.map(formatPost)));
+  res.json(await Promise.all(posts.map((p) => formatPost(p, uid))));
 });
 
 router.post("/", async (req, res) => {
+  const uid = currentUserId(req);
   const { title, content, postType, eventDate, imageUrl, videoUrl, pinLat, pinLng } = req.body;
   const [post] = await db
     .insert(postsTable)
     .values({
-      userId: SESSION_USER_ID,
+      userId: uid,
       title,
       content,
       postType: postType || "post",
@@ -137,10 +140,11 @@ router.post("/", async (req, res) => {
       pinLng,
     })
     .returning();
-  res.status(201).json(await formatPost(post));
+  res.status(201).json(await formatPost(post, uid));
 });
 
 router.post("/:postId/share", async (req, res) => {
+  const uid = currentUserId(req);
   const postId = Number(req.params.postId);
   if (!Number.isInteger(postId)) return res.status(400).json({ error: "Invalid post id" });
   const original = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
@@ -154,17 +158,18 @@ router.post("/:postId/share", async (req, res) => {
   const [post] = await db
     .insert(postsTable)
     .values({
-      userId: SESSION_USER_ID,
+      userId: uid,
       title: "",
       content,
       postType: "post",
       sharedPostId: sourceId,
     })
     .returning();
-  res.status(201).json(await formatPost(post));
+  res.status(201).json(await formatPost(post, uid));
 });
 
-router.get("/summary", async (_req, res) => {
+router.get("/summary", async (req, res) => {
+  const uid = currentUserId(req);
   const [postCountResult] = await db.select({ value: count() }).from(postsTable);
   const [eventCountResult] = await db.select({ value: count() }).from(postsTable).where(eq(postsTable.postType, "event"));
   const [pinCountResult] = await db.select({ value: count() }).from(pinsTable);
@@ -207,23 +212,25 @@ router.get("/summary", async (_req, res) => {
     totalEvents: eventCountResult.value,
     totalPins: pinCountResult.value,
     activeUsersToday: userCountResult.value,
-    upcomingEvents: await Promise.all(upcomingEvents.map(formatPost)),
+    upcomingEvents: await Promise.all(upcomingEvents.map((p) => formatPost(p, uid))),
     recentPins: formattedPins,
   });
 });
 
 router.get("/:postId", async (req, res) => {
+  const uid = currentUserId(req);
   const postId = parseInt(req.params.postId);
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!post) return res.status(404).json({ error: "Post not found" });
-  res.json(await formatPost(post));
+  res.json(await formatPost(post, uid));
 });
 
 router.delete("/:postId", async (req, res) => {
+  const uid = currentUserId(req);
   const postId = parseInt(req.params.postId);
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!post) return res.status(404).json({ error: "Post not found" });
-  if (post.userId !== SESSION_USER_ID) {
+  if (post.userId !== uid) {
     return res.status(403).json({ error: "You can only delete your own posts" });
   }
   await db.delete(postLikesTable).where(eq(postLikesTable.postId, postId));
@@ -242,27 +249,30 @@ router.delete("/:postId", async (req, res) => {
 });
 
 router.post("/:postId/save", async (req, res) => {
+  const uid = currentUserId(req);
   const postId = parseInt(req.params.postId);
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!post) return res.status(404).json({ error: "Post not found" });
   const existing = await db.query.savedPostsTable.findFirst({
-    where: and(eq(savedPostsTable.postId, postId), eq(savedPostsTable.userId, SESSION_USER_ID)),
+    where: and(eq(savedPostsTable.postId, postId), eq(savedPostsTable.userId, uid)),
   });
   if (!existing) {
-    await db.insert(savedPostsTable).values({ postId, userId: SESSION_USER_ID });
+    await db.insert(savedPostsTable).values({ postId, userId: uid });
   }
   res.json({ success: true });
 });
 
 router.delete("/:postId/save", async (req, res) => {
+  const uid = currentUserId(req);
   const postId = parseInt(req.params.postId);
   await db
     .delete(savedPostsTable)
-    .where(and(eq(savedPostsTable.postId, postId), eq(savedPostsTable.userId, SESSION_USER_ID)));
+    .where(and(eq(savedPostsTable.postId, postId), eq(savedPostsTable.userId, uid)));
   res.json({ success: true });
 });
 
 router.post("/:postId/react", async (req, res) => {
+  const uid = currentUserId(req);
   const postId = parseInt(req.params.postId);
   if (Number.isNaN(postId)) return res.status(400).json({ error: "Invalid post id" });
   const reaction = String(req.body?.reaction || "");
@@ -273,7 +283,7 @@ router.post("/:postId/react", async (req, res) => {
   if (!post) return res.status(404).json({ error: "Post not found" });
 
   const existing = await db.query.postLikesTable.findFirst({
-    where: and(eq(postLikesTable.postId, postId), eq(postLikesTable.userId, SESSION_USER_ID)),
+    where: and(eq(postLikesTable.postId, postId), eq(postLikesTable.userId, uid)),
   });
   let delta = 0;
   if (existing && existing.reaction === reaction) {
@@ -284,7 +294,7 @@ router.post("/:postId/react", async (req, res) => {
   } else {
     await db
       .insert(postLikesTable)
-      .values({ postId, userId: SESSION_USER_ID, reaction })
+      .values({ postId, userId: uid, reaction })
       .onConflictDoUpdate({ target: [postLikesTable.postId, postLikesTable.userId], set: { reaction } });
     delta = 1;
   }
@@ -296,10 +306,11 @@ router.post("/:postId/react", async (req, res) => {
   }
 
   const updated = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
-  res.json(await formatPost(updated!));
+  res.json(await formatPost(updated!, uid));
 });
 
 router.post("/:postId/rsvp", async (req, res) => {
+  const uid = currentUserId(req);
   const postId = parseInt(req.params.postId);
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!post) return res.status(404).json({ error: "Post not found" });
@@ -307,14 +318,14 @@ router.post("/:postId/rsvp", async (req, res) => {
     return res.status(400).json({ error: "You can only RSVP to events" });
   }
   const existing = await db.query.eventRsvpsTable.findFirst({
-    where: and(eq(eventRsvpsTable.postId, postId), eq(eventRsvpsTable.userId, SESSION_USER_ID)),
+    where: and(eq(eventRsvpsTable.postId, postId), eq(eventRsvpsTable.userId, uid)),
   });
   if (existing) {
     await db.delete(eventRsvpsTable).where(eq(eventRsvpsTable.id, existing.id));
   } else {
-    await db.insert(eventRsvpsTable).values({ postId, userId: SESSION_USER_ID, status: "going" });
+    await db.insert(eventRsvpsTable).values({ postId, userId: uid, status: "going" });
   }
-  res.json(await formatPost(post));
+  res.json(await formatPost(post, uid));
 });
 
 router.get("/:postId/rsvps", async (req, res) => {
@@ -349,10 +360,10 @@ router.get("/:postId/likes", async (req, res) => {
   res.json(formatted);
 });
 
-async function formatComment(c: typeof postCommentsTable.$inferSelect): Promise<any> {
+async function formatComment(c: typeof postCommentsTable.$inferSelect, viewerId: number): Promise<any> {
   const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, c.userId) });
   const like = await db.query.commentLikesTable.findFirst({
-    where: and(eq(commentLikesTable.commentId, c.id), eq(commentLikesTable.userId, SESSION_USER_ID)),
+    where: and(eq(commentLikesTable.commentId, c.id), eq(commentLikesTable.userId, viewerId)),
   });
   const reactionRows = await db
     .select({ reaction: commentLikesTable.reaction, value: count() })
@@ -378,17 +389,19 @@ async function formatComment(c: typeof postCommentsTable.$inferSelect): Promise<
 }
 
 router.get("/:postId/comments", async (req, res) => {
+  const uid = currentUserId(req);
   const postId = parseInt(req.params.postId);
   const comments = await db
     .select()
     .from(postCommentsTable)
     .where(eq(postCommentsTable.postId, postId))
     .orderBy(postCommentsTable.createdAt);
-  const formatted = await Promise.all(comments.map((c) => formatComment(c)));
+  const formatted = await Promise.all(comments.map((c) => formatComment(c, uid)));
   res.json(formatted);
 });
 
 router.post("/:postId/comments", async (req, res) => {
+  const uid = currentUserId(req);
   const postId = parseInt(req.params.postId);
   const { content, imageUrl, videoUrl } = req.body;
   const trimmedContent = content ? String(content).trim() : "";
@@ -401,12 +414,13 @@ router.post("/:postId/comments", async (req, res) => {
   if (!post) return res.status(404).json({ error: "Post not found" });
   const [comment] = await db
     .insert(postCommentsTable)
-    .values({ postId, userId: SESSION_USER_ID, content: trimmedContent, imageUrl: trimmedImageUrl || null, videoUrl: trimmedVideoUrl || null })
+    .values({ postId, userId: uid, content: trimmedContent, imageUrl: trimmedImageUrl || null, videoUrl: trimmedVideoUrl || null })
     .returning();
-  res.status(201).json(await formatComment(comment));
+  res.status(201).json(await formatComment(comment, uid));
 });
 
 router.post("/:postId/comments/:commentId/react", async (req, res) => {
+  const uid = currentUserId(req);
   const postId = parseInt(req.params.postId);
   const commentId = parseInt(req.params.commentId);
   if (Number.isNaN(postId) || Number.isNaN(commentId)) return res.status(400).json({ error: "Invalid id" });
@@ -418,7 +432,7 @@ router.post("/:postId/comments/:commentId/react", async (req, res) => {
   if (!comment || comment.postId !== postId) return res.status(404).json({ error: "Comment not found" });
 
   const existing = await db.query.commentLikesTable.findFirst({
-    where: and(eq(commentLikesTable.commentId, commentId), eq(commentLikesTable.userId, SESSION_USER_ID)),
+    where: and(eq(commentLikesTable.commentId, commentId), eq(commentLikesTable.userId, uid)),
   });
   let delta = 0;
   if (existing && existing.reaction === reaction) {
@@ -429,7 +443,7 @@ router.post("/:postId/comments/:commentId/react", async (req, res) => {
   } else {
     await db
       .insert(commentLikesTable)
-      .values({ commentId, userId: SESSION_USER_ID, reaction })
+      .values({ commentId, userId: uid, reaction })
       .onConflictDoUpdate({ target: [commentLikesTable.commentId, commentLikesTable.userId], set: { reaction } });
     delta = 1;
   }
@@ -440,14 +454,15 @@ router.post("/:postId/comments/:commentId/react", async (req, res) => {
       .where(eq(postCommentsTable.id, commentId));
   }
   const updated = await db.query.postCommentsTable.findFirst({ where: eq(postCommentsTable.id, commentId) });
-  res.json(await formatComment(updated!));
+  res.json(await formatComment(updated!, uid));
 });
 
 router.delete("/:postId/comments/:commentId", async (req, res) => {
+  const uid = currentUserId(req);
   const commentId = parseInt(req.params.commentId);
   const comment = await db.query.postCommentsTable.findFirst({ where: eq(postCommentsTable.id, commentId) });
   if (!comment) return res.status(404).json({ error: "Comment not found" });
-  if (comment.userId !== SESSION_USER_ID) {
+  if (comment.userId !== uid) {
     return res.status(403).json({ error: "You can only delete your own comments" });
   }
   await db.delete(commentLikesTable).where(eq(commentLikesTable.commentId, commentId));

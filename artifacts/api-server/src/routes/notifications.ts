@@ -2,15 +2,15 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { notificationsTable } from "@workspace/db";
 import { eq, and, desc } from "drizzle-orm";
+import { currentUserId } from "../middlewares/auth";
 
 const router = Router();
-const SESSION_USER_ID = 1;
 
-router.get("/", async (_req, res) => {
+router.get("/", async (req, res) => {
   const notifs = await db
     .select()
     .from(notificationsTable)
-    .where(eq(notificationsTable.userId, SESSION_USER_ID))
+    .where(eq(notificationsTable.userId, currentUserId(req)))
     .orderBy(desc(notificationsTable.createdAt));
   res.json(
     notifs.map((n) => ({
@@ -48,7 +48,7 @@ router.delete("/:notificationId", async (req, res) => {
     res.status(404).json({ error: "Notification not found" });
     return;
   }
-  if (existing.userId !== SESSION_USER_ID) {
+  if (existing.userId !== currentUserId(req)) {
     res.status(403).json({ error: "You can only delete your own notifications" });
     return;
   }
@@ -57,7 +57,7 @@ router.delete("/:notificationId", async (req, res) => {
     .where(
       and(
         eq(notificationsTable.id, notificationId),
-        eq(notificationsTable.userId, SESSION_USER_ID)
+        eq(notificationsTable.userId, currentUserId(req))
       )
     );
   res.json({ success: true });

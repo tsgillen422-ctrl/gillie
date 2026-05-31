@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import { Link } from "wouter";
+import { useClerk } from "@clerk/react";
 import { useGetMe, useUpdateMe, useGetBlockedUsers, useUnblockUser, useGetMutedUsers, useUnmuteUser, getGetBlockedUsersQueryKey, getGetMutedUsersQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUpload } from "@workspace/object-storage-web";
@@ -577,13 +578,25 @@ export function SettingsPage() {
         </Card>
 
         <div className="flex items-center gap-3 mt-8">
-          <Button variant="outline" className="flex-1 text-destructive hover:text-destructive">
-            <LogOut className="w-4 h-4 mr-2" /> Log Out
-          </Button>
+          <LogoutButton />
           <SosButton />
         </div>
       </div>
     </div>
+  );
+}
+
+function LogoutButton() {
+  const { signOut } = useClerk();
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+  return (
+    <Button
+      variant="outline"
+      className="flex-1 text-destructive hover:text-destructive"
+      onClick={() => signOut({ redirectUrl: basePath || "/" })}
+    >
+      <LogOut className="w-4 h-4 mr-2" /> Log Out
+    </Button>
   );
 }
 

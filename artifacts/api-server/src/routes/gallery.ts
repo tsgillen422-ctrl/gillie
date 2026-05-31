@@ -2,9 +2,9 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, galleryItemsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
+import { currentUserId } from "../middlewares/auth";
 
 const router = Router();
-const SESSION_USER_ID = 1;
 
 function formatUser(u: typeof usersTable.$inferSelect) {
   return {
@@ -43,7 +43,7 @@ async function formatItem(g: typeof galleryItemsTable.$inferSelect) {
 router.get("/", async (req, res) => {
   const profileUserId = req.query.profileUserId
     ? parseInt(req.query.profileUserId as string)
-    : SESSION_USER_ID;
+    : currentUserId(req);
   const rows = await db
     .select()
     .from(galleryItemsTable)
@@ -61,7 +61,7 @@ router.post("/", async (req, res) => {
   const [row] = await db
     .insert(galleryItemsTable)
     .values({
-      userId: SESSION_USER_ID,
+      userId: currentUserId(req),
       mediaUrl: String(mediaUrl).trim(),
       mediaType: type,
       caption: caption ?? null,
@@ -74,7 +74,7 @@ router.delete("/:itemId", async (req, res) => {
   const itemId = parseInt(req.params.itemId);
   const row = await db.query.galleryItemsTable.findFirst({ where: eq(galleryItemsTable.id, itemId) });
   if (!row) return res.status(404).json({ error: "Item not found" });
-  if (row.userId !== SESSION_USER_ID) {
+  if (row.userId !== currentUserId(req)) {
     return res.status(403).json({ error: "You can only delete your own gallery items" });
   }
   await db.delete(galleryItemsTable).where(eq(galleryItemsTable.id, itemId));

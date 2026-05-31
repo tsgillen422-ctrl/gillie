@@ -2,10 +2,10 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, conversationsTable, conversationParticipantsTable, messagesTable } from "@workspace/db";
 import { eq, and, ne, desc, gt } from "drizzle-orm";
+import { currentUserId } from "../middlewares/auth";
 import { broadcastToConversation } from "../lib/realtime";
 
 const router = Router();
-const SESSION_USER_ID = 1;
 
 async function isParticipant(conversationId: number, userId: number) {
   const row = await db.query.conversationParticipantsTable.findFirst({
@@ -38,11 +38,11 @@ function formatUser(u: typeof usersTable.$inferSelect) {
   };
 }
 
-router.get("/conversations", async (_req, res) => {
+router.get("/conversations", async (req, res) => {
   const myParticipations = await db
     .select()
     .from(conversationParticipantsTable)
-    .where(eq(conversationParticipantsTable.userId, SESSION_USER_ID));
+    .where(eq(conversationParticipantsTable.userId, currentUserId(req)));
 
   const convos = await Promise.all(
     myParticipations.map(async (p) => {
@@ -75,7 +75,7 @@ router.get("/conversations", async (_req, res) => {
         .where(
           and(
             eq(messagesTable.conversationId, conv.id),
-            ne(messagesTable.senderId, SESSION_USER_ID),
+            ne(messagesTable.senderId, currentUserId(req)),
             ...(myLastReadAt ? [gt(messagesTable.createdAt, myLastReadAt)] : [])
           )
         );
@@ -119,7 +119,7 @@ router.post("/conversations", async (req, res) => {
   const myParticipations = await db
     .select()
     .from(conversationParticipantsTable)
-    .where(eq(conversationParticipantsTable.userId, SESSION_USER_ID));
+    .where(eq(conversationParticipantsTable.userId, currentUserId(req)));
 
   for (const p of myParticipations) {
     const conv = await db.query.conversationsTable.findFirst({
@@ -133,11 +133,11 @@ router.post("/conversations", async (req, res) => {
     const ids = members.map((m) => m.userId).sort((a, b) => a - b);
     if (
       ids.length === 2 &&
-      ids[0] === Math.min(SESSION_USER_ID, participantId) &&
-      ids[1] === Math.max(SESSION_USER_ID, participantId)
+      ids[0] === Math.min(currentUserId(req), participantId) &&
+      ids[1] === Math.max(currentUserId(req), participantId)
     ) {
       const participantUsers = await Promise.all([
-        db.query.usersTable.findFirst({ where: eq(usersTable.id, SESSION_USER_ID) }),
+        db.query.usersTable.findFirst({ where: eq(usersTable.id, currentUserId(req)) }),
         db.query.usersTable.findFirst({ where: eq(usersTable.id, participantId) }),
       ]);
       return res.status(200).json({
@@ -154,11 +154,11 @@ router.post("/conversations", async (req, res) => {
 
   const [conv] = await db.insert(conversationsTable).values({}).returning();
   await db.insert(conversationParticipantsTable).values([
-    { conversationId: conv.id, userId: SESSION_USER_ID },
+    { conversationId: conv.id, userId: currentUserId(req) },
     { conversationId: conv.id, userId: participantId },
   ]);
   const participantUsers = await Promise.all([
-    db.query.usersTable.findFirst({ where: eq(usersTable.id, SESSION_USER_ID) }),
+    db.query.usersTable.findFirst({ where: eq(usersTable.id, currentUserId(req)) }),
     db.query.usersTable.findFirst({ where: eq(usersTable.id, participantId) }),
   ]);
   res.status(201).json({
@@ -184,7 +184,7 @@ router.post("/conversations/group", async (req, res) => {
     new Set(
       participantIds
         .map((id: unknown) => parseInt(String(id)))
-        .filter((id: number) => !isNaN(id) && id !== SESSION_USER_ID)
+        .filter((id: number) => !isNaN(id) && id !== currentUserId(req))
     )
   );
   const [conv] = await db
@@ -192,10 +192,10 @@ router.post("/conversations/group", async (req, res) => {
     .values({ name: String(name).trim(), isGroup: true })
     .returning();
   await db.insert(conversationParticipantsTable).values([
-    { conversationId: conv.id, userId: SESSION_USER_ID },
+    { conversationId: conv.id, userId: currentUserId(req) },
     ...uniqueIds.map((id) => ({ conversationId: conv.id, userId: id })),
   ]);
-  const allIds = [SESSION_USER_ID, ...uniqueIds];
+  const allIds = [currentUserId(req), ...uniqueIds];
   const participantUsers = await Promise.all(
     allIds.map((id) => db.query.usersTable.findFirst({ where: eq(usersTable.id, id) }))
   );
@@ -212,7 +212,7 @@ router.post("/conversations/group", async (req, res) => {
 
 router.get("/conversations/:conversationId", async (req, res) => {
   const conversationId = parseInt(req.params.conversationId);
-  if (!(await isParticipant(conversationId, SESSION_USER_ID))) {
+  if (!(await isParticipant(conversationId, currentUserId(req)))) {
     return res.status(403).json({ error: "You are not a participant in this conversation" });
   }
 
@@ -220,7 +220,7 @@ router.get("/conversations/:conversationId", async (req, res) => {
     .select()
     .from(conversationParticipantsTable)
     .where(eq(conversationParticipantsTable.conversationId, conversationId));
-  const otherParticipants = participants.filter((p) => p.userId !== SESSION_USER_ID);
+  const otherParticipants = participants.filter((p) => p.userId !== currentUserId(req));
 
   const msgs = await db
     .select()
@@ -254,7 +254,7 @@ router.get("/conversations/:conversationId", async (req, res) => {
 
 router.post("/conversations/:conversationId/read", async (req, res) => {
   const conversationId = parseInt(req.params.conversationId);
-  if (!(await isParticipant(conversationId, SESSION_USER_ID))) {
+  if (!(await isParticipant(conversationId, currentUserId(req)))) {
     return res.status(403).json({ error: "You are not a participant in this conversation" });
   }
   await db
@@ -263,7 +263,7 @@ router.post("/conversations/:conversationId/read", async (req, res) => {
     .where(
       and(
         eq(conversationParticipantsTable.conversationId, conversationId),
-        eq(conversationParticipantsTable.userId, SESSION_USER_ID)
+        eq(conversationParticipantsTable.userId, currentUserId(req))
       )
     );
   res.json({ success: true });
@@ -271,15 +271,15 @@ router.post("/conversations/:conversationId/read", async (req, res) => {
 
 router.post("/conversations/:conversationId", async (req, res) => {
   const conversationId = parseInt(req.params.conversationId);
-  if (!(await isParticipant(conversationId, SESSION_USER_ID))) {
+  if (!(await isParticipant(conversationId, currentUserId(req)))) {
     return res.status(403).json({ error: "You are not a participant in this conversation" });
   }
   const { content, mediaUrl, mediaType } = req.body;
   const [msg] = await db
     .insert(messagesTable)
-    .values({ conversationId, senderId: SESSION_USER_ID, content: content ?? "", mediaUrl: mediaUrl ?? null, mediaType: mediaType ?? null })
+    .values({ conversationId, senderId: currentUserId(req), content: content ?? "", mediaUrl: mediaUrl ?? null, mediaType: mediaType ?? null })
     .returning();
-  const sender = await db.query.usersTable.findFirst({ where: eq(usersTable.id, SESSION_USER_ID) });
+  const sender = await db.query.usersTable.findFirst({ where: eq(usersTable.id, currentUserId(req)) });
   broadcastToConversation(conversationId, {
     type: "message",
     conversationId,
@@ -312,7 +312,7 @@ router.delete("/conversations/:conversationId", async (req, res) => {
     res.status(404).json({ error: "Conversation not found" });
     return;
   }
-  if (!(await isParticipant(conversationId, SESSION_USER_ID))) {
+  if (!(await isParticipant(conversationId, currentUserId(req)))) {
     res.status(403).json({ error: "You can only delete conversations you're part of" });
     return;
   }
@@ -333,7 +333,7 @@ router.delete("/:messageId", async (req, res) => {
     res.status(404).json({ error: "Message not found" });
     return;
   }
-  if (msg.senderId !== SESSION_USER_ID) {
+  if (msg.senderId !== currentUserId(req)) {
     res.status(403).json({ error: "You can only delete your own messages" });
     return;
   }
