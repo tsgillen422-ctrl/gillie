@@ -699,7 +699,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [post, event, business, tie_up]
+            enum: [post, event, business, tie_up, boat_showcase]
       responses:
         "200":
           description: Feed posts
@@ -1844,13 +1844,30 @@ components:
           type: string
         postType:
           type: string
-          enum: [post, event, business, tie_up]
+          enum: [post, event, business, tie_up, boat_showcase]
         eventDate:
           type: ["string", "null"]
         imageUrl:
           type: ["string", "null"]
         videoUrl:
           type: ["string", "null"]
+        photos:
+          type: ["array", "null"]
+          items:
+            type: string
+          description: Gallery photo URLs (used by boat showcases).
+        engineSetup:
+          type: ["string", "null"]
+          description: Engine setup description (boat showcase).
+        horsepower:
+          type: ["integer", "null"]
+          description: Engine horsepower (boat showcase).
+        topSpeed:
+          type: ["number", "null"]
+          description: Top speed in mph (boat showcase).
+        mods:
+          type: ["string", "null"]
+          description: Modifications list (boat showcase).
         pinLat:
           type: ["number", "null"]
         pinLng:
@@ -1922,12 +1939,24 @@ components:
           type: string
         postType:
           type: string
-          enum: [post, event, business, tie_up]
+          enum: [post, event, business, tie_up, boat_showcase]
         eventDate:
           type: string
         imageUrl:
           type: string
         videoUrl:
+          type: string
+        photos:
+          type: array
+          items:
+            type: string
+        engineSetup:
+          type: string
+        horsepower:
+          type: integer
+        topSpeed:
+          type: number
+        mods:
           type: string
         pinLat:
           type: number

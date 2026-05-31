@@ -339,6 +339,7 @@ export const PostPostType = {
   event: 'event',
   business: 'business',
   tie_up: 'tie_up',
+  boat_showcase: 'boat_showcase',
 } as const;
 
 /**
@@ -378,6 +379,31 @@ export interface Post {
   imageUrl?: string | null;
   /** @nullable */
   videoUrl?: string | null;
+  /**
+     * Gallery photo URLs (used by boat showcases).
+     * @nullable
+     */
+  photos?: string[] | null;
+  /**
+     * Engine setup description (boat showcase).
+     * @nullable
+     */
+  engineSetup?: string | null;
+  /**
+     * Engine horsepower (boat showcase).
+     * @nullable
+     */
+  horsepower?: number | null;
+  /**
+     * Top speed in mph (boat showcase).
+     * @nullable
+     */
+  topSpeed?: number | null;
+  /**
+     * Modifications list (boat showcase).
+     * @nullable
+     */
+  mods?: string | null;
   /** @nullable */
   pinLat?: number | null;
   /** @nullable */
@@ -424,6 +450,7 @@ export const PostInputPostType = {
   event: 'event',
   business: 'business',
   tie_up: 'tie_up',
+  boat_showcase: 'boat_showcase',
 } as const;
 
 export interface PostInput {
@@ -433,6 +460,11 @@ export interface PostInput {
   eventDate?: string;
   imageUrl?: string;
   videoUrl?: string;
+  photos?: string[];
+  engineSetup?: string;
+  horsepower?: number;
+  topSpeed?: number;
+  mods?: string;
   pinLat?: number;
   pinLng?: number;
 }
@@ -873,6 +905,7 @@ export const GetPostsType = {
   event: 'event',
   business: 'business',
   tie_up: 'tie_up',
+  boat_showcase: 'boat_showcase',
 } as const;
 
 export type GetCatchesParams = {

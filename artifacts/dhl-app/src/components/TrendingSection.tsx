@@ -86,6 +86,25 @@ export function TrendingSection() {
     });
   }
 
+  const boatOfWeek = [...(posts ?? [])]
+    .filter((p: any) => p.postType === "boat_showcase")
+    .sort((a: any, b: any) => (b.likeCount ?? 0) - (a.likeCount ?? 0))[0];
+  if (boatOfWeek) {
+    const boatImg = (Array.isArray(boatOfWeek.photos) && boatOfWeek.photos.length ? boatOfWeek.photos[0] : boatOfWeek.imageUrl) ?? null;
+    items.push({
+      key: "boat",
+      label: "Boat of the Week",
+      emoji: "🚤",
+      title: boatOfWeek.title || boatOfWeek.user?.displayName || "Boat",
+      subtitle: boatOfWeek.horsepower != null
+        ? `${boatOfWeek.horsepower} HP · ${boatOfWeek.user?.displayName ?? ""}`
+        : `${boatOfWeek.likeCount ?? 0} ${(boatOfWeek.likeCount ?? 0) === 1 ? "like" : "likes"} · ${boatOfWeek.user?.displayName ?? ""}`,
+      imageUrl: boatImg,
+      accent: "from-sky-400/20 to-blue-500/5 text-sky-600",
+      href: `/feed?post=${boatOfWeek.id}`,
+    });
+  }
+
   const tieUps = (posts ?? []).filter((p: any) => p.postType === "tie_up");
   const upcomingTieUp = tieUps
     .filter((p: any) => p.eventDate && new Date(p.eventDate).getTime() >= now)

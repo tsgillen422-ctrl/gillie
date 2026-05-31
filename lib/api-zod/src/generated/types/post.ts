@@ -23,6 +23,31 @@ export interface Post {
   imageUrl?: string | null;
   /** @nullable */
   videoUrl?: string | null;
+  /**
+     * Gallery photo URLs (used by boat showcases).
+     * @nullable
+     */
+  photos?: string[] | null;
+  /**
+     * Engine setup description (boat showcase).
+     * @nullable
+     */
+  engineSetup?: string | null;
+  /**
+     * Engine horsepower (boat showcase).
+     * @nullable
+     */
+  horsepower?: number | null;
+  /**
+     * Top speed in mph (boat showcase).
+     * @nullable
+     */
+  topSpeed?: number | null;
+  /**
+     * Modifications list (boat showcase).
+     * @nullable
+     */
+  mods?: string | null;
   /** @nullable */
   pinLat?: number | null;
   /** @nullable */

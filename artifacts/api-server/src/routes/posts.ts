@@ -76,6 +76,11 @@ async function formatPost(post: typeof postsTable.$inferSelect, viewerId: number
     eventDate: post.eventDate ? post.eventDate.toISOString() : null,
     imageUrl: post.imageUrl,
     videoUrl: post.videoUrl,
+    photos: post.photos ?? null,
+    engineSetup: post.engineSetup ?? null,
+    horsepower: post.horsepower ?? null,
+    topSpeed: post.topSpeed ?? null,
+    mods: post.mods ?? null,
     pinLat: post.pinLat,
     pinLng: post.pinLng,
     likeCount: post.likeCount,
@@ -125,7 +130,8 @@ router.get("/saved", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const uid = currentUserId(req);
-  const { title, content, postType, eventDate, imageUrl, videoUrl, pinLat, pinLng } = req.body;
+  const { title, content, postType, eventDate, imageUrl, videoUrl, photos, engineSetup, horsepower, topSpeed, mods, pinLat, pinLng } = req.body;
+  const photoList = Array.isArray(photos) ? photos.filter((p: unknown) => typeof p === "string") : null;
   const [post] = await db
     .insert(postsTable)
     .values({
@@ -134,8 +140,13 @@ router.post("/", async (req, res) => {
       content,
       postType: postType || "post",
       eventDate: eventDate ? new Date(eventDate) : null,
-      imageUrl,
+      imageUrl: imageUrl ?? (photoList && photoList.length ? photoList[0] : null),
       videoUrl,
+      photos: photoList && photoList.length ? photoList : null,
+      engineSetup: typeof engineSetup === "string" ? engineSetup : null,
+      horsepower: Number.isInteger(horsepower) ? horsepower : null,
+      topSpeed: typeof topSpeed === "number" && Number.isFinite(topSpeed) ? topSpeed : null,
+      mods: typeof mods === "string" ? mods : null,
       pinLat,
       pinLng,
     })

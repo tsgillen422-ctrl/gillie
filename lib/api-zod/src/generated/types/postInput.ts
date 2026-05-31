@@ -14,6 +14,11 @@ export interface PostInput {
   eventDate?: string;
   imageUrl?: string;
   videoUrl?: string;
+  photos?: string[];
+  engineSetup?: string;
+  horsepower?: number;
+  topSpeed?: number;
+  mods?: string;
   pinLat?: number;
   pinLng?: number;
 }

@@ -9,7 +9,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Link, useSearch } from "wouter";
-import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, Flag, Bookmark, BookmarkCheck, VolumeX, Link2, Repeat2, Anchor } from "lucide-react";
+import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, Flag, Bookmark, BookmarkCheck, VolumeX, Link2, Repeat2, Anchor, Sailboat } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,12 +82,18 @@ export function FeedPage() {
   const openPost = openPostId != null ? posts?.find((p) => p.id === openPostId) ?? null : null;
   const [newTitle, setNewTitle] = React.useState("");
   const [newContent, setNewContent] = React.useState("");
-  const [newType, setNewType] = React.useState<"post" | "event" | "business" | "tie_up">("post");
+  const [newType, setNewType] = React.useState<"post" | "event" | "business" | "tie_up" | "boat_showcase">("post");
   const [newEventDate, setNewEventDate] = React.useState("");
   const [newImageUrl, setNewImageUrl] = React.useState<string | null>(null);
   const [newVideoUrl, setNewVideoUrl] = React.useState<string | null>(null);
+  const [newPhotos, setNewPhotos] = React.useState<string[]>([]);
+  const [newEngineSetup, setNewEngineSetup] = React.useState("");
+  const [newHorsepower, setNewHorsepower] = React.useState("");
+  const [newTopSpeed, setNewTopSpeed] = React.useState("");
+  const [newMods, setNewMods] = React.useState("");
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const videoInputRef = React.useRef<HTMLInputElement>(null);
+  const boatPhotosInputRef = React.useRef<HTMLInputElement>(null);
   const { uploadFile, isUploading } = useUpload();
 
   const refreshPosts = () => {
@@ -115,8 +121,41 @@ export function FeedPage() {
     setNewEventDate("");
     setNewImageUrl(null);
     setNewVideoUrl(null);
+    setNewPhotos([]);
+    setNewEngineSetup("");
+    setNewHorsepower("");
+    setNewTopSpeed("");
+    setNewMods("");
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (videoInputRef.current) videoInputRef.current.value = "";
+    if (boatPhotosInputRef.current) boatPhotosInputRef.current.value = "";
+  };
+
+  const handleBoatPhotosSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (boatPhotosInputRef.current) boatPhotosInputRef.current.value = "";
+    if (!files.length) return;
+    const remaining = 8 - newPhotos.length;
+    if (remaining <= 0) {
+      toast.error("You can add up to 8 photos.");
+      return;
+    }
+    const toUpload = files.filter((f) => f.type.startsWith("image/")).slice(0, remaining);
+    if (!toUpload.length) {
+      toast.error("Please choose image files.");
+      return;
+    }
+    try {
+      const uploaded: string[] = [];
+      for (const file of toUpload) {
+        const res = await uploadFile(await compressImage(file));
+        if (res?.objectPath) uploaded.push(`/api/storage${res.objectPath}`);
+      }
+      if (uploaded.length) setNewPhotos((prev) => [...prev, ...uploaded]);
+      else toast.error("Couldn't upload those photos.");
+    } catch {
+      toast.error("Couldn't upload those photos.");
+    }
   };
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -162,7 +201,8 @@ export function FeedPage() {
   };
 
   const handleCreatePost = () => {
-    if (!newContent.trim()) {
+    const isBoat = newType === "boat_showcase";
+    if (!isBoat && !newContent.trim()) {
       toast.error("Add some content for your post.");
       return;
     }
@@ -170,15 +210,26 @@ export function FeedPage() {
       toast.error("Pick a date for your event.");
       return;
     }
+    if (isBoat && newPhotos.length === 0) {
+      toast.error("Add at least one photo of your boat.");
+      return;
+    }
+    const hp = parseInt(newHorsepower, 10);
+    const speed = parseFloat(newTopSpeed);
     createPost.mutate(
       {
         data: {
-          title: newTitle.trim() || (newType === "event" ? "Event" : newType === "tie_up" ? "Tie-up" : "Post"),
-          content: newContent.trim(),
+          title: newTitle.trim() || (newType === "event" ? "Event" : newType === "tie_up" ? "Tie-up" : isBoat ? "Boat Showcase" : "Post"),
+          content: newContent.trim() || (isBoat ? "Check out this boat!" : ""),
           postType: newType as PostInputPostType,
           eventDate: (newType === "event" || newType === "tie_up") && newEventDate ? new Date(newEventDate).toISOString() : undefined,
           imageUrl: newImageUrl ? `/api/storage${newImageUrl}` : undefined,
           videoUrl: newVideoUrl ? `/api/storage${newVideoUrl}` : undefined,
+          photos: isBoat && newPhotos.length ? newPhotos : undefined,
+          engineSetup: isBoat && newEngineSetup.trim() ? newEngineSetup.trim() : undefined,
+          horsepower: isBoat && !Number.isNaN(hp) ? hp : undefined,
+          topSpeed: isBoat && !Number.isNaN(speed) ? speed : undefined,
+          mods: isBoat && newMods.trim() ? newMods.trim() : undefined,
         },
       },
       {
@@ -342,18 +393,19 @@ export function FeedPage() {
                   <SelectItem value="event">Event</SelectItem>
                   <SelectItem value="tie_up">Tie-up</SelectItem>
                   <SelectItem value="business">Local</SelectItem>
+                  <SelectItem value="boat_showcase">🚤 Boat Showcase</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-1.5">
-              <Label>Title</Label>
-              <Input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Add a title (optional)" />
+              <Label>{newType === "boat_showcase" ? "Boat name / title" : "Title"}</Label>
+              <Input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder={newType === "boat_showcase" ? "e.g. Reel Therapy — 24' Sea Ray" : "Add a title (optional)"} />
             </div>
 
             <div className="space-y-1.5">
-              <Label>{newType === "tie_up" ? "Where's the tie-up?" : "What's happening?"}</Label>
-              <Textarea value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder={newType === "tie_up" ? "Drop the spot where everyone's tying up…" : "Share an update..."} rows={4} />
+              <Label>{newType === "boat_showcase" ? "About this boat (optional)" : newType === "tie_up" ? "Where's the tie-up?" : "What's happening?"}</Label>
+              <Textarea value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder={newType === "boat_showcase" ? "Tell the story behind your build…" : newType === "tie_up" ? "Drop the spot where everyone's tying up…" : "Share an update..."} rows={newType === "boat_showcase" ? 3 : 4} />
             </div>
 
             {(newType === "event" || newType === "tie_up") && (
@@ -363,6 +415,58 @@ export function FeedPage() {
               </div>
             )}
 
+            {newType === "boat_showcase" && (
+              <>
+                <div className="space-y-1.5">
+                  <Label>Engine setup</Label>
+                  <Input value={newEngineSetup} onChange={(e) => setNewEngineSetup(e.target.value)} placeholder="e.g. Twin Mercury 400R Verado" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label>Horsepower</Label>
+                    <Input type="number" inputMode="numeric" value={newHorsepower} onChange={(e) => setNewHorsepower(e.target.value)} placeholder="e.g. 800" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Top speed (mph)</Label>
+                    <Input type="number" inputMode="decimal" value={newTopSpeed} onChange={(e) => setNewTopSpeed(e.target.value)} placeholder="e.g. 72" />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Mods</Label>
+                  <Textarea value={newMods} onChange={(e) => setNewMods(e.target.value)} placeholder="e.g. Custom prop, hydraulic jack plate, JL Audio system" rows={2} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Photos</Label>
+                  <input ref={boatPhotosInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleBoatPhotosSelect} />
+                  {newPhotos.length > 0 && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {newPhotos.map((url, i) => (
+                        <div key={`${url}-${i}`} className="relative rounded-lg overflow-hidden bg-muted aspect-square">
+                          <img src={url} alt={`Boat ${i + 1}`} className="object-cover w-full h-full" />
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="icon"
+                            className="absolute top-1 right-1 h-6 w-6"
+                            onClick={() => setNewPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {newPhotos.length < 8 && (
+                    <Button type="button" variant="outline" className="w-full" disabled={isUploading} onClick={() => boatPhotosInputRef.current?.click()}>
+                      <ImagePlus className="w-4 h-4 mr-2" />
+                      {isUploading ? "Uploading..." : newPhotos.length ? "Add more photos" : "Add photos"}
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+
+            {newType !== "boat_showcase" && (
             <div className="space-y-1.5">
               <Label>Photo or video</Label>
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
@@ -406,6 +510,7 @@ export function FeedPage() {
                 </div>
               )}
             </div>
+            )}
           </div>
 
           <DialogFooter>
@@ -671,6 +776,15 @@ export function PostCard({ post, onReact, canDelete, onDelete, currentUserId, on
   const isEvent = post.postType === "event";
   const isTieUp = post.postType === "tie_up";
   const isGathering = isEvent || isTieUp;
+  const isBoat = post.postType === "boat_showcase";
+  const boatPhotos: string[] = Array.isArray(post.photos) && post.photos.length ? post.photos : (post.imageUrl ? [post.imageUrl] : []);
+  const boatSpecs: { label: string; value: string }[] = [];
+  if (isBoat) {
+    if (post.engineSetup) boatSpecs.push({ label: "Engine", value: String(post.engineSetup) });
+    if (post.horsepower != null) boatSpecs.push({ label: "Horsepower", value: `${post.horsepower} HP` });
+    if (post.topSpeed != null) boatSpecs.push({ label: "Top speed", value: `${post.topSpeed} mph` });
+    if (post.mods) boatSpecs.push({ label: "Mods", value: String(post.mods) });
+  }
   const [showComments, setShowComments] = React.useState(false);
   const [showLikes, setShowLikes] = React.useState(false);
   const likeTotal = post.likeCount || 0;
@@ -952,6 +1066,12 @@ export function PostCard({ post, onReact, canDelete, onDelete, currentUserId, on
             Tie-up
           </div>
         )}
+        {isBoat && (
+          <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-sky-600 bg-sky-500/10 px-2 py-1 rounded-full mb-2">
+            <Sailboat className="w-3.5 h-3.5" />
+            Boat Showcase
+          </div>
+        )}
         {post.title && <h4 className="font-bold text-lg mb-1">{post.title}</h4>}
         
         {isGathering && post.eventDate && (
@@ -1010,6 +1130,35 @@ export function PostCard({ post, onReact, canDelete, onDelete, currentUserId, on
               This post is no longer available.
             </div>
           )
+        ) : isBoat ? (
+          <>
+            {boatPhotos.length > 0 && (
+              boatPhotos.length === 1 ? (
+                <div className="mt-3 rounded-xl overflow-hidden bg-muted relative aspect-video">
+                  <ClickableImage src={resolveImageSrc(boatPhotos[0])} alt="Boat" className="object-cover w-full h-full" />
+                </div>
+              ) : (
+                <div className="mt-3 -mx-1 flex gap-2 overflow-x-auto pb-1 snap-x">
+                  {boatPhotos.map((url, i) => (
+                    <div key={`${url}-${i}`} className="shrink-0 w-3/4 snap-start rounded-xl overflow-hidden bg-muted relative aspect-video">
+                      <ClickableImage src={resolveImageSrc(url)} alt={`Boat ${i + 1}`} className="object-cover w-full h-full" />
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+
+            {boatSpecs.length > 0 && (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {boatSpecs.map((spec) => (
+                  <div key={spec.label} className={`rounded-lg border border-border/60 bg-muted/30 px-3 py-2 ${spec.label === "Engine" || spec.label === "Mods" ? "col-span-2" : ""}`}>
+                    <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{spec.label}</div>
+                    <div className="text-sm font-medium">{spec.value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         ) : (
           <>
             {post.imageUrl && (
