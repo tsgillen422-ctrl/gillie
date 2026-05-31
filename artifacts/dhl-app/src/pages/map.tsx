@@ -6,7 +6,7 @@ import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCr
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
 import { ClickableImage } from "@/components/ClickableImage";
-import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X, ImagePlus, Heart, Star, Search, Trash2 } from "lucide-react";
+import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X, ImagePlus, Heart, Star, Search, Trash2, Flame } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import {
@@ -457,6 +457,7 @@ export function MapPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [presenceOpen, setPresenceOpen] = useState(false);
+  const [heatmapOn, setHeatmapOn] = useState(false);
   // Who is geospatially over water (vs. on land), keyed by friend userId.
   // Off-screen markers keep their last known state, so unverified people
   // default to "on water" (shown) rather than being hidden incorrectly.
@@ -898,6 +899,86 @@ export function MapPage() {
     };
   }, [styleReady, renderPins, updateLandStates]);
 
+  // --- Live activity heatmap ---
+  // Turns the lake into a heatmap of where people are: low density reads blue
+  // (quiet), rising through green (moderate) and yellow (busy) up to red
+  // (a packed "party spot"). Built from live friend + self locations.
+  const HEAT_SOURCE = "activity-heat";
+  const HEAT_LAYER = "activity-heat-layer";
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+
+    if (!heatmapOn) {
+      if (map.getLayer(HEAT_LAYER)) map.removeLayer(HEAT_LAYER);
+      if (map.getSource(HEAT_SOURCE)) map.removeSource(HEAT_SOURCE);
+      return;
+    }
+
+    const features: any[] = [];
+    (friends ?? []).forEach((f: any) => {
+      if (f.lat != null && f.lng != null && !f.isBusiness) {
+        features.push({
+          type: "Feature",
+          properties: {},
+          geometry: { type: "Point", coordinates: [f.lng, f.lat] },
+        });
+      }
+    });
+    if (me?.currentLat != null && me?.currentLng != null) {
+      features.push({
+        type: "Feature",
+        properties: {},
+        geometry: { type: "Point", coordinates: [me.currentLng, me.currentLat] },
+      });
+    }
+    const data = { type: "FeatureCollection" as const, features };
+
+    // Add the source + heatmap layer if missing, otherwise just refresh the data.
+    // Wrapped so we can also re-run it if the basemap style reloads (which drops
+    // any custom sources/layers).
+    const ensureHeat = () => {
+      const existing = map.getSource(HEAT_SOURCE) as maplibregl.GeoJSONSource | undefined;
+      if (existing) {
+        existing.setData(data as any);
+        return;
+      }
+      map.addSource(HEAT_SOURCE, { type: "geojson", data: data as any });
+      map.addLayer({
+        id: HEAT_LAYER,
+        type: "heatmap",
+        source: HEAT_SOURCE,
+        paint: {
+          "heatmap-weight": 1,
+          "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 8, 1, 16, 3],
+          // Density ramp: blue (quiet) -> green (moderate) -> yellow (busy) -> red (party).
+          "heatmap-color": [
+            "interpolate",
+            ["linear"],
+            ["heatmap-density"],
+            0, "rgba(37,99,235,0)",
+            0.15, "rgba(37,99,235,0.7)",
+            0.4, "rgba(34,197,94,0.75)",
+            0.65, "rgba(234,179,8,0.85)",
+            1, "rgba(239,68,68,0.95)",
+          ],
+          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 8, 24, 16, 70],
+          "heatmap-opacity": 0.8,
+        },
+      });
+    };
+
+    ensureHeat();
+    // Re-add after any style reload while heatmap mode stays on.
+    const onStyleData = () => {
+      if (!map.getLayer(HEAT_LAYER)) ensureHeat();
+    };
+    map.on("styledata", onStyleData);
+    return () => {
+      map.off("styledata", onStyleData);
+    };
+  }, [heatmapOn, friends, me, styleReady]);
+
   // --- Render my own marker ---
   useEffect(() => {
     const map = mapRef.current;
@@ -1149,6 +1230,25 @@ export function MapPage() {
         </div>
       )}
 
+      {/* Heatmap legend */}
+      {heatmapOn && (
+        <div className="absolute bottom-4 left-4 z-[400] rounded-2xl bg-card/95 backdrop-blur shadow-lg border border-border px-3 py-2.5">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Flame className="h-3.5 w-3.5 text-red-500" />
+            <span className="text-xs font-semibold">Lake Activity</span>
+          </div>
+          <div
+            className="h-2 w-36 rounded-full"
+            style={{ background: "linear-gradient(to right, #2563eb, #22c55e, #eab308, #ef4444)" }}
+          />
+          <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+            <span>Quiet</span>
+            <span>Busy</span>
+            <span>Party</span>
+          </div>
+        </div>
+      )}
+
       {/* Search bar */}
       {!pinDialog.open && (
       <div className="absolute top-3 left-4 right-20 z-[400]">
@@ -1219,6 +1319,21 @@ export function MapPage() {
               {onlineCount}
             </span>
           )}
+        </Button>
+
+        {/* Heatmap mode toggle */}
+        <Button
+          size="icon"
+          className={`h-10 w-10 rounded-full shadow-md border relative ${
+            heatmapOn
+              ? "bg-gradient-to-br from-red-500 via-amber-400 to-emerald-500 text-white border-transparent"
+              : "bg-card text-foreground border-border hover:bg-muted"
+          }`}
+          onClick={() => setHeatmapOn((v) => !v)}
+          aria-label="Heatmap mode"
+          aria-pressed={heatmapOn}
+        >
+          <Flame className="h-5 w-5" />
         </Button>
 
         {/* Add-pin FAB: smaller and softer so it doesn't dominate */}
