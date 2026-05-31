@@ -131,20 +131,20 @@ export function TrendingSection() {
       <div className="flex items-center gap-2 mb-2 px-0.5">
         <h2 className="text-sm font-bold tracking-tight">Trending This Week</h2>
       </div>
-      <div className="flex gap-3 overflow-x-auto pb-1 no-scrollbar -mx-4 px-4">
+      <div className="flex flex-col gap-3">
         {items.map((item) => {
           const card = (
-            <div className="w-[160px] shrink-0 rounded-2xl border border-border/60 bg-card overflow-hidden shadow-sm transition-transform active:scale-[0.98]">
+            <div className="flex items-stretch rounded-2xl border border-border/60 bg-card overflow-hidden shadow-sm transition-transform active:scale-[0.99] hover-elevate">
               {item.imageUrl ? (
-                <div className="h-20 bg-muted overflow-hidden">
+                <div className="w-24 shrink-0 bg-muted overflow-hidden">
                   <img src={item.imageUrl} alt={item.title} className="object-cover w-full h-full" />
                 </div>
               ) : (
-                <div className={`h-20 bg-gradient-to-br ${item.accent} flex items-center justify-center`}>
+                <div className={`w-24 shrink-0 bg-gradient-to-br ${item.accent} flex items-center justify-center`}>
                   <span className="text-3xl">{item.emoji}</span>
                 </div>
               )}
-              <div className="p-2.5">
+              <div className="flex-1 min-w-0 p-3 flex flex-col justify-center">
                 <p className={`text-[10px] font-semibold uppercase tracking-wide bg-gradient-to-br ${item.accent} bg-clip-text mb-0.5`}>
                   {item.emoji} {item.label}
                 </p>
@@ -154,11 +154,11 @@ export function TrendingSection() {
             </div>
           );
           return item.href ? (
-            <Link key={item.key} href={item.href} className="shrink-0">
+            <Link key={item.key} href={item.href} className="block">
               {card}
             </Link>
           ) : (
-            <div key={item.key} className="shrink-0">
+            <div key={item.key}>
               {card}
             </div>
           );
