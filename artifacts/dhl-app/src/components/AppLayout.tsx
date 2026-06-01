@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { Home, Users, MessageCircle, MapPin, Bell, Settings, User, Search } from "lucide-react";
+import { SwipeBack } from "@/components/swipe-back";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -52,7 +53,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="flex-1 flex flex-col relative overflow-hidden min-h-0">
-        {children}
+        <SwipeBack>{children}</SwipeBack>
       </main>
 
       {/* Bottom Nav for Mobile / Shared */}
