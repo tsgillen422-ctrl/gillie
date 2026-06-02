@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { pushSubscriptionsTable } from "@workspace/db";
+import { pushSubscriptionsTable, nativePushTokensTable } from "@workspace/db";
 import { and, eq } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { vapidPublicKey, isPushConfigured } from "../lib/push";
@@ -66,6 +66,46 @@ router.post("/unsubscribe", async (req, res) => {
       and(
         eq(pushSubscriptionsTable.endpoint, endpoint),
         eq(pushSubscriptionsTable.userId, currentUserId(req)),
+      ),
+    );
+  res.json({ success: true });
+});
+
+// --- Native (APNs / iOS) push device tokens ---
+
+router.post("/native/register", async (req, res) => {
+  const { token, platform } = req.body ?? {};
+  if (typeof token !== "string" || token.length === 0) {
+    res.status(400).json({ error: "Missing device token" });
+    return;
+  }
+
+  const userId = currentUserId(req);
+  const plat = typeof platform === "string" && platform.length > 0 ? platform : "ios";
+
+  await db
+    .insert(nativePushTokensTable)
+    .values({ userId, token, platform: plat })
+    .onConflictDoUpdate({
+      target: nativePushTokensTable.token,
+      set: { userId, platform: plat },
+    });
+
+  res.json({ success: true });
+});
+
+router.post("/native/unregister", async (req, res) => {
+  const { token } = req.body ?? {};
+  if (typeof token !== "string") {
+    res.status(400).json({ error: "Missing device token" });
+    return;
+  }
+  await db
+    .delete(nativePushTokensTable)
+    .where(
+      and(
+        eq(nativePushTokensTable.token, token),
+        eq(nativePushTokensTable.userId, currentUserId(req)),
       ),
     );
   res.json({ success: true });

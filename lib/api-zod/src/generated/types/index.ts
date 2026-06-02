@@ -42,6 +42,8 @@ export * from './messageInput';
 export * from './messageInputMediaType';
 export * from './messageMediaType';
 export * from './moonPhase';
+export * from './nativePushTokenInput';
+export * from './nativePushUnregisterInput';
 export * from './notification';
 export * from './notificationType';
 export * from './pin';

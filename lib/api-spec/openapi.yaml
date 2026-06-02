@@ -1143,6 +1143,34 @@ paths:
       responses:
         "200":
           description: Unsubscribed
+  /push/native/register:
+    post:
+      operationId: registerNativePush
+      tags: [notifications]
+      summary: Register a native (APNs/iOS) device token for the current user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NativePushTokenInput"
+      responses:
+        "200":
+          description: Registered
+  /push/native/unregister:
+    post:
+      operationId: unregisterNativePush
+      tags: [notifications]
+      summary: Remove a native (APNs/iOS) device token for the current user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NativePushUnregisterInput"
+      responses:
+        "200":
+          description: Unregistered
 
   /pins/hazards/active:
     get:
@@ -2405,6 +2433,22 @@ components:
       required: [endpoint]
       properties:
         endpoint:
+          type: string
+
+    NativePushTokenInput:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+        platform:
+          type: string
+
+    NativePushUnregisterInput:
+      type: object
+      required: [token]
+      properties:
+        token:
           type: string
 
     ReportInput:

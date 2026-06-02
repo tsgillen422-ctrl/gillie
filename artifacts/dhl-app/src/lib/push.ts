@@ -3,11 +3,18 @@ import {
   subscribePush,
   unsubscribePush,
 } from "@workspace/api-client-react";
+import {
+  isNativePlatform,
+  enableNativePush,
+  disableNativePush,
+  isNativePushEnabled,
+} from "./native-push";
 
 const SW_URL = `${import.meta.env.BASE_URL}sw.js`;
 const SW_SCOPE = import.meta.env.BASE_URL;
 
 export function isPushSupported(): boolean {
+  if (isNativePlatform()) return true;
   return (
     typeof window !== "undefined" &&
     "serviceWorker" in navigator &&
@@ -36,6 +43,7 @@ export async function registerServiceWorker(): Promise<ServiceWorkerRegistration
 }
 
 export async function isPushEnabled(): Promise<boolean> {
+  if (isNativePlatform()) return isNativePushEnabled();
   const reg = await getServiceWorkerRegistration();
   if (!reg) return false;
   const sub = await reg.pushManager.getSubscription();
@@ -71,6 +79,7 @@ function serialize(sub: PushSubscription): {
  * Throws Error("unsupported") or Error("denied") for the common failure paths.
  */
 export async function enablePush(): Promise<void> {
+  if (isNativePlatform()) return enableNativePush();
   if (!isPushSupported()) throw new Error("unsupported");
 
   const permission = await Notification.requestPermission();
@@ -93,6 +102,7 @@ export async function enablePush(): Promise<void> {
 
 /** Unsubscribe locally and remove the subscription from the server. */
 export async function disablePush(): Promise<void> {
+  if (isNativePlatform()) return disableNativePush();
   const reg = await getServiceWorkerRegistration();
   if (!reg) return;
   const sub = await reg.pushManager.getSubscription();

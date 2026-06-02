@@ -42,6 +42,8 @@ import type {
   LocationUpdate,
   Message,
   MessageInput,
+  NativePushTokenInput,
+  NativePushUnregisterInput,
   Notification,
   Pin,
   PinInput,
@@ -4385,6 +4387,148 @@ export const useUnsubscribePush = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUnsubscribePushMutationOptions(options));
+    }
+
+export const getRegisterNativePushUrl = () => {
+
+
+
+
+  return `/api/push/native/register`
+}
+
+/**
+ * @summary Register a native (APNs/iOS) device token for the current user
+ */
+export const registerNativePush = async (nativePushTokenInput: NativePushTokenInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRegisterNativePushUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      nativePushTokenInput,)
+  }
+);}
+
+
+
+
+export const getRegisterNativePushMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerNativePush>>, TError,{data: BodyType<NativePushTokenInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof registerNativePush>>, TError,{data: BodyType<NativePushTokenInput>}, TContext> => {
+
+const mutationKey = ['registerNativePush'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof registerNativePush>>, {data: BodyType<NativePushTokenInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  registerNativePush(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RegisterNativePushMutationResult = NonNullable<Awaited<ReturnType<typeof registerNativePush>>>
+    export type RegisterNativePushMutationBody = BodyType<NativePushTokenInput>
+    export type RegisterNativePushMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Register a native (APNs/iOS) device token for the current user
+ */
+export const useRegisterNativePush = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof registerNativePush>>, TError,{data: BodyType<NativePushTokenInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof registerNativePush>>,
+        TError,
+        {data: BodyType<NativePushTokenInput>},
+        TContext
+      > => {
+      return useMutation(getRegisterNativePushMutationOptions(options));
+    }
+
+export const getUnregisterNativePushUrl = () => {
+
+
+
+
+  return `/api/push/native/unregister`
+}
+
+/**
+ * @summary Remove a native (APNs/iOS) device token for the current user
+ */
+export const unregisterNativePush = async (nativePushUnregisterInput: NativePushUnregisterInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getUnregisterNativePushUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      nativePushUnregisterInput,)
+  }
+);}
+
+
+
+
+export const getUnregisterNativePushMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unregisterNativePush>>, TError,{data: BodyType<NativePushUnregisterInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unregisterNativePush>>, TError,{data: BodyType<NativePushUnregisterInput>}, TContext> => {
+
+const mutationKey = ['unregisterNativePush'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unregisterNativePush>>, {data: BodyType<NativePushUnregisterInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  unregisterNativePush(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnregisterNativePushMutationResult = NonNullable<Awaited<ReturnType<typeof unregisterNativePush>>>
+    export type UnregisterNativePushMutationBody = BodyType<NativePushUnregisterInput>
+    export type UnregisterNativePushMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Remove a native (APNs/iOS) device token for the current user
+ */
+export const useUnregisterNativePush = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unregisterNativePush>>, TError,{data: BodyType<NativePushUnregisterInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unregisterNativePush>>,
+        TError,
+        {data: BodyType<NativePushUnregisterInput>},
+        TContext
+      > => {
+      return useMutation(getUnregisterNativePushMutationOptions(options));
     }
 
 export const getGetActiveHazardsUrl = () => {

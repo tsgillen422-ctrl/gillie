@@ -2295,6 +2295,23 @@ export const UnsubscribePushBody = zod.object({
 
 
 /**
+ * @summary Register a native (APNs/iOS) device token for the current user
+ */
+export const RegisterNativePushBody = zod.object({
+  "token": zod.string(),
+  "platform": zod.string().optional()
+})
+
+
+/**
+ * @summary Remove a native (APNs/iOS) device token for the current user
+ */
+export const UnregisterNativePushBody = zod.object({
+  "token": zod.string()
+})
+
+
+/**
  * @summary Get active (non-expired) hazard pins
  */
 export const GetActiveHazardsResponseItem = zod.object({

@@ -786,6 +786,15 @@ export interface PushUnsubscribeInput {
   endpoint: string;
 }
 
+export interface NativePushTokenInput {
+  token: string;
+  platform?: string;
+}
+
+export interface NativePushUnregisterInput {
+  token: string;
+}
+
 export type ReportInputTargetType = typeof ReportInputTargetType[keyof typeof ReportInputTargetType];
 
 

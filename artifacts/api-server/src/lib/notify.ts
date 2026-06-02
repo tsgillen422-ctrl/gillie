@@ -1,12 +1,17 @@
 import { db } from "@workspace/db";
 import { notificationsTable } from "@workspace/db";
 import { sendPushToUser, type PushPayload } from "./push";
+import { sendApnsToUser } from "./apns";
 import { logger } from "./logger";
 
-/** Fire-and-forget push: never let a push failure break the calling flow. */
+/** Fire-and-forget push: never let a push failure break the calling flow.
+ * Delivers over both web push and native (APNs); each is independently gated. */
 async function safePush(userId: number, payload: PushPayload): Promise<void> {
   try {
-    await sendPushToUser(userId, payload);
+    await Promise.all([
+      sendPushToUser(userId, payload),
+      sendApnsToUser(userId, payload),
+    ]);
   } catch (err) {
     logger.warn({ err, userId }, "Push dispatch failed (notification still saved)");
   }
