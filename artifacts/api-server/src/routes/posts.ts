@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, postsTable, postLikesTable, postCommentsTable, commentLikesTable, pinsTable, eventRsvpsTable, mutesTable, savedPostsTable } from "@workspace/db";
-import { eq, and, sql, desc, count, inArray, notInArray } from "drizzle-orm";
+import { eq, and, gte, sql, desc, count, inArray, notInArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 
 const router = Router();
@@ -184,7 +184,16 @@ router.get("/summary", async (req, res) => {
   const [postCountResult] = await db.select({ value: count() }).from(postsTable);
   const [eventCountResult] = await db.select({ value: count() }).from(postsTable).where(eq(postsTable.postType, "event"));
   const [pinCountResult] = await db.select({ value: count() }).from(pinsTable);
-  const [userCountResult] = await db.select({ value: count() }).from(usersTable).where(eq(usersTable.isOnline, true));
+  // "On the lake" = currently online. We treat presence as stale after a short
+  // window, because is_online is set when a user shares location but is never
+  // cleared when they leave. Without this, anyone who ever shared a location
+  // (including demo accounts) stays counted forever.
+  const ONLINE_WINDOW_MINUTES = 10;
+  const onlineSince = new Date(Date.now() - ONLINE_WINDOW_MINUTES * 60 * 1000);
+  const [userCountResult] = await db
+    .select({ value: count() })
+    .from(usersTable)
+    .where(and(eq(usersTable.isOnline, true), gte(usersTable.lastSeen, onlineSince)));
 
   const upcomingEvents = await db
     .select()

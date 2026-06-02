@@ -1,4 +1,5 @@
 - [Follower counts](follower-counts.md) — schema's followerCount/followingCount serial columns are bogus; always compute from friend_requests.
+- [Presence staleness](presence-online-staleness.md) — is_online is set on location-share but never cleared; count "on the lake" with a last_seen freshness window.
 - [Realtime websockets](realtime-websockets.md) — ws works through the Replit proxy at /api/ws; keep polling as fallback.
 - [User deletion cascade](user-deletion-cascade.md) — no DB cascades; delete user's own data only, never wipe shared conversations/other users' messages.
 - [Web push](web-push.md) — guard subscribe against cross-user endpoint rebind (409); keep push best-effort; gate on full VAPID config.
