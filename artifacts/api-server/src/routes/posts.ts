@@ -241,7 +241,8 @@ router.delete("/:postId", async (req, res) => {
   const postId = parseInt(req.params.postId);
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!post) return res.status(404).json({ error: "Post not found" });
-  if (post.userId !== uid) {
+  const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, uid) });
+  if (post.userId !== uid && !me?.isAdmin) {
     return res.status(403).json({ error: "You can only delete your own posts" });
   }
   await db.delete(postLikesTable).where(eq(postLikesTable.postId, postId));

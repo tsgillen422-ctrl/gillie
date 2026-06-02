@@ -363,7 +363,7 @@ export function FeedPage() {
               <PostCard
                 post={post}
                 onReact={(reaction) => reactPost.mutate({ postId: post.id, data: { reaction } }, { onSuccess: refreshPosts })}
-                canDelete={me != null && post.userId === me.id}
+                canDelete={me != null && (post.userId === me.id || me.isAdmin)}
                 onDelete={() => handleDeletePost(post.id)}
                 currentUserId={me?.id}
                 onOpen={() => setOpenPostId(post.id)}
@@ -395,7 +395,7 @@ export function FeedPage() {
             <PostCard
               post={openPost}
               onReact={(reaction) => reactPost.mutate({ postId: openPost.id, data: { reaction } }, { onSuccess: refreshPosts })}
-              canDelete={me != null && openPost.userId === me.id}
+              canDelete={me != null && (openPost.userId === me.id || me.isAdmin)}
               onDelete={() => handleDeletePost(openPost.id)}
               currentUserId={me?.id}
             />

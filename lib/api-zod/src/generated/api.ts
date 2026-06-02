@@ -350,6 +350,14 @@ export const GetUserResponse = zod.object({
 
 
 /**
+ * @summary Permanently delete a user and all their content (admin only)
+ */
+export const DeleteUserParams = zod.object({
+  "userId": zod.coerce.number()
+})
+
+
+/**
  * @summary Get all accepted friends/follows
  */
 export const GetFriendsResponseItem = zod.object({

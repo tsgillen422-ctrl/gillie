@@ -1,10 +1,10 @@
 import React from "react";
-import { useParams, Link } from "wouter";
-import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useReactToPost, useDeletePost, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useGetFriends, useGetFollowers, useGetFollowing, getGetUserQueryKey, getGetGalleryQueryKey, getGetPostsQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey } from "@workspace/api-client-react";
+import { useParams, Link, useLocation } from "wouter";
+import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useReactToPost, useDeletePost, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useDeleteUser, useGetFriends, useGetFollowers, useGetFollowing, getGetUserQueryKey, getGetGalleryQueryKey, getGetPostsQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2 } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2 } from "lucide-react";
 import { ReportDialog } from "@/components/ReportDialog";
 import { BadgeRow } from "@/components/Badges";
 import { Badge } from "@/components/ui/badge";
@@ -230,6 +230,8 @@ export function ProfilePage() {
   const blockUser = useBlockUser();
   const [reportOpen, setReportOpen] = React.useState(false);
   const unblockUser = useUnblockUser();
+  const deleteUser = useDeleteUser();
+  const [, navigate] = useLocation();
 
   const refreshRelationship = () => {
     queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(id) });
@@ -263,6 +265,14 @@ export function ProfilePage() {
     unblockUser.mutate({ userId: id }, {
       onSuccess: () => { toast.success("User unblocked."); refreshRelationship(); },
       onError: () => toast.error("Couldn't unblock this user."),
+    });
+  const handleDeleteProfile = () =>
+    deleteUser.mutate({ userId: id }, {
+      onSuccess: () => {
+        toast.success(`Deleted @${user?.username}'s profile.`);
+        navigate("/");
+      },
+      onError: () => toast.error("Couldn't delete this profile."),
     });
 
   return (
@@ -436,6 +446,29 @@ export function ProfilePage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  {me?.isAdmin && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                          <Trash2 className="w-4 h-4 mr-2" /> Delete profile
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete {user.displayName}'s profile?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This permanently removes their account and all of their posts, pins, catches, photos, messages, and other content. This can't be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDeleteProfile} disabled={deleteUser.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete profile
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </div>
               </>
             )}

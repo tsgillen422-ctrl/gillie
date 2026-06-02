@@ -1,9 +1,137 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, friendRequestsTable, blocksTable, postsTable, pinsTable, catchesTable } from "@workspace/db";
-import { eq, ilike, or, and, count, notInArray } from "drizzle-orm";
+import {
+  usersTable,
+  friendRequestsTable,
+  blocksTable,
+  postsTable,
+  pinsTable,
+  catchesTable,
+  postLikesTable,
+  postCommentsTable,
+  commentLikesTable,
+  eventRsvpsTable,
+  savedPostsTable,
+  mutesTable,
+  reportsTable,
+  pinLikesTable,
+  pinFavoritesTable,
+  galleryItemsTable,
+  conversationsTable,
+  conversationParticipantsTable,
+  messagesTable,
+  notificationsTable,
+  pushSubscriptionsTable,
+  nativePushTokensTable,
+} from "@workspace/db";
+import { eq, ilike, or, and, count, notInArray, inArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { createNotifications } from "../lib/notify";
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+// Permanently delete a user and every record that references them.
+async function deleteUserAndData(tx: Tx, userId: number): Promise<void> {
+  const postIds = (
+    await tx.select({ id: postsTable.id }).from(postsTable).where(eq(postsTable.userId, userId))
+  ).map((r) => r.id);
+  const pinIds = (
+    await tx.select({ id: pinsTable.id }).from(pinsTable).where(eq(pinsTable.userId, userId))
+  ).map((r) => r.id);
+  const convIds = [
+    ...new Set(
+      (
+        await tx
+          .select({ conversationId: conversationParticipantsTable.conversationId })
+          .from(conversationParticipantsTable)
+          .where(eq(conversationParticipantsTable.userId, userId))
+      ).map((r) => r.conversationId)
+    ),
+  ];
+
+  // Comments authored by the user or left on the user's posts.
+  const commentConds = [eq(postCommentsTable.userId, userId)];
+  if (postIds.length) commentConds.push(inArray(postCommentsTable.postId, postIds));
+  const commentIds = (
+    await tx.select({ id: postCommentsTable.id }).from(postCommentsTable).where(or(...commentConds))
+  ).map((r) => r.id);
+
+  // Comment likes by the user or on those comments.
+  const commentLikeConds = [eq(commentLikesTable.userId, userId)];
+  if (commentIds.length) commentLikeConds.push(inArray(commentLikesTable.commentId, commentIds));
+  await tx.delete(commentLikesTable).where(or(...commentLikeConds));
+
+  if (commentIds.length) {
+    await tx.delete(postCommentsTable).where(inArray(postCommentsTable.id, commentIds));
+  }
+
+  // Post engagement by the user or on the user's posts.
+  const postLikeConds = [eq(postLikesTable.userId, userId)];
+  if (postIds.length) postLikeConds.push(inArray(postLikesTable.postId, postIds));
+  await tx.delete(postLikesTable).where(or(...postLikeConds));
+
+  const savedConds = [eq(savedPostsTable.userId, userId)];
+  if (postIds.length) savedConds.push(inArray(savedPostsTable.postId, postIds));
+  await tx.delete(savedPostsTable).where(or(...savedConds));
+
+  const rsvpConds = [eq(eventRsvpsTable.userId, userId)];
+  if (postIds.length) rsvpConds.push(inArray(eventRsvpsTable.postId, postIds));
+  await tx.delete(eventRsvpsTable).where(or(...rsvpConds));
+
+  await tx.delete(postsTable).where(eq(postsTable.userId, userId));
+
+  // Pin engagement by the user or on the user's pins.
+  const pinLikeConds = [eq(pinLikesTable.userId, userId)];
+  if (pinIds.length) pinLikeConds.push(inArray(pinLikesTable.pinId, pinIds));
+  await tx.delete(pinLikesTable).where(or(...pinLikeConds));
+
+  const pinFavConds = [eq(pinFavoritesTable.userId, userId)];
+  if (pinIds.length) pinFavConds.push(inArray(pinFavoritesTable.pinId, pinIds));
+  await tx.delete(pinFavoritesTable).where(or(...pinFavConds));
+
+  await tx.delete(pinsTable).where(eq(pinsTable.userId, userId));
+
+  await tx.delete(catchesTable).where(eq(catchesTable.userId, userId));
+  await tx.delete(galleryItemsTable).where(eq(galleryItemsTable.userId, userId));
+
+  // Remove the user's own messages and their participation, but preserve
+  // conversations (and other users' messages) that still have participants.
+  await tx.delete(messagesTable).where(eq(messagesTable.senderId, userId));
+  await tx.delete(conversationParticipantsTable).where(eq(conversationParticipantsTable.userId, userId));
+
+  // Drop any conversation the user was in that now has no participants left.
+  for (const convId of convIds) {
+    const [remaining] = await tx
+      .select({ value: count() })
+      .from(conversationParticipantsTable)
+      .where(eq(conversationParticipantsTable.conversationId, convId));
+    if ((remaining?.value ?? 0) === 0) {
+      await tx.delete(messagesTable).where(eq(messagesTable.conversationId, convId));
+      await tx.delete(conversationsTable).where(eq(conversationsTable.id, convId));
+    }
+  }
+
+  await tx.delete(notificationsTable).where(eq(notificationsTable.userId, userId));
+  await tx
+    .delete(friendRequestsTable)
+    .where(or(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.followeeId, userId)));
+  await tx
+    .delete(blocksTable)
+    .where(or(eq(blocksTable.blockerId, userId), eq(blocksTable.blockedId, userId)));
+  await tx.delete(mutesTable).where(or(eq(mutesTable.muterId, userId), eq(mutesTable.mutedId, userId)));
+  await tx
+    .delete(reportsTable)
+    .where(
+      or(
+        eq(reportsTable.reporterId, userId),
+        and(eq(reportsTable.targetType, "user"), eq(reportsTable.targetId, userId))
+      )
+    );
+  await tx.delete(pushSubscriptionsTable).where(eq(pushSubscriptionsTable.userId, userId));
+  await tx.delete(nativePushTokensTable).where(eq(nativePushTokensTable.userId, userId));
+
+  await tx.delete(usersTable).where(eq(usersTable.id, userId));
+}
 
 const router = Router();
 
@@ -251,6 +379,23 @@ router.patch("/:userId/admin", async (req, res) => {
     .where(eq(usersTable.id, userId))
     .returning();
   res.json({ ...formatUser(updated), ...(await getFollowCounts(updated.id)) });
+});
+
+router.delete("/:userId", async (req, res) => {
+  const uid = currentUserId(req);
+  if (!(await isAdmin(uid))) return res.status(403).json({ error: "Admin access required" });
+  const userId = parseInt(req.params.userId);
+  if (Number.isNaN(userId)) return res.status(400).json({ error: "Invalid user id" });
+  if (userId === uid) return res.status(400).json({ error: "You can't delete your own account" });
+  const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, userId) });
+  if (!target) return res.status(404).json({ error: "User not found" });
+  if (target.isAdmin) {
+    return res.status(400).json({ error: "Remove this user's admin access before deleting them" });
+  }
+  await db.transaction(async (tx) => {
+    await deleteUserAndData(tx, userId);
+  });
+  res.json({ success: true });
 });
 
 router.get("/:userId", async (req, res) => {

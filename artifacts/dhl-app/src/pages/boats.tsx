@@ -157,7 +157,7 @@ export function BoatsPage() {
               <PostCard
                 post={b}
                 onReact={(reaction) => reactPost.mutate({ postId: b.id, data: { reaction } }, { onSuccess: refresh })}
-                canDelete={me != null && b.userId === me.id}
+                canDelete={me != null && (b.userId === me.id || me.isAdmin)}
                 onDelete={() => handleDelete(b.id)}
                 currentUserId={me?.id}
               />

@@ -184,6 +184,28 @@ paths:
         "404":
           description: Not found
 
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Permanently delete a user and all their content (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Not found
+
   /friends:
     get:
       operationId: getFriends

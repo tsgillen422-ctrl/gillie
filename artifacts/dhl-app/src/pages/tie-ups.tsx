@@ -135,7 +135,7 @@ export function TieUpsPage() {
               <PostCard
                 post={t}
                 onReact={(reaction) => reactPost.mutate({ postId: t.id, data: { reaction } }, { onSuccess: refresh })}
-                canDelete={me != null && t.userId === me.id}
+                canDelete={me != null && (t.userId === me.id || me.isAdmin)}
                 onDelete={() => handleDelete(t.id)}
                 currentUserId={me?.id}
               />
