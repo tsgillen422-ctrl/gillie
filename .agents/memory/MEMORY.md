@@ -3,6 +3,7 @@
 - [Web push](web-push.md) — guard subscribe against cross-user endpoint rebind (409); keep push best-effort; gate on full VAPID config.
 - [Conditions data sources](conditions-data-sources.md) — /api/conditions real feeds (Open-Meteo, USACE CWMS water level) + which metrics are estimates; CWMS catalog quirks.
 - [Auth architecture](auth-architecture.md) — Clerk cookie-based same-origin (no Bearer); api-server has NO tsc gate so type errors won't catch runtime bugs.
+- [Admin & prod DB](admin-and-prod-db.md) — admin=users.is_admin w/ first-admin deadlock (use ADMIN_CLERK_IDS); users matched by clerkId; prod DB is separate + read-only to agent.
 - [ImageLightbox modal menus](imagelightbox-modal-menus.md) — no Radix portals inside the z-[100] lightbox; keep body-scroll/focus effect keyed on `open` only.
 - [hover-elevate vs absolute](elevate-overrides-absolute.md) — never put `absolute` on a ui Button; elevate's `:not()` rule forces position:relative. Wrap in an absolute div.
 - [Post/pin deletion cleanup](post-pin-deletion-cleanup.md) — no FK onDelete cascade; delete child rows (likes/comments/rsvps/saved, pin likes/favorites) before the parent.

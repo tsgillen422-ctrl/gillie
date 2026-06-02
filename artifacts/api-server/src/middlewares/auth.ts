@@ -2,6 +2,35 @@ import type { Request, Response, NextFunction } from "express";
 import { getAuth, clerkClient } from "@clerk/express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { logger } from "../lib/logger";
+
+// Clerk user IDs that should always have admin access. Lets the app owner
+// bootstrap admin in any environment (incl. a fresh production database)
+// without an existing admin to promote them.
+const ADMIN_CLERK_IDS = (process.env.ADMIN_CLERK_IDS ?? "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+type LocalUser = typeof usersTable.$inferSelect;
+
+// Promote a configured owner to admin on login if they aren't already. Only
+// writes once (when isAdmin flips), so it's a no-op for everyone else.
+async function ensureOwnerAdmin(user: LocalUser): Promise<LocalUser> {
+  if (user.isAdmin || !user.clerkId || !ADMIN_CLERK_IDS.includes(user.clerkId)) {
+    return user;
+  }
+  const [updated] = await db
+    .update(usersTable)
+    .set({ isAdmin: true })
+    .where(eq(usersTable.id, user.id))
+    .returning();
+  logger.info(
+    { userId: user.id, clerkId: user.clerkId },
+    "Auto-promoted configured owner to admin",
+  );
+  return updated ?? user;
+}
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -71,6 +100,7 @@ export async function requireAuth(
       where: eq(usersTable.clerkId, clerkUserId),
     });
     if (!user) user = await provisionLocalUser(clerkUserId);
+    user = await ensureOwnerAdmin(user);
     req.localUserId = user.id;
     next();
   } catch (err) {
