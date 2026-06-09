@@ -4,7 +4,7 @@ import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreate
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Fish, Tent, Anchor, Mountain, Waves, Camera, Trophy, Image as ImageIcon, Bookmark, FileText, ChevronRight, Star } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Fish, Tent, Anchor, Mountain, Waves, Camera, Image as ImageIcon, Bookmark, FileText, ChevronRight, Star } from "lucide-react";
 import { ReportDialog } from "@/components/ReportDialog";
 import { BadgeRow, badgeMeta } from "@/components/Badges";
 import { Badge } from "@/components/ui/badge";
@@ -494,6 +494,11 @@ export function ProfilePage() {
       })),
     [user],
   );
+  const earnedBadges = achievements.filter((a) => a.earned);
+  const lockedBadges = achievements.filter((a) => !a.earned);
+  // Most-recent first (advanced badges sit later in the catalog and are earned later).
+  const recentEarned = [...earnedBadges].reverse();
+  const [badgesOpen, setBadgesOpen] = React.useState(false);
 
   const recentActivity = React.useMemo(() => {
     type Item = { key: string; Icon: any; color: string; label: string; time: number };
@@ -604,7 +609,32 @@ export function ProfilePage() {
                 </h2>
                 <p className="text-muted-foreground text-sm">@{user.username}</p>
 
-                <BadgeRow badges={user.badges} />
+                <BadgeRow badges={user.badges} limit={4} onViewAll={() => setBadgesOpen(true)} />
+
+                <Dialog open={badgesOpen} onOpenChange={setBadgesOpen}>
+                  <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Badges</DialogTitle>
+                      <DialogDescription>
+                        {earnedBadges.length} earned · {lockedBadges.length} to unlock
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-5">
+                      {recentEarned.length > 0 && (
+                        <div>
+                          <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2.5">Earned</h4>
+                          <AchievementGrid items={recentEarned} />
+                        </div>
+                      )}
+                      {lockedBadges.length > 0 && (
+                        <div>
+                          <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2.5">Locked</h4>
+                          <AchievementGrid items={lockedBadges} />
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
 
                 {/* Quick stats */}
                 <div className="grid grid-cols-4 gap-2 w-full mt-5">
@@ -736,12 +766,6 @@ export function ProfilePage() {
             </div>
 
             <WaveDivider />
-
-            {/* Achievements */}
-            <div className={`${CARD} p-4`}>
-              <SectionTitle icon={Trophy}>Achievements</SectionTitle>
-              <AchievementGrid items={achievements} />
-            </div>
 
             {/* Gallery preview */}
             <div className={`${CARD} p-4`}>

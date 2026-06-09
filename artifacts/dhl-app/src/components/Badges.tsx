@@ -41,12 +41,24 @@ export function badgeMeta(key: string): BadgeMeta {
   return BADGE_META[key] ?? FALLBACK_META;
 }
 
-export function BadgeRow({ badges }: { badges?: BadgeItem[] | null }) {
+export function BadgeRow({
+  badges,
+  limit,
+  onViewAll,
+}: {
+  badges?: BadgeItem[] | null;
+  limit?: number;
+  onViewAll?: () => void;
+}) {
   const earned = (badges ?? []).filter((b) => b.earned);
-  if (earned.length === 0) return null;
+  // Badges are computed live with no earned-at timestamp, so approximate
+  // "most recent" by catalog tier: advanced badges sit later and are earned later.
+  const ordered = [...earned].reverse();
+  const shown = typeof limit === "number" ? ordered.slice(0, limit) : ordered;
+  if (shown.length === 0 && !onViewAll) return null;
   return (
     <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
-      {earned.map((b) => {
+      {shown.map((b) => {
         const { Icon, pill } = badgeMeta(b.key);
         return (
           <span
@@ -59,6 +71,15 @@ export function BadgeRow({ badges }: { badges?: BadgeItem[] | null }) {
           </span>
         );
       })}
+      {onViewAll && (
+        <button
+          type="button"
+          onClick={onViewAll}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-semibold text-muted-foreground hover-elevate active-elevate-2"
+        >
+          View all
+        </button>
+      )}
     </div>
   );
 }
