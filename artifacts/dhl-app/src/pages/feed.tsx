@@ -305,7 +305,9 @@ export function FeedPage() {
   const { data: conditions } = useGetConditions({ query: { refetchInterval: 1000 * 60 * 10 } });
   const greetingPrefix = (() => {
     const h = new Date().getHours();
-    return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+    if (h >= 5 && h < 12) return "Good Morning";
+    if (h >= 12 && h < 17) return "Good Afternoon";
+    return "Good Evening";
   })();
   const firstName = me?.displayName?.trim().split(/\s+/)[0] || me?.username || "friend";
   const WeatherIcon = weatherIcon(conditions?.weatherCode, conditions?.isDay ?? undefined);
