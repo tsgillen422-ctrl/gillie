@@ -51,6 +51,8 @@ import {
   Navigation,
   CalendarHeart,
   Images,
+  Image as ImageIcon,
+  Video as VideoIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -376,7 +378,8 @@ export function MessageThreadPage() {
   const [text, setText] = React.useState("");
   const [pending, setPending] = React.useState<{ objectPath: string; type: "image" | "video" } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const photoRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -514,7 +517,7 @@ export function MessageThreadPage() {
 
   const handleQuickAction = (key: string) => {
     if (key === "photo") {
-      fileRef.current?.click();
+      photoRef.current?.click();
       return;
     }
     const prefill: Record<string, string> = {
@@ -758,17 +761,31 @@ export function MessageThreadPage() {
             </div>
           )}
           <form onSubmit={handleSend} className="flex items-end gap-2">
-            <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFile} />
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              disabled={isUploading || !!pending}
-              onClick={() => fileRef.current?.click()}
-              className="h-11 w-11 rounded-full shrink-0"
-            >
-              {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
-            </Button>
+            <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+            <input ref={videoRef} type="file" accept="video/*" className="hidden" onChange={handleFile} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  disabled={isUploading || !!pending}
+                  className="h-11 w-11 rounded-full shrink-0"
+                >
+                  {isUploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImagePlus className="h-5 w-5" />}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" side="top">
+                <DropdownMenuItem onSelect={() => photoRef.current?.click()}>
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                  Photo
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => videoRef.current?.click()}>
+                  <VideoIcon className="mr-2 h-4 w-4" />
+                  Video
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <div className="flex-1 relative">
               <Input
                 ref={inputRef}
