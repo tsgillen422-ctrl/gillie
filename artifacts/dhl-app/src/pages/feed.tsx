@@ -1,15 +1,14 @@
 import React from "react";
-import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useGetPostLikes, useCreatePostComment, useDeletePostComment, useReactToComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useShareToProfile, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey } from "@workspace/api-client-react";
+import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useGetPostLikes, useCreatePostComment, useDeletePostComment, useReactToComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useShareToProfile, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey, useGetConditions } from "@workspace/api-client-react";
 import { PostInputPostType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { UserAvatar } from "@/components/UserAvatar";
-import { ConditionsWidget } from "@/components/ConditionsWidget";
 import { HazardBanner } from "@/components/HazardBanner";
 import { TrendingSection } from "@/components/TrendingSection";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Link, useSearch } from "wouter";
-import { Heart, MessageCircle, Share2, Calendar, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, Flag, Bookmark, BookmarkCheck, VolumeX, Link2, Repeat2, Anchor, Sailboat } from "lucide-react";
+import { Heart, MessageCircle, Share2, Calendar, CalendarPlus, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, Flag, Bookmark, BookmarkCheck, VolumeX, Link2, Repeat2, Anchor, Sailboat, Search, Bell, Sun, Moon, Cloud, CloudSun, CloudMoon, CloudRain, CloudSnow, CloudFog, CloudLightning, Fish, Camera, Waves, Wind, Gauge, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ReportDialog } from "@/components/ReportDialog";
-import dhlLogo from "@/assets/dhl-logo.png";
+import heroImg from "@assets/IMG_6055_1780988762439.jpeg";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -43,6 +42,37 @@ import { REACTIONS, REACTION_MAP, DEFAULT_REACTION, type ReactionKey } from "@/l
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+
+function windDirLabel(deg?: number | null): string {
+  if (deg == null) return "";
+  const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  return dirs[Math.round(deg / 45) % 8];
+}
+
+function weatherIcon(code?: number | null, isDay?: boolean) {
+  if (code == null) return CloudSun;
+  if (code === 0) return isDay === false ? Moon : Sun;
+  if (code <= 2) return isDay === false ? CloudMoon : CloudSun;
+  if (code === 3) return Cloud;
+  if (code >= 45 && code <= 48) return CloudFog;
+  if (code >= 51 && code <= 67) return CloudRain;
+  if (code >= 71 && code <= 77) return CloudSnow;
+  if (code >= 80 && code <= 82) return CloudRain;
+  if (code >= 95) return CloudLightning;
+  return CloudSun;
+}
+
+const advisoryStyles: Record<string, { wrap: string; icon: typeof Info }> = {
+  warning: { wrap: "bg-red-500/10 border-red-500/30 text-red-700 dark:text-red-300", icon: AlertTriangle },
+  caution: { wrap: "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300", icon: Info },
+  good: { wrap: "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300", icon: CheckCircle2 },
+};
+
+const pressureStyles: Record<string, { wrap: string; label: string }> = {
+  high: { wrap: "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300", label: "High" },
+  moderate: { wrap: "bg-sky-500/10 border-sky-500/30 text-sky-700 dark:text-sky-300", label: "Moderate" },
+  low: { wrap: "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300", label: "Low" },
+};
 
 export function FeedPage() {
   const [activeTab, setActiveTab] = React.useState<"all" | "post" | "event" | "business" | "trending" | "saved">("all");
@@ -272,74 +302,228 @@ export function FeedPage() {
     );
   };
 
+  const { data: conditions } = useGetConditions({ query: { refetchInterval: 1000 * 60 * 10 } });
+  const greetingPrefix = (() => {
+    const h = new Date().getHours();
+    return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+  })();
+  const firstName = me?.displayName?.trim().split(/\s+/)[0] || me?.username || "friend";
+  const WeatherIcon = weatherIcon(conditions?.weatherCode, conditions?.isDay ?? undefined);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(search);
+    if (params.get("compose") === "1") {
+      setComposerOpen(true);
+      params.delete("compose");
+      const qs = params.toString();
+      window.history.replaceState(null, "", `/feed${qs ? `?${qs}` : ""}`);
+    }
+  }, [search]);
+
   return (
     <div className="flex flex-col h-full min-w-0 bg-muted/30">
       <div className="flex-1 overflow-y-auto">
-        {/* Logo + quick stats: scrolls away with the page */}
-        <div className="bg-card">
+        {/* Immersive hero: scrolls away with the page */}
+        <div className="relative isolate">
           <img
-            src={dhlLogo}
-            alt="Gillie"
-            className="block w-full h-auto mb-1 object-contain select-none [-webkit-mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)] [mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)]"
+            src={heroImg}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 -z-10 h-full w-full object-cover select-none"
             draggable={false}
           />
+          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/40 via-black/25 to-black/75" />
+          <div className="px-4 pb-5" style={{ paddingTop: "max(env(safe-area-inset-top), 0.85rem)" }}>
+            {/* Top bar */}
+            <div className="flex items-center justify-between pt-1.5">
+              <span className="font-serif italic text-[26px] leading-none text-white drop-shadow-md">Gillie</span>
+              <div className="flex items-center gap-2">
+                <Link href="/search" aria-label="Search" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md hover:bg-white/25 active:scale-95 transition">
+                  <Search className="h-[18px] w-[18px]" />
+                </Link>
+                <Link href="/notifications" aria-label="Notifications" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md hover:bg-white/25 active:scale-95 transition">
+                  <Bell className="h-[18px] w-[18px]" />
+                </Link>
+                {me && (
+                  <Link href="/profile/me" aria-label="Your profile" className="rounded-full ring-2 ring-white/70 active:scale-95 transition">
+                    <UserAvatar name={me.displayName || "You"} username={me.username || ""} avatarUrl={me.avatarUrl} className="h-9 w-9" />
+                  </Link>
+                )}
+              </div>
+            </div>
 
+            {/* Greeting */}
+            <div className="mt-12">
+              <h1 className="text-[26px] font-bold leading-tight text-white drop-shadow-md">
+                {greetingPrefix},<br />{firstName} <span aria-hidden="true">👋</span>
+              </h1>
+              <p className="mt-1 text-sm text-white/85 drop-shadow">Dale Hollow Lake is looking great today.</p>
+            </div>
+
+            {/* Conditions glass card */}
+            <div className="mt-4 rounded-2xl border border-white/15 bg-black/35 p-3.5 text-white backdrop-blur-md">
+              {conditions ? (
+                <div className="flex items-center gap-2.5">
+                  <WeatherIcon className="h-9 w-9 shrink-0 text-amber-300" />
+                  <div className="min-w-0 shrink border-r border-white/20 pr-2.5">
+                    <div className="text-[26px] font-bold leading-none">{Math.round(conditions.temperature)}°</div>
+                    <div className="mt-1 truncate text-[11px] leading-none text-white/75">
+                      {conditions.weatherLabel}
+                      {conditions.apparentTemperature != null && ` · feels ${Math.round(conditions.apparentTemperature)}°`}
+                    </div>
+                  </div>
+                  <div className="grid flex-1 grid-cols-3 gap-1 text-center">
+                    <div className="min-w-0">
+                      <Waves className="mx-auto h-4 w-4 text-cyan-300" />
+                      <div className="mt-0.5 text-[13px] font-semibold leading-none">{conditions.waterTemperature != null ? `${Math.round(conditions.waterTemperature)}°` : "—"}</div>
+                      <div className="text-[10px] text-white/65">Water</div>
+                    </div>
+                    <div className="min-w-0">
+                      <Wind className="mx-auto h-4 w-4 text-sky-300" />
+                      <div className="mt-0.5 text-[13px] font-semibold leading-none">{Math.round(conditions.windSpeed)} mph</div>
+                      <div className="text-[10px] text-white/65">{windDirLabel(conditions.windDirection) || "Wind"}</div>
+                    </div>
+                    <div className="min-w-0">
+                      <Gauge className="mx-auto h-4 w-4 text-teal-300" />
+                      <div className="mt-0.5 text-[13px] font-semibold leading-none">{conditions.waterLevel != null ? `${conditions.waterLevel.toFixed(1)}ft` : "—"}</div>
+                      <div className="text-[10px] text-white/65">Lake Level</div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-9 w-9 rounded-full bg-white/20" />
+                  <Skeleton className="h-7 w-16 bg-white/20" />
+                  <Skeleton className="h-7 flex-1 bg-white/20" />
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Stats + composer */}
+        <div className="space-y-3 px-4 pt-4">
           {summary && (
-            <div className="flex gap-2.5 px-4 pb-3 overflow-x-auto no-scrollbar whitespace-nowrap">
-              <Link
-                href="/map?presence=1"
-                className="flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover-elevate active:scale-[0.97] transition-transform"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {summary.activeUsersToday} on the lake
+            <div className="grid grid-cols-4 gap-2">
+              <Link href="/map?presence=1" className="rounded-2xl border border-border bg-card p-2.5 hover-elevate active:scale-[0.98] transition-transform">
+                <div className="mb-1 flex items-center gap-1">
+                  <Users className="h-3.5 w-3.5 shrink-0 text-blue-500" />
+                  <span className="truncate text-[10px] font-medium text-muted-foreground">Lake Active</span>
+                </div>
+                <div className="text-xl font-bold leading-none">{summary.activeUsersToday}</div>
+                <div className="mt-1 truncate text-[10px] text-muted-foreground">Now on the water</div>
               </Link>
+              <Link href="/catches" className="rounded-2xl border border-border bg-card p-2.5 hover-elevate active:scale-[0.98] transition-transform">
+                <div className="mb-1 flex items-center gap-1">
+                  <Fish className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                  <span className="truncate text-[10px] font-medium text-muted-foreground">Fishing</span>
+                </div>
+                <div className="text-xl font-bold leading-none">{summary.fishingReports ?? 0}</div>
+                <div className="mt-1 truncate text-[10px] text-muted-foreground">Reports logged</div>
+              </Link>
+              <button type="button" onClick={() => setActiveTab("event")} className="rounded-2xl border border-border bg-card p-2.5 text-left hover-elevate active:scale-[0.98] transition-transform">
+                <div className="mb-1 flex items-center gap-1">
+                  <Calendar className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+                  <span className="truncate text-[10px] font-medium text-muted-foreground">Events</span>
+                </div>
+                <div className="text-xl font-bold leading-none">{summary.totalEvents}</div>
+                <div className="mt-1 truncate text-[10px] text-muted-foreground">Upcoming</div>
+              </button>
+              <Link href="/map" className="rounded-2xl border border-border bg-card p-2.5 hover-elevate active:scale-[0.98] transition-transform">
+                <div className="mb-1 flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-rose-500" />
+                  <span className="truncate text-[10px] font-medium text-muted-foreground">Live Pins</span>
+                </div>
+                <div className="text-xl font-bold leading-none">{summary.totalPins}</div>
+                <div className="mt-1 truncate text-[10px] text-muted-foreground">On the map</div>
+              </Link>
+            </div>
+          )}
+
+          {me && (
+            <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
               <button
                 type="button"
-                onClick={() => setActiveTab("event")}
-                className="flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover-elevate active:scale-[0.97] transition-transform"
+                onClick={() => { setNewType("post"); setComposerOpen(true); }}
+                className="flex w-full items-center gap-3 text-left"
+                aria-label="Create a new post"
               >
-                📅 {summary.totalEvents} events this week
+                <UserAvatar name={me.displayName || "You"} username={me.username || ""} avatarUrl={me.avatarUrl} className="h-9 w-9 shrink-0" />
+                <span className="flex-1 truncate text-sm text-muted-foreground">What's happening on the lake?</span>
               </button>
-              <Link
-                href="/map"
-                className="flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-sm text-muted-foreground hover-elevate active:scale-[0.97] transition-transform"
-              >
-                📍 {summary.totalPins} active pins
-              </Link>
+              <div className="mt-3 grid grid-cols-4 gap-1 border-t border-border pt-2">
+                <button type="button" onClick={() => { setNewType("post"); setComposerOpen(true); }} className="flex flex-col items-center gap-1 rounded-lg py-1.5 hover-elevate active:scale-95 transition">
+                  <Camera className="h-[18px] w-[18px] text-sky-500" />
+                  <span className="text-[11px] font-medium text-muted-foreground">Photo</span>
+                </button>
+                <Link href="/catches" className="flex flex-col items-center gap-1 rounded-lg py-1.5 hover-elevate active:scale-95 transition">
+                  <Fish className="h-[18px] w-[18px] text-teal-500" />
+                  <span className="text-[11px] font-medium text-muted-foreground">Catch</span>
+                </Link>
+                <Link href="/map" className="flex flex-col items-center gap-1 rounded-lg py-1.5 hover-elevate active:scale-95 transition">
+                  <MapPin className="h-[18px] w-[18px] text-rose-500" />
+                  <span className="text-[11px] font-medium text-muted-foreground">Drop Pin</span>
+                </Link>
+                <button type="button" onClick={() => { setNewType("event"); setComposerOpen(true); }} className="flex flex-col items-center gap-1 rounded-lg py-1.5 hover-elevate active:scale-95 transition">
+                  <CalendarPlus className="h-[18px] w-[18px] text-violet-500" />
+                  <span className="text-[11px] font-medium text-muted-foreground">Event</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {conditions?.fishingPressure && (() => {
+            const style = pressureStyles[conditions.fishingPressure.level] ?? pressureStyles.moderate;
+            return (
+              <div className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-xs ${style.wrap}`}>
+                <Fish className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <span><span className="font-semibold">Fishing pressure: {style.label}.</span> {conditions.fishingPressure.detail}</span>
+              </div>
+            );
+          })()}
+
+          {conditions?.advisories && conditions.advisories.length > 0 && (
+            <div className="space-y-2">
+              {conditions.advisories.map((a, i) => {
+                const style = advisoryStyles[a.level] ?? advisoryStyles.good;
+                const Icon = style.icon;
+                return (
+                  <div key={i} className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-xs ${style.wrap}`}>
+                    <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span><span className="font-semibold">{a.title}.</span> {a.detail}</span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Filter tabs: stick to the top once the logo scrolls away */}
-        <div className="sticky top-0 z-10 bg-card border-b border-border shadow-sm px-4 py-2">
-          <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
-            <TabsList className="w-full bg-muted">
-              <TabsTrigger value="all" className="flex-1">All</TabsTrigger>
-              <TabsTrigger value="post" className="flex-1">Social</TabsTrigger>
-              <TabsTrigger value="event" className="flex-1">Events</TabsTrigger>
-              <TabsTrigger value="trending" className="flex-1">Trending</TabsTrigger>
-              <TabsTrigger value="business" className="flex-1">Local</TabsTrigger>
-              <TabsTrigger value="saved" className="flex-1">Saved</TabsTrigger>
-            </TabsList>
-          </Tabs>
+        {/* Filter tabs: stick to the top once the hero scrolls away */}
+        <div className="sticky top-0 z-10 mt-3 border-b border-border bg-card/95 backdrop-blur">
+          <div className="flex items-center gap-5 overflow-x-auto no-scrollbar px-4">
+            {([
+              ["all", "All"],
+              ["post", "Social"],
+              ["event", "Events"],
+              ["trending", "Trending"],
+              ["business", "Local"],
+              ["saved", "Saved"],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setActiveTab(value)}
+                className={`relative shrink-0 py-3 text-sm font-medium transition-colors ${activeTab === value ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                {label}
+                {activeTab === value && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="p-4 space-y-4">
-        {me && (
-          <button
-            type="button"
-            onClick={() => setComposerOpen(true)}
-            className="flex w-full items-center gap-3 rounded-full border border-border bg-card px-3 py-2.5 text-left shadow-sm hover-elevate active:scale-[0.99] transition-transform"
-            aria-label="Create a new post"
-          >
-            <UserAvatar name={me.displayName || "You"} username={me.username || ""} avatarUrl={me.avatarUrl} className="w-9 h-9 shrink-0" />
-            <span className="flex-1 truncate text-sm text-muted-foreground">Share something on the lake…</span>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <Plus className="h-4 w-4" />
-            </span>
-          </button>
-        )}
         <HazardBanner />
-        <ConditionsWidget />
         {isTrendingTab ? (
           <TrendingSection />
         ) : isLoading ? (

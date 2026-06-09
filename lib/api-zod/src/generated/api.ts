@@ -2051,6 +2051,7 @@ export const GetPostsSummaryResponse = zod.object({
   "totalEvents": zod.number(),
   "totalPins": zod.number(),
   "activeUsersToday": zod.number(),
+  "fishingReports": zod.number().optional(),
   "upcomingEvents": zod.array(zod.object({
   "id": zod.number(),
   "userId": zod.number(),

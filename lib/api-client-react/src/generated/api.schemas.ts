@@ -474,6 +474,7 @@ export interface PostsSummary {
   totalEvents: number;
   totalPins: number;
   activeUsersToday: number;
+  fishingReports?: number;
   upcomingEvents?: Post[];
   recentPins?: Pin[];
 }

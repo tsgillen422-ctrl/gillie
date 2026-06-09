@@ -2066,6 +2066,8 @@ components:
           type: integer
         activeUsersToday:
           type: integer
+        fishingReports:
+          type: integer
         upcomingEvents:
           type: array
           items:

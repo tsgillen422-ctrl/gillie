@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, postsTable, postLikesTable, postCommentsTable, commentLikesTable, pinsTable, eventRsvpsTable, mutesTable, savedPostsTable } from "@workspace/db";
+import { usersTable, postsTable, postLikesTable, postCommentsTable, commentLikesTable, pinsTable, eventRsvpsTable, mutesTable, savedPostsTable, catchesTable } from "@workspace/db";
 import { eq, and, gte, sql, desc, count, inArray, notInArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 
@@ -227,11 +227,17 @@ router.get("/summary", async (req, res) => {
     })
   );
 
+  const [fishingReportsResult] = await db
+    .select({ value: count() })
+    .from(catchesTable)
+    .where(eq(catchesTable.isPrivate, false));
+
   res.json({
     totalPosts: postCountResult.value,
     totalEvents: eventCountResult.value,
     totalPins: pinCountResult.value,
     activeUsersToday: userCountResult.value,
+    fishingReports: fishingReportsResult.value,
     upcomingEvents: await Promise.all(upcomingEvents.map((p) => formatPost(p, uid))),
     recentPins: formattedPins,
   });
