@@ -2039,7 +2039,8 @@ export const ApprovePinResponse = zod.object({
  * @summary Get community feed posts and events
  */
 export const GetPostsQueryParams = zod.object({
-  "type": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']).optional()
+  "type": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']).optional(),
+  "audience": zod.enum(['friends', 'community']).optional().describe('Filter by author relationship. \"friends\" shows posts from your friends; \"community\" shows posts from people you are not friends with.')
 })
 
 export const GetPostsResponseItem = zod.object({

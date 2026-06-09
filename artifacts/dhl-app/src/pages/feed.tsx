@@ -280,14 +280,21 @@ function ConditionsDrawer({ conditions, open, onOpenChange }: { conditions: any;
 }
 
 export function FeedPage() {
-  const [activeTab, setActiveTab] = React.useState<"all" | "post" | "event" | "business" | "trending" | "saved">("all");
+  const [activeTab, setActiveTab] = React.useState<"all" | "friends" | "community" | "event" | "business" | "trending" | "saved">("all");
 
   const isSavedTab = activeTab === "saved";
   const isTrendingTab = activeTab === "trending";
-  const { data: feedPosts, isLoading: feedLoading } = useGetPosts(
-    activeTab !== "all" && !isSavedTab && !isTrendingTab ? { type: activeTab } : {},
-    { query: { enabled: !isSavedTab } }
-  );
+  const feedParams =
+    activeTab === "friends"
+      ? { audience: "friends" as const }
+      : activeTab === "community"
+        ? { audience: "community" as const }
+        : activeTab === "event" || activeTab === "business"
+          ? { type: activeTab }
+          : {};
+  const { data: feedPosts, isLoading: feedLoading } = useGetPosts(feedParams, {
+    query: { enabled: !isSavedTab && !isTrendingTab },
+  });
   const { data: savedPosts, isLoading: savedLoading } = useGetSavedPosts({
     query: { enabled: isSavedTab },
   });
@@ -300,7 +307,7 @@ export function FeedPage() {
   const search = useSearch();
   const resolveUrlTab = React.useCallback((s: string): typeof activeTab => {
     const tab = new URLSearchParams(s).get("tab");
-    return tab && ["all", "post", "event", "business", "trending", "saved"].includes(tab)
+    return tab && ["all", "friends", "community", "event", "business", "trending", "saved"].includes(tab)
       ? (tab as typeof activeTab)
       : "all";
   }, []);
@@ -777,7 +784,8 @@ export function FeedPage() {
           <div className="flex items-center justify-center gap-5 overflow-x-auto no-scrollbar px-4">
             {([
               ["all", "All"],
-              ["post", "Social"],
+              ["friends", "Friends"],
+              ["community", "Community"],
               ["event", "Events"],
               ["trending", "Trending"],
               ["business", "Local"],

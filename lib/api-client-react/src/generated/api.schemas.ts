@@ -1022,6 +1022,10 @@ export const GetPinsType = {
 
 export type GetPostsParams = {
 type?: GetPostsType;
+/**
+ * Filter by author relationship. "friends" shows posts from your friends; "community" shows posts from people you are not friends with.
+ */
+audience?: GetPostsAudience;
 };
 
 export type GetPostsType = typeof GetPostsType[keyof typeof GetPostsType];
@@ -1033,6 +1037,14 @@ export const GetPostsType = {
   business: 'business',
   tie_up: 'tie_up',
   boat_showcase: 'boat_showcase',
+} as const;
+
+export type GetPostsAudience = typeof GetPostsAudience[keyof typeof GetPostsAudience];
+
+
+export const GetPostsAudience = {
+  friends: 'friends',
+  community: 'community',
 } as const;
 
 export type SearchGifsParams = {

@@ -163,10 +163,16 @@ async function getMutedUserIds(userId: number): Promise<number[]> {
 router.get("/", async (req, res) => {
   const uid = currentUserId(req);
   const type = req.query.type as string | undefined;
+  const audience = req.query.audience as string | undefined;
   const mutedIds = await getMutedUserIds(uid);
   const friendIds = await getFriendIds(uid);
   const conditions: any[] = [visibilityCondition(uid, friendIds)];
   if (type) conditions.push(eq(postsTable.postType, type));
+  if (audience === "friends") {
+    conditions.push(friendIds.length ? inArray(postsTable.userId, friendIds) : sql`false`);
+  } else if (audience === "community") {
+    conditions.push(notInArray(postsTable.userId, [uid, ...friendIds]));
+  }
   if (mutedIds.length) conditions.push(notInArray(postsTable.userId, mutedIds));
   const where = and(...conditions);
   const posts = await db.select().from(postsTable).where(where).orderBy(desc(postsTable.createdAt));

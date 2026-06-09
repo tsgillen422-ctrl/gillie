@@ -31,6 +31,7 @@ export * from './getCatchesParams';
 export * from './getGalleryParams';
 export * from './getPinsParams';
 export * from './getPinsType';
+export * from './getPostsAudience';
 export * from './getPostsParams';
 export * from './getPostsType';
 export * from './getReportsParams';

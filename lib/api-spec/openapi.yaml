@@ -741,6 +741,13 @@ paths:
           schema:
             type: string
             enum: [post, event, business, tie_up, boat_showcase]
+        - name: audience
+          in: query
+          required: false
+          description: Filter by author relationship. "friends" shows posts from your friends; "community" shows posts from people you are not friends with.
+          schema:
+            type: string
+            enum: [friends, community]
       responses:
         "200":
           description: Feed posts

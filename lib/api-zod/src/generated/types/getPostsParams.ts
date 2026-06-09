@@ -5,8 +5,13 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { GetPostsAudience } from './getPostsAudience';
 import type { GetPostsType } from './getPostsType';
 
 export type GetPostsParams = {
 type?: GetPostsType;
+/**
+ * Filter by author relationship. "friends" shows posts from your friends; "community" shows posts from people you are not friends with.
+ */
+audience?: GetPostsAudience;
 };
