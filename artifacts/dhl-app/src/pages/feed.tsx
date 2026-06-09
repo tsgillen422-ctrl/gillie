@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ReportDialog } from "@/components/ReportDialog";
-import heroImg from "@assets/0954BF09-14B1-407B-92D4-D31ED0C144F7_1780991319549.png";
+import heroImg from "@assets/hero-lake-sunset.webp";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
