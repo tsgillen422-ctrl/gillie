@@ -83,79 +83,67 @@ const pinTier = (type: string): "high" | "low" =>
 // Below this zoom, low-priority pins only appear aggregated inside clusters.
 const SECONDARY_PIN_ZOOM = 13.5;
 
-// --- Snap Map style palette ---
-const SNAP = {
-  land: "#dde6d4",
-  green: "#cdddbb",
-  greenDeep: "#bdd3a8",
-  sand: "#e6dfcd",
-  water: "#74c2e8",
-  shoreline: "#4f9fcf",
-  road: "#ffffff",
-  roadCasing: "#e2e8dd",
-  label: "#6f7f67",
-  labelHalo: "#ffffff",
-};
+// --- Satellite / aerial imagery basemap ---
+const SAT_SOURCE = "satellite-imagery-src";
+const SAT_LAYER = "satellite-imagery";
 
-// Recolor the OpenMapTiles "liberty" style into a clean pastel Snap Map look.
-function applySnapStyle(map: maplibregl.Map) {
+// Turn the OpenMapTiles "liberty" vector style into a satellite/aerial map:
+// drop Esri World Imagery in above the polygon fills but below the roads and
+// labels, so we keep the vector roads, highway shields, and place names sitting
+// on top of real aerial imagery. The vector water/land fills stay in the style
+// (hidden beneath the imagery) so map.queryRenderedFeatures can still tell
+// whether a marker sits on water or land.
+function applySatelliteStyle(map: maplibregl.Map) {
+  if (!map.getSource(SAT_SOURCE)) {
+    map.addSource(SAT_SOURCE, {
+      type: "raster",
+      tiles: [
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      ],
+      tileSize: 256,
+      maxzoom: 19,
+      attribution: "Imagery © Esri, Maxar, Earthstar Geographics",
+    });
+  }
+
   const layers = map.getStyle().layers || [];
+  // Slot imagery just beneath the first road/label layer.
+  const firstOverlay = layers.find((l) => l.type === "line" || l.type === "symbol");
+  if (!map.getLayer(SAT_LAYER)) {
+    map.addLayer(
+      { id: SAT_LAYER, type: "raster", source: SAT_SOURCE, paint: { "raster-opacity": 1 } },
+      firstOverlay?.id,
+    );
+  }
+
   for (const layer of layers) {
     const id = layer.id;
     const type = layer.type;
     try {
-      if (type === "background") {
-        map.setPaintProperty(id, "background-color", SNAP.land);
-        continue;
-      }
-      if (type === "fill") {
-        if (/water|ocean|lake|river|reservoir|bay/i.test(id)) {
-          map.setPaintProperty(id, "fill-color", SNAP.water);
-          map.setPaintProperty(id, "fill-opacity", 1);
-          // thin shoreline stroke to separate water from land
-          map.setPaintProperty(id, "fill-outline-color", SNAP.shoreline);
-        } else if (/wood|forest|park|grass|wetland|scrub|nature|landcover_/i.test(id)) {
-          map.setPaintProperty(id, "fill-color", SNAP.green);
-          map.setPaintProperty(id, "fill-opacity", 0.9);
-        } else if (/sand|beach|desert/i.test(id)) {
-          map.setPaintProperty(id, "fill-color", SNAP.sand);
-        } else if (/building/i.test(id)) {
+      if (type === "symbol") {
+        if (/poi|building|housenumber|continent|aerodrome|airport|transit/i.test(id)) {
           map.setLayoutProperty(id, "visibility", "none");
-        } else if (/landuse|residential|industrial|commercial|pitch|cemetery/i.test(id)) {
-          map.setPaintProperty(id, "fill-color", SNAP.greenDeep);
-          map.setPaintProperty(id, "fill-opacity", 0.5);
-        } else {
-          map.setPaintProperty(id, "fill-color", SNAP.land);
+        } else if (layer.layout && (layer.layout as any)["text-field"]) {
+          // White labels with a dark halo read cleanly over dark imagery.
+          map.setPaintProperty(id, "text-color", "#ffffff");
+          map.setPaintProperty(id, "text-halo-color", "rgba(0,0,0,0.85)");
+          map.setPaintProperty(id, "text-halo-width", 1.6);
+          map.setPaintProperty(id, "text-halo-blur", 0.4);
         }
-        continue;
-      }
-      if (type === "fill-extrusion") {
-        map.setLayoutProperty(id, "visibility", "none");
         continue;
       }
       if (type === "line") {
         if (/water|river|stream|canal|waterway/i.test(id)) {
-          map.setPaintProperty(id, "line-color", SNAP.water);
-        } else if (/bridge|tunnel|road|street|highway|motorway|trunk|primary|secondary|tertiary|path|transit|rail|service/i.test(id)) {
+          // The imagery already shows the water; hide the vector waterway lines.
+          map.setLayoutProperty(id, "visibility", "none");
+        } else if (/bridge|tunnel|road|street|highway|motorway|trunk|primary|secondary|tertiary|path|service/i.test(id)) {
           if (/casing|outline/i.test(id)) {
-            map.setPaintProperty(id, "line-color", SNAP.roadCasing);
+            map.setPaintProperty(id, "line-color", "rgba(0,0,0,0.35)");
           } else {
-            map.setPaintProperty(id, "line-color", SNAP.road);
+            map.setPaintProperty(id, "line-color", "rgba(255,255,255,0.55)");
           }
         } else if (/admin|boundary|border/i.test(id)) {
           map.setLayoutProperty(id, "visibility", "none");
-        }
-        continue;
-      }
-      if (type === "symbol") {
-        if (/poi|building|housenumber|continent|aerodrome|airport|transit/i.test(id)) {
-          map.setLayoutProperty(id, "visibility", "none");
-        } else {
-          if (layer.layout && (layer.layout as any)["text-field"]) {
-            map.setPaintProperty(id, "text-color", SNAP.label);
-            map.setPaintProperty(id, "text-halo-color", SNAP.labelHalo);
-            map.setPaintProperty(id, "text-halo-width", 1.4);
-          }
         }
         continue;
       }
@@ -604,75 +592,19 @@ export function MapPage() {
       if (/webgl|context|style/i.test(msg)) setMapError(true);
     });
 
-    let waterRaf = 0;
-
     map.on("load", () => {
       mapLoaded.current = true;
 
-      // --- Clean pastel Snap Map look ---
-      applySnapStyle(map);
+      // --- Satellite / aerial imagery look ---
+      applySatelliteStyle(map);
 
-      // --- Animated shimmering water + breathing land ---
+      // Water fill layers stay in the style (hidden beneath the imagery) so the
+      // land/water marker logic can still query them via queryRenderedFeatures.
       const allLayers = map.getStyle().layers || [];
       const waterLayers = allLayers
         .filter((l) => /water|lake|river|reservoir|bay/i.test(l.id) && l.type === "fill")
         .map((l) => l.id);
       waterLayerIds.current = waterLayers;
-      const landLayers = allLayers
-        .filter(
-          (l) =>
-            l.type === "fill" &&
-            /wood|forest|park|grass|wetland|scrub|nature|landcover_|landuse/i.test(l.id)
-        )
-        .map((l) => l.id);
-
-      const reducedMotion =
-        typeof window !== "undefined" &&
-        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-      let lastTick = 0;
-      const animateScene = (now: number) => {
-        // pause when tab is hidden to save resources
-        if (document.visibilityState === "hidden") {
-          waterRaf = requestAnimationFrame(animateScene);
-          return;
-        }
-        // throttle to ~15fps — plenty for a slow ambient shimmer, easy on the GPU
-        if (now - lastTick > 66) {
-          lastTick = now;
-          const t = now / 1000;
-
-          // water: livelier shimmer around the Snap pastel blue (a touch darker)
-          const wHue = 200 + Math.sin(t * 0.6) * 10;
-          const wLight = 69 + Math.sin(t * 1.1 + 1) * 6;
-          const wSat = 78 + Math.sin(t * 0.8) * 9;
-          const waterColor = `hsl(${wHue.toFixed(1)}, ${wSat.toFixed(1)}%, ${wLight.toFixed(1)}%)`;
-          waterLayers.forEach((id) => {
-            if (map.getLayer(id)) {
-              try {
-                map.setPaintProperty(id, "fill-color", waterColor);
-              } catch {}
-            }
-          });
-
-          // land: gentle "breathing" green, more muted so it reads below water
-          const lHue = 96 + Math.sin(t * 0.35 + 0.5) * 8;
-          const lLight = 75 + Math.sin(t * 0.5) * 4;
-          const lSat = 36 + Math.sin(t * 0.4 + 2) * 7;
-          const landColor = `hsl(${lHue.toFixed(1)}, ${lSat.toFixed(1)}%, ${lLight.toFixed(1)}%)`;
-          landLayers.forEach((id) => {
-            if (map.getLayer(id)) {
-              try {
-                map.setPaintProperty(id, "fill-color", landColor);
-              } catch {}
-            }
-          });
-        }
-        waterRaf = requestAnimationFrame(animateScene);
-      };
-      if (!reducedMotion && (waterLayers.length || landLayers.length)) {
-        waterRaf = requestAnimationFrame(animateScene);
-      }
 
       setStyleReady(true);
       applyZoomScale(map.getZoom());
@@ -681,7 +613,6 @@ export function MapPage() {
     map.on("zoom", () => applyZoomScale(map.getZoom()));
 
     return () => {
-      cancelAnimationFrame(waterRaf);
       map.remove();
       mapRef.current = null;
       mapLoaded.current = false;
