@@ -8,7 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Link, useSearch } from "wouter";
-import { Heart, MessageCircle, Share2, Calendar, CalendarPlus, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, Flag, Bookmark, BookmarkCheck, VolumeX, Link2, Repeat2, Anchor, Sailboat, Search, Bell, Sun, Moon, Cloud, CloudSun, CloudMoon, CloudRain, CloudSnow, CloudFog, CloudLightning, Fish, Camera, Waves, Wind, Gauge, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
+import { Heart, MessageCircle, Share2, Calendar, CalendarPlus, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, Flag, Bookmark, BookmarkCheck, VolumeX, Link2, Repeat2, Anchor, Sailboat, Search, Bell, Sun, Moon, Cloud, CloudSun, CloudMoon, CloudRain, CloudSnow, CloudFog, CloudLightning, Fish, Camera, Waves, Wind, Gauge, AlertTriangle, Info, CheckCircle2, Droplets, Sunrise, Sunset, ChevronRight } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ReportDialog } from "@/components/ReportDialog";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import heroImg from "@assets/hero-lake-sunset.webp";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -42,6 +43,17 @@ import { REACTIONS, REACTION_MAP, DEFAULT_REACTION, type ReactionKey } from "@/l
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+
+function fmtTime(iso?: string | null): string {
+  if (!iso) return "—";
+  const m = iso.match(/T(\d{2}):(\d{2})/);
+  if (!m) return "—";
+  let h = parseInt(m[1], 10);
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${m[2]} ${ampm}`;
+}
 
 function windDirLabel(deg?: number | null): string {
   if (deg == null) return "";
@@ -73,6 +85,90 @@ const pressureStyles: Record<string, { wrap: string; label: string }> = {
   moderate: { wrap: "bg-sky-500/10 border-sky-500/30 text-sky-700 dark:text-sky-300", label: "Moderate" },
   low: { wrap: "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300", label: "Low" },
 };
+
+function ConditionsDrawer({ conditions, open, onOpenChange }: { conditions: any; open: boolean; onOpenChange: (v: boolean) => void }) {
+  if (!conditions) return null;
+  const WeatherIcon = weatherIcon(conditions.weatherCode, conditions.isDay ?? undefined);
+  const metrics: { icon: typeof Info; label: string; value: string; tint: string }[] = [
+    { icon: Waves, label: "Water Temp", value: conditions.waterTemperature != null ? `${Math.round(conditions.waterTemperature)}°F` : "—", tint: "text-cyan-500" },
+    { icon: Gauge, label: "Lake Level", value: conditions.waterLevel != null ? `${conditions.waterLevel.toFixed(1)} ft` : "—", tint: "text-teal-500" },
+    { icon: Wind, label: "Wind", value: `${Math.round(conditions.windSpeed)} mph ${windDirLabel(conditions.windDirection)}`.trim(), tint: "text-sky-500" },
+    { icon: Wind, label: "Wind Gust", value: conditions.windGust != null ? `${Math.round(conditions.windGust)} mph` : "—", tint: "text-sky-500" },
+    { icon: Droplets, label: "Humidity", value: conditions.humidity != null ? `${Math.round(conditions.humidity)}%` : "—", tint: "text-blue-500" },
+    { icon: CloudRain, label: "Precipitation", value: conditions.precipitation != null ? `${conditions.precipitation.toFixed(2)} in` : "—", tint: "text-indigo-500" },
+    { icon: Sunrise, label: "Sunrise", value: fmtTime(conditions.sunrise), tint: "text-amber-500" },
+    { icon: Sunset, label: "Sunset", value: fmtTime(conditions.sunset), tint: "text-orange-500" },
+  ];
+  const pressure = conditions.fishingPressure ? (pressureStyles[conditions.fishingPressure.level] ?? pressureStyles.moderate) : null;
+  return (
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent>
+        <DrawerHeader className="text-left">
+          <DrawerTitle>Lake Conditions</DrawerTitle>
+        </DrawerHeader>
+        <div className="max-h-[70vh] overflow-y-auto px-4 pb-8">
+          <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
+            <WeatherIcon className="h-12 w-12 shrink-0 text-amber-400" />
+            <div className="min-w-0">
+              <div className="text-4xl font-bold leading-none">{Math.round(conditions.temperature)}°</div>
+              <div className="mt-1 text-sm text-muted-foreground">
+                {conditions.weatherLabel}
+                {conditions.apparentTemperature != null && ` · feels like ${Math.round(conditions.apparentTemperature)}°`}
+              </div>
+            </div>
+            {conditions.moonPhase && (
+              <div className="ml-auto shrink-0 text-center">
+                <div className="text-2xl leading-none">{conditions.moonPhase.emoji}</div>
+                <div className="mt-1 text-[11px] text-muted-foreground">{conditions.moonPhase.name}</div>
+                <div className="text-[10px] text-muted-foreground">{conditions.moonPhase.illumination}% lit</div>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {metrics.map((m) => (
+              <div key={m.label} className="rounded-xl border border-border bg-card p-3">
+                <div className="flex items-center gap-1.5">
+                  <m.icon className={`h-4 w-4 shrink-0 ${m.tint}`} />
+                  <span className="text-[11px] font-medium text-muted-foreground">{m.label}</span>
+                </div>
+                <div className="mt-1 text-lg font-semibold leading-none">{m.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {pressure && (
+            <div className={`mt-3 flex items-start gap-2 rounded-xl border px-3 py-2.5 text-sm ${pressure.wrap}`}>
+              <Fish className="mt-0.5 h-4 w-4 shrink-0" />
+              <span><span className="font-semibold">Fishing pressure: {pressure.label}.</span> {conditions.fishingPressure.detail}</span>
+            </div>
+          )}
+
+          {conditions.advisories && conditions.advisories.length > 0 && (
+            <div className="mt-3 space-y-2">
+              {conditions.advisories.map((a: any, i: number) => {
+                const style = advisoryStyles[a.level] ?? advisoryStyles.good;
+                const Icon = style.icon;
+                return (
+                  <div key={i} className={`flex items-start gap-2 rounded-xl border px-3 py-2.5 text-sm ${style.wrap}`}>
+                    <Icon className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span><span className="font-semibold">{a.title}.</span> {a.detail}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {conditions.updatedAt && (
+            <p className="mt-4 text-center text-[11px] text-muted-foreground">
+              Updated {new Date(conditions.updatedAt).toLocaleString([], { hour: "numeric", minute: "2-digit", month: "short", day: "numeric" })}
+            </p>
+          )}
+        </div>
+      </DrawerContent>
+    </Drawer>
+  );
+}
 
 export function FeedPage() {
   const [activeTab, setActiveTab] = React.useState<"all" | "post" | "event" | "business" | "trending" | "saved">("all");
@@ -303,6 +399,7 @@ export function FeedPage() {
   };
 
   const { data: conditions } = useGetConditions({ query: { refetchInterval: 1000 * 60 * 10 } });
+  const [conditionsOpen, setConditionsOpen] = React.useState(false);
   const greetingPrefix = (() => {
     const h = new Date().getHours();
     if (h >= 5 && h < 12) return "Good Morning";
@@ -366,7 +463,13 @@ export function FeedPage() {
             </div>
 
             {/* Conditions glass card */}
-            <div className="mt-4 rounded-2xl border border-white/15 bg-black/35 p-3.5 text-white backdrop-blur-md">
+            <button
+              type="button"
+              onClick={() => conditions && setConditionsOpen(true)}
+              disabled={!conditions}
+              aria-label="View detailed weather conditions"
+              className="mt-4 block w-full rounded-2xl border border-white/15 bg-black/35 p-3.5 text-left text-white backdrop-blur-md transition active:scale-[0.99]"
+            >
               {conditions ? (
                 <div className="flex items-center gap-2.5">
                   <WeatherIcon className="h-9 w-9 shrink-0 text-amber-300" />
@@ -394,6 +497,7 @@ export function FeedPage() {
                       <div className="text-[10px] text-white/65">Lake Level</div>
                     </div>
                   </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-white/50" />
                 </div>
               ) : (
                 <div className="flex items-center gap-3">
@@ -402,9 +506,11 @@ export function FeedPage() {
                   <Skeleton className="h-7 flex-1 bg-white/20" />
                 </div>
               )}
-            </div>
+            </button>
           </div>
         </div>
+
+        <ConditionsDrawer conditions={conditions ?? null} open={conditionsOpen} onOpenChange={setConditionsOpen} />
 
         {/* Stats + composer */}
         <div className="space-y-3 px-4 pt-4">
