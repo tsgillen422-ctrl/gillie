@@ -47,5 +47,13 @@
         </array>
         <key>UIViewControllerBasedStatusBarAppearance</key>
         <true/>
+        <key>NSPhotoLibraryUsageDescription</key>
+        <string>Gillie needs access to your photos so you can share pictures and videos in your messages and posts.</string>
+        <key>NSPhotoLibraryAddUsageDescription</key>
+        <string>Gillie needs permission to save photos and videos to your library.</string>
+        <key>NSCameraUsageDescription</key>
+        <string>Gillie needs access to your camera so you can take photos and videos to share in your messages and posts.</string>
+        <key>NSMicrophoneUsageDescription</key>
+        <string>Gillie needs access to your microphone so the videos you record include sound.</string>
 </dict>
 </plist>

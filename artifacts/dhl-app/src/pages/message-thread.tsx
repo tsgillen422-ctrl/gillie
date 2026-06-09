@@ -54,6 +54,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
+import { compressImage } from "@/lib/compress";
 
 const CARD = "rounded-3xl border border-card-border bg-card shadow-soft";
 
@@ -449,9 +450,14 @@ export function MessageThreadPage() {
       toast({ title: "Unsupported file", description: "Only photos and videos can be sent.", variant: "destructive" });
       return;
     }
-    const res = await uploadFile(file);
-    if (res?.objectPath) {
-      setPending({ objectPath: res.objectPath, type: isVideo ? "video" : "image" });
+    try {
+      const toUpload = isImage ? await compressImage(file) : file;
+      const res = await uploadFile(toUpload);
+      if (res?.objectPath) {
+        setPending({ objectPath: res.objectPath, type: isVideo ? "video" : "image" });
+      }
+    } catch {
+      toast({ title: "Upload failed", description: "Could not upload that file.", variant: "destructive" });
     }
   };
 
