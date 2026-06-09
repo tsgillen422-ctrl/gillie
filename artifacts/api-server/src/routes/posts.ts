@@ -229,10 +229,12 @@ router.post("/:postId/share", async (req, res) => {
   if (!Number.isInteger(postId)) return res.status(400).json({ error: "Invalid post id" });
   const original = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!original) return res.status(404).json({ error: "Post not found" });
+  if (!(await canViewPost(uid, original))) return res.status(404).json({ error: "Post not found" });
   const sourceId = original.sharedPostId ?? original.id;
   if (sourceId !== original.id) {
     const source = await db.query.postsTable.findFirst({ where: eq(postsTable.id, sourceId) });
     if (!source) return res.status(404).json({ error: "Original post is no longer available" });
+    if (!(await canViewPost(uid, source))) return res.status(404).json({ error: "Original post is no longer available" });
   }
   const content = typeof req.body?.content === "string" ? req.body.content : "";
   const [post] = await db
@@ -355,6 +357,7 @@ router.post("/:postId/save", async (req, res) => {
   const postId = parseInt(req.params.postId);
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!post) return res.status(404).json({ error: "Post not found" });
+  if (!(await canViewPost(uid, post))) return res.status(404).json({ error: "Post not found" });
   const existing = await db.query.savedPostsTable.findFirst({
     where: and(eq(savedPostsTable.postId, postId), eq(savedPostsTable.userId, uid)),
   });
@@ -383,6 +386,7 @@ router.post("/:postId/react", async (req, res) => {
   }
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!post) return res.status(404).json({ error: "Post not found" });
+  if (!(await canViewPost(uid, post))) return res.status(404).json({ error: "Post not found" });
 
   const existing = await db.query.postLikesTable.findFirst({
     where: and(eq(postLikesTable.postId, postId), eq(postLikesTable.userId, uid)),
@@ -444,6 +448,7 @@ router.post("/:postId/rsvp", async (req, res) => {
   const postId = parseInt(req.params.postId);
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!post) return res.status(404).json({ error: "Post not found" });
+  if (!(await canViewPost(uid, post))) return res.status(404).json({ error: "Post not found" });
   if (post.postType !== "event" && post.postType !== "tie_up") {
     return res.status(400).json({ error: "You can only RSVP to events or tie-ups" });
   }
@@ -459,7 +464,11 @@ router.post("/:postId/rsvp", async (req, res) => {
 });
 
 router.get("/:postId/rsvps", async (req, res) => {
+  const uid = currentUserId(req);
   const postId = parseInt(req.params.postId);
+  const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
+  if (!post) return res.status(404).json({ error: "Post not found" });
+  if (!(await canViewPost(uid, post))) return res.status(404).json({ error: "Post not found" });
   const rsvps = await db
     .select()
     .from(eventRsvpsTable)
@@ -475,7 +484,11 @@ router.get("/:postId/rsvps", async (req, res) => {
 });
 
 router.get("/:postId/likes", async (req, res) => {
+  const uid = currentUserId(req);
   const postId = parseInt(req.params.postId);
+  const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
+  if (!post) return res.status(404).json({ error: "Post not found" });
+  if (!(await canViewPost(uid, post))) return res.status(404).json({ error: "Post not found" });
   const likes = await db
     .select()
     .from(postLikesTable)
@@ -521,6 +534,9 @@ async function formatComment(c: typeof postCommentsTable.$inferSelect, viewerId:
 router.get("/:postId/comments", async (req, res) => {
   const uid = currentUserId(req);
   const postId = parseInt(req.params.postId);
+  const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
+  if (!post) return res.status(404).json({ error: "Post not found" });
+  if (!(await canViewPost(uid, post))) return res.status(404).json({ error: "Post not found" });
   const comments = await db
     .select()
     .from(postCommentsTable)
@@ -542,6 +558,7 @@ router.post("/:postId/comments", async (req, res) => {
   }
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!post) return res.status(404).json({ error: "Post not found" });
+  if (!(await canViewPost(uid, post))) return res.status(404).json({ error: "Post not found" });
   const [comment] = await db
     .insert(postCommentsTable)
     .values({ postId, userId: uid, content: trimmedContent, imageUrl: trimmedImageUrl || null, videoUrl: trimmedVideoUrl || null })
@@ -560,6 +577,8 @@ router.post("/:postId/comments/:commentId/react", async (req, res) => {
   }
   const comment = await db.query.postCommentsTable.findFirst({ where: eq(postCommentsTable.id, commentId) });
   if (!comment || comment.postId !== postId) return res.status(404).json({ error: "Comment not found" });
+  const parentPost = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
+  if (!parentPost || !(await canViewPost(uid, parentPost))) return res.status(404).json({ error: "Post not found" });
 
   const existing = await db.query.commentLikesTable.findFirst({
     where: and(eq(commentLikesTable.commentId, commentId), eq(commentLikesTable.userId, uid)),
