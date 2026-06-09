@@ -53,10 +53,12 @@ import {
   Images,
   Image as ImageIcon,
   Video as VideoIcon,
+  Film as GifIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { compressImage } from "@/lib/compress";
+import { GifPickerDialog } from "@/components/GifPickerDialog";
 
 const CARD = "rounded-3xl border border-card-border bg-card shadow-soft";
 
@@ -86,6 +88,7 @@ const STARTERS = [
 ];
 
 function mediaSrc(objectPath: string) {
+  if (/^(https?:|data:|blob:)/.test(objectPath)) return objectPath;
   return `/api/storage${objectPath}`;
 }
 
@@ -377,6 +380,7 @@ export function MessageThreadPage() {
   const reactMessage = useReactToMessage();
   const [text, setText] = React.useState("");
   const [pending, setPending] = React.useState<{ objectPath: string; type: "image" | "video" } | null>(null);
+  const [gifOpen, setGifOpen] = React.useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const photoRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
@@ -784,8 +788,21 @@ export function MessageThreadPage() {
                   <VideoIcon className="mr-2 h-4 w-4" />
                   Video
                 </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setGifOpen(true)}>
+                  <GifIcon className="mr-2 h-4 w-4" />
+                  GIF
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <GifPickerDialog
+              open={gifOpen}
+              onOpenChange={setGifOpen}
+              description="Search for a GIF to send."
+              onSelect={(url) => {
+                setPending({ objectPath: url, type: "image" });
+                setGifOpen(false);
+              }}
+            />
             <div className="flex-1 relative">
               <Input
                 ref={inputRef}

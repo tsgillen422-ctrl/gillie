@@ -1,3 +1,19 @@
-<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="180" height="180" rx="36" fill="#FF3C00"/>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gillieBg" x1="0" y1="0" x2="0" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#15b6cb"/>
+      <stop offset="1" stop-color="#0a6486"/>
+    </linearGradient>
+    <linearGradient id="gillieDrop" x1="256" y1="96" x2="256" y2="344" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dff7fb"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#gillieBg)"/>
+  <path d="M256 96 C224 150 168 206 168 256 A88 88 0 0 0 344 256 C344 206 288 150 256 96 Z" fill="url(#gillieDrop)"/>
+  <circle cx="256" cy="250" r="33" fill="#0a6486"/>
+  <g stroke="#ffffff" stroke-width="17" stroke-linecap="round" fill="none">
+    <path d="M104 396 c26 0 26 22 52 22 s26 -22 52 -22 26 22 52 22 26 -22 52 -22 26 22 52 22 26 -22 52 -22" opacity="0.95"/>
+    <path d="M104 442 c26 0 26 22 52 22 s26 -22 52 -22 26 22 52 22 26 -22 52 -22 26 22 52 22 26 -22 52 -22" opacity="0.5"/>
+  </g>
 </svg>
