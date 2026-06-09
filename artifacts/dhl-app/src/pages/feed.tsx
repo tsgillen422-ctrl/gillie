@@ -502,7 +502,7 @@ export function FeedPage() {
 
         {/* Filter tabs: stick to the top once the hero scrolls away */}
         <div className="sticky top-0 z-10 mt-3 border-b border-border bg-card/95 backdrop-blur">
-          <div className="flex items-center gap-5 overflow-x-auto no-scrollbar px-4">
+          <div className="flex items-center justify-center gap-5 overflow-x-auto no-scrollbar px-4">
             {([
               ["all", "All"],
               ["post", "Social"],

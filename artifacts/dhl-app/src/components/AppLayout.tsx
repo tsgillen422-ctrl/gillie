@@ -20,7 +20,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const hideHeader = location === "/feed";
 
   const renderNavItem = (item: (typeof navItems)[number]) => (
-    <li key={item.href} className="flex-1">
+    <div key={item.href} className="flex-1">
       <Link
         href={item.href}
         className={`flex flex-col items-center justify-center h-full w-full gap-1 transition-colors ${
@@ -32,7 +32,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <item.icon className="w-5 h-5" />
         <span className="text-[10px] font-medium">{item.label}</span>
       </Link>
-    </li>
+    </div>
   );
 
   return (
@@ -78,9 +78,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Bottom Nav for Mobile / Shared */}
       <nav className="border-t border-border bg-card shrink-0 pb-safe z-50">
-        <ul className="flex items-center justify-around h-16 px-2">
-          {navItems.slice(0, 2).map(renderNavItem)}
-          <li className="flex-1 flex justify-center">
+        <div className="flex items-stretch h-16 px-2">
+          <div className="flex flex-1 items-stretch">
+            {navItems.slice(0, 2).map(renderNavItem)}
+          </div>
+          <div className="flex shrink-0 items-center justify-center px-3">
             <Link
               href="/feed?compose=1"
               aria-label="Create"
@@ -88,9 +90,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             >
               <Plus className="h-7 w-7" />
             </Link>
-          </li>
-          {navItems.slice(2).map(renderNavItem)}
-        </ul>
+          </div>
+          <div className="flex flex-1 items-stretch">
+            {navItems.slice(2).map(renderNavItem)}
+          </div>
+        </div>
       </nav>
     </div>
   );
