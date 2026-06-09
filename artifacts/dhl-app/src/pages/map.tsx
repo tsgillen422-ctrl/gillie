@@ -155,6 +155,14 @@ function applySatelliteStyle(map: maplibregl.Map) {
   }
 }
 
+// Interpolate between two #rrggbb colors, returning an rgb() string.
+function lerpHex(a: string, b: string, t: number): string {
+  const ca = [parseInt(a.slice(1, 3), 16), parseInt(a.slice(3, 5), 16), parseInt(a.slice(5, 7), 16)];
+  const cb = [parseInt(b.slice(1, 3), 16), parseInt(b.slice(3, 5), 16), parseInt(b.slice(5, 7), 16)];
+  const m = ca.map((v, i) => Math.round(v + (cb[i] - v) * t));
+  return `rgb(${m[0]}, ${m[1]}, ${m[2]})`;
+}
+
 const getPinEmoji = (type: string) => {
   switch (type) {
     case "fishing_spot": return "🎣";
@@ -915,6 +923,44 @@ export function MapPage() {
       map.off("styledata", onStyleData);
     };
   }, [heatmapOn, friends, me, styleReady]);
+
+  // --- Animated water shimmer ---
+  // Gently drift the lake fill between two blues (and breathe its opacity) so the
+  // flat vector water reads as living water instead of a static polygon. Throttled
+  // to ~16fps — the motion is slow, so this stays light on battery, and opacity
+  // never reaches 0 so the land/water hit-testing keeps working.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    const COLOR_A = "#4f93cf";
+    const COLOR_B = "#7cc0ef";
+    let raf = 0;
+    let last = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      raf = requestAnimationFrame(tick);
+      if (now - last < 60) return;
+      last = now;
+      // Re-derive live water layer ids each frame so the shimmer survives style
+      // reloads (layers may be dropped/recreated underneath us).
+      const ids = waterLayerIds.current.filter((id) => map.getLayer(id));
+      if (!ids.length) return;
+      const t = (now - start) / 1000;
+      const wave = (Math.sin(t * 0.6) + 1) / 2;
+      const color = lerpHex(COLOR_A, COLOR_B, wave);
+      const opacity = 0.85 + 0.1 * Math.sin(t * 0.9);
+      for (const id of ids) {
+        try {
+          map.setPaintProperty(id, "fill-color", color);
+          map.setPaintProperty(id, "fill-opacity", opacity);
+        } catch {
+          // layer may have been removed during a style reload — ignore
+        }
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [styleReady]);
 
   // --- Render my own marker ---
   useEffect(() => {
