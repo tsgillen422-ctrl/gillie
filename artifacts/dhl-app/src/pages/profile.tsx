@@ -649,12 +649,9 @@ export function ProfilePage() {
                 </div>
 
               {/* Actions */}
+              {!isSelf && (
               <div className="flex flex-col gap-2 w-full max-w-xs mt-5">
-                {isSelf ? (
-                  <Button variant="outline" className="flex-1 rounded-2xl" asChild>
-                    <Link href="/settings"><Settings className="w-4 h-4 mr-2" /> Edit Profile</Link>
-                  </Button>
-                ) : isBlocked ? (
+                {isBlocked ? (
                   <Button variant="outline" className="flex-1 rounded-2xl" onClick={handleUnblock} disabled={unblockUser.isPending}>
                     <ShieldOff className="w-4 h-4 mr-2" /> Unblock
                   </Button>
@@ -744,6 +741,7 @@ export function ProfilePage() {
                   </>
                 )}
               </div>
+              )}
               </div>
             </div>
           </section>
