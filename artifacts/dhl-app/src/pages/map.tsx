@@ -98,7 +98,9 @@ function applySatelliteStyle(map: maplibregl.Map) {
     map.addSource(SAT_SOURCE, {
       type: "raster",
       tiles: [
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        // Esri "Clarity" imagery — higher-resolution source than standard
+        // World_Imagery for this rural lake (~2x detail at the same zoom).
+        "https://clarity.maptiles.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       ],
       tileSize: 256,
       maxzoom: 19,
