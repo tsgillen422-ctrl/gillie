@@ -30,7 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -699,37 +699,104 @@ export function FeedPage() {
       </Dialog>
 
       <Dialog open={composerOpen} onOpenChange={(open) => { setComposerOpen(open); if (!open) resetComposer(); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>New Post</DialogTitle>
-            <DialogDescription>Share something with the Dale Hollow community.</DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-md gap-0 overflow-hidden p-0 [&>button]:hidden">
+          <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
+            <DialogClose asChild>
+              <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-full">
+                <X className="h-5 w-5" />
+              </Button>
+            </DialogClose>
+            <DialogTitle className="text-base font-semibold">Create Post</DialogTitle>
+            <Button
+              type="button"
+              onClick={handleCreatePost}
+              disabled={createPost.isPending || isUploading}
+              className="h-9 rounded-full bg-gradient-to-r from-teal-500 to-cyan-600 px-5 text-sm font-semibold text-white hover:opacity-90"
+            >
+              {createPost.isPending ? "Posting..." : "Post"}
+            </Button>
+          </div>
+          <DialogDescription className="sr-only">Share something with the Dale Hollow community.</DialogDescription>
 
-          <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Type</Label>
-              <Select value={newType} onValueChange={(v: any) => setNewType(v)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="post">Social</SelectItem>
-                  <SelectItem value="event">Event</SelectItem>
-                  <SelectItem value="tie_up">Tie-up</SelectItem>
-                  <SelectItem value="business">Local</SelectItem>
-                  <SelectItem value="boat_showcase">🚤 Boat Showcase</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="max-h-[70vh] space-y-4 overflow-y-auto px-4 py-4">
+            <div className="flex items-center gap-3">
+              <UserAvatar name={me?.displayName || "You"} username={me?.username || ""} avatarUrl={me?.avatarUrl} className="h-11 w-11 shrink-0" />
+              <div className="min-w-0">
+                <div className="font-semibold leading-tight">{me?.displayName || "You"}</div>
+                <Select value={newType} onValueChange={(v: any) => setNewType(v)}>
+                  <SelectTrigger className="mt-1 h-7 w-auto gap-1.5 rounded-full border-border bg-muted/60 px-2.5 py-0 text-xs font-medium">
+                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="post">Social</SelectItem>
+                    <SelectItem value="event">Event</SelectItem>
+                    <SelectItem value="tie_up">Tie-up</SelectItem>
+                    <SelectItem value="business">Local</SelectItem>
+                    <SelectItem value="boat_showcase">🚤 Boat Showcase</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label>{newType === "boat_showcase" ? "Boat name / title" : "Title"}</Label>
-              <Input value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder={newType === "boat_showcase" ? "e.g. Reel Therapy — 24' Sea Ray" : "Add a title (optional)"} />
-            </div>
+            <Textarea
+              value={newContent}
+              onChange={(e) => setNewContent(e.target.value)}
+              placeholder={newType === "boat_showcase" ? "Tell the story behind your build…" : newType === "tie_up" ? "Drop the spot where everyone's tying up…" : "What's on your mind?"}
+              rows={newType === "boat_showcase" ? 3 : 4}
+              className="resize-none border-0 px-0 text-lg shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0"
+            />
+
+            {newType !== "boat_showcase" && (
+              <>
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
+                <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} />
+                {newImageUrl ? (
+                  <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
+                    <img src={`/api/storage${newImageUrl}`} alt="Selected" className="h-full w-full object-cover" />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      className="absolute right-2 top-2 h-7 w-7"
+                      onClick={() => { setNewImageUrl(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : newVideoUrl ? (
+                  <div className="relative aspect-video overflow-hidden rounded-xl bg-black">
+                    <video src={`/api/storage${newVideoUrl}`} controls className="h-full w-full" />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      className="absolute right-2 top-2 h-7 w-7"
+                      onClick={() => { setNewVideoUrl(null); if (videoInputRef.current) videoInputRef.current.value = ""; }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : null}
+                <div className="flex items-center justify-around border-y border-border py-2">
+                  <button type="button" disabled={isUploading} onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 rounded-lg px-3 py-1.5 transition hover-elevate active:scale-95 disabled:opacity-50">
+                    <ImagePlus className="h-5 w-5 text-emerald-500" />
+                    <span className="text-sm font-medium">{isUploading ? "Uploading..." : "Photo"}</span>
+                  </button>
+                  <button type="button" disabled={isUploading} onClick={() => videoInputRef.current?.click()} className="flex items-center gap-2 rounded-lg px-3 py-1.5 transition hover-elevate active:scale-95 disabled:opacity-50">
+                    <Video className="h-5 w-5 text-indigo-500" />
+                    <span className="text-sm font-medium">Video</span>
+                  </button>
+                </div>
+              </>
+            )}
 
             <div className="space-y-1.5">
-              <Label>{newType === "boat_showcase" ? "About this boat (optional)" : newType === "tie_up" ? "Where's the tie-up?" : "What's happening?"}</Label>
-              <Textarea value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder={newType === "boat_showcase" ? "Tell the story behind your build…" : newType === "tie_up" ? "Drop the spot where everyone's tying up…" : "Share an update..."} rows={newType === "boat_showcase" ? 3 : 4} />
+              <div className="flex items-center justify-between">
+                <Label>{newType === "boat_showcase" ? "Boat name / title" : "Add a title"} <span className="font-normal text-muted-foreground">(optional)</span></Label>
+                <span className="text-xs text-muted-foreground">{newTitle.length}/100</span>
+              </div>
+              <Input maxLength={100} value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder={newType === "boat_showcase" ? "e.g. Reel Therapy — 24' Sea Ray" : "Give your post a title"} />
             </div>
 
             {(newType === "event" || newType === "tie_up") && (
@@ -790,59 +857,7 @@ export function FeedPage() {
               </>
             )}
 
-            {newType !== "boat_showcase" && (
-            <div className="space-y-1.5">
-              <Label>Photo or video</Label>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
-              <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} />
-              {newImageUrl ? (
-                <div className="relative rounded-lg overflow-hidden bg-muted aspect-video">
-                  <img src={`/api/storage${newImageUrl}`} alt="Selected" className="object-cover w-full h-full" />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    className="absolute top-2 right-2 h-7 w-7"
-                    onClick={() => { setNewImageUrl(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ) : newVideoUrl ? (
-                <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
-                  <video src={`/api/storage${newVideoUrl}`} controls className="w-full h-full" />
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    className="absolute top-2 right-2 h-7 w-7"
-                    onClick={() => { setNewVideoUrl(null); if (videoInputRef.current) videoInputRef.current.value = ""; }}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" className="flex-1" disabled={isUploading} onClick={() => fileInputRef.current?.click()}>
-                    <ImagePlus className="w-4 h-4 mr-2" />
-                    {isUploading ? "Uploading..." : "Add a photo"}
-                  </Button>
-                  <Button type="button" variant="outline" className="flex-1" disabled={isUploading} onClick={() => videoInputRef.current?.click()}>
-                    <Video className="w-4 h-4 mr-2" />
-                    {isUploading ? "Uploading..." : "Add a video"}
-                  </Button>
-                </div>
-              )}
-            </div>
-            )}
           </div>
-
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => { setComposerOpen(false); resetComposer(); }}>Cancel</Button>
-            <Button onClick={handleCreatePost} disabled={createPost.isPending || isUploading}>
-              {createPost.isPending ? "Sharing..." : "Share"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
