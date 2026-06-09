@@ -1,10 +1,10 @@
 import React from "react";
 import { useParams, Link, useLocation } from "wouter";
-import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useReactToPost, useDeletePost, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useDeleteUser, useGetFriends, useGetFollowers, useGetFollowing, getGetUserQueryKey, getGetGalleryQueryKey, getGetPostsQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey } from "@workspace/api-client-react";
+import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useReactToPost, useDeletePost, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useDeleteUser, useGetFriends, useGetFollowers, useGetFollowing, useGetCatches, useGetFavoritePins, getGetUserQueryKey, getGetGalleryQueryKey, getGetPostsQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2 } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Compass, Fish, Tent, Anchor, Award, Mountain, Waves, Camera, Trophy, Sparkles, BookOpen, Image as ImageIcon, Bookmark, FileText, ChevronRight } from "lucide-react";
 import { ReportDialog } from "@/components/ReportDialog";
 import { BadgeRow } from "@/components/Badges";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +36,7 @@ import { Label } from "@/components/ui/label";
 import { useUpload } from "@workspace/object-storage-web";
 import { compressImage } from "@/lib/compress";
 import { useQueryClient } from "@tanstack/react-query";
+import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
 const BOAT_TYPE_LABELS: Record<string, string> = {
@@ -76,28 +77,6 @@ function formatBirthday(value?: string | null) {
   return d.toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
 }
 
-function ProfileDetails({ user }: { user: any }) {
-  const items: { icon: React.ReactNode; label: string }[] = [];
-  if (user.location) items.push({ icon: <MapPin className="w-4 h-4 text-primary" />, label: `Lives in ${user.location}` });
-  if (user.hometown) items.push({ icon: <Home className="w-4 h-4 text-primary" />, label: `From ${user.hometown}` });
-  if (user.work) items.push({ icon: <Briefcase className="w-4 h-4 text-primary" />, label: user.work });
-  const bday = formatBirthday(user.birthday);
-  if (bday) items.push({ icon: <Cake className="w-4 h-4 text-primary" />, label: bday });
-  if (user.relationshipStatus) items.push({ icon: <Heart className="w-4 h-4 text-primary" />, label: user.relationshipStatus });
-  if (user.gender) items.push({ icon: <User2 className="w-4 h-4 text-primary" />, label: user.gender });
-  if (items.length === 0) return null;
-  return (
-    <div className="mt-6 w-full max-w-sm mx-auto flex flex-col gap-2 px-4">
-      {items.map((item, i) => (
-        <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-          {item.icon}
-          <span>{item.label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function pinWindow(startTime?: string | null, endTime?: string | null) {
   if (!startTime && !endTime) return null;
   const fmt = (s: string) =>
@@ -105,6 +84,187 @@ function pinWindow(startTime?: string | null, endTime?: string | null) {
   if (startTime && endTime) return `${fmt(startTime)} - ${fmt(endTime)}`;
   if (startTime) return `From ${fmt(startTime)}`;
   return `Until ${fmt(endTime!)}`;
+}
+
+/* ----------------------------- Modern profile UI ---------------------------- */
+
+const CARD = "rounded-3xl border border-card-border bg-card shadow-soft";
+
+/** Lake-inspired wave divider between sections. */
+function WaveDivider({ className = "" }: { className?: string }) {
+  return (
+    <div className={`-mx-4 text-primary/15 ${className}`} aria-hidden="true">
+      <svg viewBox="0 0 1440 48" preserveAspectRatio="none" className="w-full h-4">
+        <path
+          fill="currentColor"
+          d="M0,24 C180,46 360,4 540,18 C720,32 900,48 1080,30 C1260,14 1350,20 1440,28 L1440,48 L0,48 Z"
+        />
+      </svg>
+    </div>
+  );
+}
+
+function SectionTitle({ icon: Icon, children, action }: { icon: any; children: React.ReactNode; action?: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between mb-3 px-0.5">
+      <h3 className="text-[15px] font-bold flex items-center gap-2">
+        <span className="grid place-items-center w-7 h-7 rounded-xl bg-primary/10 text-primary">
+          <Icon className="w-4 h-4" />
+        </span>
+        {children}
+      </h3>
+      {action}
+    </div>
+  );
+}
+
+type PersonaBadge = { key: string; label: string; Icon: any; className: string };
+
+function PersonaBadges({ badges }: { badges: PersonaBadge[] }) {
+  if (badges.length === 0) return null;
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
+      {badges.map(({ key, label, Icon, className }) => (
+        <span
+          key={key}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold shadow-soft ${className}`}
+        >
+          <Icon className="w-3.5 h-3.5" />
+          {label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function StatCard({ label, value, icon: Icon, onClick }: { label: string; value: number; icon: any; onClick?: () => void }) {
+  const inner = (
+    <>
+      <span className="grid place-items-center w-9 h-9 rounded-2xl bg-primary/10 text-primary mb-2">
+        <Icon className="w-[18px] h-[18px]" />
+      </span>
+      <span className="text-xl font-bold leading-none tabular-nums">{value}</span>
+      <span className="text-[11px] uppercase tracking-wide text-muted-foreground mt-1">{label}</span>
+    </>
+  );
+  const base = `${CARD} flex flex-col items-center justify-center py-4 px-2 text-center`;
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={`${base} hover-elevate active-elevate-2`}>
+        {inner}
+      </button>
+    );
+  }
+  return <div className={base}>{inner}</div>;
+}
+
+const INTEREST_DEFS: { key: string; label: string; Icon: any }[] = [
+  { key: "fishing", label: "Fishing", Icon: Fish },
+  { key: "boating", label: "Boating", Icon: Anchor },
+  { key: "camping", label: "Camping", Icon: Tent },
+  { key: "hiking", label: "Hiking", Icon: Mountain },
+  { key: "swimming", label: "Swimming", Icon: Waves },
+  { key: "photography", label: "Photography", Icon: Camera },
+];
+
+function InterestChips({ active }: { active: Set<string> }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {INTEREST_DEFS.map(({ key, label, Icon }) => {
+        const on = active.has(key);
+        return (
+          <span
+            key={key}
+            className={
+              "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium border transition-colors " +
+              (on
+                ? "bg-primary text-primary-foreground border-transparent shadow-soft"
+                : "bg-muted/60 text-muted-foreground border-border")
+            }
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+type Achievement = { key: string; label: string; Icon: any; earned: boolean };
+
+function AchievementGrid({ items }: { items: Achievement[] }) {
+  return (
+    <div className="grid grid-cols-4 gap-2.5">
+      {items.map(({ key, label, Icon, earned }) => (
+        <div
+          key={key}
+          className={
+            "relative flex flex-col items-center justify-start text-center gap-1.5 rounded-2xl border p-2.5 " +
+            (earned
+              ? "bg-accent/10 border-accent/30 shadow-soft"
+              : "bg-muted/40 border-border")
+          }
+        >
+          <span
+            className={
+              "grid place-items-center w-10 h-10 rounded-full " +
+              (earned ? "bg-accent/20 text-amber-600 dark:text-amber-400" : "bg-muted text-muted-foreground/50")
+            }
+          >
+            <Icon className="w-5 h-5" />
+          </span>
+          <span className={"text-[10px] leading-tight font-semibold " + (earned ? "text-foreground" : "text-muted-foreground/70")}>
+            {label}
+          </span>
+          {!earned && (
+            <span className="absolute top-1.5 right-1.5 text-muted-foreground/50">
+              <Lock className="w-3 h-3" />
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function AboutCard({ user }: { user: any }) {
+  const items: { icon: React.ReactNode; label: string }[] = [];
+  if (user.location) items.push({ icon: <MapPin className="w-4 h-4" />, label: `Lives in ${user.location}` });
+  if (user.hometown) items.push({ icon: <Home className="w-4 h-4" />, label: `From ${user.hometown}` });
+  if (user.work) items.push({ icon: <Briefcase className="w-4 h-4" />, label: user.work });
+  const bday = formatBirthday(user.birthday);
+  if (bday) items.push({ icon: <Cake className="w-4 h-4" />, label: bday });
+  if (user.relationshipStatus) items.push({ icon: <Heart className="w-4 h-4" />, label: user.relationshipStatus });
+  if (user.gender) items.push({ icon: <User2 className="w-4 h-4" />, label: user.gender });
+  if (user.boatName) {
+    items.push({
+      icon: <Ship className="w-4 h-4" />,
+      label: `${user.boatName} · ${BOAT_TYPE_LABELS[user.boatType ?? ""] ?? "Speed Boat"}`,
+    });
+  }
+
+  const hasBio = !!user.bio;
+  if (!hasBio && items.length === 0) return null;
+
+  return (
+    <div className={`${CARD} p-4`}>
+      <SectionTitle icon={User2}>About Me</SectionTitle>
+      {hasBio && <p className="text-sm leading-relaxed whitespace-pre-wrap mb-3">{user.bio}</p>}
+      {items.length > 0 && (
+        <div className="flex flex-col gap-2.5">
+          {items.map((item, i) => (
+            <div key={i} className="flex items-center gap-3 text-sm">
+              <span className="grid place-items-center w-7 h-7 rounded-lg bg-primary/10 text-primary shrink-0">
+                {item.icon}
+              </span>
+              <span className="text-foreground/90">{item.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ProfilePage() {
@@ -120,6 +280,9 @@ export function ProfilePage() {
   const user = isSelf ? me : otherUser;
   const loadingUser = isSelf ? !me : loadingOther;
 
+  const showFollowers = (otherUser as any)?.showFollowers;
+  const canViewFollows = isSelf || showFollowers !== false;
+
   const { data: posts, isLoading: loadingPosts } = useGetPosts({});
   const { data: pins, isLoading: loadingPins } = useGetPins(
     id ? { profileUserId: id } : {},
@@ -130,6 +293,13 @@ export function ProfilePage() {
     id ? { profileUserId: id } : {},
     { query: { enabled: !!id } }
   );
+  const { data: catches } = useGetCatches(
+    id ? { profileUserId: id } : {},
+    { query: { enabled: !!id } }
+  );
+  const { data: favoritePins } = useGetFavoritePins({ query: { enabled: isSelf } });
+  const followersQuery = useGetFollowers(id, { query: { enabled: !!id && canViewFollows } });
+  const followingQuery = useGetFollowing(id, { query: { enabled: !!id && canViewFollows } });
 
   const queryClient = useQueryClient();
   const reactPost = useReactToPost();
@@ -154,6 +324,13 @@ export function ProfilePage() {
   const [caption, setCaption] = React.useState("");
   const [mediaUrl, setMediaUrl] = React.useState<string | null>(null);
   const [mediaType, setMediaType] = React.useState<"image" | "video">("image");
+
+  const [tab, setTab] = React.useState("posts");
+  const tabsRef = React.useRef<HTMLDivElement>(null);
+  const goToTab = (value: string) => {
+    setTab(value);
+    requestAnimationFrame(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
 
   const refreshGallery = () =>
     queryClient.invalidateQueries({ queryKey: getGetGalleryQueryKey(id ? { profileUserId: id } : {}) });
@@ -247,8 +424,6 @@ export function ProfilePage() {
   const isFriend = friendStatus ? friendStatus === "accepted" : friends?.some((f) => f.id === id);
   const isBlocked = friendStatus === "blocked";
   const isPending = friendStatus === "pending_out";
-  const showFollowers = (otherUser as any)?.showFollowers;
-  const canViewFollows = isSelf || showFollowers !== false;
   const userPosts = posts?.filter((p) => p.userId === id);
   const userPins = pins?.filter((p) => p.userId === id);
 
@@ -275,102 +450,256 @@ export function ProfilePage() {
       onError: () => toast.error("Couldn't delete this profile."),
     });
 
+  /* ------------------------------- Derived data ------------------------------ */
+
+  const postCount = userPosts?.length ?? 0;
+  const pinCount = userPins?.length ?? 0;
+  const catchCount = catches?.length ?? 0;
+  const galleryCount = gallery?.length ?? 0;
+  const followersCount = canViewFollows ? (followersQuery.data?.length ?? user?.followerCount ?? 0) : (user?.followerCount ?? 0);
+  const followingCount = canViewFollows ? (followingQuery.data?.length ?? user?.followingCount ?? 0) : (user?.followingCount ?? 0);
+
+  const personaBadges = React.useMemo<PersonaBadge[]>(() => {
+    if (!user) return [];
+    const list: PersonaBadge[] = [];
+    list.push({ key: "explorer", label: "Lake Explorer", Icon: Compass, className: "bg-primary/15 text-primary" });
+    if (catchCount > 0) list.push({ key: "angler", label: "Angler", Icon: Fish, className: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400" });
+    if (userPins?.some((p) => p.type === "campsite")) list.push({ key: "camper", label: "Camper", Icon: Tent, className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" });
+    if (user.boatName) list.push({ key: "boater", label: "Boater", Icon: Anchor, className: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400" });
+    if (user.isBusiness || (userPins?.filter((p) => p.visibility === "public").length ?? 0) >= 3) {
+      list.push({ key: "guide", label: "Local Guide", Icon: Award, className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" });
+    }
+    return list;
+  }, [user, catchCount, userPins]);
+
+  const activeInterests = React.useMemo(() => {
+    const s = new Set<string>();
+    if (catchCount > 0) s.add("fishing");
+    if (user?.boatName) s.add("boating");
+    if (userPins?.some((p) => p.type === "campsite")) s.add("camping");
+    if (userPins?.some((p) => p.type === "cliff" || p.type === "waterfall" || p.type === "landmark")) s.add("hiking");
+    if (galleryCount > 0) s.add("photography");
+    return s;
+  }, [user, catchCount, galleryCount, userPins]);
+
+  const achievements = React.useMemo<Achievement[]>(() => [
+    { key: "first_post", label: "First Post", Icon: Sparkles, earned: postCount >= 1 },
+    { key: "storyteller", label: "Storyteller", Icon: BookOpen, earned: postCount >= 10 },
+    { key: "first_catch", label: "First Catch", Icon: Fish, earned: catchCount >= 1 },
+    { key: "master_angler", label: "Master Angler", Icon: Trophy, earned: catchCount >= 5 },
+    { key: "pathfinder", label: "Pathfinder", Icon: MapPin, earned: pinCount >= 1 },
+    { key: "trailblazer", label: "Trailblazer", Icon: Compass, earned: pinCount >= 5 },
+    { key: "shutterbug", label: "Shutterbug", Icon: Camera, earned: galleryCount >= 3 },
+    { key: "popular", label: "Crowd Favorite", Icon: Heart, earned: followersCount >= 5 },
+  ], [postCount, catchCount, pinCount, galleryCount, followersCount]);
+
+  const recentActivity = React.useMemo(() => {
+    type Item = { key: string; Icon: any; color: string; label: string; time: number };
+    const items: Item[] = [];
+    (userPosts ?? []).forEach((p) => items.push({
+      key: `post-${p.id}`, Icon: FileText, color: "text-primary bg-primary/10",
+      label: p.title ? `Posted “${p.title}”` : "Shared a post", time: new Date(p.createdAt).getTime(),
+    }));
+    (catches ?? []).forEach((c) => items.push({
+      key: `catch-${c.id}`, Icon: Fish, color: "text-cyan-600 dark:text-cyan-400 bg-cyan-500/10",
+      label: `Logged a catch · ${c.species}`, time: new Date(c.caughtAt).getTime(),
+    }));
+    (userPins ?? []).forEach((p) => items.push({
+      key: `pin-${p.id}`, Icon: MapPin, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
+      label: `Dropped a pin · ${p.title}`, time: new Date(p.createdAt).getTime(),
+    }));
+    (gallery ?? []).forEach((g) => items.push({
+      key: `gallery-${g.id}`, Icon: ImageIcon, color: "text-amber-600 dark:text-amber-400 bg-amber-500/10",
+      label: g.caption ? `Shared a photo · ${g.caption}` : "Added a photo to the gallery", time: new Date(g.createdAt).getTime(),
+    }));
+    return items.filter((i) => !isNaN(i.time)).sort((a, b) => b.time - a.time).slice(0, 5);
+  }, [userPosts, catches, userPins, gallery]);
+
+  const galleryPreview = (gallery ?? []).slice(0, 6);
+
   return (
     <div className="flex flex-col h-full bg-background overflow-y-auto">
-      <div className="p-4 flex items-center gap-3 sticky top-0 z-10 bg-background/80 backdrop-blur-md">
-        <Button size="icon" variant="ghost" asChild className="-ml-2 shrink-0">
-          <Link href={isSelf ? "/" : "/friends"}><ArrowLeft className="w-5 h-5" /></Link>
-        </Button>
-        <h1 className="text-lg font-bold">{isSelf ? "My Profile" : "Profile"}</h1>
-        {isSelf && (
-          <Button size="icon" variant="ghost" asChild className="ml-auto shrink-0">
-            <Link href="/settings"><Settings className="w-5 h-5" /></Link>
-          </Button>
-        )}
-      </div>
-
       {loadingUser ? (
         <div className="p-6 space-y-6">
-          <div className="flex flex-col items-center gap-4">
-            <Skeleton className="w-24 h-24 rounded-full" />
+          <Skeleton className="w-full h-52 rounded-3xl" />
+          <div className="flex flex-col items-center gap-3 -mt-16">
+            <Skeleton className="w-28 h-28 rounded-full" />
             <Skeleton className="h-6 w-40" />
             <Skeleton className="h-4 w-24" />
           </div>
+          <div className="grid grid-cols-4 gap-2.5">
+            {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-3xl" />)}
+          </div>
         </div>
       ) : user ? (
-        <div className="flex flex-col items-center bg-card border-b border-border shadow-sm">
-          <div className="w-full h-36 bg-gradient-to-br from-primary/30 to-primary/10 relative">
-            {user.coverUrl && (
-              <button
-                type="button"
-                onClick={() => setPhotoView({ src: `/api/storage${user.coverUrl}`, alt: "Cover photo" })}
-                className="w-full h-full cursor-zoom-in"
-                aria-label="View cover photo"
-              >
-                <img src={`/api/storage${user.coverUrl}`} alt="Cover photo" className="w-full h-full object-cover" />
-              </button>
-            )}
-          </div>
-          <div className="flex flex-col items-center px-6 pb-6 -mt-12 w-full">
-          {user.avatarUrl ? (
-            <button
-              type="button"
-              onClick={() => {
-                const src = resolveAvatarUrl(user.avatarUrl);
-                if (src) setPhotoView({ src, alt: "Profile photo" });
-              }}
-              className="cursor-zoom-in rounded-full"
-              aria-label="View profile photo"
-            >
-              <UserAvatar
-                name={user.displayName}
-                username={user.username}
-                avatarUrl={user.avatarUrl}
-                online={user.isOnline}
-                className="w-24 h-24 mb-4 ring-4 ring-card"
-              />
-            </button>
-          ) : (
-            <UserAvatar
-              name={user.displayName}
-              username={user.username}
-              avatarUrl={user.avatarUrl}
-              online={user.isOnline}
-              className="w-24 h-24 mb-4 ring-4 ring-card"
-            />
-          )}
+        <>
+          {/* Hero: scenic cover photo + overlapping avatar */}
+          <section className="relative">
+            <div className="relative h-52 w-full overflow-hidden bg-gradient-to-br from-primary via-secondary to-primary/60">
+              {user.coverUrl && (
+                <button
+                  type="button"
+                  onClick={() => setPhotoView({ src: `/api/storage${user.coverUrl}`, alt: "Cover photo" })}
+                  className="w-full h-full cursor-zoom-in"
+                  aria-label="View cover photo"
+                >
+                  <img src={`/api/storage${user.coverUrl}`} alt="Cover photo" className="w-full h-full object-cover" />
+                </button>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/15 pointer-events-none" />
+            </div>
 
-          <h2 className="text-2xl font-bold flex items-center gap-1.5">
-            {user.displayName}
-            {user.isBusiness && <BadgeCheck className="w-5 h-5 text-primary" />}
-          </h2>
-          <p className="text-muted-foreground mb-4">@{user.username}</p>
-
-          <div className="flex items-center gap-4 mb-6 text-sm">
-            {canViewFollows ? (
-              <button type="button" className="text-center transition-opacity hover:opacity-70" onClick={() => setFollowList("followers")}>
-                <div className="font-bold">{user.followerCount || 0}</div>
-                <div className="text-muted-foreground text-xs uppercase tracking-wider">Followers</div>
-              </button>
-            ) : (
-              <div className="text-center">
-                <div className="font-bold">{user.followerCount || 0}</div>
-                <div className="text-muted-foreground text-xs uppercase tracking-wider">Followers</div>
+            {/* Floating nav */}
+            <div className="absolute top-4 left-4 z-10">
+              <Button size="icon" variant="secondary" asChild className="rounded-full bg-white/85 text-foreground hover:bg-white shadow-soft backdrop-blur">
+                <Link href={isSelf ? "/" : "/friends"}><ArrowLeft className="w-5 h-5" /></Link>
+              </Button>
+            </div>
+            {isSelf && (
+              <div className="absolute top-4 right-4 z-10">
+                <Button size="icon" variant="secondary" asChild className="rounded-full bg-white/85 text-foreground hover:bg-white shadow-soft backdrop-blur">
+                  <Link href="/settings"><Settings className="w-5 h-5" /></Link>
+                </Button>
               </div>
             )}
-            <div className="w-px h-8 bg-border" />
-            {canViewFollows ? (
-              <button type="button" className="text-center transition-opacity hover:opacity-70" onClick={() => setFollowList("following")}>
-                <div className="font-bold">{user.followingCount || 0}</div>
-                <div className="text-muted-foreground text-xs uppercase tracking-wider">Following</div>
-              </button>
-            ) : (
-              <div className="text-center">
-                <div className="font-bold">{user.followingCount || 0}</div>
-                <div className="text-muted-foreground text-xs uppercase tracking-wider">Following</div>
+
+            {/* Avatar + identity */}
+            <div className="flex flex-col items-center px-6 -mt-16">
+              {user.avatarUrl ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const src = resolveAvatarUrl(user.avatarUrl);
+                    if (src) setPhotoView({ src, alt: "Profile photo" });
+                  }}
+                  className="cursor-zoom-in rounded-full"
+                  aria-label="View profile photo"
+                >
+                  <UserAvatar
+                    name={user.displayName}
+                    username={user.username}
+                    avatarUrl={user.avatarUrl}
+                    online={user.isOnline}
+                    className="w-28 h-28 ring-4 ring-white dark:ring-card shadow-soft-lg"
+                  />
+                </button>
+              ) : (
+                <UserAvatar
+                  name={user.displayName}
+                  username={user.username}
+                  avatarUrl={user.avatarUrl}
+                  online={user.isOnline}
+                  className="w-28 h-28 ring-4 ring-white dark:ring-card shadow-soft-lg"
+                />
+              )}
+
+              <h2 className="mt-3 text-2xl font-bold flex items-center gap-1.5 text-center">
+                {user.displayName}
+                {user.isBusiness && <BadgeCheck className="w-5 h-5 text-primary" />}
+              </h2>
+              <p className="text-muted-foreground text-sm">@{user.username}</p>
+
+              <PersonaBadges badges={personaBadges} />
+              <BadgeRow badges={(user as any).badges} />
+
+              {/* Actions */}
+              <div className="flex flex-col gap-2 w-full max-w-xs mt-5">
+                {isSelf ? (
+                  <Button variant="outline" className="flex-1 rounded-2xl" asChild>
+                    <Link href="/settings"><Settings className="w-4 h-4 mr-2" /> Edit Profile</Link>
+                  </Button>
+                ) : isBlocked ? (
+                  <Button variant="outline" className="flex-1 rounded-2xl" onClick={handleUnblock} disabled={unblockUser.isPending}>
+                    <ShieldOff className="w-4 h-4 mr-2" /> Unblock
+                  </Button>
+                ) : (
+                  <>
+                    <div className="flex gap-2 w-full">
+                      {isFriend ? (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" className="flex-1 rounded-2xl">
+                              <UserMinus className="w-4 h-4 mr-2" /> Unfriend
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Unfriend {user.displayName}?</AlertDialogTitle>
+                              <AlertDialogDescription>You'll no longer be connected on the lake.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleUnfollow}>Unfriend</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      ) : isPending ? (
+                        <Button variant="outline" className="flex-1 rounded-2xl" onClick={handleUnfollow} disabled={unfollowUser.isPending}>
+                          <Clock className="w-4 h-4 mr-2" /> Requested
+                        </Button>
+                      ) : (
+                        <Button className="flex-1 rounded-2xl" onClick={handleFollow} disabled={followUser.isPending}>
+                          <UserPlus className="w-4 h-4 mr-2" /> Follow
+                        </Button>
+                      )}
+                      <Button variant="secondary" className="flex-1 rounded-2xl" asChild>
+                        <Link href={`/messages?user=${id}`}><MessageSquare className="w-4 h-4 mr-2" /> Message</Link>
+                      </Button>
+                    </div>
+                    <div className="flex gap-2 justify-center">
+                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" onClick={() => setReportOpen(true)}>
+                        <Flag className="w-4 h-4 mr-2" /> Report
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                            <Ban className="w-4 h-4 mr-2" /> Block
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Block {user.displayName}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              They won't be able to follow you, and you'll remove any existing connection. You can unblock them later from Settings.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleBlock} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              Block
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      {me?.isAdmin && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete profile
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete {user.displayName}'s profile?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This permanently removes their account and all of their posts, pins, catches, photos, messages, and other content. This can't be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDeleteProfile} disabled={deleteUser.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Delete profile
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          </section>
 
           <FollowListDialog
             userId={id}
@@ -378,269 +707,249 @@ export function ProfilePage() {
             onOpenChange={(open) => { if (!open) setFollowList(null); }}
           />
 
-          <div className="flex flex-col gap-2 w-full max-w-xs">
-            {isSelf ? (
-              <Button variant="outline" className="flex-1" asChild>
-                <Link href="/settings"><Settings className="w-4 h-4 mr-2" /> Edit Profile</Link>
-              </Button>
-            ) : isBlocked ? (
-              <Button variant="outline" className="flex-1" onClick={handleUnblock} disabled={unblockUser.isPending}>
-                <ShieldOff className="w-4 h-4 mr-2" /> Unblock
-              </Button>
-            ) : (
-              <>
-                <div className="flex gap-2 w-full">
-                  {isFriend ? (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="flex-1">
-                          <UserMinus className="w-4 h-4 mr-2" /> Unfriend
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Unfriend {user.displayName}?</AlertDialogTitle>
-                          <AlertDialogDescription>You'll no longer be connected on the lake.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleUnfollow}>Unfriend</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  ) : isPending ? (
-                    <Button variant="outline" className="flex-1" onClick={handleUnfollow} disabled={unfollowUser.isPending}>
-                      <Clock className="w-4 h-4 mr-2" /> Requested
-                    </Button>
-                  ) : (
-                    <Button className="flex-1" onClick={handleFollow} disabled={followUser.isPending}>
-                      <UserPlus className="w-4 h-4 mr-2" /> Follow
-                    </Button>
-                  )}
-                  <Button variant="secondary" className="flex-1" asChild>
-                    <Link href={`/messages?user=${id}`}><MessageSquare className="w-4 h-4 mr-2" /> Message</Link>
-                  </Button>
-                </div>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" onClick={() => setReportOpen(true)}>
-                    <Flag className="w-4 h-4 mr-2" /> Report
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
-                        <Ban className="w-4 h-4 mr-2" /> Block
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Block {user.displayName}?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          They won't be able to follow you, and you'll remove any existing connection. You can unblock them later from Settings.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleBlock} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                          Block
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                  {me?.isAdmin && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
-                          <Trash2 className="w-4 h-4 mr-2" /> Delete profile
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete {user.displayName}'s profile?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This permanently removes their account and all of their posts, pins, catches, photos, messages, and other content. This can't be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleDeleteProfile} disabled={deleteUser.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete profile
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-
-          <BadgeRow badges={(user as any).badges} />
-
-          {user.bio && (
-            <p className="mt-6 text-center text-sm px-4 whitespace-pre-wrap">{user.bio}</p>
-          )}
-
-          <ProfileDetails user={user} />
-
-          {user.boatName && (
-            <div className="mt-6 flex items-center justify-center gap-2 text-sm bg-muted/50 px-4 py-2 rounded-full border border-border/50">
-              <Ship className="w-4 h-4 text-primary" />
-              <span className="font-medium text-foreground">Vessel:</span>
-              <span className="text-muted-foreground">{user.boatName}</span>
-              <span className="text-muted-foreground">· {BOAT_TYPE_LABELS[user.boatType ?? ""] ?? "Speed Boat"}</span>
-              {user.boatColor && (
-                <div className="w-3 h-3 rounded-full ml-1" style={{ backgroundColor: user.boatColor }} />
+          {/* Body */}
+          <div className="px-4 pt-5 pb-24 space-y-5">
+            {/* Stat cards */}
+            <div className="grid grid-cols-4 gap-2.5">
+              <StatCard label="Posts" value={postCount} icon={FileText} onClick={() => goToTab("posts")} />
+              <StatCard label="Followers" value={followersCount} icon={Users} onClick={canViewFollows ? () => setFollowList("followers") : undefined} />
+              <StatCard label="Following" value={followingCount} icon={UserPlus} onClick={canViewFollows ? () => setFollowList("following") : undefined} />
+              {isSelf ? (
+                <StatCard label="Favorites" value={favoritePins?.length ?? 0} icon={Bookmark} onClick={() => navigate("/map")} />
+              ) : (
+                <StatCard label="Catches" value={catchCount} icon={Fish} />
               )}
             </div>
-          )}
-          </div>
-        </div>
-      ) : (
-        <div className="p-10 text-center text-muted-foreground">User not found</div>
-      )}
 
-      <div className="p-4 flex-1">
-        <Tabs defaultValue="posts" className="w-full">
-          <TabsList className="w-full mb-4">
-            <TabsTrigger value="posts" className="flex-1">Posts</TabsTrigger>
-            <TabsTrigger value="pins" className="flex-1">Pins</TabsTrigger>
-            <TabsTrigger value="gallery" className="flex-1">Gallery</TabsTrigger>
-          </TabsList>
+            <WaveDivider />
 
-          <TabsContent value="posts" className="space-y-4">
-            {loadingPosts ? (
-              <Skeleton className="h-32 w-full rounded-xl" />
-            ) : userPosts?.length ? (
-              userPosts.map((post) => (
-                <Card
-                  key={post.id}
-                  role="button"
-                  tabIndex={0}
-                  aria-label={`Open post${post.title ? `: ${post.title}` : ""}`}
-                  onClick={() => setOpenPostId(post.id)}
-                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenPostId(post.id); } }}
-                  className="border-border/50 hover-elevate cursor-pointer"
-                >
-                  <CardContent className="p-4">
-                    {post.title && <h3 className="font-bold">{post.title}</h3>}
-                    {post.content && <p className="text-sm mt-1 line-clamp-3">{post.content}</p>}
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-10 text-muted-foreground">
-                {isSelf ? "You haven't posted yet." : "No posts yet."}
-              </div>
-            )}
-          </TabsContent>
+            {/* About */}
+            <AboutCard user={user} />
 
-          <TabsContent value="pins" className="space-y-4">
-            {loadingPins ? (
-              <Skeleton className="h-24 w-full rounded-xl" />
-            ) : userPins?.length ? (
-              userPins.map((pin) => {
-                const window = pinWindow(pin.startTime, pin.endTime);
-                const canLocate = pin.lat != null && pin.lng != null;
-                const card = (
-                  <Card key={pin.id} className={`border-border/50 ${canLocate ? "transition-colors hover:bg-muted/40 cursor-pointer" : ""}`}>
-                    <CardContent className="p-4 flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0 text-xl">
-                        {pinEmoji(pin.type)}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-bold text-sm">{pin.title}</h3>
-                          <PinVisibility visibility={pin.visibility} />
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">{pin.description}</p>
-                        {window && <p className="text-[11px] text-primary font-medium mt-0.5">{window}</p>}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-                return canLocate ? (
-                  <Link key={pin.id} href={`/map?lat=${pin.lat}&lng=${pin.lng}`} className="block">
-                    {card}
-                  </Link>
-                ) : card;
-              })
-            ) : (
-              <div className="text-center py-10 text-muted-foreground">
-                {isSelf ? "You haven't dropped any pins." : "No pins dropped."}
-              </div>
-            )}
-          </TabsContent>
+            {/* Interests */}
+            <div className={`${CARD} p-4`}>
+              <SectionTitle icon={Heart}>Interests</SectionTitle>
+              <InterestChips active={activeInterests} />
+            </div>
 
-          <TabsContent value="gallery" className="space-y-4">
-            {isSelf && (
-              <>
-                <input
-                  ref={mediaInputRef}
-                  type="file"
-                  accept="image/*,video/*"
-                  className="hidden"
-                  onChange={handleMedia}
-                />
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setGalleryOpen(true)}
-                >
-                  <ImagePlus className="w-4 h-4 mr-2" /> Add photos and videos
-                </Button>
-              </>
-            )}
+            <WaveDivider />
 
-            {loadingGallery ? (
-              <div className="grid grid-cols-3 gap-1.5">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <Skeleton key={i} className="aspect-square w-full rounded-lg" />
-                ))}
-              </div>
-            ) : gallery?.length ? (
-              <div className="grid grid-cols-3 gap-1.5">
-                {gallery.map((item) => (
-                  <div key={item.id} className="relative group aspect-square rounded-lg overflow-hidden bg-muted">
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      aria-label={item.mediaType === "video" ? "View video" : "View photo"}
-                      className="w-full h-full cursor-zoom-in"
+            {/* Achievements */}
+            <div className={`${CARD} p-4`}>
+              <SectionTitle icon={Trophy}>Achievements</SectionTitle>
+              <AchievementGrid items={achievements} />
+            </div>
+
+            {/* Gallery preview */}
+            <div className={`${CARD} p-4`}>
+              <SectionTitle
+                icon={Camera}
+                action={
+                  galleryCount > 0 ? (
+                    <button type="button" onClick={() => goToTab("gallery")} className="text-xs font-semibold text-primary flex items-center gap-0.5 hover:opacity-70">
+                      See all <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  ) : undefined
+                }
+              >
+                Lake Adventures
+              </SectionTitle>
+              {galleryPreview.length > 0 ? (
+                <div className="grid grid-cols-3 gap-1.5">
+                  {galleryPreview.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
                       onClick={() => setViewerItem(item)}
-                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewerItem(item); } }}
+                      className="relative aspect-square rounded-2xl overflow-hidden bg-muted cursor-zoom-in"
+                      aria-label={item.mediaType === "video" ? "View video" : "View photo"}
                     >
                       {item.mediaType === "video" ? (
                         <>
                           <video src={item.mediaUrl} className="w-full h-full object-cover" muted playsInline preload="metadata" />
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div className="bg-black/40 rounded-full p-2">
-                              <Play className="w-5 h-5 text-white fill-white" />
-                            </div>
-                          </div>
+                          <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span className="bg-black/40 rounded-full p-1.5">
+                              <Play className="w-4 h-4 text-white fill-white" />
+                            </span>
+                          </span>
                         </>
                       ) : (
                         <img src={item.mediaUrl} alt={item.caption ?? "Gallery item"} className="w-full h-full object-cover" />
                       )}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground py-2">
+                  {isSelf ? "Share your first lake adventure below." : "No photos shared yet."}
+                </p>
+              )}
+            </div>
+
+            <WaveDivider />
+
+            {/* Recent activity */}
+            <div className={`${CARD} p-4`}>
+              <SectionTitle icon={Clock}>Recent Activity</SectionTitle>
+              {recentActivity.length > 0 ? (
+                <div className="flex flex-col gap-3">
+                  {recentActivity.map(({ key, Icon, color, label, time }) => (
+                    <div key={key} className="flex items-center gap-3">
+                      <span className={`grid place-items-center w-9 h-9 rounded-full shrink-0 ${color}`}>
+                        <Icon className="w-[18px] h-[18px]" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{label}</p>
+                        <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(time), { addSuffix: true })}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-10 text-muted-foreground">
-                {isSelf ? "Add your first photos and videos." : "No photos or videos yet."}
-              </div>
-            )}
-            <ImageLightbox
-              src={viewerItem?.mediaUrl ?? null}
-              alt={viewerItem?.caption ?? "Gallery item"}
-              mediaType={viewerItem?.mediaType === "video" ? "video" : "image"}
-              open={!!viewerItem}
-              onClose={() => setViewerItem(null)}
-              onDelete={isSelf && viewerItem ? () => handleGalleryDelete(viewerItem.id) : undefined}
-            />
-          </TabsContent>
-        </Tabs>
-      </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground py-2">No activity on the lake yet.</p>
+              )}
+            </div>
+
+            {/* Detailed tabs */}
+            <div ref={tabsRef} className="pt-1">
+              <Tabs value={tab} onValueChange={setTab} className="w-full">
+                <TabsList className="w-full mb-4 rounded-2xl">
+                  <TabsTrigger value="posts" className="flex-1 rounded-xl">Posts</TabsTrigger>
+                  <TabsTrigger value="pins" className="flex-1 rounded-xl">Pins</TabsTrigger>
+                  <TabsTrigger value="gallery" className="flex-1 rounded-xl">Gallery</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="posts" className="space-y-4">
+                  {loadingPosts ? (
+                    <Skeleton className="h-32 w-full rounded-3xl" />
+                  ) : userPosts?.length ? (
+                    userPosts.map((post) => (
+                      <Card
+                        key={post.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Open post${post.title ? `: ${post.title}` : ""}`}
+                        onClick={() => setOpenPostId(post.id)}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenPostId(post.id); } }}
+                        className="rounded-3xl border-card-border shadow-soft hover-elevate cursor-pointer"
+                      >
+                        <CardContent className="p-4">
+                          {post.title && <h3 className="font-bold">{post.title}</h3>}
+                          {post.content && <p className="text-sm mt-1 line-clamp-3">{post.content}</p>}
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="text-center py-10 text-muted-foreground">
+                      {isSelf ? "You haven't posted yet." : "No posts yet."}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="pins" className="space-y-4">
+                  {loadingPins ? (
+                    <Skeleton className="h-24 w-full rounded-3xl" />
+                  ) : userPins?.length ? (
+                    userPins.map((pin) => {
+                      const window = pinWindow(pin.startTime, pin.endTime);
+                      const canLocate = pin.lat != null && pin.lng != null;
+                      const card = (
+                        <Card key={pin.id} className={`rounded-3xl border-card-border shadow-soft ${canLocate ? "transition-colors hover:bg-muted/40 cursor-pointer" : ""}`}>
+                          <CardContent className="p-4 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0 text-xl">
+                              {pinEmoji(pin.type)}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-bold text-sm">{pin.title}</h3>
+                                <PinVisibility visibility={pin.visibility} />
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">{pin.description}</p>
+                              {window && <p className="text-[11px] text-primary font-medium mt-0.5">{window}</p>}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                      return canLocate ? (
+                        <Link key={pin.id} href={`/map?lat=${pin.lat}&lng=${pin.lng}`} className="block">
+                          {card}
+                        </Link>
+                      ) : card;
+                    })
+                  ) : (
+                    <div className="text-center py-10 text-muted-foreground">
+                      {isSelf ? "You haven't dropped any pins." : "No pins dropped."}
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="gallery" className="space-y-4">
+                  {isSelf && (
+                    <>
+                      <input
+                        ref={mediaInputRef}
+                        type="file"
+                        accept="image/*,video/*"
+                        className="hidden"
+                        onChange={handleMedia}
+                      />
+                      <Button
+                        variant="outline"
+                        className="w-full rounded-2xl"
+                        onClick={() => setGalleryOpen(true)}
+                      >
+                        <ImagePlus className="w-4 h-4 mr-2" /> Add photos and videos
+                      </Button>
+                    </>
+                  )}
+
+                  {loadingGallery ? (
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <Skeleton key={i} className="aspect-square w-full rounded-2xl" />
+                      ))}
+                    </div>
+                  ) : gallery?.length ? (
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {gallery.map((item) => (
+                        <div key={item.id} className="relative group aspect-square rounded-2xl overflow-hidden bg-muted">
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            aria-label={item.mediaType === "video" ? "View video" : "View photo"}
+                            className="w-full h-full cursor-zoom-in"
+                            onClick={() => setViewerItem(item)}
+                            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewerItem(item); } }}
+                          >
+                            {item.mediaType === "video" ? (
+                              <>
+                                <video src={item.mediaUrl} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                  <div className="bg-black/40 rounded-full p-2">
+                                    <Play className="w-5 h-5 text-white fill-white" />
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <img src={item.mediaUrl} alt={item.caption ?? "Gallery item"} className="w-full h-full object-cover" />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 text-muted-foreground">
+                      {isSelf ? "Add your first photos and videos." : "No photos or videos yet."}
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="p-10 text-center text-muted-foreground">User not found</div>
+      )}
 
       <Dialog open={!!openPost} onOpenChange={(o) => { if (!o) setOpenPostId(null); }}>
         <DialogContent className="max-w-md p-0 gap-0 max-h-[85vh] overflow-y-auto border-0 bg-transparent shadow-none">
@@ -718,6 +1027,15 @@ export function ProfilePage() {
       </Dialog>
 
       <ReportDialog open={reportOpen} onOpenChange={setReportOpen} targetType="user" targetId={id} />
+
+      <ImageLightbox
+        src={viewerItem?.mediaUrl ?? null}
+        alt={viewerItem?.caption ?? "Gallery item"}
+        mediaType={viewerItem?.mediaType === "video" ? "video" : "image"}
+        open={!!viewerItem}
+        onClose={() => setViewerItem(null)}
+        onDelete={isSelf && viewerItem ? () => handleGalleryDelete(viewerItem.id) : undefined}
+      />
 
       <ImageLightbox src={photoView?.src ?? null} alt={photoView?.alt ?? ""} open={!!photoView} onClose={() => setPhotoView(null)} />
     </div>
