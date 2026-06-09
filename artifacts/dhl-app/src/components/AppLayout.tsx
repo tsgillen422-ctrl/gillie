@@ -9,7 +9,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: "/", icon: Home, label: "Map" },
     { href: "/feed", icon: Users, label: "Feed" },
-    { href: "/pins", icon: MapPin, label: "Pins" },
     { href: "/messages", icon: MessageCircle, label: "Messages" },
     { href: "/profile/me", icon: User, label: "Profile" },
   ];
@@ -49,6 +48,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               }`}
             >
               <Search className="w-5 h-5" />
+            </Link>
+            <Link
+              href="/pins"
+              aria-label="Pins"
+              className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
+                location === "/pins" ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <MapPin className="w-5 h-5" />
             </Link>
             <Link
               href="/notifications"
