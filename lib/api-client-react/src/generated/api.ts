@@ -42,6 +42,8 @@ import type {
   LocationUpdate,
   Message,
   MessageInput,
+  MessageReactionInput,
+  MutualFriends,
   NativePushTokenInput,
   NativePushUnregisterInput,
   Notification,
@@ -1351,6 +1353,83 @@ export function useGetFollowing<TData = Awaited<ReturnType<typeof getFollowing>>
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetFollowingQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetMutualFriendsUrl = (userId: number,) => {
+
+
+
+
+  return `/api/friends/${userId}/mutual`
+}
+
+/**
+ * @summary Get mutual friends shared with this user
+ */
+export const getMutualFriends = async (userId: number, options?: RequestInit): Promise<MutualFriends> => {
+
+  return customFetch<MutualFriends>(getGetMutualFriendsUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMutualFriendsQueryKey = (userId: number,) => {
+    return [
+    `/api/friends/${userId}/mutual`
+    ] as const;
+    }
+
+
+export const getGetMutualFriendsQueryOptions = <TData = Awaited<ReturnType<typeof getMutualFriends>>, TError = ErrorType<unknown>>(userId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMutualFriends>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMutualFriendsQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMutualFriends>>> = ({ signal }) => getMutualFriends(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(userId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMutualFriends>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMutualFriendsQueryResult = NonNullable<Awaited<ReturnType<typeof getMutualFriends>>>
+export type GetMutualFriendsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get mutual friends shared with this user
+ */
+
+export function useGetMutualFriends<TData = Awaited<ReturnType<typeof getMutualFriends>>, TError = ErrorType<unknown>>(
+ userId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMutualFriends>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMutualFriendsQueryOptions(userId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -3864,6 +3943,78 @@ export const useDeleteMessage = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteMessageMutationOptions(options));
+    }
+
+export const getReactToMessageUrl = (messageId: number,) => {
+
+
+
+
+  return `/api/messages/${messageId}/react`
+}
+
+/**
+ * @summary Add, change, or remove a reaction on a message
+ */
+export const reactToMessage = async (messageId: number,
+    messageReactionInput: MessageReactionInput, options?: RequestInit): Promise<Message> => {
+
+  return customFetch<Message>(getReactToMessageUrl(messageId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      messageReactionInput,)
+  }
+);}
+
+
+
+
+export const getReactToMessageMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactToMessage>>, TError,{messageId: number;data: BodyType<MessageReactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reactToMessage>>, TError,{messageId: number;data: BodyType<MessageReactionInput>}, TContext> => {
+
+const mutationKey = ['reactToMessage'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reactToMessage>>, {messageId: number;data: BodyType<MessageReactionInput>}> = (props) => {
+          const {messageId,data} = props ?? {};
+
+          return  reactToMessage(messageId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReactToMessageMutationResult = NonNullable<Awaited<ReturnType<typeof reactToMessage>>>
+    export type ReactToMessageMutationBody = BodyType<MessageReactionInput>
+    export type ReactToMessageMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add, change, or remove a reaction on a message
+ */
+export const useReactToMessage = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactToMessage>>, TError,{messageId: number;data: BodyType<MessageReactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reactToMessage>>,
+        TError,
+        {messageId: number;data: BodyType<MessageReactionInput>},
+        TContext
+      > => {
+      return useMutation(getReactToMessageMutationOptions(options));
     }
 
 export const getRequestUploadUrlUrl = () => {

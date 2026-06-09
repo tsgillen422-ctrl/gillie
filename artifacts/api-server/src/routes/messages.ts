@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, conversationsTable, conversationParticipantsTable, messagesTable } from "@workspace/db";
-import { eq, and, ne, desc, gt } from "drizzle-orm";
+import { usersTable, conversationsTable, conversationParticipantsTable, messagesTable, messageReactionsTable } from "@workspace/db";
+import { eq, and, ne, desc, gt, inArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { broadcastToConversation } from "../lib/realtime";
 
@@ -15,6 +15,34 @@ async function isParticipant(conversationId: number, userId: number) {
     ),
   });
   return Boolean(row);
+}
+
+const ALLOWED_MESSAGE_REACTIONS = ["heart", "fish", "boat", "fire"] as const;
+
+function emptyReactionCounts() {
+  return { heart: 0, fish: 0, boat: 0, fire: 0 } as Record<string, number>;
+}
+
+// Builds per-message reaction counts and the current user's own reaction.
+async function reactionsForMessages(messageIds: number[], uid: number) {
+  const counts = new Map<number, Record<string, number>>();
+  const mine = new Map<number, string>();
+  if (!messageIds.length) return { counts, mine };
+  const rows = await db
+    .select()
+    .from(messageReactionsTable)
+    .where(inArray(messageReactionsTable.messageId, messageIds));
+  for (const r of rows) {
+    if (!ALLOWED_MESSAGE_REACTIONS.includes(r.reaction as any)) continue;
+    let c = counts.get(r.messageId);
+    if (!c) {
+      c = emptyReactionCounts();
+      counts.set(r.messageId, c);
+    }
+    c[r.reaction] = (c[r.reaction] ?? 0) + 1;
+    if (r.userId === uid) mine.set(r.messageId, r.reaction);
+  }
+  return { counts, mine };
 }
 
 function formatUser(u: typeof usersTable.$inferSelect) {
@@ -228,6 +256,8 @@ router.get("/conversations/:conversationId", async (req, res) => {
     .where(eq(messagesTable.conversationId, conversationId))
     .orderBy(messagesTable.createdAt);
 
+  const { counts, mine } = await reactionsForMessages(msgs.map((m) => m.id), currentUserId(req));
+
   const formatted = await Promise.all(
     msgs.map(async (m) => {
       const sender = await db.query.usersTable.findFirst({ where: eq(usersTable.id, m.senderId) });
@@ -245,6 +275,8 @@ router.get("/conversations/:conversationId", async (req, res) => {
         mediaUrl: m.mediaUrl,
         mediaType: m.mediaType,
         read,
+        reactions: counts.get(m.id) ?? emptyReactionCounts(),
+        myReaction: mine.get(m.id) ?? null,
         createdAt: m.createdAt.toISOString(),
       };
     })
@@ -295,6 +327,8 @@ router.post("/conversations/:conversationId", async (req, res) => {
     mediaUrl: msg.mediaUrl,
     mediaType: msg.mediaType,
     read: msg.read,
+    reactions: emptyReactionCounts(),
+    myReaction: null,
     createdAt: msg.createdAt.toISOString(),
   });
 });
@@ -317,6 +351,14 @@ router.delete("/conversations/:conversationId", async (req, res) => {
     return;
   }
   await db.transaction(async (tx) => {
+    const convMsgs = await tx
+      .select({ id: messagesTable.id })
+      .from(messagesTable)
+      .where(eq(messagesTable.conversationId, conversationId));
+    const msgIds = convMsgs.map((m) => m.id);
+    if (msgIds.length) {
+      await tx.delete(messageReactionsTable).where(inArray(messageReactionsTable.messageId, msgIds));
+    }
     await tx.delete(messagesTable).where(eq(messagesTable.conversationId, conversationId));
     await tx
       .delete(conversationParticipantsTable)
@@ -337,8 +379,71 @@ router.delete("/:messageId", async (req, res) => {
     res.status(403).json({ error: "You can only delete your own messages" });
     return;
   }
+  await db.delete(messageReactionsTable).where(eq(messageReactionsTable.messageId, messageId));
   await db.delete(messagesTable).where(eq(messagesTable.id, messageId));
   res.json({ success: true });
+});
+
+router.post("/:messageId/react", async (req, res) => {
+  const uid = currentUserId(req);
+  const messageId = parseInt(req.params.messageId);
+  if (Number.isNaN(messageId)) return res.status(400).json({ error: "Invalid message id" });
+  const reaction = String(req.body?.reaction || "");
+  if (!ALLOWED_MESSAGE_REACTIONS.includes(reaction as any)) {
+    return res.status(400).json({ error: "Invalid reaction" });
+  }
+  const msg = await db.query.messagesTable.findFirst({ where: eq(messagesTable.id, messageId) });
+  if (!msg) return res.status(404).json({ error: "Message not found" });
+  if (!(await isParticipant(msg.conversationId, uid))) {
+    return res.status(403).json({ error: "You are not a participant in this conversation" });
+  }
+
+  const existing = await db.query.messageReactionsTable.findFirst({
+    where: and(eq(messageReactionsTable.messageId, messageId), eq(messageReactionsTable.userId, uid)),
+  });
+  if (existing && existing.reaction === reaction) {
+    await db.delete(messageReactionsTable).where(eq(messageReactionsTable.id, existing.id));
+  } else if (existing) {
+    await db.update(messageReactionsTable).set({ reaction }).where(eq(messageReactionsTable.id, existing.id));
+  } else {
+    await db
+      .insert(messageReactionsTable)
+      .values({ messageId, userId: uid, reaction })
+      .onConflictDoUpdate({ target: [messageReactionsTable.messageId, messageReactionsTable.userId], set: { reaction } });
+  }
+
+  const { counts, mine } = await reactionsForMessages([messageId], uid);
+  const sender = await db.query.usersTable.findFirst({ where: eq(usersTable.id, msg.senderId) });
+  const otherParticipants = (
+    await db
+      .select()
+      .from(conversationParticipantsTable)
+      .where(eq(conversationParticipantsTable.conversationId, msg.conversationId))
+  ).filter((p) => p.userId !== msg.senderId);
+  const read =
+    otherParticipants.length > 0 &&
+    otherParticipants.every((p) => p.lastReadAt != null && p.lastReadAt >= msg.createdAt);
+
+  broadcastToConversation(msg.conversationId, {
+    type: "message",
+    conversationId: msg.conversationId,
+    messageId: msg.id,
+    senderId: msg.senderId,
+  });
+
+  res.json({
+    id: msg.id,
+    conversationId: msg.conversationId,
+    senderId: msg.senderId,
+    sender: sender ? formatUser(sender) : null,
+    content: msg.content,
+    mediaUrl: msg.mediaUrl,
+    mediaType: msg.mediaType,
+    read,
+    reactions: counts.get(messageId) ?? emptyReactionCounts(),
+    myReaction: mine.get(messageId) ?? null,
+    createdAt: msg.createdAt.toISOString(),
+  });
 });
 
 export default router;

@@ -964,6 +964,69 @@ export const GetFollowingResponse = zod.array(GetFollowingResponseItem)
 
 
 /**
+ * @summary Get mutual friends shared with this user
+ */
+export const GetMutualFriendsParams = zod.object({
+  "userId": zod.coerce.number()
+})
+
+export const GetMutualFriendsResponse = zod.object({
+  "count": zod.number(),
+  "users": zod.array(zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "relationshipStatus": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "interests": zod.array(zod.string()).optional(),
+  "shareLocation": zod.boolean().optional(),
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
+  "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
+  "createdAt": zod.string()
+})).optional()
+})
+
+
+/**
  * @summary Block a user
  */
 export const BlockUserParams = zod.object({
@@ -1214,6 +1277,13 @@ export const GetConversationsResponseItem = zod.object({
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.union([zod.literal('image'),zod.literal('video'),zod.literal(null)]).nullish(),
   "read": zod.boolean().optional(),
+  "reactions": zod.object({
+  "heart": zod.number().optional(),
+  "fish": zod.number().optional(),
+  "boat": zod.number().optional(),
+  "fire": zod.number().optional()
+}).optional(),
+  "myReaction": zod.union([zod.enum(['heart', 'fish', 'boat', 'fire']),zod.null()]).optional(),
   "createdAt": zod.string()
 }).optional(),
   "unreadCount": zod.number().optional(),
@@ -1296,6 +1366,13 @@ export const GetConversationMessagesResponseItem = zod.object({
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.union([zod.literal('image'),zod.literal('video'),zod.literal(null)]).nullish(),
   "read": zod.boolean().optional(),
+  "reactions": zod.object({
+  "heart": zod.number().optional(),
+  "fish": zod.number().optional(),
+  "boat": zod.number().optional(),
+  "fire": zod.number().optional()
+}).optional(),
+  "myReaction": zod.union([zod.enum(['heart', 'fish', 'boat', 'fire']),zod.null()]).optional(),
   "createdAt": zod.string()
 })
 export const GetConversationMessagesResponse = zod.array(GetConversationMessagesResponseItem)
@@ -2727,6 +2804,87 @@ export const GetNotificationsResponse = zod.array(GetNotificationsResponseItem)
  */
 export const DeleteMessageParams = zod.object({
   "messageId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Add, change, or remove a reaction on a message
+ */
+export const ReactToMessageParams = zod.object({
+  "messageId": zod.coerce.number()
+})
+
+export const ReactToMessageBody = zod.object({
+  "reaction": zod.enum(['heart', 'fish', 'boat', 'fire'])
+})
+
+export const ReactToMessageResponse = zod.object({
+  "id": zod.number(),
+  "conversationId": zod.number(),
+  "senderId": zod.number(),
+  "sender": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "relationshipStatus": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "interests": zod.array(zod.string()).optional(),
+  "shareLocation": zod.boolean().optional(),
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
+  "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
+  "createdAt": zod.string()
+}).optional(),
+  "content": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.union([zod.literal('image'),zod.literal('video'),zod.literal(null)]).nullish(),
+  "read": zod.boolean().optional(),
+  "reactions": zod.object({
+  "heart": zod.number().optional(),
+  "fish": zod.number().optional(),
+  "boat": zod.number().optional(),
+  "fire": zod.number().optional()
+}).optional(),
+  "myReaction": zod.union([zod.enum(['heart', 'fish', 'boat', 'fire']),zod.null()]).optional(),
+  "createdAt": zod.string()
 })
 
 

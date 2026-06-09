@@ -195,6 +195,33 @@ router.get("/:userId/followers", async (req, res) => {
   res.json(await Promise.all(users.map(formatUserWithCounts)));
 });
 
+router.get("/:userId/mutual", async (req, res) => {
+  const targetId = parseInt(req.params.userId);
+  if (Number.isNaN(targetId)) return res.status(400).json({ error: "Invalid user id" });
+  const me = currentUserId(req);
+  const acceptedFor = async (uid: number) => {
+    const rows = await db.query.friendRequestsTable.findMany({
+      where: and(
+        or(eq(friendRequestsTable.followerId, uid), eq(friendRequestsTable.followeeId, uid)),
+        eq(friendRequestsTable.status, "accepted")
+      ),
+    });
+    return new Set(rows.map((r) => (r.followerId === uid ? r.followeeId : r.followerId)));
+  };
+  const [mine, theirs, blockedIds] = await Promise.all([
+    acceptedFor(me),
+    acceptedFor(targetId),
+    getBlockedUserIds(me),
+  ]);
+  const mutualIds = [...mine].filter(
+    (id) => theirs.has(id) && id !== me && id !== targetId && !blockedIds.includes(id)
+  );
+  if (!mutualIds.length) return res.json({ count: 0, users: [] });
+  const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, mutualIds) });
+  const preview = await Promise.all(users.slice(0, 6).map(formatUserWithCounts));
+  res.json({ count: mutualIds.length, users: preview });
+});
+
 router.get("/:userId/following", async (req, res) => {
   const targetId = parseInt(req.params.userId);
   const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });

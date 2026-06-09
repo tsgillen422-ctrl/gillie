@@ -193,6 +193,23 @@ export const MessageMediaType = {
   video: 'video',
 } as const;
 
+export interface MessageReactionCounts {
+  heart?: number;
+  fish?: number;
+  boat?: number;
+  fire?: number;
+}
+
+export type MessageReactionType = typeof MessageReactionType[keyof typeof MessageReactionType];
+
+
+export const MessageReactionType = {
+  heart: 'heart',
+  fish: 'fish',
+  boat: 'boat',
+  fire: 'fire',
+} as const;
+
 export interface Message {
   id: number;
   conversationId: number;
@@ -204,6 +221,8 @@ export interface Message {
   /** @nullable */
   mediaType?: MessageMediaType;
   read?: boolean;
+  reactions?: MessageReactionCounts;
+  myReaction?: MessageReactionType | null;
   createdAt: string;
 }
 
@@ -239,6 +258,15 @@ export interface MessageInput {
   content?: string;
   mediaUrl?: string;
   mediaType?: MessageInputMediaType;
+}
+
+export interface MessageReactionInput {
+  reaction: MessageReactionType;
+}
+
+export interface MutualFriends {
+  count: number;
+  users?: User[];
 }
 
 export type PinType = typeof PinType[keyof typeof PinType];

@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { MessageMediaType } from './messageMediaType';
+import type { MessageReactionCounts } from './messageReactionCounts';
+import type { MessageReactionType } from './messageReactionType';
 import type { User } from './user';
 
 export interface Message {
@@ -19,5 +21,7 @@ export interface Message {
   /** @nullable */
   mediaType?: MessageMediaType;
   read?: boolean;
+  reactions?: MessageReactionCounts;
+  myReaction?: MessageReactionType | null;
   createdAt: string;
 }

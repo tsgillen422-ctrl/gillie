@@ -346,6 +346,25 @@ paths:
         "403":
           description: Following list is hidden
 
+  /friends/{userId}/mutual:
+    get:
+      operationId: getMutualFriends
+      tags: [friends]
+      summary: Get mutual friends shared with this user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Mutual friends
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MutualFriends"
+
   /friends/{userId}/block:
     post:
       operationId: blockUser
@@ -990,6 +1009,31 @@ paths:
       responses:
         "200":
           description: Deleted
+
+  /messages/{messageId}/react:
+    post:
+      operationId: reactToMessage
+      tags: [messages]
+      summary: Add, change, or remove a reaction on a message
+      parameters:
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageReactionInput"
+      responses:
+        "200":
+          description: Updated message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
 
   /storage/uploads/request-url:
     post:
@@ -1871,6 +1915,12 @@ components:
           enum: [image, video, null]
         read:
           type: boolean
+        reactions:
+          $ref: "#/components/schemas/MessageReactionCounts"
+        myReaction:
+          oneOf:
+            - $ref: "#/components/schemas/MessageReactionType"
+            - type: "null"
         createdAt:
           type: string
 
@@ -1884,6 +1934,40 @@ components:
         mediaType:
           type: string
           enum: [image, video]
+
+    MessageReactionType:
+      type: string
+      enum: [heart, fish, boat, fire]
+
+    MessageReactionInput:
+      type: object
+      required: [reaction]
+      properties:
+        reaction:
+          $ref: "#/components/schemas/MessageReactionType"
+
+    MessageReactionCounts:
+      type: object
+      properties:
+        heart:
+          type: integer
+        fish:
+          type: integer
+        boat:
+          type: integer
+        fire:
+          type: integer
+
+    MutualFriends:
+      type: object
+      required: [count]
+      properties:
+        count:
+          type: integer
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
 
     Pin:
       type: object
