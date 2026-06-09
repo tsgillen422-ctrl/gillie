@@ -343,6 +343,9 @@ export function FeedPage() {
                 <Link href="/search" aria-label="Search" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md hover:bg-white/25 active:scale-95 transition">
                   <Search className="h-[18px] w-[18px]" />
                 </Link>
+                <Link href="/pins" aria-label="Pins" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md hover:bg-white/25 active:scale-95 transition">
+                  <MapPin className="h-[18px] w-[18px]" />
+                </Link>
                 <Link href="/notifications" aria-label="Notifications" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md hover:bg-white/25 active:scale-95 transition">
                   <Bell className="h-[18px] w-[18px]" />
                 </Link>
