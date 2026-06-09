@@ -17,7 +17,7 @@ export function LandingPage() {
       <header className="flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
         <div className="flex items-center gap-2.5">
           <img src={`${basePath}/logo.svg`} alt="Gillie" className="h-9 w-9 rounded-xl" />
-          <span className="font-display text-lg font-bold tracking-tight">Gillie</span>
+          <span className="font-script text-2xl font-bold leading-none">Gillie</span>
         </div>
         <Link href="/sign-in">
           <Button variant="ghost" className="font-semibold">Sign In</Button>

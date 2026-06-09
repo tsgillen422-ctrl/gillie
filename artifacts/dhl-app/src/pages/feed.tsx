@@ -338,7 +338,7 @@ export function FeedPage() {
           <div className="px-4 pb-5" style={{ paddingTop: "max(env(safe-area-inset-top), 0.85rem)" }}>
             {/* Top bar */}
             <div className="flex items-center justify-between pt-1.5">
-              <span className="font-serif italic text-[26px] leading-none text-white drop-shadow-md">Gillie</span>
+              <span className="font-script text-[34px] font-bold leading-none text-white drop-shadow-md">Gillie</span>
               <div className="flex items-center gap-2">
                 <Link href="/search" aria-label="Search" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md hover:bg-white/25 active:scale-95 transition">
                   <Search className="h-[18px] w-[18px]" />
