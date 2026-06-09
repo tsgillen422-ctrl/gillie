@@ -16,8 +16,8 @@ export function LandingPage() {
     <div className="min-h-[100dvh] bg-background text-foreground">
       <header className="flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
         <div className="flex items-center gap-2.5">
-          <img src={`${basePath}/logo.svg`} alt="DHL" className="h-9 w-9 rounded-xl" />
-          <span className="font-display text-lg font-bold tracking-tight">Dale Hollow Lake</span>
+          <img src={`${basePath}/logo.svg`} alt="Gillie" className="h-9 w-9 rounded-xl" />
+          <span className="font-display text-lg font-bold tracking-tight">Gillie</span>
         </div>
         <Link href="/sign-in">
           <Button variant="ghost" className="font-semibold">Sign In</Button>
@@ -71,7 +71,7 @@ export function LandingPage() {
       </main>
 
       <footer className="border-t border-border py-6 text-center text-sm text-muted-foreground">
-        Dale Hollow Lake · Made for boaters and anglers
+        Gillie · Made for boaters and anglers
       </footer>
     </div>
   );

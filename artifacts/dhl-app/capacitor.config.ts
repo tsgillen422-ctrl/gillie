@@ -2,7 +2,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "app.dalehollowlake",
-  appName: "Dale Hollow Lake",
+  appName: "Gillie",
   webDir: "dist/public",
   server: {
     url: "https://dale-hollow-nav.replit.app",

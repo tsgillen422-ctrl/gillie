@@ -1,4 +1,4 @@
-/* Web push service worker for DHL - Dale Hollow Lake */
+/* Web push service worker for Gillie */
 
 self.addEventListener("install", () => {
   self.skipWaiting();
@@ -16,7 +16,7 @@ self.addEventListener("push", (event) => {
     data = { body: event.data ? event.data.text() : "" };
   }
 
-  const title = data.title || "Dale Hollow Lake";
+  const title = data.title || "Gillie";
   const options = {
     body: data.body || "",
     icon: new URL("logo.svg", self.registration.scope).href,

@@ -9,7 +9,7 @@ const SLIDES = [
   {
     icon: Anchor,
     emoji: "⚓",
-    title: "Welcome to Dale Hollow Lake",
+    title: "Welcome to Gillie",
     body: "Your home base for everything happening on the water — friends, spots, and the day's conditions, all in one place.",
   },
   {

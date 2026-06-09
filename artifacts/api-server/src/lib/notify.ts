@@ -25,7 +25,7 @@ export interface NotificationInput {
 }
 
 const PUSH_TITLES: Record<string, string> = {
-  friend_request: "Dale Hollow Lake",
+  friend_request: "Gillie",
   sos: "🚨 SOS Alert",
   warning: "Moderator notice",
   message: "New message",
@@ -57,7 +57,7 @@ function pushPayloadFor(n: NotificationInput): PushPayload {
       url = "/notifications";
   }
   return {
-    title: PUSH_TITLES[n.type] ?? "Dale Hollow Lake",
+    title: PUSH_TITLES[n.type] ?? "Gillie",
     body: n.message,
     url,
     type: n.type,

@@ -205,7 +205,7 @@ function ClerkProviderWithRoutes() {
         signUp: {
           start: {
             title: "Create your account",
-            subtitle: "Join the Dale Hollow Lake community",
+            subtitle: "Join the Gillie community",
           },
         },
       }}

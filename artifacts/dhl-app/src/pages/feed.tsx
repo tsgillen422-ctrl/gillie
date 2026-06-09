@@ -279,7 +279,7 @@ export function FeedPage() {
         <div className="bg-card">
           <img
             src={dhlLogo}
-            alt="DHL — Dale Hollow Lake"
+            alt="Gillie"
             className="block w-full h-auto mb-1 object-contain select-none [-webkit-mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)] [mask-image:linear-gradient(to_right,transparent,black_15%,black_85%,transparent)]"
             draggable={false}
           />
@@ -837,7 +837,7 @@ export function PostCard({ post, onReact, canDelete, onDelete, currentUserId, on
 
   const handleShareExternal = async () => {
     const url = `${window.location.origin}${import.meta.env.BASE_URL}feed?post=${post.id}`;
-    const title = post.title || post.user?.displayName || "DHL post";
+    const title = post.title || post.user?.displayName || "Gillie post";
     if (navigator.share) {
       try {
         await navigator.share({ title, text: post.content || title, url });

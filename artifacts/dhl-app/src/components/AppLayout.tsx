@@ -20,7 +20,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-background text-foreground">
       <header className="flex items-center justify-between px-4 h-12 border-b border-border bg-card shrink-0 z-50">
-        <span className="font-bold text-primary tracking-tight">Dale Hollow</span>
+        <span className="font-bold text-primary tracking-tight">Gillie</span>
         <div className="flex items-center gap-1">
           <Link
             href="/search"

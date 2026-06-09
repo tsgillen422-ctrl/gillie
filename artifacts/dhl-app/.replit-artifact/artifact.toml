@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "DHL - Dale Hollow Lake"
+title = "Gillie"
 version = "1.0.0"
 id = "artifacts/dhl-app"
 router = "path"

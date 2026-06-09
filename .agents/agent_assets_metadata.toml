@@ -30,6 +30,12 @@ uri = "file://artifacts/dhl-app/public/seed/wakeboard.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "0XcKsjFhLWIDdFngLnPuP"
+uri = "file://artifacts/dhl-app/src/assets/dhl-logo.png"
+type = "image"
+title = "gillie lake wordmark logo"
+
 [[outputs]]
 id = "T5YDjCAIoQUUwTlifm7eU"
 uri = "file://screenshots/gallery-fixed.jpg"
