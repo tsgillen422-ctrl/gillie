@@ -4,7 +4,7 @@ import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreate
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Compass, Fish, Tent, Anchor, Award, Mountain, Waves, Camera, Trophy, Sparkles, BookOpen, Image as ImageIcon, Bookmark, FileText, ChevronRight } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Compass, Fish, Tent, Anchor, Award, Mountain, Waves, Camera, Trophy, Sparkles, BookOpen, Image as ImageIcon, Bookmark, FileText, ChevronRight, Star } from "lucide-react";
 import { ReportDialog } from "@/components/ReportDialog";
 import { BadgeRow } from "@/components/Badges";
 import { Badge } from "@/components/ui/badge";
@@ -137,17 +137,17 @@ function PersonaBadges({ badges }: { badges: PersonaBadge[] }) {
   );
 }
 
-function StatCard({ label, value, icon: Icon, onClick }: { label: string; value: number; icon: any; onClick?: () => void }) {
+function StatCard({ label, value, star = false, onClick }: { label: string; value: number; star?: boolean; onClick?: () => void }) {
   const inner = (
     <>
-      <span className="grid place-items-center w-9 h-9 rounded-2xl bg-primary/10 text-primary mb-2">
-        <Icon className="w-[18px] h-[18px]" />
+      <span className="flex items-center gap-1 text-lg font-bold leading-none tabular-nums">
+        {star && <Star className="w-4 h-4 text-accent fill-accent" />}
+        {value}
       </span>
-      <span className="text-xl font-bold leading-none tabular-nums">{value}</span>
-      <span className="text-[11px] uppercase tracking-wide text-muted-foreground mt-1">{label}</span>
+      <span className="text-[11px] text-muted-foreground mt-1">{label}</span>
     </>
   );
-  const base = `${CARD} flex flex-col items-center justify-center py-4 px-2 text-center`;
+  const base = "rounded-2xl border border-border bg-card flex flex-col items-center justify-center py-3 px-1 text-center";
   if (onClick) {
     return (
       <button type="button" onClick={onClick} className={`${base} hover-elevate active-elevate-2`}>
@@ -228,6 +228,34 @@ function AchievementGrid({ items }: { items: Achievement[] }) {
   );
 }
 
+/** Illustrated "fun badge" emblem — a sunrise over the lake. */
+function AdventurerBadge() {
+  return (
+    <div className="shrink-0 flex flex-col items-center w-24">
+      <div className="w-24 h-24 rounded-2xl overflow-hidden border border-card-border shadow-soft">
+        <svg viewBox="0 0 100 100" className="w-full h-full" role="img" aria-label="Dale Hollow Adventurer badge">
+          <defs>
+            <linearGradient id="dha-sky" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#fef3c7" />
+              <stop offset="50%" stopColor="#fcd34d" />
+              <stop offset="100%" stopColor="#0e7490" />
+            </linearGradient>
+          </defs>
+          <rect width="100" height="100" fill="url(#dha-sky)" />
+          <circle cx="50" cy="44" r="13" fill="#fbbf24" />
+          <path d="M0,64 Q26,50 50,61 Q74,72 100,57 L100,72 L0,72 Z" fill="#0f766e" />
+          <rect y="70" width="100" height="30" fill="#0e7490" />
+          <path d="M0,80 Q12,76 24,80 T48,80 T72,80 T96,80" stroke="#67e8f9" strokeWidth="1.6" fill="none" opacity="0.7" />
+          <path d="M0,88 Q12,84 24,88 T48,88 T72,88 T96,88" stroke="#a5f3fc" strokeWidth="1.6" fill="none" opacity="0.55" />
+        </svg>
+      </div>
+      <span className="mt-1.5 text-[9px] font-extrabold uppercase tracking-wide text-center leading-tight text-foreground">
+        Dale Hollow Adventurer
+      </span>
+    </div>
+  );
+}
+
 function AboutCard({ user }: { user: any }) {
   const items: { icon: React.ReactNode; label: string }[] = [];
   if (user.location) items.push({ icon: <MapPin className="w-4 h-4" />, label: `Lives in ${user.location}` });
@@ -245,24 +273,30 @@ function AboutCard({ user }: { user: any }) {
   }
 
   const hasBio = !!user.bio;
-  if (!hasBio && items.length === 0) return null;
 
   return (
     <div className={`${CARD} p-4`}>
       <SectionTitle icon={User2}>About Me</SectionTitle>
       {hasBio && <p className="text-sm leading-relaxed whitespace-pre-wrap mb-3">{user.bio}</p>}
-      {items.length > 0 && (
-        <div className="flex flex-col gap-2.5">
-          {items.map((item, i) => (
-            <div key={i} className="flex items-center gap-3 text-sm">
-              <span className="grid place-items-center w-7 h-7 rounded-lg bg-primary/10 text-primary shrink-0">
-                {item.icon}
-              </span>
-              <span className="text-foreground/90">{item.label}</span>
+      <div className="flex gap-4 items-start">
+        <div className="flex-1 min-w-0">
+          {items.length > 0 ? (
+            <div className="flex flex-col gap-2.5">
+              {items.map((item, i) => (
+                <div key={i} className="flex items-center gap-3 text-sm">
+                  <span className="grid place-items-center w-7 h-7 rounded-lg bg-primary/10 text-primary shrink-0">
+                    {item.icon}
+                  </span>
+                  <span className="text-foreground/90">{item.label}</span>
+                </div>
+              ))}
             </div>
-          ))}
+          ) : (
+            !hasBio && <p className="text-sm text-muted-foreground">No details shared yet.</p>
+          )}
         </div>
-      )}
+        <AdventurerBadge />
+      </div>
     </div>
   );
 }
@@ -563,44 +597,59 @@ export function ProfilePage() {
               </div>
             )}
 
-            {/* Avatar + identity */}
-            <div className="flex flex-col items-center px-6 -mt-16">
-              {user.avatarUrl ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const src = resolveAvatarUrl(user.avatarUrl);
-                    if (src) setPhotoView({ src, alt: "Profile photo" });
-                  }}
-                  className="cursor-zoom-in rounded-full"
-                  aria-label="View profile photo"
-                >
-                  <UserAvatar
-                    name={user.displayName}
-                    username={user.username}
-                    avatarUrl={user.avatarUrl}
-                    online={user.isOnline}
-                    className="w-28 h-28 ring-4 ring-white dark:ring-card shadow-soft-lg"
-                  />
-                </button>
-              ) : (
-                <UserAvatar
-                  name={user.displayName}
-                  username={user.username}
-                  avatarUrl={user.avatarUrl}
-                  online={user.isOnline}
-                  className="w-28 h-28 ring-4 ring-white dark:ring-card shadow-soft-lg"
-                />
-              )}
+            {/* Identity card overlapping the cover */}
+            <div className="px-3 -mt-14 relative z-10">
+              <div className="relative rounded-[28px] bg-card border border-card-border shadow-soft-lg px-5 pt-16 pb-5 flex flex-col items-center">
+                <div className="absolute -top-12 left-1/2 -translate-x-1/2">
+                  {user.avatarUrl ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const src = resolveAvatarUrl(user.avatarUrl);
+                        if (src) setPhotoView({ src, alt: "Profile photo" });
+                      }}
+                      className="cursor-zoom-in rounded-full"
+                      aria-label="View profile photo"
+                    >
+                      <UserAvatar
+                        name={user.displayName}
+                        username={user.username}
+                        avatarUrl={user.avatarUrl}
+                        online={user.isOnline}
+                        className="w-24 h-24 ring-4 ring-white dark:ring-card shadow-soft-lg"
+                      />
+                    </button>
+                  ) : (
+                    <UserAvatar
+                      name={user.displayName}
+                      username={user.username}
+                      avatarUrl={user.avatarUrl}
+                      online={user.isOnline}
+                      className="w-24 h-24 ring-4 ring-white dark:ring-card shadow-soft-lg"
+                    />
+                  )}
+                </div>
 
-              <h2 className="mt-3 text-2xl font-bold flex items-center gap-1.5 text-center">
-                {user.displayName}
-                {user.isBusiness && <BadgeCheck className="w-5 h-5 text-primary" />}
-              </h2>
-              <p className="text-muted-foreground text-sm">@{user.username}</p>
+                <h2 className="text-2xl font-bold flex items-center gap-1.5 text-center">
+                  {user.displayName}
+                  {user.isBusiness && <BadgeCheck className="w-5 h-5 text-primary" />}
+                </h2>
+                <p className="text-muted-foreground text-sm">@{user.username}</p>
 
-              <PersonaBadges badges={personaBadges} />
-              <BadgeRow badges={(user as any).badges} />
+                <PersonaBadges badges={personaBadges} />
+                <BadgeRow badges={(user as any).badges} />
+
+                {/* Quick stats */}
+                <div className="grid grid-cols-4 gap-2 w-full mt-5">
+                  <StatCard label="Posts" value={postCount} onClick={() => goToTab("posts")} />
+                  <StatCard label="Followers" value={followersCount} onClick={canViewFollows ? () => setFollowList("followers") : undefined} />
+                  <StatCard label="Following" value={followingCount} onClick={canViewFollows ? () => setFollowList("following") : undefined} />
+                  {isSelf ? (
+                    <StatCard label="Favorites" value={favoritePins?.length ?? 0} star onClick={() => navigate("/map")} />
+                  ) : (
+                    <StatCard label="Catches" value={catchCount} star />
+                  )}
+                </div>
 
               {/* Actions */}
               <div className="flex flex-col gap-2 w-full max-w-xs mt-5">
@@ -698,6 +747,7 @@ export function ProfilePage() {
                   </>
                 )}
               </div>
+              </div>
             </div>
           </section>
 
@@ -709,20 +759,6 @@ export function ProfilePage() {
 
           {/* Body */}
           <div className="px-4 pt-5 pb-24 space-y-5">
-            {/* Stat cards */}
-            <div className="grid grid-cols-4 gap-2.5">
-              <StatCard label="Posts" value={postCount} icon={FileText} onClick={() => goToTab("posts")} />
-              <StatCard label="Followers" value={followersCount} icon={Users} onClick={canViewFollows ? () => setFollowList("followers") : undefined} />
-              <StatCard label="Following" value={followingCount} icon={UserPlus} onClick={canViewFollows ? () => setFollowList("following") : undefined} />
-              {isSelf ? (
-                <StatCard label="Favorites" value={favoritePins?.length ?? 0} icon={Bookmark} onClick={() => navigate("/map")} />
-              ) : (
-                <StatCard label="Catches" value={catchCount} icon={Fish} />
-              )}
-            </div>
-
-            <WaveDivider />
-
             {/* About */}
             <AboutCard user={user} />
 
