@@ -37,6 +37,7 @@ import type {
   GetPinsParams,
   GetPostsParams,
   GetReportsParams,
+  GifResult,
   GroupConversationInput,
   HealthStatus,
   LocationUpdate,
@@ -49,6 +50,7 @@ import type {
   Notification,
   Pin,
   PinInput,
+  PollVoteInput,
   Post,
   PostInput,
   PostLikeUser,
@@ -61,6 +63,7 @@ import type {
   ReportInput,
   ReportResolveInput,
   RsvpUser,
+  SearchGifsParams,
   SearchParams,
   SearchResults,
   SearchUsersParams,
@@ -3348,6 +3351,162 @@ export const useReactToPost = <TError = ErrorType<unknown>,
       > => {
       return useMutation(getReactToPostMutationOptions(options));
     }
+
+export const getVotePollUrl = (postId: number,) => {
+
+
+
+
+  return `/api/posts/${postId}/poll/vote`
+}
+
+/**
+ * @summary Vote on a post's poll (one vote per user; voting the same option again removes it)
+ */
+export const votePoll = async (postId: number,
+    pollVoteInput: PollVoteInput, options?: RequestInit): Promise<Post> => {
+
+  return customFetch<Post>(getVotePollUrl(postId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      pollVoteInput,)
+  }
+);}
+
+
+
+
+export const getVotePollMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof votePoll>>, TError,{postId: number;data: BodyType<PollVoteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof votePoll>>, TError,{postId: number;data: BodyType<PollVoteInput>}, TContext> => {
+
+const mutationKey = ['votePoll'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof votePoll>>, {postId: number;data: BodyType<PollVoteInput>}> = (props) => {
+          const {postId,data} = props ?? {};
+
+          return  votePoll(postId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VotePollMutationResult = NonNullable<Awaited<ReturnType<typeof votePoll>>>
+    export type VotePollMutationBody = BodyType<PollVoteInput>
+    export type VotePollMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Vote on a post's poll (one vote per user; voting the same option again removes it)
+ */
+export const useVotePoll = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof votePoll>>, TError,{postId: number;data: BodyType<PollVoteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof votePoll>>,
+        TError,
+        {postId: number;data: BodyType<PollVoteInput>},
+        TContext
+      > => {
+      return useMutation(getVotePollMutationOptions(options));
+    }
+
+export const getSearchGifsUrl = (params?: SearchGifsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/gifs/search?${stringifiedParams}` : `/api/gifs/search`
+}
+
+/**
+ * @summary Search GIFs to attach to a post
+ */
+export const searchGifs = async (params?: SearchGifsParams, options?: RequestInit): Promise<GifResult[]> => {
+
+  return customFetch<GifResult[]>(getSearchGifsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getSearchGifsQueryKey = (params?: SearchGifsParams,) => {
+    return [
+    `/api/gifs/search`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getSearchGifsQueryOptions = <TData = Awaited<ReturnType<typeof searchGifs>>, TError = ErrorType<unknown>>(params?: SearchGifsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchGifs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSearchGifsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof searchGifs>>> = ({ signal }) => searchGifs(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof searchGifs>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type SearchGifsQueryResult = NonNullable<Awaited<ReturnType<typeof searchGifs>>>
+export type SearchGifsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Search GIFs to attach to a post
+ */
+
+export function useSearchGifs<TData = Awaited<ReturnType<typeof searchGifs>>, TError = ErrorType<unknown>>(
+ params?: SearchGifsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof searchGifs>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getSearchGifsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
 
 export const getGetPostLikesUrl = (postId: number,) => {
 

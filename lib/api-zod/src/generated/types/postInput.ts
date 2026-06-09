@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { PostInputPostType } from './postInputPostType';
+import type { PostInputVisibility } from './postInputVisibility';
 
 export interface PostInput {
   title: string;
@@ -21,4 +22,7 @@ export interface PostInput {
   mods?: string;
   pinLat?: number;
   pinLng?: number;
+  visibility?: PostInputVisibility;
+  /** 2-10 poll choices. When present, the post includes a poll. */
+  pollOptions?: string[];
 }

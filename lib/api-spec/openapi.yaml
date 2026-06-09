@@ -852,6 +852,52 @@ paths:
               schema:
                 $ref: "#/components/schemas/Post"
 
+  /posts/{postId}/poll/vote:
+    post:
+      operationId: votePoll
+      tags: [posts]
+      summary: Vote on a post's poll (one vote per user; voting the same option again removes it)
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PollVoteInput"
+      responses:
+        "200":
+          description: Updated post with poll results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
+  /gifs/search:
+    get:
+      operationId: searchGifs
+      tags: [gifs]
+      summary: Search GIFs to attach to a post
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of GIF results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GifResult"
+
   /posts/{postId}/likes:
     get:
       operationId: getPostLikes
@@ -2110,8 +2156,60 @@ components:
           oneOf:
             - type: "null"
             - $ref: "#/components/schemas/Post"
+        visibility:
+          type: string
+          enum: [community, friends]
+        poll:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/Poll"
         createdAt:
           type: string
+
+    Poll:
+      type: object
+      required: [options, totalVotes]
+      properties:
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/PollOption"
+        totalVotes:
+          type: integer
+        myVote:
+          type: ["integer", "null"]
+          description: The option id the viewer voted for, or null.
+
+    PollOption:
+      type: object
+      required: [id, text, voteCount]
+      properties:
+        id:
+          type: integer
+        text:
+          type: string
+        voteCount:
+          type: integer
+
+    PollVoteInput:
+      type: object
+      required: [optionId]
+      properties:
+        optionId:
+          type: integer
+
+    GifResult:
+      type: object
+      required: [id, url, previewUrl]
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+          description: Full GIF URL to attach to a post.
+        previewUrl:
+          type: string
+          description: Smaller GIF URL for the picker grid.
 
     ShareInput:
       type: object
@@ -2179,6 +2277,14 @@ components:
           type: number
         pinLng:
           type: number
+        visibility:
+          type: string
+          enum: [community, friends]
+        pollOptions:
+          type: array
+          items:
+            type: string
+          description: 2-10 poll choices. When present, the post includes a poll.
 
     PostsSummary:
       type: object

@@ -1,6 +1,6 @@
 import React from "react";
-import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useGetPostLikes, useCreatePostComment, useDeletePostComment, useReactToComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useShareToProfile, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey, useGetConditions } from "@workspace/api-client-react";
-import { PostInputPostType } from "@workspace/api-client-react/src/generated/api.schemas";
+import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useGetPostLikes, useCreatePostComment, useDeletePostComment, useReactToComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useShareToProfile, useVotePoll, useSearchGifs, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey, useGetConditions } from "@workspace/api-client-react";
+import { PostInputPostType, PostInputVisibility, type GifResult } from "@workspace/api-client-react/src/generated/api.schemas";
 import { UserAvatar } from "@/components/UserAvatar";
 import { HazardBanner } from "@/components/HazardBanner";
 import { TrendingSection } from "@/components/TrendingSection";
@@ -8,7 +8,8 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Link, useSearch } from "wouter";
-import { Heart, MessageCircle, Share2, Calendar, CalendarPlus, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, Flag, Bookmark, BookmarkCheck, VolumeX, Link2, Repeat2, Anchor, Sailboat, Search, Bell, Sun, Moon, Cloud, CloudSun, CloudMoon, CloudRain, CloudSnow, CloudFog, CloudLightning, Fish, Camera, Waves, Wind, Gauge, AlertTriangle, Info, CheckCircle2, Droplets, Sunrise, Sunset, ChevronRight } from "lucide-react";
+import { Heart, MessageCircle, Share2, Calendar, CalendarPlus, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, MoreHorizontal, Flag, Bookmark, BookmarkCheck, VolumeX, Link2, Repeat2, Anchor, Sailboat, Search, Bell, Sun, Moon, Cloud, CloudSun, CloudMoon, CloudRain, CloudSnow, CloudFog, CloudLightning, Fish, Camera, Waves, Wind, Gauge, AlertTriangle, Info, CheckCircle2, Droplets, Sunrise, Sunset, ChevronRight, Smile, BarChart3, Hash, Globe, Lock } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,6 +44,114 @@ import { REACTIONS, REACTION_MAP, DEFAULT_REACTION, type ReactionKey } from "@/l
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+
+const FEELINGS: { emoji: string; label: string }[] = [
+  { emoji: "😊", label: "happy" },
+  { emoji: "🥳", label: "excited" },
+  { emoji: "😎", label: "relaxed" },
+  { emoji: "🎣", label: "fishing" },
+  { emoji: "🚤", label: "cruising" },
+  { emoji: "😍", label: "in love" },
+  { emoji: "🙏", label: "blessed" },
+  { emoji: "😂", label: "amused" },
+  { emoji: "😴", label: "tired" },
+  { emoji: "😋", label: "hungry" },
+  { emoji: "🤔", label: "curious" },
+  { emoji: "😤", label: "determined" },
+];
+
+function GifPickerDialog({ open, onOpenChange, onSelect }: { open: boolean; onOpenChange: (o: boolean) => void; onSelect: (url: string) => void }) {
+  const [q, setQ] = React.useState("");
+  const [debounced, setDebounced] = React.useState("");
+  React.useEffect(() => {
+    const t = setTimeout(() => setDebounced(q.trim()), 350);
+    return () => clearTimeout(t);
+  }, [q]);
+  React.useEffect(() => {
+    if (!open) { setQ(""); setDebounced(""); }
+  }, [open]);
+  const { data: gifs, isLoading, isError } = useSearchGifs(
+    { q: debounced || undefined },
+    { query: { enabled: open } },
+  );
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Choose a GIF</DialogTitle>
+          <DialogDescription className="sr-only">Search GIFs to attach to your post.</DialogDescription>
+        </DialogHeader>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search GIFs" className="pl-9" autoFocus />
+        </div>
+        <div className="max-h-[55vh] overflow-y-auto">
+          {isError ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">GIF search isn't available right now.</p>
+          ) : isLoading ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">Loading GIFs…</p>
+          ) : gifs && gifs.length ? (
+            <div className="grid grid-cols-2 gap-2">
+              {gifs.map((g: GifResult) => (
+                <button key={g.id} type="button" onClick={() => onSelect(g.url)} className="overflow-hidden rounded-lg bg-muted transition hover:opacity-80 active:scale-95">
+                  <img src={g.previewUrl} alt="GIF" className="h-32 w-full object-cover" loading="lazy" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="py-8 text-center text-sm text-muted-foreground">No GIFs found.</p>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PollView({ post }: { post: any }) {
+  const queryClient = useQueryClient();
+  const votePoll = useVotePoll();
+  const poll = post.poll as { options: { id: number; text: string; voteCount: number }[]; totalVotes: number; myVote?: number | null } | undefined;
+  if (!poll || !poll.options?.length) return null;
+  const total = poll.totalVotes || 0;
+  const myVote = poll.myVote ?? null;
+  const handleVote = (optionId: number) => {
+    if (votePoll.isPending) return;
+    votePoll.mutate(
+      { postId: post.id, data: { optionId } },
+      { onSettled: () => {
+        queryClient.invalidateQueries({ queryKey: getGetPostsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetSavedPostsQueryKey() });
+      } },
+    );
+  };
+  return (
+    <div className="mt-3 space-y-2">
+      {poll.options.map((opt) => {
+        const pct = total > 0 ? Math.round((opt.voteCount / total) * 100) : 0;
+        const mine = myVote === opt.id;
+        return (
+          <button
+            key={opt.id}
+            type="button"
+            disabled={votePoll.isPending}
+            onClick={() => handleVote(opt.id)}
+            className="relative w-full overflow-hidden rounded-lg border border-border px-3 py-2 text-left transition hover-elevate active:scale-[0.99] disabled:opacity-70"
+          >
+            <span className={`absolute inset-y-0 left-0 ${mine ? "bg-primary/20" : "bg-muted"}`} style={{ width: `${pct}%` }} aria-hidden />
+            <span className="relative flex items-center justify-between gap-2">
+              <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
+                {mine && <Check className="h-3.5 w-3.5 shrink-0 text-primary" />}
+                <span className="truncate">{opt.text}</span>
+              </span>
+              <span className="shrink-0 text-xs font-semibold text-muted-foreground">{pct}%</span>
+            </span>
+          </button>
+        );
+      })}
+      <p className="text-xs text-muted-foreground">{total} {total === 1 ? "vote" : "votes"}{myVote ? " · Tap to change" : ""}</p>
+    </div>
+  );
+}
 
 function fmtTime(iso?: string | null): string {
   if (!iso) return "—";
@@ -245,6 +354,19 @@ export function FeedPage() {
   const [newHorsepower, setNewHorsepower] = React.useState("");
   const [newTopSpeed, setNewTopSpeed] = React.useState("");
   const [newMods, setNewMods] = React.useState("");
+  const [newFeeling, setNewFeeling] = React.useState<{ emoji: string; label: string } | null>(null);
+  const [newTopics, setNewTopics] = React.useState<string[]>([]);
+  const [newLocation, setNewLocation] = React.useState("");
+  const [newGifUrl, setNewGifUrl] = React.useState<string | null>(null);
+  const [pollOptions, setPollOptions] = React.useState<string[]>([]);
+  const [newVisibility, setNewVisibility] = React.useState<"community" | "friends">("community");
+  const [feelingOpen, setFeelingOpen] = React.useState(false);
+  const [topicsOpen, setTopicsOpen] = React.useState(false);
+  const [topicDraft, setTopicDraft] = React.useState("");
+  const [locationOpen, setLocationOpen] = React.useState(false);
+  const [locationDraft, setLocationDraft] = React.useState("");
+  const [gifOpen, setGifOpen] = React.useState(false);
+  const pollActive = pollOptions.length > 0;
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const videoInputRef = React.useRef<HTMLInputElement>(null);
   const boatPhotosInputRef = React.useRef<HTMLInputElement>(null);
@@ -280,6 +402,14 @@ export function FeedPage() {
     setNewHorsepower("");
     setNewTopSpeed("");
     setNewMods("");
+    setNewFeeling(null);
+    setNewTopics([]);
+    setNewLocation("");
+    setNewGifUrl(null);
+    setPollOptions([]);
+    setNewVisibility("community");
+    setTopicDraft("");
+    setLocationDraft("");
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (videoInputRef.current) videoInputRef.current.value = "";
     if (boatPhotosInputRef.current) boatPhotosInputRef.current.value = "";
@@ -324,6 +454,7 @@ export function FeedPage() {
       if (res?.objectPath) {
         setNewImageUrl(res.objectPath);
         setNewVideoUrl(null);
+        setNewGifUrl(null);
         if (videoInputRef.current) videoInputRef.current.value = "";
       } else {
         toast.error("Couldn't upload that photo.");
@@ -345,6 +476,7 @@ export function FeedPage() {
       if (res?.objectPath) {
         setNewVideoUrl(res.objectPath);
         setNewImageUrl(null);
+        setNewGifUrl(null);
         if (fileInputRef.current) fileInputRef.current.value = "";
       } else {
         toast.error("Couldn't upload that video.");
@@ -354,10 +486,28 @@ export function FeedPage() {
     }
   };
 
+  const addTopic = () => {
+    const t = topicDraft.trim().replace(/^#+/, "").replace(/[^\w]/g, "");
+    if (!t) return;
+    setNewTopics((prev) => (prev.includes(t) || prev.length >= 10 ? prev : [...prev, t]));
+    setTopicDraft("");
+  };
+
+  const handleSelectGif = (url: string) => {
+    setNewGifUrl(url);
+    setNewImageUrl(null);
+    setNewVideoUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (videoInputRef.current) videoInputRef.current.value = "";
+    setGifOpen(false);
+  };
+
   const handleCreatePost = () => {
     const isBoat = newType === "boat_showcase";
-    if (!isBoat && !newContent.trim()) {
-      toast.error("Add some content for your post.");
+    const validPollOptions = pollOptions.map((o) => o.trim()).filter((o) => o.length > 0);
+    const hasExtras = !!(newGifUrl || newImageUrl || newVideoUrl || newFeeling || newLocation.trim() || newTopics.length || validPollOptions.length >= 2);
+    if (!isBoat && !newContent.trim() && !hasExtras) {
+      toast.error("Add something to your post.");
       return;
     }
     if (newType === "event" && !newEventDate) {
@@ -368,22 +518,35 @@ export function FeedPage() {
       toast.error("Add at least one photo of your boat.");
       return;
     }
+    if (pollActive && validPollOptions.length < 2) {
+      toast.error("Add at least two poll choices.");
+      return;
+    }
     const hp = parseInt(newHorsepower, 10);
     const speed = parseFloat(newTopSpeed);
+    const body = newContent.trim();
+    const head: string[] = [];
+    if (newFeeling) head.push(`${newFeeling.emoji} Feeling ${newFeeling.label}`);
+    const tail: string[] = [];
+    if (newLocation.trim()) tail.push(`📍 ${newLocation.trim()}`);
+    if (newTopics.length) tail.push(newTopics.map((t) => `#${t}`).join(" "));
+    const composedContent = [...head, body, ...tail].filter(Boolean).join("\n\n");
     createPost.mutate(
       {
         data: {
           title: newTitle.trim() || (newType === "event" ? "Event" : newType === "tie_up" ? "Tie-up" : isBoat ? "Boat Showcase" : "Post"),
-          content: newContent.trim() || (isBoat ? "Check out this boat!" : ""),
+          content: composedContent || (isBoat ? "Check out this boat!" : ""),
           postType: newType as PostInputPostType,
           eventDate: (newType === "event" || newType === "tie_up") && newEventDate ? new Date(newEventDate).toISOString() : undefined,
-          imageUrl: newImageUrl ? `/api/storage${newImageUrl}` : undefined,
+          imageUrl: newGifUrl ?? (newImageUrl ? `/api/storage${newImageUrl}` : undefined),
           videoUrl: newVideoUrl ? `/api/storage${newVideoUrl}` : undefined,
           photos: isBoat && newPhotos.length ? newPhotos : undefined,
           engineSetup: isBoat && newEngineSetup.trim() ? newEngineSetup.trim() : undefined,
           horsepower: isBoat && !Number.isNaN(hp) ? hp : undefined,
           topSpeed: isBoat && !Number.isNaN(speed) ? speed : undefined,
           mods: isBoat && newMods.trim() ? newMods.trim() : undefined,
+          visibility: newVisibility as PostInputVisibility,
+          pollOptions: validPollOptions.length >= 2 ? validPollOptions : undefined,
         },
       },
       {
@@ -751,7 +914,21 @@ export function FeedPage() {
               <>
                 <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
                 <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} />
-                {newImageUrl ? (
+                {newGifUrl ? (
+                  <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
+                    <img src={newGifUrl} alt="Selected GIF" className="h-full w-full object-contain" />
+                    <span className="absolute left-2 top-2 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white">GIF</span>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      className="absolute right-2 top-2 h-7 w-7"
+                      onClick={() => setNewGifUrl(null)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : newImageUrl ? (
                   <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
                     <img src={`/api/storage${newImageUrl}`} alt="Selected" className="h-full w-full object-cover" />
                     <Button
@@ -778,6 +955,54 @@ export function FeedPage() {
                     </Button>
                   </div>
                 ) : null}
+
+                {(newFeeling || newLocation.trim() || newTopics.length > 0) && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {newFeeling && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+                        {newFeeling.emoji} Feeling {newFeeling.label}
+                        <button type="button" onClick={() => setNewFeeling(null)} className="ml-0.5"><X className="h-3 w-3" /></button>
+                      </span>
+                    )}
+                    {newLocation.trim() && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2.5 py-1 text-xs font-medium text-rose-600 dark:text-rose-400">
+                        <MapPin className="h-3 w-3" /> {newLocation.trim()}
+                        <button type="button" onClick={() => setNewLocation("")} className="ml-0.5"><X className="h-3 w-3" /></button>
+                      </span>
+                    )}
+                    {newTopics.map((t) => (
+                      <span key={t} className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-medium text-sky-600 dark:text-sky-400">
+                        #{t}
+                        <button type="button" onClick={() => setNewTopics((prev) => prev.filter((x) => x !== t))} className="ml-0.5"><X className="h-3 w-3" /></button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {pollActive && (
+                  <div className="space-y-2 rounded-xl border border-border p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold">Poll</span>
+                      <button type="button" onClick={() => setPollOptions([])} className="text-xs text-muted-foreground transition hover:text-foreground">Remove poll</button>
+                    </div>
+                    {pollOptions.map((opt, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Input value={opt} maxLength={80} placeholder={`Option ${i + 1}`} onChange={(e) => setPollOptions((prev) => prev.map((o, idx) => (idx === i ? e.target.value : o)))} />
+                        {pollOptions.length > 2 && (
+                          <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => setPollOptions((prev) => prev.filter((_, idx) => idx !== i))}>
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    {pollOptions.length < 6 && (
+                      <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setPollOptions((prev) => [...prev, ""])}>
+                        <Plus className="mr-1.5 h-4 w-4" /> Add option
+                      </Button>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-around border-y border-border py-2">
                   <button type="button" disabled={isUploading} onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 rounded-lg px-3 py-1.5 transition hover-elevate active:scale-95 disabled:opacity-50">
                     <ImagePlus className="h-5 w-5 text-emerald-500" />
@@ -786,6 +1011,28 @@ export function FeedPage() {
                   <button type="button" disabled={isUploading} onClick={() => videoInputRef.current?.click()} className="flex items-center gap-2 rounded-lg px-3 py-1.5 transition hover-elevate active:scale-95 disabled:opacity-50">
                     <Video className="h-5 w-5 text-indigo-500" />
                     <span className="text-sm font-medium">Video</span>
+                  </button>
+                  <Popover open={feelingOpen} onOpenChange={setFeelingOpen}>
+                    <PopoverTrigger asChild>
+                      <button type="button" className="flex items-center gap-2 rounded-lg px-3 py-1.5 transition hover-elevate active:scale-95">
+                        <Smile className="h-5 w-5 text-amber-500" />
+                        <span className="text-sm font-medium">Feeling</span>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-2">
+                      <div className="grid grid-cols-4 gap-1">
+                        {FEELINGS.map((f) => (
+                          <button key={f.label} type="button" onClick={() => { setNewFeeling(f); setFeelingOpen(false); }} className="flex flex-col items-center gap-0.5 rounded-lg p-2 text-center hover-elevate active:scale-95">
+                            <span className="text-xl">{f.emoji}</span>
+                            <span className="text-[10px] text-muted-foreground">{f.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <button type="button" onClick={() => setPollOptions((prev) => (prev.length ? prev : ["", ""]))} className="flex items-center gap-2 rounded-lg px-3 py-1.5 transition hover-elevate active:scale-95">
+                    <BarChart3 className="h-5 w-5 text-orange-500" />
+                    <span className="text-sm font-medium">Poll</span>
                   </button>
                 </div>
               </>
@@ -804,6 +1051,78 @@ export function FeedPage() {
                 <Label>{newType === "tie_up" ? "When (optional)" : "Event date"}</Label>
                 <Input type="datetime-local" value={newEventDate} onChange={(e) => setNewEventDate(e.target.value)} />
               </div>
+            )}
+
+            {newType !== "boat_showcase" && (
+              <>
+                <button type="button" onClick={() => { setTopicDraft(""); setTopicsOpen(true); }} className="flex w-full items-center gap-3 rounded-xl border border-border px-3.5 py-3 text-left transition hover-elevate active:scale-[0.99]">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-500/10">
+                    <Hash className="h-4 w-4 text-sky-500" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">Add topics</span>
+                    <span className="block truncate text-xs text-muted-foreground">{newTopics.length ? newTopics.map((t) => `#${t}`).join(" ") : "Help others discover your post"}</span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
+
+                <button type="button" onClick={() => { setLocationDraft(newLocation); setLocationOpen(true); }} className="flex w-full items-center gap-3 rounded-xl border border-border px-3.5 py-3 text-left transition hover-elevate active:scale-[0.99]">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-500/10">
+                    <MapPin className="h-4 w-4 text-rose-500" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">Add location</span>
+                    <span className="block truncate text-xs text-muted-foreground">{newLocation.trim() || "Tag where this is happening"}</span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
+
+                <div className="flex w-full items-center gap-3 rounded-xl border border-border px-3.5 py-2.5">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-500/10">
+                    <Users className="h-4 w-4 text-teal-500" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold">Audience</div>
+                    <div className="truncate text-xs text-muted-foreground">Who can see this post</div>
+                  </div>
+                  <Select value={newVisibility} onValueChange={(v) => setNewVisibility(v as "community" | "friends")}>
+                    <SelectTrigger className="h-8 w-auto gap-1.5 rounded-full border-border bg-muted/60 px-3 text-xs font-medium">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="community">
+                        <span className="flex items-center gap-1.5"><Globe className="h-3.5 w-3.5" /> Dale Hollow Community</span>
+                      </SelectItem>
+                      <SelectItem value="friends">
+                        <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5" /> Friends only</span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => setGifOpen(true)} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-bold text-emerald-600 transition hover-elevate active:scale-95 dark:text-emerald-400">
+                    GIF
+                  </button>
+                  <button type="button" onClick={() => setPollOptions((prev) => (prev.length ? prev : ["", ""]))} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border transition hover-elevate active:scale-95" aria-label="Add a poll">
+                    <BarChart3 className="h-5 w-5 text-orange-500" />
+                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button type="button" className="flex h-9 w-9 items-center justify-center rounded-lg border border-border transition hover-elevate active:scale-95" aria-label="More options">
+                        <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem onClick={() => setGifOpen(true)}>Add a GIF</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => setPollOptions((prev) => (prev.length ? prev : ["", ""]))}>Add a poll</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setTopicDraft(""); setTopicsOpen(true); }}>Add topics</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setLocationDraft(newLocation); setLocationOpen(true); }}>Add location</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={resetComposer}>Clear post</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </>
             )}
 
             {newType === "boat_showcase" && (
@@ -860,6 +1179,66 @@ export function FeedPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={topicsOpen} onOpenChange={setTopicsOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Add topics</DialogTitle>
+            <DialogDescription>Add hashtags so others can find your post.</DialogDescription>
+          </DialogHeader>
+          <div className="flex gap-2">
+            <Input
+              value={topicDraft}
+              onChange={(e) => setTopicDraft(e.target.value)}
+              placeholder="e.g. fishing"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTopic(); } }}
+            />
+            <Button type="button" onClick={addTopic} disabled={!topicDraft.trim()}>Add</Button>
+          </div>
+          {newTopics.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {newTopics.map((t) => (
+                <span key={t} className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-medium text-sky-600 dark:text-sky-400">
+                  #{t}
+                  <button type="button" onClick={() => setNewTopics((prev) => prev.filter((x) => x !== t))} className="ml-0.5"><X className="h-3 w-3" /></button>
+                </span>
+              ))}
+            </div>
+          )}
+          <DialogFooter>
+            <Button type="button" onClick={() => setTopicsOpen(false)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={locationOpen} onOpenChange={setLocationOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Add location</DialogTitle>
+            <DialogDescription>Where is this happening?</DialogDescription>
+          </DialogHeader>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={locationDraft}
+              onChange={(e) => setLocationDraft(e.target.value)}
+              placeholder="e.g. Sulphur Creek Marina"
+              className="pl-9"
+              autoFocus
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); setNewLocation(locationDraft.trim()); setLocationOpen(false); } }}
+            />
+          </div>
+          <DialogFooter>
+            {newLocation.trim() && (
+              <Button type="button" variant="ghost" onClick={() => { setNewLocation(""); setLocationDraft(""); setLocationOpen(false); }}>Remove</Button>
+            )}
+            <Button type="button" onClick={() => { setNewLocation(locationDraft.trim()); setLocationOpen(false); }}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <GifPickerDialog open={gifOpen} onOpenChange={setGifOpen} onSelect={handleSelectGif} />
     </div>
   );
 }
@@ -1440,6 +1819,8 @@ export function PostCard({ post, onReact, canDelete, onDelete, currentUserId, on
         )}
         
         {post.content && <p className="text-sm whitespace-pre-wrap">{post.content}</p>}
+
+        {post.poll && <PollView post={post} />}
 
         {post.sharedPostId ? (
           post.sharedPost ? (

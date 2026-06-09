@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, postsTable, postLikesTable, postCommentsTable, commentLikesTable, pinsTable, eventRsvpsTable, mutesTable, savedPostsTable, catchesTable } from "@workspace/db";
-import { eq, and, gte, sql, desc, count, inArray, notInArray } from "drizzle-orm";
+import { usersTable, postsTable, postLikesTable, postCommentsTable, commentLikesTable, pinsTable, eventRsvpsTable, mutesTable, savedPostsTable, catchesTable, pollOptionsTable, pollVotesTable, friendRequestsTable, blocksTable } from "@workspace/db";
+import { eq, and, gte, sql, desc, count, inArray, notInArray, or, asc } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 
 const router = Router();
@@ -56,6 +56,31 @@ async function formatPost(post: typeof postsTable.$inferSelect, viewerId: number
     });
     rsvpByMe = mine?.status === "going";
   }
+  const pollOptionRows = await db
+    .select()
+    .from(pollOptionsTable)
+    .where(eq(pollOptionsTable.postId, post.id))
+    .orderBy(asc(pollOptionsTable.position), asc(pollOptionsTable.id));
+  let poll = null;
+  if (pollOptionRows.length) {
+    const voteRows = await db
+      .select({ optionId: pollVotesTable.optionId, value: count() })
+      .from(pollVotesTable)
+      .where(eq(pollVotesTable.postId, post.id))
+      .groupBy(pollVotesTable.optionId);
+    const voteMap = new Map<number, number>();
+    for (const v of voteRows) voteMap.set(v.optionId, v.value);
+    const myVoteRow = await db.query.pollVotesTable.findFirst({
+      where: and(eq(pollVotesTable.postId, post.id), eq(pollVotesTable.userId, viewerId)),
+    });
+    let totalVotes = 0;
+    const options = pollOptionRows.map((o) => {
+      const voteCount = voteMap.get(o.id) ?? 0;
+      totalVotes += voteCount;
+      return { id: o.id, text: o.text, voteCount };
+    });
+    poll = { options, totalVotes, myVote: myVoteRow?.optionId ?? null };
+  }
   let sharedPost = null;
   if (post.sharedPostId && embedShared) {
     const orig = await db.query.postsTable.findFirst({ where: eq(postsTable.id, post.sharedPostId) });
@@ -92,8 +117,42 @@ async function formatPost(post: typeof postsTable.$inferSelect, viewerId: number
     savedByMe: !!saved,
     sharedPostId: post.sharedPostId ?? null,
     sharedPost,
+    visibility: post.visibility,
+    poll,
     createdAt: post.createdAt.toISOString(),
   };
+}
+
+async function getFriendIds(userId: number): Promise<number[]> {
+  const accepted = await db.query.friendRequestsTable.findMany({
+    where: and(
+      or(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.followeeId, userId)),
+      eq(friendRequestsTable.status, "accepted")
+    ),
+  });
+  const blocks = await db.query.blocksTable.findMany({
+    where: or(eq(blocksTable.blockerId, userId), eq(blocksTable.blockedId, userId)),
+  });
+  const blockedIds = new Set(blocks.map((b) => (b.blockerId === userId ? b.blockedId : b.blockerId)));
+  return accepted
+    .map((r) => (r.followerId === userId ? r.followeeId : r.followerId))
+    .filter((id) => !blockedIds.has(id));
+}
+
+// A post is visible to a viewer when it is shared with the whole community, or
+// the viewer is the author, or the author is an accepted friend of the viewer.
+function visibilityCondition(uid: number, friendIds: number[]) {
+  return or(
+    eq(postsTable.visibility, "community"),
+    inArray(postsTable.userId, [uid, ...friendIds])
+  );
+}
+
+// True when the viewer is allowed to see/interact with a post given its audience.
+async function canViewPost(uid: number, post: { userId: number; visibility: string }): Promise<boolean> {
+  if (post.visibility !== "friends" || post.userId === uid) return true;
+  const friendIds = await getFriendIds(uid);
+  return friendIds.includes(post.userId);
 }
 
 async function getMutedUserIds(userId: number): Promise<number[]> {
@@ -105,10 +164,11 @@ router.get("/", async (req, res) => {
   const uid = currentUserId(req);
   const type = req.query.type as string | undefined;
   const mutedIds = await getMutedUserIds(uid);
-  const conditions = [];
+  const friendIds = await getFriendIds(uid);
+  const conditions: any[] = [visibilityCondition(uid, friendIds)];
   if (type) conditions.push(eq(postsTable.postType, type));
   if (mutedIds.length) conditions.push(notInArray(postsTable.userId, mutedIds));
-  const where = conditions.length ? and(...conditions) : undefined;
+  const where = and(...conditions);
   const posts = await db.select().from(postsTable).where(where).orderBy(desc(postsTable.createdAt));
   res.json(await Promise.all(posts.map((p) => formatPost(p, uid))));
 });
@@ -130,8 +190,11 @@ router.get("/saved", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const uid = currentUserId(req);
-  const { title, content, postType, eventDate, imageUrl, videoUrl, photos, engineSetup, horsepower, topSpeed, mods, pinLat, pinLng } = req.body;
+  const { title, content, postType, eventDate, imageUrl, videoUrl, photos, engineSetup, horsepower, topSpeed, mods, pinLat, pinLng, visibility, pollOptions } = req.body;
   const photoList = Array.isArray(photos) ? photos.filter((p: unknown) => typeof p === "string") : null;
+  const pollChoices = Array.isArray(pollOptions)
+    ? pollOptions.map((p: unknown) => (typeof p === "string" ? p.trim() : "")).filter((p) => p.length > 0).slice(0, 10)
+    : [];
   const [post] = await db
     .insert(postsTable)
     .values({
@@ -149,8 +212,14 @@ router.post("/", async (req, res) => {
       mods: typeof mods === "string" ? mods : null,
       pinLat,
       pinLng,
+      visibility: visibility === "friends" ? "friends" : "community",
     })
     .returning();
+  if (pollChoices.length >= 2) {
+    await db.insert(pollOptionsTable).values(
+      pollChoices.map((text, i) => ({ postId: post.id, text, position: i }))
+    );
+  }
   res.status(201).json(await formatPost(post, uid));
 });
 
@@ -248,6 +317,10 @@ router.get("/:postId", async (req, res) => {
   const postId = parseInt(req.params.postId);
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!post) return res.status(404).json({ error: "Post not found" });
+  if (post.visibility === "friends" && post.userId !== uid) {
+    const friendIds = await getFriendIds(uid);
+    if (!friendIds.includes(post.userId)) return res.status(404).json({ error: "Post not found" });
+  }
   res.json(await formatPost(post, uid));
 });
 
@@ -271,6 +344,8 @@ router.delete("/:postId", async (req, res) => {
   await db.delete(postCommentsTable).where(eq(postCommentsTable.postId, postId));
   await db.delete(eventRsvpsTable).where(eq(eventRsvpsTable.postId, postId));
   await db.delete(savedPostsTable).where(eq(savedPostsTable.postId, postId));
+  await db.delete(pollVotesTable).where(eq(pollVotesTable.postId, postId));
+  await db.delete(pollOptionsTable).where(eq(pollOptionsTable.postId, postId));
   await db.delete(postsTable).where(eq(postsTable.id, postId));
   res.json({ success: true });
 });
@@ -334,6 +409,34 @@ router.post("/:postId/react", async (req, res) => {
 
   const updated = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   res.json(await formatPost(updated!, uid));
+});
+
+router.post("/:postId/poll/vote", async (req, res) => {
+  const uid = currentUserId(req);
+  const postId = parseInt(req.params.postId);
+  if (Number.isNaN(postId)) return res.status(400).json({ error: "Invalid post id" });
+  const optionId = Number(req.body?.optionId);
+  if (!Number.isInteger(optionId)) return res.status(400).json({ error: "Invalid option" });
+  const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
+  if (!post) return res.status(404).json({ error: "Post not found" });
+  if (!(await canViewPost(uid, post))) return res.status(404).json({ error: "Post not found" });
+  const option = await db.query.pollOptionsTable.findFirst({ where: eq(pollOptionsTable.id, optionId) });
+  if (!option || option.postId !== postId) return res.status(404).json({ error: "Poll option not found" });
+
+  const existing = await db.query.pollVotesTable.findFirst({
+    where: and(eq(pollVotesTable.postId, postId), eq(pollVotesTable.userId, uid)),
+  });
+  if (existing && existing.optionId === optionId) {
+    await db.delete(pollVotesTable).where(eq(pollVotesTable.id, existing.id));
+  } else if (existing) {
+    await db.update(pollVotesTable).set({ optionId }).where(eq(pollVotesTable.id, existing.id));
+  } else {
+    await db
+      .insert(pollVotesTable)
+      .values({ postId, optionId, userId: uid })
+      .onConflictDoUpdate({ target: [pollVotesTable.postId, pollVotesTable.userId], set: { optionId } });
+  }
+  res.json(await formatPost(post, uid));
 });
 
 router.post("/:postId/rsvp", async (req, res) => {

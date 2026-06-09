@@ -5,8 +5,10 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { Poll } from './poll';
 import type { PostMyReaction } from './postMyReaction';
 import type { PostPostType } from './postPostType';
+import type { PostVisibility } from './postVisibility';
 import type { ReactionCounts } from './reactionCounts';
 import type { User } from './user';
 
@@ -63,5 +65,7 @@ export interface Post {
   /** @nullable */
   sharedPostId?: number | null;
   sharedPost?: null | Post;
+  visibility?: PostVisibility;
+  poll?: null | Poll;
   createdAt: string;
 }

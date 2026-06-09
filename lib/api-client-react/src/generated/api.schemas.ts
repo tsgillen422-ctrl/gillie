@@ -407,6 +407,14 @@ export const PostMyReaction = {
   angry: 'angry',
 } as const;
 
+export type PostVisibility = typeof PostVisibility[keyof typeof PostVisibility];
+
+
+export const PostVisibility = {
+  community: 'community',
+  friends: 'friends',
+} as const;
+
 export interface ReactionCounts {
   thumbsup?: number;
   thumbsdown?: number;
@@ -414,6 +422,22 @@ export interface ReactionCounts {
   laugh?: number;
   sad?: number;
   angry?: number;
+}
+
+export interface PollOption {
+  id: number;
+  text: string;
+  voteCount: number;
+}
+
+export interface Poll {
+  options: PollOption[];
+  totalVotes: number;
+  /**
+     * The option id the viewer voted for, or null.
+     * @nullable
+     */
+  myVote?: number | null;
 }
 
 export interface Post {
@@ -469,7 +493,21 @@ export interface Post {
   /** @nullable */
   sharedPostId?: number | null;
   sharedPost?: null | Post;
+  visibility?: PostVisibility;
+  poll?: null | Poll;
   createdAt: string;
+}
+
+export interface PollVoteInput {
+  optionId: number;
+}
+
+export interface GifResult {
+  id: string;
+  /** Full GIF URL to attach to a post. */
+  url: string;
+  /** Smaller GIF URL for the picker grid. */
+  previewUrl: string;
 }
 
 export interface ShareInput {
@@ -503,6 +541,14 @@ export const PostInputPostType = {
   boat_showcase: 'boat_showcase',
 } as const;
 
+export type PostInputVisibility = typeof PostInputVisibility[keyof typeof PostInputVisibility];
+
+
+export const PostInputVisibility = {
+  community: 'community',
+  friends: 'friends',
+} as const;
+
 export interface PostInput {
   title: string;
   content: string;
@@ -517,6 +563,9 @@ export interface PostInput {
   mods?: string;
   pinLat?: number;
   pinLng?: number;
+  visibility?: PostInputVisibility;
+  /** 2-10 poll choices. When present, the post includes a poll. */
+  pollOptions?: string[];
 }
 
 export interface PostsSummary {
@@ -985,6 +1034,10 @@ export const GetPostsType = {
   tie_up: 'tie_up',
   boat_showcase: 'boat_showcase',
 } as const;
+
+export type SearchGifsParams = {
+q?: string;
+};
 
 export type GetCatchesParams = {
 /**
