@@ -1112,9 +1112,6 @@ export function FeedPage() {
                   <button type="button" onClick={() => setGifOpen(true)} className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-bold text-emerald-600 transition hover-elevate active:scale-95 dark:text-emerald-400">
                     GIF
                   </button>
-                  <button type="button" onClick={() => setPollOptions((prev) => (prev.length ? prev : ["", ""]))} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border transition hover-elevate active:scale-95" aria-label="Add a poll">
-                    <BarChart3 className="h-5 w-5 text-orange-500" />
-                  </button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button type="button" className="flex h-9 w-9 items-center justify-center rounded-lg border border-border transition hover-elevate active:scale-95" aria-label="More options">
