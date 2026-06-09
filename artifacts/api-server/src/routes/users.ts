@@ -148,18 +148,50 @@ async function getFriendIds(userId: number): Promise<number[]> {
   return accepted.map((r) => (r.followerId === userId ? r.followeeId : r.followerId));
 }
 
-async function computeBadges(userId: number): Promise<string[]> {
-  const badges: string[] = [];
+type BadgeOut = { key: string; label: string; description: string; earned: boolean };
+
+// Single source of truth for every badge and its earning threshold.
+// Earned status is computed live from real activity on each request.
+async function computeBadges(userId: number): Promise<BadgeOut[]> {
   const [postRes] = await db.select({ value: count() }).from(postsTable).where(eq(postsTable.userId, userId));
   const [pinRes] = await db.select({ value: count() }).from(pinsTable).where(eq(pinsTable.userId, userId));
   const [catchRes] = await db.select({ value: count() }).from(catchesTable).where(eq(catchesTable.userId, userId));
+  const [galleryRes] = await db.select({ value: count() }).from(galleryItemsTable).where(eq(galleryItemsTable.userId, userId));
+  const [campRes] = await db
+    .select({ value: count() })
+    .from(pinsTable)
+    .where(and(eq(pinsTable.userId, userId), eq(pinsTable.type, "campsite")));
+  const [publicPinRes] = await db
+    .select({ value: count() })
+    .from(pinsTable)
+    .where(and(eq(pinsTable.userId, userId), eq(pinsTable.visibility, "public")));
+  const { followerCount } = await getFollowCounts(userId);
   const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, userId) });
-  if (user?.isBusiness) badges.push("verified_business");
-  if ((postRes?.value ?? 0) >= 10) badges.push("frequent_poster");
-  if ((pinRes?.value ?? 0) >= 5) badges.push("trailblazer");
-  if ((catchRes?.value ?? 0) >= 10) badges.push("angler");
-  else if ((catchRes?.value ?? 0) >= 1) badges.push("first_catch");
-  return badges;
+
+  const posts = postRes?.value ?? 0;
+  const pins = pinRes?.value ?? 0;
+  const catches = catchRes?.value ?? 0;
+  const photos = galleryRes?.value ?? 0;
+  const campsitePins = campRes?.value ?? 0;
+  const publicPins = publicPinRes?.value ?? 0;
+  const isBusiness = !!user?.isBusiness;
+  const hasBoat = !!user?.boatName;
+
+  return [
+    { key: "explorer", label: "Lake Explorer", description: "Welcome to the Dale Hollow Lake community.", earned: true },
+    { key: "first_post", label: "First Post", description: "Share your first post.", earned: posts >= 1 },
+    { key: "frequent_poster", label: "Frequent Poster", description: "Share 10 posts.", earned: posts >= 10 },
+    { key: "first_catch", label: "First Catch", description: "Log your first catch.", earned: catches >= 1 },
+    { key: "angler", label: "Master Angler", description: "Log 10 catches.", earned: catches >= 10 },
+    { key: "pathfinder", label: "Pathfinder", description: "Drop your first map pin.", earned: pins >= 1 },
+    { key: "trailblazer", label: "Trailblazer", description: "Drop 5 map pins.", earned: pins >= 5 },
+    { key: "shutterbug", label: "Shutterbug", description: "Add 3 photos to your gallery.", earned: photos >= 3 },
+    { key: "popular", label: "Crowd Favorite", description: "Reach 5 followers.", earned: followerCount >= 5 },
+    { key: "camper", label: "Camper", description: "Pin a campsite.", earned: campsitePins >= 1 },
+    { key: "boater", label: "Boater", description: "Add your boat to your profile.", earned: hasBoat },
+    { key: "local_guide", label: "Local Guide", description: "Share 3 public pins or run a verified business.", earned: isBusiness || publicPins >= 3 },
+    { key: "verified_business", label: "Verified Business", description: "A verified Dale Hollow Lake business.", earned: isBusiness },
+  ];
 }
 
 function formatUser(u: typeof usersTable.$inferSelect) {

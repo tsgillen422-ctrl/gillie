@@ -9,6 +9,13 @@ export interface HealthStatus {
   status: string;
 }
 
+export interface Badge {
+  key: string;
+  label: string;
+  description: string;
+  earned: boolean;
+}
+
 export type UserFriendStatus = typeof UserFriendStatus[keyof typeof UserFriendStatus];
 
 
@@ -73,7 +80,7 @@ export interface User {
   friendStatus?: UserFriendStatus;
   followerCount?: number;
   followingCount?: number;
-  badges?: string[];
+  badges?: Badge[];
   createdAt: string;
 }
 

@@ -4,9 +4,9 @@ import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreate
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Compass, Fish, Tent, Anchor, Award, Mountain, Waves, Camera, Trophy, Sparkles, BookOpen, Image as ImageIcon, Bookmark, FileText, ChevronRight, Star } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Fish, Tent, Anchor, Mountain, Waves, Camera, Trophy, Image as ImageIcon, Bookmark, FileText, ChevronRight, Star } from "lucide-react";
 import { ReportDialog } from "@/components/ReportDialog";
-import { BadgeRow } from "@/components/Badges";
+import { BadgeRow, badgeMeta } from "@/components/Badges";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar, resolveAvatarUrl } from "@/components/UserAvatar";
@@ -114,25 +114,6 @@ function SectionTitle({ icon: Icon, children, action }: { icon: any; children: R
         {children}
       </h3>
       {action}
-    </div>
-  );
-}
-
-type PersonaBadge = { key: string; label: string; Icon: any; className: string };
-
-function PersonaBadges({ badges }: { badges: PersonaBadge[] }) {
-  if (badges.length === 0) return null;
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
-      {badges.map(({ key, label, Icon, className }) => (
-        <span
-          key={key}
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold shadow-soft ${className}`}
-        >
-          <Icon className="w-3.5 h-3.5" />
-          {label}
-        </span>
-      ))}
     </div>
   );
 }
@@ -493,19 +474,6 @@ export function ProfilePage() {
   const followersCount = canViewFollows ? (followersQuery.data?.length ?? user?.followerCount ?? 0) : (user?.followerCount ?? 0);
   const followingCount = canViewFollows ? (followingQuery.data?.length ?? user?.followingCount ?? 0) : (user?.followingCount ?? 0);
 
-  const personaBadges = React.useMemo<PersonaBadge[]>(() => {
-    if (!user) return [];
-    const list: PersonaBadge[] = [];
-    list.push({ key: "explorer", label: "Lake Explorer", Icon: Compass, className: "bg-primary/15 text-primary" });
-    if (catchCount > 0) list.push({ key: "angler", label: "Angler", Icon: Fish, className: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400" });
-    if (userPins?.some((p) => p.type === "campsite")) list.push({ key: "camper", label: "Camper", Icon: Tent, className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" });
-    if (user.boatName) list.push({ key: "boater", label: "Boater", Icon: Anchor, className: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400" });
-    if (user.isBusiness || (userPins?.filter((p) => p.visibility === "public").length ?? 0) >= 3) {
-      list.push({ key: "guide", label: "Local Guide", Icon: Award, className: "bg-amber-500/15 text-amber-600 dark:text-amber-400" });
-    }
-    return list;
-  }, [user, catchCount, userPins]);
-
   const activeInterests = React.useMemo(() => {
     const s = new Set<string>();
     if (catchCount > 0) s.add("fishing");
@@ -516,16 +484,16 @@ export function ProfilePage() {
     return s;
   }, [user, catchCount, galleryCount, userPins]);
 
-  const achievements = React.useMemo<Achievement[]>(() => [
-    { key: "first_post", label: "First Post", Icon: Sparkles, earned: postCount >= 1 },
-    { key: "storyteller", label: "Storyteller", Icon: BookOpen, earned: postCount >= 10 },
-    { key: "first_catch", label: "First Catch", Icon: Fish, earned: catchCount >= 1 },
-    { key: "master_angler", label: "Master Angler", Icon: Trophy, earned: catchCount >= 5 },
-    { key: "pathfinder", label: "Pathfinder", Icon: MapPin, earned: pinCount >= 1 },
-    { key: "trailblazer", label: "Trailblazer", Icon: Compass, earned: pinCount >= 5 },
-    { key: "shutterbug", label: "Shutterbug", Icon: Camera, earned: galleryCount >= 3 },
-    { key: "popular", label: "Crowd Favorite", Icon: Heart, earned: followersCount >= 5 },
-  ], [postCount, catchCount, pinCount, galleryCount, followersCount]);
+  const achievements = React.useMemo<Achievement[]>(
+    () =>
+      (user?.badges ?? []).map((b) => ({
+        key: b.key,
+        label: b.label,
+        Icon: badgeMeta(b.key).Icon,
+        earned: b.earned,
+      })),
+    [user],
+  );
 
   const recentActivity = React.useMemo(() => {
     type Item = { key: string; Icon: any; color: string; label: string; time: number };
@@ -636,8 +604,7 @@ export function ProfilePage() {
                 </h2>
                 <p className="text-muted-foreground text-sm">@{user.username}</p>
 
-                <PersonaBadges badges={personaBadges} />
-                <BadgeRow badges={(user as any).badges} />
+                <BadgeRow badges={user.badges} />
 
                 {/* Quick stats */}
                 <div className="grid grid-cols-4 gap-2 w-full mt-5">

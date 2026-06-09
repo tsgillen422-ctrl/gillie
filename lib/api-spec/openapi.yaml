@@ -1585,6 +1585,19 @@ components:
       required:
         - status
 
+    Badge:
+      type: object
+      required: [key, label, description, earned]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        earned:
+          type: boolean
+
     User:
       type: object
       required: [id, username, displayName, createdAt]
@@ -1657,7 +1670,7 @@ components:
         badges:
           type: array
           items:
-            type: string
+            $ref: "#/components/schemas/Badge"
         createdAt:
           type: string
 

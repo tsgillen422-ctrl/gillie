@@ -8,6 +8,7 @@
 
 export * from './advisory';
 export * from './advisoryLevel';
+export * from './badge';
 export * from './catch';
 export * from './catchInput';
 export * from './comment';

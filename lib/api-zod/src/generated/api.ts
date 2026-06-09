@@ -52,7 +52,12 @@ export const GetMeResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 
@@ -116,7 +121,12 @@ export const UpdateMeResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 
@@ -162,7 +172,12 @@ export const UpdateMyLocationResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 
@@ -203,7 +218,12 @@ export const GetAdminsResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 export const GetAdminsResponse = zod.array(GetAdminsResponseItem)
@@ -253,7 +273,12 @@ export const SetUserAdminResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 
@@ -298,7 +323,12 @@ export const SearchUsersResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 export const SearchUsersResponse = zod.array(SearchUsersResponseItem)
@@ -344,7 +374,12 @@ export const GetUserResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 
@@ -393,7 +428,12 @@ export const GetFriendsResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 export const GetFriendsResponse = zod.array(GetFriendsResponseItem)
@@ -463,7 +503,12 @@ export const GetFriendRequestsResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "followee": zod.object({
@@ -499,7 +544,12 @@ export const GetFriendRequestsResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -552,7 +602,12 @@ export const FollowUserResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "followee": zod.object({
@@ -588,7 +643,12 @@ export const FollowUserResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -639,7 +699,12 @@ export const GetBlockedUsersResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 export const GetBlockedUsersResponse = zod.array(GetBlockedUsersResponseItem)
@@ -685,7 +750,12 @@ export const GetFollowersResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 export const GetFollowersResponse = zod.array(GetFollowersResponseItem)
@@ -731,7 +801,12 @@ export const GetFollowingResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 export const GetFollowingResponse = zod.array(GetFollowingResponseItem)
@@ -798,7 +873,12 @@ export const AcceptFriendRequestResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "followee": zod.object({
@@ -834,7 +914,12 @@ export const AcceptFriendRequestResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -881,7 +966,12 @@ export const GetConversationsResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })).optional(),
   "lastMessage": zod.object({
@@ -921,7 +1011,12 @@ export const GetConversationsResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -988,7 +1083,12 @@ export const GetConversationMessagesResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -1119,7 +1219,12 @@ export const GetPinsResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1203,7 +1308,12 @@ export const GetPinResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1276,7 +1386,12 @@ export const LikePinResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1337,7 +1452,12 @@ export const GetFavoritePinsResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1403,7 +1523,12 @@ export const ToggleFavoritePinResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1464,7 +1589,12 @@ export const GetPendingPinsResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1530,7 +1660,12 @@ export const ApprovePinResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1595,7 +1730,12 @@ export const GetPostsResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -1707,7 +1847,12 @@ export const GetPostResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -1798,7 +1943,12 @@ export const ReactToPostResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -1877,7 +2027,12 @@ export const GetPostLikesResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional()
 })
@@ -1928,7 +2083,12 @@ export const GetPostCommentsResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -2022,7 +2182,12 @@ export const ReactToCommentResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -2088,7 +2253,12 @@ export const GetPostsSummaryResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -2158,7 +2328,12 @@ export const GetPostsSummaryResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -2359,7 +2534,12 @@ export const GetActiveHazardsResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -2425,7 +2605,12 @@ export const ToggleRsvpResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -2503,7 +2688,12 @@ export const GetRsvpsResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional()
 })
@@ -2553,7 +2743,12 @@ export const GetCatchesResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "species": zod.string(),
@@ -2637,7 +2832,12 @@ export const GetGalleryResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "mediaUrl": zod.string(),
@@ -2707,7 +2907,12 @@ export const SearchResponse = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })),
   "pins": zod.array(zod.object({
@@ -2859,7 +3064,12 @@ export const GetSavedPostsResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -2948,7 +3158,12 @@ export const GetMutedUsersResponseItem = zod.object({
   "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
   "followerCount": zod.number().optional(),
   "followingCount": zod.number().optional(),
-  "badges": zod.array(zod.string()).optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
   "createdAt": zod.string()
 })
 export const GetMutedUsersResponse = zod.array(GetMutedUsersResponseItem)
