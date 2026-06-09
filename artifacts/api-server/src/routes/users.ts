@@ -206,6 +206,33 @@ async function computeBadges(userId: number): Promise<BadgeOut[]> {
   ];
 }
 
+const RANK_TIERS = [
+  { key: "newcomer", title: "Newcomer", min: 1 },
+  { key: "explorer", title: "Lake Explorer", min: 3 },
+  { key: "weekender", title: "Weekend Warrior", min: 5 },
+  { key: "adventurer", title: "Dale Hollow Adventurer", min: 8 },
+  { key: "legend", title: "Lake Legend", min: 11 },
+];
+
+function computeRank(badges: BadgeOut[]) {
+  const earnedCount = badges.filter((b) => b.earned).length;
+  const totalCount = badges.length;
+  let current = RANK_TIERS[0];
+  for (const t of RANK_TIERS) {
+    if (earnedCount >= t.min) current = t;
+  }
+  const next = RANK_TIERS.find((t) => t.min > earnedCount) ?? null;
+  return {
+    key: current.key,
+    title: current.title,
+    tier: RANK_TIERS.indexOf(current) + 1,
+    earnedCount,
+    totalCount,
+    nextTitle: next ? next.title : null,
+    nextNeeded: next ? next.min - earnedCount : null,
+  };
+}
+
 function formatUser(u: typeof usersTable.$inferSelect) {
   return {
     id: u.id,
@@ -274,7 +301,8 @@ router.get("/me", async (req, res) => {
     where: eq(usersTable.id, uid),
   });
   if (!user) return res.status(401).json({ error: "Not logged in" });
-  res.json({ ...formatUser(user), ...(await getFollowCounts(user.id)), badges: await computeBadges(user.id) });
+  const meBadges = await computeBadges(user.id);
+  res.json({ ...formatUser(user), ...(await getFollowCounts(user.id)), badges: meBadges, rank: computeRank(meBadges) });
 });
 
 router.post("/me/sos", async (req, res) => {
@@ -487,7 +515,8 @@ router.get("/:userId", async (req, res) => {
   }
 
   const counts = await getFollowCounts(user.id);
-  res.json({ ...formatUser(user), ...counts, badges: await computeBadges(user.id), friendStatus });
+  const userBadges = await computeBadges(user.id);
+  res.json({ ...formatUser(user), ...counts, badges: userBadges, rank: computeRank(userBadges), friendStatus });
 });
 
 export default router;

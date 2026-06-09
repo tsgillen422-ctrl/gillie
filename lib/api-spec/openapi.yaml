@@ -1598,6 +1598,25 @@ components:
         earned:
           type: boolean
 
+    Rank:
+      type: object
+      required: [key, title, tier, earnedCount, totalCount]
+      properties:
+        key:
+          type: string
+        title:
+          type: string
+        tier:
+          type: integer
+        earnedCount:
+          type: integer
+        totalCount:
+          type: integer
+        nextTitle:
+          type: ["string", "null"]
+        nextNeeded:
+          type: ["integer", "null"]
+
     User:
       type: object
       required: [id, username, displayName, createdAt]
@@ -1675,6 +1694,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Badge"
+        rank:
+          $ref: "#/components/schemas/Rank"
         createdAt:
           type: string
 

@@ -65,6 +65,7 @@ export * from './postsSummary';
 export * from './pushSubscriptionInput';
 export * from './pushSubscriptionInputKeys';
 export * from './pushUnsubscribeInput';
+export * from './rank';
 export * from './reactionCounts';
 export * from './reactionInput';
 export * from './reactionType';

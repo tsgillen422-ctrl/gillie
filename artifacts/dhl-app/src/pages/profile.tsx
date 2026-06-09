@@ -198,30 +198,65 @@ function AchievementGrid({ items }: { items: Achievement[] }) {
   );
 }
 
-/** Illustrated "fun badge" emblem — a sunrise over the lake. */
-function AdventurerBadge() {
+/** Illustrated rank emblem — sunrise→night art changes with the user's earned rank. */
+type RankPalette = {
+  sky: [string, string, string];
+  orb: string;
+  hills: string;
+  water: string;
+  wave1: string;
+  wave2: string;
+  night?: boolean;
+};
+
+const RANK_PALETTES: Record<number, RankPalette> = {
+  1: { sky: ["#e0f2fe", "#bae6fd", "#7dd3fc"], orb: "#fde68a", hills: "#38bdf8", water: "#0ea5e9", wave1: "#bae6fd", wave2: "#e0f2fe" },
+  2: { sky: ["#fef9c3", "#fde68a", "#38bdf8"], orb: "#facc15", hills: "#0ea5e9", water: "#0284c7", wave1: "#7dd3fc", wave2: "#bae6fd" },
+  3: { sky: ["#fef3c7", "#fcd34d", "#0e7490"], orb: "#fbbf24", hills: "#0f766e", water: "#0e7490", wave1: "#67e8f9", wave2: "#a5f3fc" },
+  4: { sky: ["#fed7aa", "#fb923c", "#7c2d12"], orb: "#f97316", hills: "#155e75", water: "#0c4a6e", wave1: "#38bdf8", wave2: "#7dd3fc" },
+  5: { sky: ["#1e3a8a", "#312e81", "#0c4a6e"], orb: "#fde68a", hills: "#0c4a6e", water: "#082f49", wave1: "#38bdf8", wave2: "#67e8f9", night: true },
+};
+
+const STARS = [
+  { x: 20, y: 16 }, { x: 70, y: 12 }, { x: 84, y: 28 }, { x: 14, y: 34 }, { x: 40, y: 10 },
+];
+
+function RankBadge({ rank }: { rank?: { tier?: number; title?: string; nextTitle?: string | null; nextNeeded?: number | null } | null }) {
+  const tier = rank?.tier ?? 3;
+  const title = rank?.title ?? "Dale Hollow Adventurer";
+  const p = RANK_PALETTES[tier] ?? RANK_PALETTES[3];
+  const gid = `rank-sky-${tier}`;
   return (
     <div className="shrink-0 flex flex-col items-center w-24">
       <div className="w-24 h-24 rounded-2xl overflow-hidden border border-card-border shadow-soft">
-        <svg viewBox="0 0 100 100" className="w-full h-full" role="img" aria-label="Dale Hollow Adventurer badge">
+        <svg viewBox="0 0 100 100" className="w-full h-full" role="img" aria-label={`${title} rank badge`}>
           <defs>
-            <linearGradient id="dha-sky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#fef3c7" />
-              <stop offset="50%" stopColor="#fcd34d" />
-              <stop offset="100%" stopColor="#0e7490" />
+            <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={p.sky[0]} />
+              <stop offset="50%" stopColor={p.sky[1]} />
+              <stop offset="100%" stopColor={p.sky[2]} />
             </linearGradient>
           </defs>
-          <rect width="100" height="100" fill="url(#dha-sky)" />
-          <circle cx="50" cy="44" r="13" fill="#fbbf24" />
-          <path d="M0,64 Q26,50 50,61 Q74,72 100,57 L100,72 L0,72 Z" fill="#0f766e" />
-          <rect y="70" width="100" height="30" fill="#0e7490" />
-          <path d="M0,80 Q12,76 24,80 T48,80 T72,80 T96,80" stroke="#67e8f9" strokeWidth="1.6" fill="none" opacity="0.7" />
-          <path d="M0,88 Q12,84 24,88 T48,88 T72,88 T96,88" stroke="#a5f3fc" strokeWidth="1.6" fill="none" opacity="0.55" />
+          <rect width="100" height="100" fill={`url(#${gid})`} />
+          {p.night &&
+            STARS.map((s, i) => (
+              <circle key={i} cx={s.x} cy={s.y} r="1.1" fill="#fef9c3" opacity="0.9" />
+            ))}
+          <circle cx="50" cy="44" r="13" fill={p.orb} />
+          <path d="M0,64 Q26,50 50,61 Q74,72 100,57 L100,72 L0,72 Z" fill={p.hills} />
+          <rect y="70" width="100" height="30" fill={p.water} />
+          <path d="M0,80 Q12,76 24,80 T48,80 T72,80 T96,80" stroke={p.wave1} strokeWidth="1.6" fill="none" opacity="0.7" />
+          <path d="M0,88 Q12,84 24,88 T48,88 T72,88 T96,88" stroke={p.wave2} strokeWidth="1.6" fill="none" opacity="0.55" />
         </svg>
       </div>
       <span className="mt-1.5 text-[9px] font-extrabold uppercase tracking-wide text-center leading-tight text-foreground">
-        Dale Hollow Adventurer
+        {title}
       </span>
+      {rank?.nextTitle && rank?.nextNeeded != null && (
+        <span className="mt-0.5 text-[8px] text-center leading-tight text-muted-foreground">
+          {rank.nextNeeded} more to {rank.nextTitle}
+        </span>
+      )}
     </div>
   );
 }
@@ -265,7 +300,7 @@ function AboutCard({ user }: { user: any }) {
             !hasBio && <p className="text-sm text-muted-foreground">No details shared yet.</p>
           )}
         </div>
-        <AdventurerBadge />
+        <RankBadge rank={user.rank} />
       </div>
     </div>
   );

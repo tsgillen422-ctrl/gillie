@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Badge } from './badge';
+import type { Rank } from './rank';
 import type { UserFriendStatus } from './userFriendStatus';
 
 export interface User {
@@ -61,5 +62,6 @@ export interface User {
   followerCount?: number;
   followingCount?: number;
   badges?: Badge[];
+  rank?: Rank;
   createdAt: string;
 }

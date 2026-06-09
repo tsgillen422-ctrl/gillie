@@ -16,6 +16,18 @@ export interface Badge {
   earned: boolean;
 }
 
+export interface Rank {
+  key: string;
+  title: string;
+  tier: number;
+  earnedCount: number;
+  totalCount: number;
+  /** @nullable */
+  nextTitle?: string | null;
+  /** @nullable */
+  nextNeeded?: number | null;
+}
+
 export type UserFriendStatus = typeof UserFriendStatus[keyof typeof UserFriendStatus];
 
 
@@ -82,6 +94,7 @@ export interface User {
   followerCount?: number;
   followingCount?: number;
   badges?: Badge[];
+  rank?: Rank;
   createdAt: string;
 }
 

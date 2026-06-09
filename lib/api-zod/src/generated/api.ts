@@ -59,6 +59,15 @@ export const GetMeResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 })
 
@@ -130,6 +139,15 @@ export const UpdateMeResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 })
 
@@ -182,6 +200,15 @@ export const UpdateMyLocationResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 })
 
@@ -229,6 +256,15 @@ export const GetAdminsResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 })
 export const GetAdminsResponse = zod.array(GetAdminsResponseItem)
@@ -285,6 +321,15 @@ export const SetUserAdminResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 })
 
@@ -336,6 +381,15 @@ export const SearchUsersResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 })
 export const SearchUsersResponse = zod.array(SearchUsersResponseItem)
@@ -388,6 +442,15 @@ export const GetUserResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 })
 
@@ -443,6 +506,15 @@ export const GetFriendsResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 })
 export const GetFriendsResponse = zod.array(GetFriendsResponseItem)
@@ -519,6 +591,15 @@ export const GetFriendRequestsResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "followee": zod.object({
@@ -561,6 +642,15 @@ export const GetFriendRequestsResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -620,6 +710,15 @@ export const FollowUserResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "followee": zod.object({
@@ -662,6 +761,15 @@ export const FollowUserResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -719,6 +827,15 @@ export const GetBlockedUsersResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 })
 export const GetBlockedUsersResponse = zod.array(GetBlockedUsersResponseItem)
@@ -771,6 +888,15 @@ export const GetFollowersResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 })
 export const GetFollowersResponse = zod.array(GetFollowersResponseItem)
@@ -823,6 +949,15 @@ export const GetFollowingResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 })
 export const GetFollowingResponse = zod.array(GetFollowingResponseItem)
@@ -896,6 +1031,15 @@ export const AcceptFriendRequestResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "followee": zod.object({
@@ -938,6 +1082,15 @@ export const AcceptFriendRequestResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -991,6 +1144,15 @@ export const GetConversationsResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 })).optional(),
   "lastMessage": zod.object({
@@ -1037,6 +1199,15 @@ export const GetConversationsResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -1110,6 +1281,15 @@ export const GetConversationMessagesResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -1247,6 +1427,15 @@ export const GetPinsResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1337,6 +1526,15 @@ export const GetPinResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1416,6 +1614,15 @@ export const LikePinResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1483,6 +1690,15 @@ export const GetFavoritePinsResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1555,6 +1771,15 @@ export const ToggleFavoritePinResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1622,6 +1847,15 @@ export const GetPendingPinsResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1694,6 +1928,15 @@ export const ApprovePinResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -1765,6 +2008,15 @@ export const GetPostsResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -1883,6 +2135,15 @@ export const GetPostResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -1980,6 +2241,15 @@ export const ReactToPostResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -2065,6 +2335,15 @@ export const GetPostLikesResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional()
 })
@@ -2122,6 +2401,15 @@ export const GetPostCommentsResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -2222,6 +2510,15 @@ export const ReactToCommentResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -2294,6 +2591,15 @@ export const GetPostsSummaryResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -2370,6 +2676,15 @@ export const GetPostsSummaryResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -2577,6 +2892,15 @@ export const GetActiveHazardsResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "lat": zod.number(),
@@ -2649,6 +2973,15 @@ export const ToggleRsvpResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -2733,6 +3066,15 @@ export const GetRsvpsResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional()
 })
@@ -2789,6 +3131,15 @@ export const GetCatchesResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "species": zod.string(),
@@ -2879,6 +3230,15 @@ export const GetGalleryResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "mediaUrl": zod.string(),
@@ -2955,6 +3315,15 @@ export const SearchResponse = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 })),
   "pins": zod.array(zod.object({
@@ -3113,6 +3482,15 @@ export const GetSavedPostsResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 }).optional(),
   "title": zod.string(),
@@ -3208,6 +3586,15 @@ export const GetMutedUsersResponseItem = zod.object({
   "description": zod.string(),
   "earned": zod.boolean()
 })).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
   "createdAt": zod.string()
 })
 export const GetMutedUsersResponse = zod.array(GetMutedUsersResponseItem)
