@@ -576,6 +576,10 @@ export function MapPage() {
         pitch: 0,
         bearing: 0,
         maxPitch: 0,
+        // Esri aerial imagery for this rural lake is only sharp up to ~z19;
+        // capping the zoom here keeps the deepest view crisp instead of letting
+        // the basemap overzoom (stretch) into a blurry placeholder tile.
+        maxZoom: 19,
         dragRotate: false,
         attributionControl: { compact: true },
       });
