@@ -27,6 +27,7 @@ export const usersTable = pgTable("users", {
   boatNeon: boolean("boat_neon").notNull().default(false),
   boatFlag: boolean("boat_flag").notNull().default(false),
   boatAccent: text("boat_accent"),
+  interests: text("interests").array(),
   shareLocation: boolean("share_location").notNull().default(true),
   requireFollowApproval: boolean("require_follow_approval").notNull().default(false),
   showFollowers: boolean("show_followers").notNull().default(true),

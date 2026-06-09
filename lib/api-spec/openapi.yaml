@@ -1648,6 +1648,10 @@ components:
           type: ["boolean", "null"]
         boatAccent:
           type: ["string", "null"]
+        interests:
+          type: array
+          items:
+            type: string
         shareLocation:
           type: boolean
         requireFollowApproval:
@@ -1709,6 +1713,10 @@ components:
           type: boolean
         boatAccent:
           type: ["string", "null"]
+        interests:
+          type: array
+          items:
+            type: string
         isBusiness:
           type: boolean
         shareLocation:

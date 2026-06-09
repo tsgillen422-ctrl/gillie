@@ -13,7 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor, VolumeX, Volume2, ShieldCheck, Bookmark, ChevronRight } from "lucide-react";
+import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor, VolumeX, Volume2, ShieldCheck, Bookmark, ChevronRight, Heart } from "lucide-react";
+import { INTEREST_DEFS } from "@/lib/interests";
 import { useToast } from "@/hooks/use-toast";
 import { compressImage } from "@/lib/compress";
 import { ImageCropDialog } from "@/components/ImageCropDialog";
@@ -99,6 +100,7 @@ export function SettingsPage() {
   const [boatFlag, setBoatFlag] = React.useState(false);
   const [boatAccent, setBoatAccent] = React.useState("");
   const [bio, setBio] = React.useState("");
+  const [interests, setInterests] = React.useState<string[]>([]);
   const [location, setLocation] = React.useState("");
   const [hometown, setHometown] = React.useState("");
   const [birthday, setBirthday] = React.useState("");
@@ -134,6 +136,7 @@ export function SettingsPage() {
       setBoatFlag(me.boatFlag ?? false);
       setBoatAccent(me.boatAccent || "");
       setBio(me.bio || "");
+      setInterests(((me as any).interests as string[]) || []);
       setLocation((me as any).location || "");
       setHometown((me as any).hometown || "");
       setBirthday((me as any).birthday || "");
@@ -212,6 +215,7 @@ export function SettingsPage() {
         boatFlag,
         boatAccent: boatAccent || null,
         bio,
+        interests,
         location: location || null,
         hometown: hometown || null,
         birthday: birthday || null,
@@ -436,6 +440,39 @@ export function SettingsPage() {
             <div className="space-y-2">
               <Label htmlFor="bio">Bio</Label>
               <Textarea id="bio" value={bio} onChange={e => setBio(e.target.value)} placeholder="What's your lake story?" className="bg-background resize-none" rows={3} />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Heart className="w-4 h-4 text-primary" />
+                <Label>Interests</Label>
+              </div>
+              <p className="text-xs text-muted-foreground">Pick what you love on the lake. These show on your profile.</p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {INTEREST_DEFS.map(({ key, label, Icon }) => {
+                  const on = interests.includes(key);
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() =>
+                        setInterests(prev =>
+                          prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+                        )
+                      }
+                      className={
+                        "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium border transition-colors " +
+                        (on
+                          ? "bg-primary text-primary-foreground border-transparent shadow-sm"
+                          : "bg-muted/60 text-muted-foreground border-border hover:bg-muted")
+                      }
+                    >
+                      <Icon className="w-4 h-4" />
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="pt-2">

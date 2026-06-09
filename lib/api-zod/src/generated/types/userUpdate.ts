@@ -30,6 +30,7 @@ export interface UserUpdate {
   boatFlag?: boolean;
   /** @nullable */
   boatAccent?: string | null;
+  interests?: string[];
   isBusiness?: boolean;
   shareLocation?: boolean;
   requireFollowApproval?: boolean;

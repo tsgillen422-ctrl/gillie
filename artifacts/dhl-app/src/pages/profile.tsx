@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Fish, Tent, Anchor, Mountain, Waves, Camera, Image as ImageIcon, Bookmark, FileText, ChevronRight, Star } from "lucide-react";
+import { INTEREST_MAP } from "@/lib/interests";
 import { ReportDialog } from "@/components/ReportDialog";
 import { BadgeRow, badgeMeta } from "@/components/Badges";
 import { Badge } from "@/components/ui/badge";
@@ -139,32 +140,20 @@ function StatCard({ label, value, star = false, onClick }: { label: string; valu
   return <div className={base}>{inner}</div>;
 }
 
-const INTEREST_DEFS: { key: string; label: string; Icon: any }[] = [
-  { key: "fishing", label: "Fishing", Icon: Fish },
-  { key: "boating", label: "Boating", Icon: Anchor },
-  { key: "camping", label: "Camping", Icon: Tent },
-  { key: "hiking", label: "Hiking", Icon: Mountain },
-  { key: "swimming", label: "Swimming", Icon: Waves },
-  { key: "photography", label: "Photography", Icon: Camera },
-];
-
-function InterestChips({ active }: { active: Set<string> }) {
+function InterestChips({ selected }: { selected: string[] }) {
   return (
     <div className="flex flex-wrap gap-2">
-      {INTEREST_DEFS.map(({ key, label, Icon }) => {
-        const on = active.has(key);
+      {selected.map((key) => {
+        const def = INTEREST_MAP[key];
+        if (!def) return null;
+        const Icon = def.Icon;
         return (
           <span
             key={key}
-            className={
-              "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium border transition-colors " +
-              (on
-                ? "bg-primary text-primary-foreground border-transparent shadow-soft"
-                : "bg-muted/60 text-muted-foreground border-border")
-            }
+            className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium border border-transparent bg-primary text-primary-foreground shadow-soft"
           >
             <Icon className="w-4 h-4" />
-            {label}
+            {def.label}
           </span>
         );
       })}
@@ -474,15 +463,10 @@ export function ProfilePage() {
   const followersCount = canViewFollows ? (followersQuery.data?.length ?? user?.followerCount ?? 0) : (user?.followerCount ?? 0);
   const followingCount = canViewFollows ? (followingQuery.data?.length ?? user?.followingCount ?? 0) : (user?.followingCount ?? 0);
 
-  const activeInterests = React.useMemo(() => {
-    const s = new Set<string>();
-    if (catchCount > 0) s.add("fishing");
-    if (user?.boatName) s.add("boating");
-    if (userPins?.some((p) => p.type === "campsite")) s.add("camping");
-    if (userPins?.some((p) => p.type === "cliff" || p.type === "waterfall" || p.type === "landmark")) s.add("hiking");
-    if (galleryCount > 0) s.add("photography");
-    return s;
-  }, [user, catchCount, galleryCount, userPins]);
+  const activeInterests = React.useMemo<string[]>(
+    () => (user as any)?.interests ?? [],
+    [user],
+  );
 
   const achievements = React.useMemo<Achievement[]>(
     () =>
@@ -758,10 +742,12 @@ export function ProfilePage() {
             <AboutCard user={user} />
 
             {/* Interests */}
-            <div className={`${CARD} p-4`}>
-              <SectionTitle icon={Heart}>Interests</SectionTitle>
-              <InterestChips active={activeInterests} />
-            </div>
+            {activeInterests.length > 0 && (
+              <div className={`${CARD} p-4`}>
+                <SectionTitle icon={Heart}>Interests</SectionTitle>
+                <InterestChips selected={activeInterests} />
+              </div>
+            )}
 
             <WaveDivider />
 

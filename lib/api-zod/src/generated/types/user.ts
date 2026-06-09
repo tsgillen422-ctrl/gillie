@@ -50,6 +50,7 @@ export interface User {
   boatFlag?: boolean | null;
   /** @nullable */
   boatAccent?: string | null;
+  interests?: string[];
   shareLocation?: boolean;
   requireFollowApproval?: boolean;
   showFollowers?: boolean;

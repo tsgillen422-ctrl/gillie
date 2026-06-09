@@ -71,6 +71,7 @@ export interface User {
   boatFlag?: boolean | null;
   /** @nullable */
   boatAccent?: string | null;
+  interests?: string[];
   shareLocation?: boolean;
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
@@ -108,6 +109,7 @@ export interface UserUpdate {
   boatFlag?: boolean;
   /** @nullable */
   boatAccent?: string | null;
+  interests?: string[];
   isBusiness?: boolean;
   shareLocation?: boolean;
   requireFollowApproval?: boolean;

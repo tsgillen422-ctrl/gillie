@@ -30,6 +30,18 @@ import { createNotifications } from "../lib/notify";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
+const VALID_INTERESTS = [
+  "fishing",
+  "boating",
+  "camping",
+  "hiking",
+  "swimming",
+  "photography",
+  "sunsets",
+  "wildlife",
+  "bonfires",
+];
+
 // Permanently delete a user and every record that references them.
 async function deleteUserAndData(tx: Tx, userId: number): Promise<void> {
   const postIds = (
@@ -219,6 +231,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     boatNeon: u.boatNeon,
     boatFlag: u.boatFlag,
     boatAccent: u.boatAccent,
+    interests: u.interests ?? [],
     shareLocation: u.shareLocation,
     requireFollowApproval: u.requireFollowApproval,
     showFollowers: u.showFollowers,
@@ -297,7 +310,7 @@ router.post("/me/sos", async (req, res) => {
 
 router.patch("/me", async (req, res) => {
   const uid = currentUserId(req);
-  const { displayName, bio, location, hometown, birthday, relationshipStatus, gender, work, avatarUrl, coverUrl, boatName, boatColor, boatType, boatNeon, boatFlag, boatAccent, isBusiness, shareLocation } = req.body;
+  const { displayName, bio, location, hometown, birthday, relationshipStatus, gender, work, avatarUrl, coverUrl, boatName, boatColor, boatType, boatNeon, boatFlag, boatAccent, interests, isBusiness, shareLocation } = req.body;
   const updates: Partial<typeof usersTable.$inferInsert> = {};
   if (displayName !== undefined) updates.displayName = displayName;
   if (bio !== undefined) updates.bio = bio;
@@ -335,6 +348,15 @@ router.patch("/me", async (req, res) => {
       return res.status(400).json({ error: "boatAccent must be a string or null" });
     }
     updates.boatAccent = boatAccent;
+  }
+  if (interests !== undefined) {
+    if (!Array.isArray(interests) || interests.some((i) => typeof i !== "string")) {
+      return res.status(400).json({ error: "interests must be an array of strings" });
+    }
+    if (interests.some((i) => !VALID_INTERESTS.includes(i))) {
+      return res.status(400).json({ error: "interests contains an unknown value" });
+    }
+    updates.interests = Array.from(new Set(interests as string[]));
   }
   if (isBusiness !== undefined) updates.isBusiness = isBusiness;
   if (shareLocation !== undefined) updates.shareLocation = shareLocation;
