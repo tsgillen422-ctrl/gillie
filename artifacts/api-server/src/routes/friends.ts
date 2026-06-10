@@ -1,22 +1,22 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, friendRequestsTable, blocksTable, mutesTable } from "@workspace/db";
-import { eq, or, and, inArray, count } from "drizzle-orm";
+import { eq, or, and, inArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { createNotification } from "../lib/notify";
 
 const router = Router();
 
 async function getFollowCounts(userId: number): Promise<{ followerCount: number; followingCount: number }> {
-  const [followers] = await db
-    .select({ value: count() })
-    .from(friendRequestsTable)
-    .where(and(eq(friendRequestsTable.followeeId, userId), eq(friendRequestsTable.status, "accepted")));
-  const [following] = await db
-    .select({ value: count() })
-    .from(friendRequestsTable)
-    .where(and(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.status, "accepted")));
-  return { followerCount: followers?.value ?? 0, followingCount: following?.value ?? 0 };
+  const accepted = await db.query.friendRequestsTable.findMany({
+    where: and(
+      or(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.followeeId, userId)),
+      eq(friendRequestsTable.status, "accepted")
+    ),
+  });
+  const ids = new Set(accepted.map((r) => (r.followerId === userId ? r.followeeId : r.followerId)));
+  ids.delete(userId);
+  return { followerCount: ids.size, followingCount: ids.size };
 }
 
 function formatUser(u: typeof usersTable.$inferSelect) {
@@ -64,6 +64,25 @@ async function getBlockedUserIds(userId: number): Promise<number[]> {
     where: or(eq(blocksTable.blockerId, userId), eq(blocksTable.blockedId, userId)),
   });
   return rows.map((b) => (b.blockerId === userId ? b.blockedId : b.blockerId));
+}
+
+// Friendships are mutual: an accepted friend_request links two users in both
+// directions, so followers, following, and friends all resolve to the same set.
+async function getAcceptedConnectionIds(targetId: number, requesterId: number): Promise<number[]> {
+  const accepted = await db.query.friendRequestsTable.findMany({
+    where: and(
+      or(eq(friendRequestsTable.followerId, targetId), eq(friendRequestsTable.followeeId, targetId)),
+      eq(friendRequestsTable.status, "accepted")
+    ),
+  });
+  const blockedIds = await getBlockedUserIds(requesterId);
+  return [
+    ...new Set(
+      accepted
+        .map((r) => (r.followerId === targetId ? r.followeeId : r.followerId))
+        .filter((id) => id !== targetId && !blockedIds.includes(id))
+    ),
+  ];
 }
 
 router.get("/", async (req, res) => {
@@ -185,11 +204,7 @@ router.get("/:userId/followers", async (req, res) => {
       return res.status(403).json({ error: "This user has hidden their followers" });
     }
   }
-  const rows = await db.query.friendRequestsTable.findMany({
-    where: and(eq(friendRequestsTable.followeeId, targetId), eq(friendRequestsTable.status, "accepted")),
-  });
-  const blockedIds = await getBlockedUserIds(currentUserId(req));
-  const ids = rows.map((r) => r.followerId).filter((id) => !blockedIds.includes(id));
+  const ids = await getAcceptedConnectionIds(targetId, currentUserId(req));
   if (!ids.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, ids) });
   res.json(await Promise.all(users.map(formatUserWithCounts)));
@@ -212,23 +227,7 @@ router.get("/:userId/friends", async (req, res) => {
       return res.status(403).json({ error: "This user has hidden their friends" });
     }
   }
-  const accepted = await db.query.friendRequestsTable.findMany({
-    where: and(
-      or(
-        eq(friendRequestsTable.followerId, targetId),
-        eq(friendRequestsTable.followeeId, targetId)
-      ),
-      eq(friendRequestsTable.status, "accepted")
-    ),
-  });
-  const blockedIds = await getBlockedUserIds(currentUserId(req));
-  const friendIds = [
-    ...new Set(
-      accepted
-        .map((r) => (r.followerId === targetId ? r.followeeId : r.followerId))
-        .filter((id) => id !== targetId && !blockedIds.includes(id))
-    ),
-  ];
+  const friendIds = await getAcceptedConnectionIds(targetId, currentUserId(req));
   if (!friendIds.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, friendIds) });
   res.json(await Promise.all(users.map(formatUserWithCounts)));
@@ -277,11 +276,7 @@ router.get("/:userId/following", async (req, res) => {
       return res.status(403).json({ error: "This user has hidden who they follow" });
     }
   }
-  const rows = await db.query.friendRequestsTable.findMany({
-    where: and(eq(friendRequestsTable.followerId, targetId), eq(friendRequestsTable.status, "accepted")),
-  });
-  const blockedIds = await getBlockedUserIds(currentUserId(req));
-  const ids = rows.map((r) => r.followeeId).filter((id) => !blockedIds.includes(id));
+  const ids = await getAcceptedConnectionIds(targetId, currentUserId(req));
   if (!ids.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, ids) });
   res.json(await Promise.all(users.map(formatUserWithCounts)));

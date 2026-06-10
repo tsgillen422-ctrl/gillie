@@ -277,15 +277,15 @@ function formatUser(u: typeof usersTable.$inferSelect) {
 }
 
 async function getFollowCounts(userId: number): Promise<{ followerCount: number; followingCount: number }> {
-  const [followers] = await db
-    .select({ value: count() })
-    .from(friendRequestsTable)
-    .where(and(eq(friendRequestsTable.followeeId, userId), eq(friendRequestsTable.status, "accepted")));
-  const [following] = await db
-    .select({ value: count() })
-    .from(friendRequestsTable)
-    .where(and(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.status, "accepted")));
-  return { followerCount: followers?.value ?? 0, followingCount: following?.value ?? 0 };
+  const accepted = await db.query.friendRequestsTable.findMany({
+    where: and(
+      or(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.followeeId, userId)),
+      eq(friendRequestsTable.status, "accepted")
+    ),
+  });
+  const ids = new Set(accepted.map((r) => (r.followerId === userId ? r.followeeId : r.followerId)));
+  ids.delete(userId);
+  return { followerCount: ids.size, followingCount: ids.size };
 }
 
 async function getBlockedUserIds(userId: number): Promise<number[]> {
