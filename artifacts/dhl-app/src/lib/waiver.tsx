@@ -1,4 +1,4 @@
-export const WAIVER_VERSION = "1.0";
+export const WAIVER_VERSION = "1.1";
 
 export function WaiverBody() {
   return (
@@ -32,9 +32,9 @@ export function WaiverBody() {
           Gillie is provided for informational and community purposes only.
           Information within the app may not always be accurate, complete, or up
           to date. By using Gillie, you agree that Gillie, its owner, operators,
-          affiliates, and contributors are not responsible for any injury, loss,
-          damage, accident, or other claim arising from your use of the app or
-          participation in any activity referenced within it.
+          affiliates, and contributors are not responsible for any injury,
+          death, loss, damage, accident, or other claim arising from your use of
+          the app or participation in any activity referenced within it.
         </p>
       </section>
 
