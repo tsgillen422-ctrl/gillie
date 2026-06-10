@@ -32,7 +32,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
   };
 }
 
-async function getFriendIds(userId: number): Promise<number[]> {
+export async function getFriendIds(userId: number): Promise<number[]> {
   const accepted = await db.query.friendRequestsTable.findMany({
     where: and(
       or(
@@ -47,7 +47,7 @@ async function getFriendIds(userId: number): Promise<number[]> {
   );
 }
 
-function canViewPin(
+export function canViewPin(
   pin: typeof pinsTable.$inferSelect,
   viewerId: number,
   friendIds: number[]

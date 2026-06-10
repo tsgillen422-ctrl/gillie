@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { usersTable, postsTable, postLikesTable, postCommentsTable, commentLikesTable, pinsTable, eventRsvpsTable, mutesTable, savedPostsTable, catchesTable, pollOptionsTable, pollVotesTable, friendRequestsTable, blocksTable } from "@workspace/db";
 import { eq, and, gte, sql, desc, count, inArray, notInArray, or, asc } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
+import { canViewPin, getFriendIds as getPinFriendIds } from "./pins";
 
 const router = Router();
 const ALLOWED_REACTIONS = ["thumbsup", "thumbsdown", "heart", "laugh", "sad", "angry"];
@@ -260,7 +261,14 @@ router.get("/summary", async (req, res) => {
   const uid = currentUserId(req);
   const [postCountResult] = await db.select({ value: count() }).from(postsTable);
   const [eventCountResult] = await db.select({ value: count() }).from(postsTable).where(eq(postsTable.postType, "event"));
-  const [pinCountResult] = await db.select({ value: count() }).from(pinsTable);
+  // "Pins" must match exactly what the viewer sees via GET /pins (and on the
+  // map): filtered by canViewPin (own, approved public/community, or
+  // friends-only from a friend). A raw count() of every row over-counts
+  // unapproved pins and other people's friends-only pins. We reuse pins.ts's
+  // own canViewPin + getFriendIds so the count never drifts from the list.
+  const pinFriendIds = await getPinFriendIds(uid);
+  const allPins = await db.select().from(pinsTable);
+  const visiblePins = allPins.filter((pin) => canViewPin(pin, uid, pinFriendIds));
   // "On the lake" = currently online. We treat presence as stale after a short
   // window, because is_online is set when a user shares location but is never
   // cleared when they leave. Without this, anyone who ever shared a location
@@ -279,11 +287,9 @@ router.get("/summary", async (req, res) => {
     .orderBy(desc(postsTable.createdAt))
     .limit(3);
 
-  const recentPins = await db
-    .select()
-    .from(pinsTable)
-    .orderBy(desc(pinsTable.createdAt))
-    .limit(5);
+  const recentPins = [...visiblePins]
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 5);
 
   const formattedPins = await Promise.all(
     recentPins.map(async (pin) => {
@@ -312,7 +318,7 @@ router.get("/summary", async (req, res) => {
   res.json({
     totalPosts: postCountResult.value,
     totalEvents: eventCountResult.value,
-    totalPins: pinCountResult.value,
+    totalPins: visiblePins.length,
     activeUsersToday: userCountResult.value,
     fishingReports: fishingReportsResult.value,
     upcomingEvents: await Promise.all(upcomingEvents.map((p) => formatPost(p, uid))),
