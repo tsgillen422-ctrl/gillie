@@ -520,10 +520,6 @@ export function MessageThreadPage() {
   };
 
   const handleQuickAction = (key: string) => {
-    if (key === "photo") {
-      photoRef.current?.click();
-      return;
-    }
     const prefill: Record<string, string> = {
       fishing: "🎣 Fishing report: ",
       meet: "Want to meet up this weekend? 🚤",
@@ -737,7 +733,6 @@ export function MessageThreadPage() {
             { key: "fishing", label: "Fishing Report", Icon: Fish },
             { key: "meet", label: "Meet Up", Icon: CalendarHeart },
             { key: "location", label: "Share Location", Icon: Navigation },
-            { key: "photo", label: "Send Photo", Icon: ImagePlus },
           ].map(({ key, label, Icon }) => (
             <button
               key={key}
