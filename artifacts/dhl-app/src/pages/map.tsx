@@ -2684,11 +2684,13 @@ const MAP_CSS = `
     width: 64px;
     height: 84px;
     transform: translateX(-50%);
-    animation: snapBob 3.2s ease-in-out infinite;
+    animation: snapBob 3.4s ease-in-out infinite;
   }
   @keyframes snapBob {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(-6px); }
+    0%, 100% { transform: translateX(-50%) translateY(0) scale(1); }
+    30% { transform: translateX(-50%) translateY(-5px) scale(1.01); }
+    50% { transform: translateX(-50%) translateY(-8px) scale(1.02); }
+    70% { transform: translateX(-50%) translateY(-4px) scale(1.01); }
   }
   /* profile photo mounted on the boat like a captain at the helm */
   .snap-photo {
@@ -2733,12 +2735,14 @@ const MAP_CSS = `
     line-height: 0;
     z-index: 2;
     filter: drop-shadow(0 5px 5px rgba(11,58,91,0.30));
-    transform-origin: 50% 80%;
-    animation: snapRock 3.6s ease-in-out infinite;
+    transform-origin: 50% 85%;
+    animation: snapRock 2.9s ease-in-out infinite;
   }
   @keyframes snapRock {
-    0%, 100% { transform: translateX(-50%) rotate(-5deg); }
-    50% { transform: translateX(-50%) rotate(5deg); }
+    0%, 100% { transform: translateX(-50%) rotate(-7deg); }
+    28% { transform: translateX(-50%) rotate(6deg); }
+    50% { transform: translateX(-50%) rotate(-2deg); }
+    72% { transform: translateX(-50%) rotate(7deg); }
   }
   /* neon underglow accessory: glowing colored halo under the hull */
   .snap-underglow {
