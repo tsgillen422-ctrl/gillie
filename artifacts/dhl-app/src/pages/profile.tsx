@@ -660,6 +660,17 @@ export function ProfilePage() {
                   )}
                 </div>
 
+              {/* Find me on Map (own profile) */}
+              {isSelf && (
+                <div className="w-full max-w-xs mt-5">
+                  <Button variant="outline" className="w-full rounded-2xl" asChild>
+                    <Link href={user.currentLat != null && user.currentLng != null ? `/map?lat=${user.currentLat}&lng=${user.currentLng}` : "/map"}>
+                      <MapPin className="w-4 h-4 mr-2" /> Find me on Map
+                    </Link>
+                  </Button>
+                </div>
+              )}
+
               {/* Actions */}
               {!isSelf && (
               <div className="flex flex-col gap-2 w-full max-w-xs mt-5">
