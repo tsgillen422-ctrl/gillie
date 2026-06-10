@@ -9,4 +9,5 @@
 export interface LocationUpdate {
   lat: number;
   lng: number;
+  onWater?: boolean;
 }

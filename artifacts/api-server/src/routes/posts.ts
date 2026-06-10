@@ -269,16 +269,23 @@ router.get("/summary", async (req, res) => {
   const pinFriendIds = await getPinFriendIds(uid);
   const allPins = await db.select().from(pinsTable);
   const visiblePins = allPins.filter((pin) => canViewPin(pin, uid, pinFriendIds));
-  // "On the lake" = currently online. We treat presence as stale after a short
-  // window, because is_online is set when a user shares location but is never
-  // cleared when they leave. Without this, anyone who ever shared a location
-  // (including demo accounts) stays counted forever.
+  // "Now on the water" = users the map has detected as geospatially over water
+  // (not on land at marinas/homes), still sharing location, and seen recently.
+  // is_on_water is reported by the client (only it can tell water from land) and
+  // is never cleared, so we also require a fresh last_seen to drop people who
+  // have left, and respect share_location so privacy is honored.
   const ONLINE_WINDOW_MINUTES = 10;
   const onlineSince = new Date(Date.now() - ONLINE_WINDOW_MINUTES * 60 * 1000);
   const [userCountResult] = await db
     .select({ value: count() })
     .from(usersTable)
-    .where(and(eq(usersTable.isOnline, true), gte(usersTable.lastSeen, onlineSince)));
+    .where(
+      and(
+        eq(usersTable.isOnWater, true),
+        eq(usersTable.shareLocation, true),
+        gte(usersTable.lastSeen, onlineSince)
+      )
+    );
 
   const upcomingEvents = await db
     .select()

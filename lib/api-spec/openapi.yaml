@@ -1852,6 +1852,8 @@ components:
           type: number
         lng:
           type: number
+        onWater:
+          type: boolean
 
     FriendLocation:
       type: object

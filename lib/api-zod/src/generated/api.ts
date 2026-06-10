@@ -157,7 +157,8 @@ export const UpdateMeResponse = zod.object({
  */
 export const UpdateMyLocationBody = zod.object({
   "lat": zod.number(),
-  "lng": zod.number()
+  "lng": zod.number(),
+  "onWater": zod.boolean().optional()
 })
 
 export const UpdateMyLocationResponse = zod.object({

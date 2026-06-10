@@ -132,6 +132,7 @@ export interface UserUpdate {
 export interface LocationUpdate {
   lat: number;
   lng: number;
+  onWater?: boolean;
 }
 
 export interface FriendLocation {

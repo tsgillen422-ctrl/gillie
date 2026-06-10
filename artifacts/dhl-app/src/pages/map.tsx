@@ -664,12 +664,28 @@ export function MapPage() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((pos) => {
         updateLocation.mutate({
-          data: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+          data: {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            onWater: !meOnLandRef.current,
+          },
         });
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.shareLocation]);
+
+  // Keep the server's on-the-water status in sync as I cross between water and
+  // land. Only the client can tell water from land (via the rendered map), and
+  // the feed's "Now on the water" count relies on this signal, so we re-report
+  // whenever that determination flips. Mirrors the map's own meOnWater logic.
+  useEffect(() => {
+    if (!me?.shareLocation || me.currentLat == null || me.currentLng == null) return;
+    updateLocation.mutate({
+      data: { lat: me.currentLat, lng: me.currentLng, onWater: !meOnLand },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meOnLand]);
 
   // --- Render friend markers ---
   useEffect(() => {

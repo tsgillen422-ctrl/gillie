@@ -17,6 +17,7 @@ export const usersTable = pgTable("users", {
   gender: text("gender"),
   work: text("work"),
   isOnline: boolean("is_online").notNull().default(false),
+  isOnWater: boolean("is_on_water").notNull().default(false),
   isBusiness: boolean("is_business").notNull().default(false),
   currentLat: real("current_lat"),
   currentLng: real("current_lng"),

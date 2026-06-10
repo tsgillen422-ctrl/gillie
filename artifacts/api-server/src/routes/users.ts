@@ -406,10 +406,10 @@ router.patch("/me", async (req, res) => {
 
 router.patch("/me/location", async (req, res) => {
   const uid = currentUserId(req);
-  const { lat, lng } = req.body;
+  const { lat, lng, onWater } = req.body;
   const [updated] = await db
     .update(usersTable)
-    .set({ currentLat: lat, currentLng: lng, isOnline: true, lastSeen: new Date() })
+    .set({ currentLat: lat, currentLng: lng, isOnline: true, isOnWater: onWater === true, lastSeen: new Date() })
     .where(eq(usersTable.id, uid))
     .returning();
   res.json(formatUser(updated));
