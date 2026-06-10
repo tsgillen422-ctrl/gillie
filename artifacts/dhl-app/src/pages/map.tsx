@@ -2,6 +2,15 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Supercluster from "supercluster";
+import {
+  ZOOM_MID,
+  SECONDARY_PIN_ZOOM,
+  BOAT_CLUSTER_RADIUS,
+  BOAT_CLUSTER_MAXZOOM,
+  isClusterHot,
+  createBoatIndex,
+  createPinIndex,
+} from "@/lib/clustering";
 import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey } from "@workspace/api-client-react";
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
@@ -80,20 +89,6 @@ const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const HIGH_PRIORITY_PINS = new Set(["marina", "campsite", "hazard"]);
 const pinTier = (type: string): "high" | "low" =>
   HIGH_PRIORITY_PINS.has(type) ? "high" : "low";
-
-// Below this zoom, low-priority pins only appear aggregated inside clusters.
-const SECONDARY_PIN_ZOOM = 13.5;
-
-// Shared zoom tiers used by every layer (boats, pins, places) so visibility is
-// consistent: below ZOOM_MID is the "far" tier (clusters + badges only, no text
-// labels); at/above ZOOM_MID individual markers and place labels appear; at/above
-// SECONDARY_PIN_ZOOM ("close") the low-priority pin chips are revealed too.
-const ZOOM_MID = 12.5;
-
-// Boat clustering: friends within this pixel radius collapse into one bubble when
-// dense. Mirrors the low-pin cluster settings so all layers cluster consistently.
-const BOAT_CLUSTER_RADIUS = 60;
-const BOAT_CLUSTER_MAXZOOM = 16;
 
 // Friendly plural label for a cluster of a given pin type, e.g. "3 fishing spots".
 const clusterPinLabel = (type: string, count: number) => {
@@ -842,7 +837,7 @@ export function MapPage() {
         if (c.properties.cluster) {
           const count = c.properties.point_count as number;
           const { root, scale } = buildClusterEl(count, "🚤", `${count} boats here`);
-          if (heatmapOn && count >= 6) {
+          if (heatmapOn && isClusterHot(count)) {
             (root.querySelector(".pin-cluster") as HTMLElement | null)?.classList.add("cluster-hot");
           }
           root.addEventListener("click", (ev) => {
@@ -930,7 +925,7 @@ export function MapPage() {
         geometry: { type: "Point" as const, coordinates: [f.lng, f.lat] },
       }));
 
-    const index = new Supercluster({ radius: BOAT_CLUSTER_RADIUS, maxZoom: BOAT_CLUSTER_MAXZOOM });
+    const index = createBoatIndex();
     index.load(points as any);
     boatIndex.current = index;
 
@@ -1010,7 +1005,7 @@ export function MapPage() {
           const count = c.properties.point_count as number;
           const domType = dominantClusterType(index, c.properties.cluster_id);
           const { root, scale } = buildClusterEl(count, getPinEmoji(domType), clusterPinLabel(domType, count));
-          if (heatmapOn && count >= 6) {
+          if (heatmapOn && isClusterHot(count)) {
             (root.querySelector(".pin-cluster") as HTMLElement | null)?.classList.add("cluster-hot");
           }
           root.addEventListener("click", (ev) => {
@@ -1063,7 +1058,7 @@ export function MapPage() {
         geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] },
       }));
 
-    const index = new Supercluster({ radius: 70, maxZoom: 16 });
+    const index = createPinIndex();
     index.load(lowPoints as any);
     clusterIndex.current = index;
 
