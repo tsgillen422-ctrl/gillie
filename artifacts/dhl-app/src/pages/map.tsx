@@ -461,8 +461,12 @@ export function MapPage() {
   // default to "on water" (shown) rather than being hidden incorrectly.
   const [onLandIds, setOnLandIds] = useState<Set<number>>(new Set());
   const onLandRef = useRef<Set<number>>(new Set());
-  const [meOnLand, setMeOnLand] = useState(false);
-  const meOnLandRef = useRef(false);
+  // Default to "on land" so we never report a user as on the water (or show
+  // them in presence/counts) until the map's geospatial pass actually confirms
+  // their coordinates are over water. is_on_water is never cleared server-side,
+  // so a premature "true" would leave them stuck "on the lake".
+  const [meOnLand, setMeOnLand] = useState(true);
+  const meOnLandRef = useRef(true);
 
   const [pinDialog, setPinDialog] = useState<{ open: boolean; lat?: number; lng?: number }>({ open: false });
   const [pinTitle, setPinTitle] = useState("");
