@@ -1663,6 +1663,18 @@ export function MapPage() {
         });
       }
     }
+    for (const dl of dockLabels ?? []) {
+      if (dl.lat == null || dl.lng == null) continue;
+      if (dl.label?.toLowerCase().includes(q)) {
+        results.push({
+          key: `dock-${dl.id}`,
+          icon: "⚓",
+          title: dl.label,
+          subtitle: "Dock",
+          onSelect: () => flyToLocation(dl.lng!, dl.lat!, { kind: "dockLabel", data: dl }),
+        });
+      }
+    }
     for (const f of friends ?? []) {
       if (f.displayName?.toLowerCase().includes(q) || f.username?.toLowerCase().includes(q) || f.boatName?.toLowerCase().includes(q)) {
         results.push({
@@ -1816,7 +1828,7 @@ export function MapPage() {
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search places, pins, and people..."
+                placeholder="Search places, docks, pins, and people..."
                 className="flex-1 bg-transparent outline-none text-sm"
               />
               <button
