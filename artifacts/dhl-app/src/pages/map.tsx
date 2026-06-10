@@ -436,7 +436,15 @@ function buildCrewEl(opts: {
 // out, the name revealed at medium zoom, and the full wooden sign at close zoom.
 const DOCK_FADE_ZOOM = 9.5; // below this the label is hidden entirely
 const DOCK_NAME_ZOOM = 12.5; // at/above this the name is revealed (medium zoom)
-const DOCK_SIGN_ZOOM = 14; // at/above this the full wooden sign appears (close zoom)
+const DOCK_SIGN_ZOOM = 14; // at/above this the chosen emoji appears (close zoom)
+
+// Emoji palette an admin picks from when placing a dock sign. The chosen one is
+// shown above the name pill at the closest zoom (in place of the old wooden sign).
+const DOCK_EMOJIS = [
+  "🗼", "🌊", "🏮", "🕯️", "⛵️", "🦅", "🪶", "🛟",
+  "🏞️", "🌿", "💧", "🍃", "🦋", "🌲", "🍂", "⛰️",
+  "🌤️", "💦", "🪨", "🕊️", "🛶", "🌅", "🌞", "🌴",
+];
 
 // Smoothly maps zoom → label scale, clamped so signs never become billboards.
 const dockScaleForZoom = (zoom: number) =>
@@ -444,24 +452,18 @@ const dockScaleForZoom = (zoom: number) =>
 
 // --- Admin "dock sign" marker ---
 // One element that morphs across zoom tiers: an anchor chip (far) → an icon +
-// name pill (medium) → a weathered-wood hanging sign (close). A stem + dot keep
-// it pinned to the exact shoreline location; the decorative hardware (beam,
-// ropes, nails, shimmer) only fades in at the closest tier.
-function buildDockSignEl(label: string): HTMLDivElement {
+// name pill (medium) → the admin-chosen emoji sitting above that same name pill
+// (close). A stem + dot keep it pinned to the exact shoreline location.
+function buildDockSignEl(label: string, emoji?: string | null): HTMLDivElement {
   const root = el("div", "dock-sign") as HTMLDivElement;
   const scale = el("div", "dock-scale");
   const bob = el("div", "dock-sign-bob");
 
-  // Hanging hardware — revealed only at the closest zoom.
-  const rig = el("div", "dock-rig");
-  const ropeL = el("span", "dock-rope left");
-  const ropeR = el("span", "dock-rope right");
-  const beam = el("div", "dock-beam");
-  rig.appendChild(ropeL);
-  rig.appendChild(ropeR);
-  rig.appendChild(beam);
+  // The chosen emoji — only fades in at the closest tier (replaces the wooden sign).
+  const emojiEl = el("div", "dock-emoji");
+  emojiEl.textContent = emoji || "⚓";
 
-  // The label pill: anchor icon + name. Restyles into wood at the closest tier.
+  // The label pill: anchor icon + name. Clean white pill at every tier.
   const pill = el("div", "dock-pill");
   const ico = el("span", "dock-ico");
   ico.textContent = "⚓";
@@ -469,18 +471,15 @@ function buildDockSignEl(label: string): HTMLDivElement {
   name.textContent = label;
   pill.appendChild(ico);
   pill.appendChild(name);
-  for (const pos of ["tl", "tr", "bl", "br"]) pill.appendChild(el("span", `dock-nail ${pos}`));
 
   // Subtle pointer + dot anchoring the label to its location.
   const stem = el("div", "dock-stem");
   const dot = el("div", "dock-dot");
-  const shimmer = el("div", "dock-shimmer");
 
-  bob.appendChild(rig);
+  bob.appendChild(emojiEl);
   bob.appendChild(pill);
   bob.appendChild(stem);
   bob.appendChild(dot);
-  bob.appendChild(shimmer);
   scale.appendChild(bob);
   root.appendChild(scale);
   return root;
@@ -652,6 +651,7 @@ export function MapPage() {
   const [pinDesc, setPinDesc] = useState("");
   const [pinType, setPinType] = useState<PinInputType>("fishing_spot");
   const [pinMode, setPinMode] = useState<"pin" | "landmark" | "dock">("pin");
+  const [dockEmoji, setDockEmoji] = useState<string>(DOCK_EMOJIS[0]);
   const [pinVisibility, setPinVisibility] = useState<"friends" | "public" | "community">("friends");
   const [pinStart, setPinStart] = useState("");
   const [pinEnd, setPinEnd] = useState("");
@@ -1374,7 +1374,7 @@ export function MapPage() {
     dockLabelMarkers.current = [];
     (dockLabels ?? []).forEach((dl) => {
       if (dl.lat == null || dl.lng == null) return;
-      const root = buildDockSignEl(dl.label);
+      const root = buildDockSignEl(dl.label, dl.emoji);
       root.addEventListener("click", (ev) => {
         ev.stopPropagation();
         setSelected({ kind: "dockLabel", data: dl });
@@ -1707,6 +1707,7 @@ export function MapPage() {
   const closePinDialog = () => {
     setPinDialog({ open: false });
     setPinMode("pin");
+    setDockEmoji(DOCK_EMOJIS[0]);
     setPinType("fishing_spot");
     setPinTitle("");
     setPinDesc("");
@@ -1721,7 +1722,7 @@ export function MapPage() {
   const submitDockLabel = () => {
     if (pinDialog.lat == null || pinDialog.lng == null) return;
     createDockLabel.mutate(
-      { data: { label: pinTitle.trim() || "Dock", lat: pinDialog.lat, lng: pinDialog.lng } },
+      { data: { label: pinTitle.trim() || "Dock", emoji: dockEmoji, lat: pinDialog.lat, lng: pinDialog.lng } },
       {
         onSuccess: () => {
           toast.success("Dock sign placed!");
@@ -2152,6 +2153,29 @@ export function MapPage() {
                 onChange={(e) => setPinTitle(e.target.value)}
               />
             </div>
+
+            {pinMode === "dock" && (
+              <div className="grid gap-2">
+                <Label>Dock emoji</Label>
+                <div className="grid grid-cols-8 gap-1.5">
+                  {DOCK_EMOJIS.map((em) => (
+                    <button
+                      key={em}
+                      type="button"
+                      onClick={() => setDockEmoji(em)}
+                      className={`flex h-9 items-center justify-center rounded-lg text-xl transition-colors ${
+                        dockEmoji === em
+                          ? "bg-primary/15 ring-2 ring-primary"
+                          : "bg-muted hover:bg-muted/70"
+                      }`}
+                    >
+                      {em}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">Shown above the sign when zoomed in close.</p>
+              </div>
+            )}
 
             {pinMode !== "dock" && (
             <>
@@ -2984,6 +3008,14 @@ const MAP_CSS = `
       background 0.35s ease, border-color 0.35s ease, border-radius 0.35s ease;
   }
   .dock-ico { font-size: 14px; line-height: 1; flex: none; }
+
+  /* The admin-chosen emoji — collapsed until the close tier, then sits above the pill. */
+  .dock-emoji {
+    font-size: 0; line-height: 1; opacity: 0; margin-bottom: 0; user-select: none;
+    filter: drop-shadow(0 3px 4px rgba(2,40,70,0.35));
+    transition: font-size 0.3s ease, opacity 0.3s ease, margin-bottom 0.3s ease;
+  }
+  .dock-sign.tier-near .dock-emoji { font-size: 34px; opacity: 1; margin-bottom: 3px; }
   .dock-name {
     font-size: 12.5px; font-weight: 700; letter-spacing: 0.1px; color: #0b3a55;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -3008,62 +3040,4 @@ const MAP_CSS = `
     background: #0284c7; box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 1px 3px rgba(0,0,0,0.4);
   }
 
-  /* Hanging hardware (beam + ropes) — collapsed until the close tier. */
-  .dock-rig {
-    position: relative; display: flex; justify-content: center; overflow: hidden;
-    height: 0; opacity: 0; transform: scaleY(0.4); transform-origin: bottom center;
-    transition: height 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
-  }
-  .dock-beam {
-    width: 58px; height: 5px; border-radius: 3px;
-    background: linear-gradient(180deg, #6b4423, #3f2611);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.45);
-  }
-  .dock-rope { position: absolute; top: 5px; width: 2px; height: 12px; background: #c9a468; border-radius: 1px; }
-  .dock-rope.left { left: calc(50% - 16px); transform: rotate(9deg); }
-  .dock-rope.right { right: calc(50% - 16px); transform: rotate(-9deg); }
-
-  /* Nails — hidden until the close tier. */
-  .dock-nail {
-    position: absolute; width: 4px; height: 4px; border-radius: 50%; opacity: 0;
-    background: radial-gradient(circle at 30% 30%, #ecdab8, #5e472b);
-    box-shadow: 0 0 1px rgba(0,0,0,0.55); transition: opacity 0.3s ease;
-  }
-  .dock-nail.tl { top: 3px; left: 4px; }
-  .dock-nail.tr { top: 3px; right: 4px; }
-  .dock-nail.bl { bottom: 3px; left: 4px; }
-  .dock-nail.br { bottom: 3px; right: 4px; }
-
-  /* Wave shimmer reflection beneath the sign — hidden until the close tier. */
-  .dock-shimmer {
-    position: absolute; left: 50%; bottom: -3px; transform: translateX(-50%) scaleX(0.85);
-    width: 42px; height: 7px; border-radius: 50%; opacity: 0;
-    background: radial-gradient(ellipse at center, rgba(170,214,235,0.6), rgba(170,214,235,0) 70%);
-    filter: blur(1px); transition: opacity 0.4s ease;
-  }
-
-  /* Close tier — the full weathered-wood hanging sign. */
-  .dock-sign.tier-near .dock-rig { height: 16px; opacity: 1; transform: scaleY(1); }
-  .dock-sign.tier-near .dock-pill {
-    gap: 6px; padding: 6px 14px; max-width: min(190px, 50vw); border-radius: 7px;
-    background:
-      repeating-linear-gradient(90deg, rgba(0,0,0,0.10) 0 1px, transparent 1px 7px),
-      linear-gradient(170deg, #b07d45 0%, #8a5a2b 52%, #6d441e 100%);
-    border: 2px solid #46290f;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -3px 6px rgba(0,0,0,0.4), 0 7px 14px rgba(0,0,0,0.4);
-    transform-origin: top center; animation: dockSway 5s ease-in-out infinite;
-  }
-  .dock-sign.tier-near .dock-name {
-    font-weight: 800; color: #fdeacc;
-    text-shadow: 0 1px 1px rgba(0,0,0,0.6), 0 -1px 0 rgba(255,255,255,0.12);
-  }
-  .dock-sign.tier-near .dock-ico { filter: drop-shadow(0 1px 1px rgba(0,0,0,0.5)); }
-  .dock-sign.tier-near .dock-stem { border-top-color: #6d441e; }
-  .dock-sign.tier-near .dock-nail { opacity: 1; }
-  .dock-sign.tier-near .dock-shimmer { opacity: 0.7; animation: dockShimmer 2.6s ease-in-out infinite; }
-  @keyframes dockSway { 0%, 100% { transform: rotate(-1.6deg); } 50% { transform: rotate(1.6deg); } }
-  @keyframes dockShimmer {
-    0%, 100% { opacity: 0.3; transform: translateX(-50%) scaleX(0.82); }
-    50% { opacity: 0.7; transform: translateX(-50%) scaleX(1.12); }
-  }
 `;

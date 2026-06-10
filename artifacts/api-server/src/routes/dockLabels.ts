@@ -16,6 +16,7 @@ function formatDockLabel(d: typeof dockLabelsTable.$inferSelect) {
     id: d.id,
     userId: d.userId,
     label: d.label,
+    emoji: d.emoji ?? null,
     lat: d.lat,
     lng: d.lng,
     createdAt: d.createdAt.toISOString(),
@@ -34,13 +35,14 @@ router.post("/", async (req, res) => {
   if (!(await isAdmin(uid))) {
     return res.status(403).json({ error: "Only an admin can place dock labels" });
   }
-  const { label, lat, lng } = req.body ?? {};
+  const { label, emoji, lat, lng } = req.body ?? {};
   if (typeof label !== "string" || !label.trim() || typeof lat !== "number" || typeof lng !== "number") {
     return res.status(400).json({ error: "label, lat and lng are required" });
   }
+  const emojiValue = typeof emoji === "string" && emoji.trim() ? emoji.trim().slice(0, 8) : null;
   const [row] = await db
     .insert(dockLabelsTable)
-    .values({ userId: uid, label: label.trim().slice(0, 60), lat, lng })
+    .values({ userId: uid, label: label.trim().slice(0, 60), emoji: emojiValue, lat, lng })
     .returning();
   res.status(201).json(formatDockLabel(row));
 });

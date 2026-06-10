@@ -2209,6 +2209,7 @@ export const GetDockLabelsResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
   "label": zod.string(),
+  "emoji": zod.string().nullish(),
   "lat": zod.number(),
   "lng": zod.number(),
   "createdAt": zod.string()
@@ -2221,6 +2222,7 @@ export const GetDockLabelsResponse = zod.array(GetDockLabelsResponseItem)
  */
 export const CreateDockLabelBody = zod.object({
   "label": zod.string(),
+  "emoji": zod.string().optional(),
   "lat": zod.number(),
   "lng": zod.number()
 })

@@ -7,6 +7,7 @@ export const dockLabelsTable = pgTable("dock_labels", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => usersTable.id),
   label: text("label").notNull(),
+  emoji: text("emoji"),
   lat: real("lat").notNull(),
   lng: real("lng").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),

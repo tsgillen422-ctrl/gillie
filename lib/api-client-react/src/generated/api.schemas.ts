@@ -410,6 +410,7 @@ export interface DockLabel {
   id: number;
   userId: number;
   label: string;
+  emoji?: string | null;
   lat: number;
   lng: number;
   createdAt: string;
@@ -417,6 +418,7 @@ export interface DockLabel {
 
 export interface DockLabelInput {
   label: string;
+  emoji?: string;
   lat: number;
   lng: number;
 }

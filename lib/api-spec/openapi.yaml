@@ -2275,6 +2275,9 @@ components:
           type: integer
         label:
           type: string
+        emoji:
+          type: string
+          nullable: true
         lat:
           type: number
         lng:
@@ -2287,6 +2290,8 @@ components:
       required: [label, lat, lng]
       properties:
         label:
+          type: string
+        emoji:
           type: string
         lat:
           type: number

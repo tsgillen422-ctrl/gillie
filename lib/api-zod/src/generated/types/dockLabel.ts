@@ -10,6 +10,7 @@ export interface DockLabel {
   id: number;
   userId: number;
   label: string;
+  emoji?: string | null;
   lat: number;
   lng: number;
   createdAt: string;

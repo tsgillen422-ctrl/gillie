@@ -8,6 +8,7 @@
 
 export interface DockLabelInput {
   label: string;
+  emoji?: string;
   lat: number;
   lng: number;
 }
