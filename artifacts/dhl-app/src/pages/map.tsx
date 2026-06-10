@@ -258,6 +258,8 @@ type Selected =
   | { kind: "pin"; data: any }
   | { kind: "me"; data: any }
   | { kind: "place"; data: LakePlace }
+  | { kind: "boatCluster"; data: { friends: any[]; lng: number; lat: number; expansionZoom: number } }
+  | { kind: "pinCluster"; data: { pins: any[]; lng: number; lat: number; expansionZoom: number } }
   | null;
 
 const el = (tag: string, className?: string) => {
@@ -844,7 +846,11 @@ export function MapPage() {
           root.addEventListener("click", (ev) => {
             ev.stopPropagation();
             const expZoom = Math.min(index.getClusterExpansionZoom(c.properties.cluster_id), 18);
-            map.easeTo({ center: [lng, lat], zoom: expZoom });
+            const leaves = index.getLeaves(c.properties.cluster_id, Infinity) as any[];
+            const groupFriends = leaves
+              .map((l) => friendDataRef.current.get(l.properties.userId) ?? l.properties.friend)
+              .filter(Boolean);
+            setSelected({ kind: "boatCluster", data: { friends: groupFriends, lng, lat, expansionZoom: expZoom } });
           });
           const marker = new maplibregl.Marker({ element: root, anchor: "center" })
             .setLngLat([lng, lat])
@@ -1008,7 +1014,9 @@ export function MapPage() {
           root.addEventListener("click", (ev) => {
             ev.stopPropagation();
             const expZoom = Math.min(index.getClusterExpansionZoom(c.properties.cluster_id), 18);
-            map.easeTo({ center: [lng, lat], zoom: expZoom });
+            const leaves = index.getLeaves(c.properties.cluster_id, Infinity) as any[];
+            const groupPins = leaves.map((l) => l.properties.pin).filter(Boolean);
+            setSelected({ kind: "pinCluster", data: { pins: groupPins, lng, lat, expansionZoom: expZoom } });
           });
           const marker = new maplibregl.Marker({ element: root, anchor: "center" })
             .setLngLat([lng, lat])
@@ -1673,7 +1681,15 @@ export function MapPage() {
             transition={{ type: "spring", damping: 28, stiffness: 320 }}
             className="absolute bottom-0 left-0 right-0 z-[600] px-3 pb-3"
           >
-            <DetailCard selected={selected} onClose={() => setSelected(null)} />
+            <DetailCard
+              selected={selected}
+              onClose={() => setSelected(null)}
+              onSelect={(sel) => setSelected(sel)}
+              onZoom={(lng, lat, zoom) => {
+                mapRef.current?.easeTo({ center: [lng, lat], zoom });
+                setSelected(null);
+              }}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -1882,13 +1898,104 @@ export function MapPage() {
 }
 
 // --- Slide-up social-style detail card ---
-function DetailCard({ selected, onClose }: { selected: NonNullable<Selected>; onClose: () => void }) {
+function DetailCard({
+  selected,
+  onClose,
+  onSelect,
+  onZoom,
+}: {
+  selected: NonNullable<Selected>;
+  onClose: () => void;
+  onSelect?: (sel: Selected) => void;
+  onZoom?: (lng: number, lat: number, zoom: number) => void;
+}) {
   const queryClient = useQueryClient();
   const { data: me } = useGetMe();
   const likePin = useLikePin();
   const favoritePin = useToggleFavoritePin();
   const deletePin = useDeletePin();
   const { data: freshPins } = useGetPins({});
+
+  if (selected.kind === "boatCluster") {
+    const { friends, lng, lat, expansionZoom } = selected.data;
+    return (
+      <div className="mx-auto w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
+        <div className="flex items-center gap-3 p-4">
+          <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-2xl shrink-0">🚤</div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-lg leading-tight truncate">{friends.length} boats here</h3>
+            <p className="text-xs text-muted-foreground">Tap someone to see their boat</p>
+          </div>
+          <Button size="icon" variant="ghost" className="h-8 w-8 -mr-1 -mt-1" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <div className="max-h-64 overflow-y-auto px-2">
+          {friends.map((f) => (
+            <button
+              key={f.userId}
+              onClick={() => onSelect?.({ kind: "friend", data: f })}
+              className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted text-left transition-colors"
+            >
+              <UserAvatar name={f.displayName} username={f.username} avatarUrl={f.avatarUrl} online={f.isOnline} className="w-11 h-11" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold truncate">{f.displayName || f.username || "Friend"}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {f.boatName ? `🚤 ${f.boatName}` : f.isOnline ? "Online now" : "On the lake"}
+                </p>
+              </div>
+              {f.isOnline && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 p-4 pt-3">
+          <Button variant="outline" className="flex-1" onClick={() => onZoom?.(lng, lat, expansionZoom)}>
+            <Search className="w-4 h-4 mr-2" /> Zoom in to spread out
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (selected.kind === "pinCluster") {
+    const { pins, lng, lat, expansionZoom } = selected.data;
+    return (
+      <div className="mx-auto w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
+        <div className="flex items-center gap-3 p-4">
+          <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-2xl shrink-0">📍</div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-lg leading-tight truncate">{pins.length} spots here</h3>
+            <p className="text-xs text-muted-foreground">Tap one to see details</p>
+          </div>
+          <Button size="icon" variant="ghost" className="h-8 w-8 -mr-1 -mt-1" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <div className="max-h-64 overflow-y-auto px-2">
+          {pins.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => onSelect?.({ kind: "pin", data: p })}
+              className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted text-left transition-colors"
+            >
+              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl shrink-0">
+                {getPinEmoji(p.type)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold truncate">{p.title}</p>
+                <p className="text-xs text-muted-foreground truncate">{getPinCategory(p.type)}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 p-4 pt-3">
+          <Button variant="outline" className="flex-1" onClick={() => onZoom?.(lng, lat, expansionZoom)}>
+            <Plus className="w-4 h-4 mr-2" /> Zoom in
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (selected.kind === "place") {
     const place = selected.data;
