@@ -15,7 +15,6 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor, VolumeX, Volume2, ShieldCheck, Bookmark, ChevronRight, Heart, ScrollText } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { WaiverBody } from "@/lib/waiver";
 import { INTEREST_DEFS } from "@/lib/interests";
 import { useToast } from "@/hooks/use-toast";
@@ -385,11 +384,11 @@ export function SettingsPage() {
               <DialogTitle>Welcome to Gillie! 🎣</DialogTitle>
               <DialogDescription>Safety rules &amp; liability waiver</DialogDescription>
             </DialogHeader>
-            <ScrollArea className="min-h-0 flex-1 border-t border-border">
+            <div className="min-h-0 flex-1 overflow-y-auto border-t border-border">
               <div className="p-5">
                 <WaiverBody />
               </div>
-            </ScrollArea>
+            </div>
           </DialogContent>
         </Dialog>
 
