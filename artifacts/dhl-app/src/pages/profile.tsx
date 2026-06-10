@@ -810,7 +810,7 @@ export function ProfilePage() {
                 <SectionTitle
                   icon={Users}
                   action={
-                    (profileFriends?.length ?? 0) > 9 ? (
+                    (profileFriends?.length ?? 0) > 4 ? (
                       <button type="button" onClick={() => setFollowList("friends")} className="text-xs font-semibold text-primary flex items-center gap-0.5 hover:opacity-70">
                         See all <ChevronRight className="w-3.5 h-3.5" />
                       </button>
@@ -820,10 +820,10 @@ export function ProfilePage() {
                   Friends{(profileFriends?.length ?? 0) > 0 ? ` · ${profileFriends!.length}` : ""}
                 </SectionTitle>
                 {profileFriends && profileFriends.length > 0 ? (
-                  <div className="grid grid-cols-3 gap-2.5">
-                    {profileFriends.slice(0, 9).map((f) => (
+                  <div className="grid grid-cols-4 gap-2.5">
+                    {profileFriends.slice(0, 4).map((f) => (
                       <Link key={f.id} href={`/profile/${f.id}`} className="flex flex-col items-center gap-1.5">
-                        <UserAvatar name={f.displayName} username={f.username} avatarUrl={f.avatarUrl ?? undefined} className="w-16 h-16" />
+                        <UserAvatar name={f.displayName} username={f.username} avatarUrl={f.avatarUrl ?? undefined} className="w-14 h-14" />
                         <span className="block w-full text-[11px] font-medium text-center leading-tight truncate">{f.displayName}</span>
                       </Link>
                     ))}
