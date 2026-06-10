@@ -20,3 +20,4 @@
 - [Badge system](badge-system.md) — badges are server-authoritative (computeBadges returns full catalog w/ earned flag); client is presentation-only. Add badges only there.
 - [Satellite basemap water detection](satellite-basemap-water-detection.md) — map shows Esri raster but MUST keep vector water fills visible for queryRenderedFeatures boat land/water toggle.
 - [Post visibility enforcement](post-visibility-enforcement.md) — friends-only audience only guarded on feed list, GET /:id, and poll vote; save/share/comments still bypassable (IDOR).
+- [Map WebGL e2e limitation](map-webgl-e2e-limitation.md) — Playwright harness has no WebGL so maplibre map pages can't be visually e2e'd; verify cluster logic via headless supercluster instead.
