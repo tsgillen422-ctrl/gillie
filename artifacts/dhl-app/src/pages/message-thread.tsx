@@ -549,12 +549,23 @@ export function MessageThreadPage() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <div className="flex items-center gap-3 min-w-0">
-          {isGroup ? (
+        {isGroup ? (
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-full bg-primary/15 border border-border flex items-center justify-center text-primary font-semibold text-sm shrink-0">
               {(conversation?.name?.[0] || "G").toUpperCase()}
             </div>
-          ) : (
+            <div className="min-w-0">
+              <h2 className="font-semibold text-sm truncate">{headerTitle}</h2>
+              <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+                {headerSubtitle}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <Link
+            href={otherUserId ? `/profile/${otherUserId}` : "#"}
+            className="flex items-center gap-3 min-w-0 rounded-full -ml-1 pl-1 pr-2 py-1 hover-elevate active-elevate-2"
+          >
             <UserAvatar
               name={otherUser?.displayName || otherParticipants[0]?.displayName || "User"}
               username={otherUser?.username || otherParticipants[0]?.username || ""}
@@ -562,17 +573,17 @@ export function MessageThreadPage() {
               online={otherUser?.isOnline ?? otherParticipants[0]?.isOnline}
               className="w-10 h-10 shrink-0"
             />
-          )}
-          <div className="min-w-0">
-            <h2 className="font-semibold text-sm truncate">{headerTitle}</h2>
-            <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
-              {!isGroup && (otherUser?.isOnline ?? otherParticipants[0]?.isOnline) && (
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              )}
-              {headerSubtitle}
-            </p>
-          </div>
-        </div>
+            <div className="min-w-0">
+              <h2 className="font-semibold text-sm truncate">{headerTitle}</h2>
+              <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1">
+                {(otherUser?.isOnline ?? otherParticipants[0]?.isOnline) && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                )}
+                {headerSubtitle}
+              </p>
+            </div>
+          </Link>
+        )}
       </div>
 
       {/* Messages Area */}
