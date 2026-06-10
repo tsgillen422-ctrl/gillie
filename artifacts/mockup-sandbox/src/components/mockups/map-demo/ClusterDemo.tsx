@@ -33,36 +33,53 @@ const clusterPinLabel = (type: string, count: number) => {
 
 const BOAT_COLORS = ["#0ea5e9", "#f97316", "#a855f7", "#22c55e", "#ef4444", "#eab308", "#14b8a6", "#ec4899"];
 
-type Boat = { id: number; name: string; lng: number; lat: number; vx: number; vy: number; bx: number; by: number; color: string };
+type Occupant = { initials: string; color: string };
+// A "boat" can carry multiple occupants — that's how we represent friends whose
+// phones are physically close (same hull / rafted up). This grouping is by
+// real-world distance, so it stays merged at every zoom level (unlike the
+// screen-distance Supercluster grouping below).
+type Boat = { id: number; occupants: Occupant[]; lng: number; lat: number; vx: number; vy: number; bx: number; by: number };
 type Pin = { id: number; type: string; lng: number; lat: number };
 
 function seedBoats(): Boat[] {
-  // three coves of friends drifting around Dale Hollow Lake
-  const coves: Array<[number, number, number]> = [
-    [-85.345, 36.585, 6],
-    [-85.255, 36.552, 5],
-    [-85.405, 36.612, 3],
-  ];
   const names = ["Jess", "Marco", "Priya", "Dale", "Sam", "Tara", "Wade", "Lou", "Nina", "Cody", "Beth", "Rio", "Gus", "Mae"];
-  const boats: Boat[] = [];
+  let ni = 0;
   let id = 1;
-  for (const [clng, clat, n] of coves) {
-    for (let i = 0; i < n; i++) {
-      const lng = clng + (Math.random() - 0.5) * 0.012;
-      const lat = clat + (Math.random() - 0.5) * 0.008;
-      boats.push({
-        id,
-        name: names[(id - 1) % names.length],
-        lng,
-        lat,
-        bx: lng,
-        by: lat,
-        vx: (Math.random() - 0.5) * 0.00002,
-        vy: (Math.random() - 0.5) * 0.000014,
-        color: BOAT_COLORS[(id - 1) % BOAT_COLORS.length],
-      });
-      id++;
-    }
+  const boats: Boat[] = [];
+  const nextOccupant = (): Occupant => {
+    const nm = names[ni % names.length];
+    const o: Occupant = { initials: nm.slice(0, 2).toUpperCase(), color: BOAT_COLORS[ni % BOAT_COLORS.length] };
+    ni++;
+    return o;
+  };
+  const addBoat = (lng: number, lat: number, occupants: Occupant[]) => {
+    boats.push({
+      id: id++,
+      occupants,
+      lng,
+      lat,
+      bx: lng,
+      by: lat,
+      vx: (Math.random() - 0.5) * 0.00002,
+      vy: (Math.random() - 0.5) * 0.000014,
+    });
+  };
+
+  // Cove A: 6 SEPARATE boats — demonstrates screen-distance clustering that
+  // collapses when zoomed out and splits back into 6 boats when zoomed in.
+  for (let i = 0; i < 6; i++) {
+    addBoat(-85.345 + (Math.random() - 0.5) * 0.012, 36.585 + (Math.random() - 0.5) * 0.008, [nextOccupant()]);
+  }
+
+  // Rafted crew: 4 friends whose phones are within ~30m share ONE boat. Shows
+  // all 4 faces and stays merged even at full zoom (real-world grouping). A
+  // genuinely separate boat sits right beside them for contrast.
+  addBoat(-85.255, 36.552, [nextOccupant(), nextOccupant(), nextOccupant(), nextOccupant()]);
+  addBoat(-85.2535, 36.5532, [nextOccupant()]);
+
+  // Cove C: 3 separate boats.
+  for (let i = 0; i < 3; i++) {
+    addBoat(-85.405 + (Math.random() - 0.5) * 0.012, 36.612 + (Math.random() - 0.5) * 0.008, [nextOccupant()]);
   }
   return boats;
 }
@@ -138,22 +155,49 @@ function buildPinEl(type: string, showLabel: boolean): HTMLDivElement {
   return (root.appendChild(scale), scale.appendChild(row), root);
 }
 
-function buildBoatEl(boat: Boat): HTMLDivElement {
-  const root = el("div", "snap-marker") as HTMLDivElement;
-  const bob = el("div", "snap-bob");
-  const avatar = el("div", "snap-avatar");
-  avatar.style.borderColor = boat.color;
+function makeAvatar(o: Occupant, cls: string): HTMLElement {
+  const avatar = el("div", cls);
+  avatar.style.borderColor = o.color;
   const initials = el("div", "snap-initials");
-  initials.style.background = boat.color;
-  initials.textContent = boat.name.slice(0, 2).toUpperCase();
+  initials.style.background = o.color;
+  initials.textContent = o.initials;
   avatar.appendChild(initials);
-  const online = el("i", "snap-online");
-  avatar.appendChild(online);
+  return avatar;
+}
+
+function buildBoatEl(boat: Boat): HTMLDivElement {
+  const crew = boat.occupants.length > 1;
+  const root = el("div", `snap-marker${crew ? " crew" : ""}`) as HTMLDivElement;
+  const bob = el("div", "snap-bob");
+
+  if (crew) {
+    // Multiple friends on one hull: fan their faces in a row over a single boat.
+    const av = el("div", "crew-avatars");
+    for (const o of boat.occupants.slice(0, 3)) av.appendChild(makeAvatar(o, "snap-avatar mini"));
+    if (boat.occupants.length > 3) {
+      const more = el("div", "crew-more");
+      more.textContent = "+" + (boat.occupants.length - 3);
+      av.appendChild(more);
+    }
+    const online = el("i", "snap-online crew-online");
+    av.appendChild(online);
+    bob.appendChild(av);
+  } else {
+    const avatar = makeAvatar(boat.occupants[0], "snap-avatar");
+    avatar.appendChild(el("i", "snap-online"));
+    bob.appendChild(avatar);
+  }
+
   const hull = el("div", "snap-boat");
   hull.textContent = "🚤";
-  bob.appendChild(avatar);
   bob.appendChild(hull);
   root.appendChild(bob);
+
+  if (crew) {
+    const label = el("div", "crew-label");
+    label.textContent = `${boat.occupants.length} aboard`;
+    root.appendChild(label);
+  }
   return root;
 }
 
@@ -394,6 +438,7 @@ export function ClusterDemo() {
       {/* legend */}
       <div className="hud hud-legend">
         <div className="legend-row"><span className="lg-em">🚤</span> Boats cluster into <em>“N boats here”</em></div>
+        <div className="legend-row"><span className="lg-em">👥</span> Friends whose phones are close ride <em>one boat</em> (stays merged when zoomed in)</div>
         <div className="legend-row"><span className="lg-em">🎣</span> Pins cluster into <em>“N fishing spots”</em></div>
         <div className="legend-row"><span className="lg-em">🔎</span> Zoom in past {ZOOM_MID} to reveal individual markers + labels</div>
         <div className="legend-row"><span className="lg-em">⚡</span> Activity mode glows dense clusters amber</div>
@@ -453,6 +498,21 @@ const CSS = `
   .snap-boat { font-size: 22px; line-height: 1; margin-top: -4px; filter: drop-shadow(0 5px 5px rgba(11,58,91,0.30));
     transform-origin: 50% 80%; animation: snapRock 3.6s ease-in-out infinite; }
   @keyframes snapRock { 0%,100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+
+  /* rafted crew: several friends on one hull */
+  .snap-marker.crew { width: 92px; }
+  .crew-avatars { position: relative; display: flex; flex-direction: row; align-items: center; }
+  .snap-avatar.mini { width: 30px; height: 30px; border-width: 2px; margin-left: -11px;
+    box-shadow: 0 3px 7px rgba(0,0,0,0.32), 0 0 0 2px rgba(255,255,255,0.92); }
+  .snap-avatar.mini:first-child { margin-left: 0; }
+  .snap-avatar.mini .snap-initials { font-size: 12px; }
+  .crew-more { margin-left: -9px; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px;
+    background: #0f2942; color: #fff; font-size: 12px; font-weight: 800; display: flex; align-items: center;
+    justify-content: center; border: 2px solid #fff; box-shadow: 0 3px 7px rgba(0,0,0,0.3); }
+  .crew-online { position: absolute; right: -2px; bottom: -2px; }
+  .crew-label { position: absolute; left: 50%; bottom: -15px; transform: translateX(-50%); white-space: nowrap;
+    font-size: 11px; font-weight: 800; color: #fff; background: rgba(8,25,40,0.85); padding: 1px 8px;
+    border-radius: 999px; text-shadow: none; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
 
   /* HUD overlays */
   .hud { position: absolute; z-index: 5; background: rgba(8,25,40,0.78); color: #e8f4ff; backdrop-filter: blur(8px);
