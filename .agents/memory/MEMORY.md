@@ -14,6 +14,7 @@
 - [DHL layout shell](dhl-layout-shell.md) — AppLayout `<main>` must stay `grid` so page `h-full` resolves; FABs wrap absolute on a div, not the Button.
 - [Static asset base path](static-asset-base-path.md) — public/ asset URLs must rebase on import.meta.env.BASE_URL; hardcoded /dhl-app/seed/... breaks in dev.
 - [esbuild undefined JSX refs](esbuild-undefined-jsx.md) — vite build passes even when a JSX component is used without importing it; grep imports, don't trust a green build.
+- [Clerk prod white screen](clerk-prod-white-screen.md) — prod white screen + dev_browser/`/v1/client` 401 loop = test keys in prod bundle; wiring is canonical, fix is re-publish.
 - [App-blocking gates fail closed](app-gating-fail-closed.md) — AuthedApp gates (waiver/onboarding) must block when /me is loading/errored/missing; never fall through to the app.
 - [Profile interests](profile-interests.md) — interests are user-selected (not activity-derived); shared catalog in lib/interests.ts + server VALID_INTERESTS allowlist.
 - [Badge system](badge-system.md) — badges are server-authoritative (computeBadges returns full catalog w/ earned flag); client is presentation-only. Add badges only there.
