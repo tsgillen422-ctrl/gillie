@@ -48,6 +48,7 @@ const BOAT_COLORS = [
 
 const BOAT_TYPES = [
   { value: 'speedboat', label: 'Speed Boat', desc: 'Sleek & fast' },
+  { value: 'fishing', label: 'Fishing Boat', desc: 'Reel them in' },
   { value: 'pontoon', label: 'Pontoon', desc: 'Relaxed cruiser' },
   { value: 'sailboat', label: 'Sailboat', desc: 'Wind powered' },
   { value: 'kayak', label: 'Kayak', desc: 'Paddle solo' },

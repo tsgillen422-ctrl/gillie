@@ -130,8 +130,32 @@ export const YACHT_SVG = `<svg width="58" height="38" viewBox="0 0 64 42" fill="
   <path d="M12 32.6 H52 C50.6 34 49 34.5 46 34.5 H18 C15 34.5 13.4 34 12 32.6 Z" fill="#001a2b" opacity="0.28"/>
 </svg>`;
 
+// Fishing boat: deep-V hull, center console with a windshield, and two rods
+// angled off the stern with fishing lines.
+const FB_HULL =
+  "M5 24 H49 C55 24 60 26.5 62 29.5 C62.7 30.6 61.9 31.9 60.4 32.5 L52 36 C50.5 36.6 49 37 47 37 H14 C11.5 37 9.8 36.2 8.3 34.6 L4 29.5 C2.8 28.1 3.2 25.3 5 24 Z";
+export const FISHINGBOAT_SVG = `<svg width="58" height="38" viewBox="0 0 64 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+  ${shadeDefs("fb")}
+  <ellipse cx="32" cy="38.4" rx="27" ry="3" fill="#0b2f4a" opacity="0.22"/>
+  <path d="M44 24 L40 9" stroke="${INK}" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M40 9 C46 11 49 15 50.5 20" stroke="#001a2b" stroke-width="0.9" stroke-linecap="round" opacity="0.55"/>
+  <path d="M47 24 L52 10" stroke="${INK}" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M52 10 C57 12.5 59.5 16.5 60.5 21" stroke="#001a2b" stroke-width="0.9" stroke-linecap="round" opacity="0.55"/>
+  <path d="${FB_HULL}" fill="currentColor" stroke="${INK}" stroke-width="2.6" stroke-linejoin="round"/>
+  <path d="${FB_HULL}" fill="url(#fb-g)"/>
+  <path d="${FB_HULL}" fill="url(#fb-s)"/>
+  <rect x="10" y="25.6" width="34" height="3" rx="1.5" fill="#ffffff" opacity="0.9"/>
+  <path d="M9 33 C12 34.8 16 35.6 20 35.6 H44 C47 35.6 49.5 35 52 33.8 L53.6 33 C49 33.6 12 33.6 9 33 Z" fill="#001a2b" opacity="0.3"/>
+  <rect x="24" y="16" width="13" height="9" rx="2" fill="currentColor" stroke="${INK}" stroke-width="2" stroke-linejoin="round"/>
+  <rect x="24" y="16" width="13" height="9" rx="2" fill="url(#fb-g)"/>
+  <rect x="24" y="16" width="13" height="9" rx="2" fill="url(#fb-s)"/>
+  <path d="M25 16 C25 13.6 27 12 29.5 12 H33 L36.5 16 Z" fill="url(#fb-gl)" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/>
+  <path d="M27 15.4 L29.6 12.6 H31.4 L28.8 15.4 Z" fill="#ffffff" opacity="0.75"/>
+</svg>`;
+
 export const BOAT_SVGS: Record<string, string> = {
   speedboat: SPEEDBOAT_SVG,
+  fishing: FISHINGBOAT_SVG,
   pontoon: PONTOON_SVG,
   sailboat: SAILBOAT_SVG,
   kayak: KAYAK_SVG,
