@@ -4,6 +4,7 @@ import { usersTable, conversationsTable, conversationParticipantsTable, messages
 import { eq, and, ne, desc, gt, inArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { broadcastToConversation } from "../lib/realtime";
+import { createNotifications } from "../lib/notify";
 
 const router = Router();
 
@@ -318,6 +319,40 @@ router.post("/conversations/:conversationId", async (req, res) => {
     messageId: msg.id,
     senderId: msg.senderId,
   });
+
+  // Notify every other participant (in-app + push). Fire-and-forget so a
+  // notification failure never blocks sending the message.
+  const recipients = await db
+    .select({ userId: conversationParticipantsTable.userId })
+    .from(conversationParticipantsTable)
+    .where(
+      and(
+        eq(conversationParticipantsTable.conversationId, conversationId),
+        ne(conversationParticipantsTable.userId, msg.senderId),
+      ),
+    );
+  if (recipients.length) {
+    const senderName = sender?.displayName || sender?.username || "Someone";
+    const trimmed = (msg.content ?? "").trim();
+    const preview = trimmed
+      ? trimmed.length > 80
+        ? `${trimmed.slice(0, 80)}…`
+        : trimmed
+      : msg.mediaType === "video"
+        ? "Sent a video"
+        : msg.mediaType === "image"
+          ? "Sent a photo"
+          : "Sent you a message";
+    createNotifications(
+      recipients.map((r) => ({
+        userId: r.userId,
+        type: "message",
+        message: `${senderName}: ${preview}`,
+        relatedId: conversationId,
+      })),
+    ).catch(() => {});
+  }
+
   res.status(201).json({
     id: msg.id,
     conversationId: msg.conversationId,
