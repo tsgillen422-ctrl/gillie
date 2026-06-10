@@ -23,6 +23,7 @@ import {
   notificationsTable,
   pushSubscriptionsTable,
   nativePushTokensTable,
+  waiverAcceptancesTable,
 } from "@workspace/db";
 import { eq, ilike, or, and, count, notInArray, inArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
@@ -141,6 +142,7 @@ async function deleteUserAndData(tx: Tx, userId: number): Promise<void> {
     );
   await tx.delete(pushSubscriptionsTable).where(eq(pushSubscriptionsTable.userId, userId));
   await tx.delete(nativePushTokensTable).where(eq(nativePushTokensTable.userId, userId));
+  await tx.delete(waiverAcceptancesTable).where(eq(waiverAcceptancesTable.userId, userId));
 
   await tx.delete(usersTable).where(eq(usersTable.id, userId));
 }
@@ -412,11 +414,17 @@ router.post("/me/waiver", async (req, res) => {
   if (typeof version !== "string" || !version.trim()) {
     return res.status(400).json({ error: "version must be a non-empty string" });
   }
-  const [updated] = await db
-    .update(usersTable)
-    .set({ waiverAcceptedAt: new Date(), waiverVersion: version })
-    .where(eq(usersTable.id, uid))
-    .returning();
+  const acceptedAt = new Date();
+  const updated = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(usersTable)
+      .set({ waiverAcceptedAt: acceptedAt, waiverVersion: version })
+      .where(eq(usersTable.id, uid))
+      .returning();
+    if (!row) return null;
+    await tx.insert(waiverAcceptancesTable).values({ userId: uid, version, acceptedAt });
+    return row;
+  });
   if (!updated) return res.status(401).json({ error: "Not logged in" });
   res.json(formatUser(updated));
 });
