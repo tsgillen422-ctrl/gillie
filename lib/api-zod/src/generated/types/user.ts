@@ -58,6 +58,10 @@ export interface User {
   isAdmin?: boolean;
   isSuspended?: boolean;
   warningCount?: number;
+  /** @nullable */
+  waiverAcceptedAt?: string | null;
+  /** @nullable */
+  waiverVersion?: string | null;
   friendStatus?: UserFriendStatus;
   followerCount?: number;
   followingCount?: number;

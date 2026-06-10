@@ -13,7 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor, VolumeX, Volume2, ShieldCheck, Bookmark, ChevronRight, Heart } from "lucide-react";
+import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor, VolumeX, Volume2, ShieldCheck, Bookmark, ChevronRight, Heart, ScrollText } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { WaiverBody } from "@/lib/waiver";
 import { INTEREST_DEFS } from "@/lib/interests";
 import { useToast } from "@/hooks/use-toast";
 import { compressImage } from "@/lib/compress";
@@ -114,6 +117,7 @@ export function SettingsPage() {
   const [coverUrl, setCoverUrl] = React.useState<string | undefined>(undefined);
   const [cropState, setCropState] = React.useState<{ kind: "avatar" | "cover"; fileName: string; src: string } | null>(null);
   const [cropping, setCropping] = React.useState(false);
+  const [showWaiver, setShowWaiver] = React.useState(false);
 
   const avatarRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
@@ -356,6 +360,38 @@ export function SettingsPage() {
         <BlockedUsersCard />
 
         <MutedUsersCard />
+
+        {/* Rules & Waiver */}
+        <Card className="border-border shadow-sm hover-elevate cursor-pointer" onClick={() => setShowWaiver(true)}>
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-full bg-primary/10 text-primary">
+                  <ScrollText className="w-5 h-5" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Rules & Waiver</CardTitle>
+                  <CardDescription>Review the safety rules and liability waiver</CardDescription>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </div>
+          </CardHeader>
+        </Card>
+
+        <Dialog open={showWaiver} onOpenChange={setShowWaiver}>
+          <DialogContent className="max-w-lg p-0 gap-0 max-h-[85vh] flex flex-col">
+            <DialogHeader className="px-5 pt-5 pb-3 shrink-0">
+              <DialogTitle>Welcome to Gillie! 🎣</DialogTitle>
+              <DialogDescription>Safety rules &amp; liability waiver</DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="min-h-0 flex-1 border-t border-border">
+              <div className="p-5">
+                <WaiverBody />
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
 
         {me?.isAdmin && (
           <Link href="/admin">

@@ -75,7 +75,8 @@ import type {
   UploadUrlResponse,
   User,
   UserUpdate,
-  VapidPublicKey
+  VapidPublicKey,
+  WaiverAccept
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -5738,6 +5739,77 @@ export const useSendSos = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getSendSosMutationOptions(options));
+    }
+
+export const getAcceptWaiverUrl = () => {
+
+
+
+
+  return `/api/users/me/waiver`
+}
+
+/**
+ * @summary Record acceptance of the liability waiver
+ */
+export const acceptWaiver = async (waiverAccept: WaiverAccept, options?: RequestInit): Promise<User> => {
+
+  return customFetch<User>(getAcceptWaiverUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      waiverAccept,)
+  }
+);}
+
+
+
+
+export const getAcceptWaiverMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptWaiver>>, TError,{data: BodyType<WaiverAccept>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptWaiver>>, TError,{data: BodyType<WaiverAccept>}, TContext> => {
+
+const mutationKey = ['acceptWaiver'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptWaiver>>, {data: BodyType<WaiverAccept>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  acceptWaiver(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptWaiverMutationResult = NonNullable<Awaited<ReturnType<typeof acceptWaiver>>>
+    export type AcceptWaiverMutationBody = BodyType<WaiverAccept>
+    export type AcceptWaiverMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Record acceptance of the liability waiver
+ */
+export const useAcceptWaiver = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptWaiver>>, TError,{data: BodyType<WaiverAccept>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof acceptWaiver>>,
+        TError,
+        {data: BodyType<WaiverAccept>},
+        TContext
+      > => {
+      return useMutation(getAcceptWaiverMutationOptions(options));
     }
 
 export const getCreateReportUrl = () => {

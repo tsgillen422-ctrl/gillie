@@ -107,3 +107,4 @@ export * from './user';
 export * from './userFriendStatus';
 export * from './userUpdate';
 export * from './vapidPublicKey';
+export * from './waiverAccept';

@@ -265,6 +265,8 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     isAdmin: u.isAdmin,
     isSuspended: u.isSuspended,
     warningCount: u.warningCount,
+    waiverAcceptedAt: u.waiverAcceptedAt ? u.waiverAcceptedAt.toISOString() : null,
+    waiverVersion: u.waiverVersion,
     followerCount: 0,
     followingCount: 0,
     createdAt: u.createdAt.toISOString(),
@@ -401,6 +403,21 @@ router.patch("/me", async (req, res) => {
     updates.showFollowers = req.body.showFollowers;
   }
   const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, uid)).returning();
+  res.json(formatUser(updated));
+});
+
+router.post("/me/waiver", async (req, res) => {
+  const uid = currentUserId(req);
+  const { version } = req.body;
+  if (typeof version !== "string" || !version.trim()) {
+    return res.status(400).json({ error: "version must be a non-empty string" });
+  }
+  const [updated] = await db
+    .update(usersTable)
+    .set({ waiverAcceptedAt: new Date(), waiverVersion: version })
+    .where(eq(usersTable.id, uid))
+    .returning();
+  if (!updated) return res.status(401).json({ error: "Not logged in" });
   res.json(formatUser(updated));
 });
 

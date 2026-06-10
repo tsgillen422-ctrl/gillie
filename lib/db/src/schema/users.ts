@@ -37,6 +37,8 @@ export const usersTable = pgTable("users", {
   isAdmin: boolean("is_admin").notNull().default(false),
   isSuspended: boolean("is_suspended").notNull().default(false),
   warningCount: integer("warning_count").notNull().default(0),
+  waiverAcceptedAt: timestamp("waiver_accepted_at"),
+  waiverVersion: text("waiver_version"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

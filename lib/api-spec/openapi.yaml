@@ -1522,6 +1522,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/SosResult"
 
+  /users/me/waiver:
+    post:
+      operationId: acceptWaiver
+      tags: [users]
+      summary: Record acceptance of the liability waiver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WaiverAccept"
+      responses:
+        "200":
+          description: Waiver accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
   /reports:
     post:
       operationId: createReport
@@ -1780,6 +1799,10 @@ components:
           type: boolean
         warningCount:
           type: integer
+        waiverAcceptedAt:
+          type: ["string", "null"]
+        waiverVersion:
+          type: ["string", "null"]
         friendStatus:
           type: string
           enum: [none, self, accepted, pending_out, pending_in, blocked, blocked_by]
@@ -1794,6 +1817,13 @@ components:
         rank:
           $ref: "#/components/schemas/Rank"
         createdAt:
+          type: string
+
+    WaiverAccept:
+      type: object
+      required: [version]
+      properties:
+        version:
           type: string
 
     UserUpdate:

@@ -90,12 +90,20 @@ export interface User {
   isAdmin?: boolean;
   isSuspended?: boolean;
   warningCount?: number;
+  /** @nullable */
+  waiverAcceptedAt?: string | null;
+  /** @nullable */
+  waiverVersion?: string | null;
   friendStatus?: UserFriendStatus;
   followerCount?: number;
   followingCount?: number;
   badges?: Badge[];
   rank?: Rank;
   createdAt: string;
+}
+
+export interface WaiverAccept {
+  version: string;
 }
 
 export interface UserUpdate {

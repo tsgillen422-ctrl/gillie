@@ -10,6 +10,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppLayout } from "@/components/AppLayout";
 import { Onboarding } from "@/components/Onboarding";
+import { WaiverGate } from "@/components/WaiverGate";
+import { Button } from "@/components/ui/button";
+import { useGetMe } from "@workspace/api-client-react";
+import { WAIVER_VERSION } from "@/lib/waiver";
 
 import { LandingPage } from "@/pages/landing";
 import { MapPage } from "@/pages/map";
@@ -147,6 +151,26 @@ function ClerkQueryClientCacheInvalidator() {
 }
 
 function AuthedApp() {
+  const { data: me, isLoading, isError, refetch } = useGetMe();
+
+  if (isLoading) {
+    return <div className="flex min-h-[100dvh] items-center justify-center bg-background text-muted-foreground">Loading…</div>;
+  }
+
+  // Fail closed: never expose the app unless we successfully loaded the account.
+  if (isError || !me) {
+    return (
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-background px-6 text-center">
+        <p className="text-muted-foreground">We couldn't load your account. Please check your connection and try again.</p>
+        <Button onClick={() => refetch()}>Try again</Button>
+      </div>
+    );
+  }
+
+  if (me.waiverVersion !== WAIVER_VERSION) {
+    return <WaiverGate />;
+  }
+
   return (
     <AppLayout>
       <Switch>
