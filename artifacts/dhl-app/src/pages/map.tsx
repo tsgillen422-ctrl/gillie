@@ -83,6 +83,23 @@ const pinTier = (type: string): "high" | "low" =>
 // Below this zoom, low-priority pins only appear aggregated inside clusters.
 const SECONDARY_PIN_ZOOM = 13.5;
 
+// Shared zoom tiers used by every layer (boats, pins, places) so visibility is
+// consistent: below ZOOM_MID is the "far" tier (clusters + badges only, no text
+// labels); at/above ZOOM_MID individual markers and place labels appear; at/above
+// SECONDARY_PIN_ZOOM ("close") the low-priority pin chips are revealed too.
+const ZOOM_MID = 12.5;
+
+// Boat clustering: friends within this pixel radius collapse into one bubble when
+// dense. Mirrors the low-pin cluster settings so all layers cluster consistently.
+const BOAT_CLUSTER_RADIUS = 60;
+const BOAT_CLUSTER_MAXZOOM = 16;
+
+// Friendly plural label for a cluster of a given pin type, e.g. "3 fishing spots".
+const clusterPinLabel = (type: string, count: number) => {
+  const cat = getPinCategory(type).toLowerCase();
+  return `${count} ${cat}${count === 1 ? "" : "s"}`;
+};
+
 // --- Satellite / aerial imagery basemap ---
 const SAT_SOURCE = "satellite-imagery-src";
 const SAT_LAYER = "satellite-imagery";
@@ -346,11 +363,12 @@ function buildPinEl(opts: {
   tier: "high" | "low";
   color: string;
   category: string;
+  showLabel?: boolean;
 }): {
   root: HTMLDivElement;
   scale: HTMLDivElement;
 } {
-  const { emoji, title, delay, tier, color, category } = opts;
+  const { emoji, title, delay, tier, color, category, showLabel = true } = opts;
   const root = el("div", "lake-pin") as HTMLDivElement;
   const scale = el("div", "lake-pin-scale") as HTMLDivElement;
 
@@ -365,8 +383,9 @@ function buildPinEl(opts: {
   badge.appendChild(emojiEl);
   row.appendChild(badge);
 
-  // High-priority places get a colored text label (no white pill box).
-  if (tier === "high") {
+  // High-priority places get a colored text label (no white pill box). The
+  // label is suppressed at the far zoom tier so far-out views stay badge-only.
+  if (tier === "high" && showLabel) {
     const textWrap = el("div", "place-text");
     const titleEl = el("div", "place-title");
     titleEl.textContent = title;
@@ -384,24 +403,36 @@ function buildPinEl(opts: {
   return { root, scale };
 }
 
-// --- Cluster bubble marker element (aggregates nearby low-priority pins) ---
+// --- Cluster bubble marker element (aggregates nearby boats/pins) ---
 // Shows a representative emoji for the group; the bubble grows with the count.
-function buildClusterEl(count: number, emoji: string): { root: HTMLDivElement; scale: HTMLDivElement } {
+// For multi-point clusters a friendly count label (e.g. "8 boats here") sits to
+// the right of the bubble; singletons render as a bare bubble (current look).
+function buildClusterEl(count: number, emoji: string, label?: string): { root: HTMLDivElement; scale: HTMLDivElement } {
   const root = el("div", "lake-pin") as HTMLDivElement;
   const scale = el("div", "lake-pin-scale") as HTMLDivElement;
+  const row = el("div", "cluster-row");
   // larger bubble for denser clusters
   const sizeClass = count >= 25 ? "cluster-lg" : count >= 10 ? "cluster-md" : "cluster-sm";
   const bubble = el("div", `pin-cluster ${sizeClass}`);
   const emojiEl = el("span", "pin-cluster-emoji");
   emojiEl.textContent = emoji;
   bubble.appendChild(emojiEl);
-  scale.appendChild(bubble);
+  row.appendChild(bubble);
+  if (label && count > 1) {
+    const textWrap = el("div", "place-text");
+    const titleEl = el("div", "place-title cluster-label");
+    titleEl.textContent = label;
+    textWrap.appendChild(titleEl);
+    row.appendChild(textWrap);
+  }
+  scale.appendChild(row);
   root.appendChild(scale);
   return { root, scale };
 }
 
-// Pick the most common pin-type emoji among a cluster's leaves.
-function dominantClusterEmoji(index: Supercluster, clusterId: number): string {
+// Pick the most common pin-type among a cluster's leaves (drives both the
+// representative emoji and the friendly "N <category>s" label).
+function dominantClusterType(index: Supercluster, clusterId: number): string {
   try {
     const leaves = index.getLeaves(clusterId, Infinity) as any[];
     const counts: Record<string, number> = {};
@@ -417,9 +448,9 @@ function dominantClusterEmoji(index: Supercluster, clusterId: number): string {
         best = t;
       }
     }
-    return getPinEmoji(best);
+    return best;
   } catch {
-    return getPinEmoji("");
+    return "";
   }
 }
 
@@ -440,7 +471,18 @@ export function MapPage() {
 
   // Track scalable marker elements so we can resize on zoom.
   const scaleEls = useRef<Set<HTMLDivElement>>(new Set());
-  const friendMarkers = useRef<maplibregl.Marker[]>([]);
+  // Live individual boat markers, pooled by friend userId so positions can be
+  // animated smoothly between polls and only on-screen boats stay instantiated.
+  const friendMarkerMap = useRef<Map<number, maplibregl.Marker>>(new Map());
+  // Latest friend record per userId, so a marker's click handler always opens the
+  // freshest profile data even after the underlying data refreshes.
+  const friendDataRef = useRef<Map<number, any>>(new Map());
+  // Transient boat-cluster bubbles (rebuilt on every view change).
+  const boatClusterMarkers = useRef<maplibregl.Marker[]>([]);
+  // In-flight position tweens per boat (rAF ids), so we can cancel/replace them.
+  const boatTweens = useRef<Map<number, number>>(new Map());
+  // Supercluster index over boats (friends) for clustering + viewport culling.
+  const boatIndex = useRef<Supercluster | null>(null);
   const pinMarkers = useRef<maplibregl.Marker[]>([]);
   const meMarker = useRef<maplibregl.Marker | null>(null);
   const placeMarker = useRef<maplibregl.Marker | null>(null);
@@ -547,7 +589,7 @@ export function MapPage() {
         nextOnLand.add(userId);
       }
     };
-    friendMarkers.current.forEach((m) => {
+    friendMarkerMap.current.forEach((m) => {
       const raw = m.getElement().dataset.userId;
       const uid = raw != null ? Number(raw) : NaN;
       apply(m, Number.isNaN(uid) ? null : uid);
@@ -630,7 +672,50 @@ export function MapPage() {
 
     map.on("zoom", () => applyZoomScale(map.getZoom()));
 
+    // --- Long-press (touch) / right-click (desktop) to drop a new pin ---
+    let lpTimer: number | null = null;
+    let lpStart: { x: number; y: number } | null = null;
+    const clearLp = () => {
+      if (lpTimer != null) {
+        clearTimeout(lpTimer);
+        lpTimer = null;
+      }
+      lpStart = null;
+    };
+    const startLp = (point: { x: number; y: number }, lngLat: maplibregl.LngLat) => {
+      clearLp();
+      lpStart = { x: point.x, y: point.y };
+      lpTimer = window.setTimeout(() => {
+        lpTimer = null;
+        lpStart = null;
+        setPinDialog({ open: true, lat: lngLat.lat, lng: lngLat.lng });
+      }, 550);
+    };
+    map.on("mousedown", (e) => startLp(e.point, e.lngLat));
+    map.on("touchstart", (e) => {
+      if (e.points.length !== 1) {
+        clearLp();
+        return;
+      }
+      startLp(e.point, e.lngLat);
+    });
+    map.on("mousemove", (e) => {
+      if (lpStart && (Math.abs(e.point.x - lpStart.x) > 8 || Math.abs(e.point.y - lpStart.y) > 8)) {
+        clearLp();
+      }
+    });
+    map.on("touchmove", clearLp);
+    map.on("mouseup", clearLp);
+    map.on("touchend", clearLp);
+    map.on("dragstart", clearLp);
+    map.on("zoomstart", clearLp);
+    map.on("contextmenu", (e) => {
+      clearLp();
+      setPinDialog({ open: true, lat: e.lngLat.lat, lng: e.lngLat.lng });
+    });
+
     return () => {
+      clearLp();
       map.remove();
       mapRef.current = null;
       mapLoaded.current = false;
@@ -691,46 +776,158 @@ export function MapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meOnLand]);
 
-  // --- Render friend markers ---
+  // Smoothly glide a boat marker from its current spot to a new position. Used
+  // when a poll reports a friend has moved, so boats slide across the water
+  // (keeping the existing wake/ripple effect) instead of teleporting.
+  const animateBoatTo = useCallback((id: number, marker: maplibregl.Marker, toLng: number, toLat: number) => {
+    const from = marker.getLngLat();
+    const dLng = toLng - from.lng;
+    const dLat = toLat - from.lat;
+    // No meaningful change (e.g. a pure view re-render) — leave it put.
+    if (Math.abs(dLng) < 1e-7 && Math.abs(dLat) < 1e-7) return;
+    const prev = boatTweens.current.get(id);
+    if (prev) cancelAnimationFrame(prev);
+    const start = performance.now();
+    const dur = 600;
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / dur);
+      const e = t * (2 - t); // easeOut
+      marker.setLngLat([from.lng + dLng * e, from.lat + dLat * e]);
+      if (t < 1) {
+        boatTweens.current.set(id, requestAnimationFrame(step));
+      } else {
+        boatTweens.current.delete(id);
+      }
+    };
+    boatTweens.current.set(id, requestAnimationFrame(step));
+  }, []);
+
+  // --- Render the boat layer (clustering + viewport culling) ---
+  // Boats run through supercluster like pins do: dense groups collapse into a
+  // count bubble, and only on-screen clusters/boats are instantiated so the live
+  // DOM-marker count stays bounded even with thousands of points. Individual boat
+  // markers are pooled by userId so they can animate between polls.
+  const renderBoats = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    const zoom = map.getZoom();
+
+    // Clear transient boat-cluster bubbles from the previous view.
+    boatClusterMarkers.current.forEach((m) => {
+      const el = m.getElement().querySelector(".lake-pin-scale") as HTMLDivElement | null;
+      if (el) scaleEls.current.delete(el);
+      m.remove();
+    });
+    boatClusterMarkers.current = [];
+
+    const index = boatIndex.current;
+    // userId -> target position/data for boats that should render individually now.
+    const target = new Map<number, { lng: number; lat: number; friend: any }>();
+
+    if (index) {
+      const b = map.getBounds();
+      const bbox: [number, number, number, number] = [
+        b.getWest(),
+        b.getSouth(),
+        b.getEast(),
+        b.getNorth(),
+      ];
+      const clusters = index.getClusters(bbox, Math.floor(zoom));
+      clusters.forEach((c: any) => {
+        const [lng, lat] = c.geometry.coordinates;
+        if (c.properties.cluster) {
+          const count = c.properties.point_count as number;
+          const { root, scale } = buildClusterEl(count, "🚤", `${count} boats here`);
+          if (heatmapOn && count >= 6) {
+            (root.querySelector(".pin-cluster") as HTMLElement | null)?.classList.add("cluster-hot");
+          }
+          root.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            const expZoom = Math.min(index.getClusterExpansionZoom(c.properties.cluster_id), 18);
+            map.easeTo({ center: [lng, lat], zoom: expZoom });
+          });
+          const marker = new maplibregl.Marker({ element: root, anchor: "center" })
+            .setLngLat([lng, lat])
+            .addTo(map);
+          boatClusterMarkers.current.push(marker);
+          scaleEls.current.add(scale);
+        } else {
+          const f = c.properties.friend;
+          target.set(f.userId, { lng, lat, friend: f });
+        }
+      });
+    }
+
+    // Reconcile the pooled individual boat markers against the target set.
+    const pool = friendMarkerMap.current;
+    // Remove boats that are no longer individually visible (clustered or off-screen).
+    for (const [id, marker] of pool) {
+      if (!target.has(id)) {
+        const el = marker.getElement().querySelector(".snap-scale") as HTMLDivElement | null;
+        if (el) scaleEls.current.delete(el);
+        const tw = boatTweens.current.get(id);
+        if (tw) cancelAnimationFrame(tw);
+        boatTweens.current.delete(id);
+        friendDataRef.current.delete(id);
+        marker.remove();
+        pool.delete(id);
+      }
+    }
+    // Create newcomers, glide existing boats to their fresh position.
+    for (const [id, info] of target) {
+      friendDataRef.current.set(id, info.friend);
+      let marker = pool.get(id);
+      if (!marker) {
+        const friend = info.friend;
+        const color = friend.boatColor || "#0ea5e9";
+        const { root, scale } = buildFriendEl({
+          color,
+          name: friend.displayName || friend.username || "Friend",
+          avatarUrl: friend.avatarUrl,
+          online: friend.isOnline,
+          boatType: friend.boatType,
+          boatNeon: friend.boatNeon,
+          boatFlag: friend.boatFlag,
+          boatAccent: friend.boatAccent,
+        });
+        root.dataset.userId = String(id);
+        root.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          setSelected({ kind: "friend", data: friendDataRef.current.get(id) ?? info.friend });
+        });
+        marker = new maplibregl.Marker({ element: root, anchor: "bottom", offset: [0, 13] })
+          .setLngLat([info.lng, info.lat])
+          .addTo(map);
+        pool.set(id, marker);
+        scaleEls.current.add(scale);
+      } else {
+        animateBoatTo(id, marker, info.lng, info.lat);
+      }
+    }
+
+    applyZoomScale(zoom);
+    updateLandStates();
+  }, [styleReady, applyZoomScale, updateLandStates, animateBoatTo, heatmapOn]);
+
+  // Build the boat supercluster index whenever the friend set changes, then render.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !styleReady) return;
 
-    friendMarkers.current.forEach((m) => {
-      const el = m.getElement().querySelector(".snap-scale") as HTMLDivElement | null;
-      if (el) scaleEls.current.delete(el);
-      m.remove();
-    });
-    friendMarkers.current = [];
+    const points = (friends ?? [])
+      .filter((f: any) => f.lat != null && f.lng != null)
+      .map((f: any) => ({
+        type: "Feature" as const,
+        properties: { friend: f, userId: f.userId },
+        geometry: { type: "Point" as const, coordinates: [f.lng, f.lat] },
+      }));
 
-    friends?.forEach((friend) => {
-      if (friend.lat == null || friend.lng == null) return;
-      const color = friend.boatColor || "#0ea5e9";
-      const { root, scale } = buildFriendEl({
-        color,
-        name: friend.displayName || friend.username || "Friend",
-        avatarUrl: friend.avatarUrl,
-        online: friend.isOnline,
-        boatType: friend.boatType,
-        boatNeon: friend.boatNeon,
-        boatFlag: friend.boatFlag,
-        boatAccent: friend.boatAccent,
-      });
-      root.dataset.userId = String(friend.userId);
-      root.addEventListener("click", (ev) => {
-        ev.stopPropagation();
-        setSelected({ kind: "friend", data: friend });
-      });
-      const marker = new maplibregl.Marker({ element: root, anchor: "bottom", offset: [0, 13] })
-        .setLngLat([friend.lng, friend.lat])
-        .addTo(map);
-      friendMarkers.current.push(marker);
-      scaleEls.current.add(scale);
-    });
+    const index = new Supercluster({ radius: BOAT_CLUSTER_RADIUS, maxZoom: BOAT_CLUSTER_MAXZOOM });
+    index.load(points as any);
+    boatIndex.current = index;
 
-    applyZoomScale(map.getZoom());
-    updateLandStates();
-  }, [friends, styleReady, applyZoomScale, updateLandStates]);
+    renderBoats();
+  }, [friends, styleReady, renderBoats]);
 
   // --- Render pin markers (with clustering + tiering) ---
   // Re-runs on every map move/zoom so clusters re-form for the current view.
@@ -749,7 +946,17 @@ export function MapPage() {
     const zoom = map.getZoom();
     const allPins = pinsRef.current;
 
-    const addPinMarker = (pin: any) => {
+    const b = map.getBounds();
+    const bbox: [number, number, number, number] = [
+      b.getWest(),
+      b.getSouth(),
+      b.getEast(),
+      b.getNorth(),
+    ];
+    const inView = (lng: number, lat: number) =>
+      lng >= bbox[0] && lng <= bbox[2] && lat >= bbox[1] && lat <= bbox[3];
+
+    const addPinMarker = (pin: any, showLabel = true) => {
       const tier = pinTier(pin.type);
       const { root, scale } = buildPinEl({
         emoji: getPinEmoji(pin.type),
@@ -758,6 +965,7 @@ export function MapPage() {
         tier,
         color: getPinColor(pin.type),
         category: getPinCategory(pin.type),
+        showLabel,
       });
       root.addEventListener("click", (ev) => {
         ev.stopPropagation();
@@ -770,31 +978,33 @@ export function MapPage() {
       scaleEls.current.add(scale);
     };
 
-    // High-priority places: always visible, never clustered.
+    // Layer 3 — landmarks/places (high-priority pins): always individual, but
+    // viewport-culled and showing their full text label only from the mid tier
+    // in (far-out views keep just the badge so labels don't crowd the map).
+    const showPlaceLabels = zoom >= ZOOM_MID;
     allPins.forEach((pin) => {
       if (pin.lat == null || pin.lng == null) return;
-      if (pinTier(pin.type) === "high") addPinMarker(pin);
+      if (pinTier(pin.type) !== "high") return;
+      if (!inView(pin.lng, pin.lat)) return;
+      addPinMarker(pin, showPlaceLabels);
     });
 
     // Low-priority pins: clustered via supercluster for the current view.
     const index = clusterIndex.current;
     if (index) {
-      const b = map.getBounds();
-      const bbox: [number, number, number, number] = [
-        b.getWest(),
-        b.getSouth(),
-        b.getEast(),
-        b.getNorth(),
-      ];
       const clusters = index.getClusters(bbox, Math.floor(zoom));
       const revealChips = zoom >= SECONDARY_PIN_ZOOM;
       clusters.forEach((c: any) => {
         const [lng, lat] = c.geometry.coordinates;
         if (c.properties.cluster) {
-          // A multi-point cluster: bubble shows the dominant emoji, expands on tap.
+          // A multi-point cluster: bubble shows the dominant emoji + a friendly
+          // count label ("3 fishing spots"), and expands on tap.
           const count = c.properties.point_count as number;
-          const emoji = dominantClusterEmoji(index, c.properties.cluster_id);
-          const { root, scale } = buildClusterEl(count, emoji);
+          const domType = dominantClusterType(index, c.properties.cluster_id);
+          const { root, scale } = buildClusterEl(count, getPinEmoji(domType), clusterPinLabel(domType, count));
+          if (heatmapOn && count >= 6) {
+            (root.querySelector(".pin-cluster") as HTMLElement | null)?.classList.add("cluster-hot");
+          }
           root.addEventListener("click", (ev) => {
             ev.stopPropagation();
             const expZoom = Math.min(index.getClusterExpansionZoom(c.properties.cluster_id), 18);
@@ -826,7 +1036,7 @@ export function MapPage() {
     }
 
     applyZoomScale(zoom);
-  }, [styleReady, applyZoomScale]);
+  }, [styleReady, applyZoomScale, heatmapOn]);
 
   // Build the supercluster index whenever the pin set changes, then render.
   useEffect(() => {
@@ -856,13 +1066,14 @@ export function MapPage() {
     if (!map || !styleReady) return;
     const onMoveEnd = () => {
       renderPins();
+      renderBoats();
       updateLandStates();
     };
     map.on("moveend", onMoveEnd);
     return () => {
       map.off("moveend", onMoveEnd);
     };
-  }, [styleReady, renderPins, updateLandStates]);
+  }, [styleReady, renderPins, renderBoats, updateLandStates]);
 
   // --- Live activity heatmap ---
   // Turns the lake into a heatmap of where people are: low density reads blue
@@ -2104,6 +2315,20 @@ const MAP_CSS = `
   .pin-cluster.cluster-sm .pin-cluster-emoji { font-size: 18px; }
   .pin-cluster.cluster-md .pin-cluster-emoji { font-size: 22px; }
   .pin-cluster.cluster-lg .pin-cluster-emoji { font-size: 26px; }
+  /* Bubble + friendly count label sit on a single row (no bobbing). */
+  .cluster-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 7px;
+  }
+  .cluster-label { color: #0369a1; }
+  .pin-cluster { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+  /* Activity-mode emphasis: dense clusters glow amber while the heatmap is on. */
+  .pin-cluster.cluster-hot {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.28), 0 6px 18px rgba(245,158,11,0.45);
+  }
 
   /* ================= MapLibre controls polish ================= */
   .maplibregl-ctrl-group {
