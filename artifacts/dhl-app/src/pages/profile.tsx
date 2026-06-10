@@ -4,7 +4,7 @@ import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreate
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, Settings, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Fish, Tent, Anchor, Mountain, Waves, Camera, Image as ImageIcon, Bookmark, FileText, ChevronRight, Star } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Fish, Tent, Anchor, Mountain, Waves, Camera, Image as ImageIcon, Bookmark, FileText, ChevronRight, Star } from "lucide-react";
 import { INTEREST_MAP } from "@/lib/interests";
 import { ReportDialog } from "@/components/ReportDialog";
 import { BadgeRow, badgeMeta } from "@/components/Badges";
@@ -581,13 +581,6 @@ export function ProfilePage() {
                 <Link href={isSelf ? "/" : "/friends"}><ArrowLeft className="w-5 h-5" /></Link>
               </Button>
             </div>
-            {isSelf && (
-              <div className="absolute top-4 right-4 z-10">
-                <Button size="icon" variant="secondary" asChild className="rounded-full bg-white/85 text-foreground hover:bg-white shadow-soft backdrop-blur">
-                  <Link href="/settings"><Settings className="w-5 h-5" /></Link>
-                </Button>
-              </div>
-            )}
 
             {/* Identity card overlapping the cover */}
             <div className="px-3 -mt-14 relative z-10">
