@@ -30,6 +30,7 @@ import { UserAvatar, resolveAvatarUrl } from "@/components/UserAvatar";
 import { AnimatePresence, motion } from "framer-motion";
 import { useUpload } from "@workspace/object-storage-web";
 import { boatSvgFor, FLAG_SVG } from "../boats";
+import { hapticTap } from "@/lib/haptics";
 
 const LAKE_CENTER: [number, number] = [-85.37, 36.53]; // [lng, lat]
 const BASE_ZOOM = 12;
@@ -690,6 +691,7 @@ export function MapPage() {
       lpTimer = window.setTimeout(() => {
         lpTimer = null;
         lpStart = null;
+        void hapticTap();
         setPinDialog({ open: true, lat: lngLat.lat, lng: lngLat.lng });
       }, 550);
     };
@@ -2178,6 +2180,21 @@ function DetailCard({
 const MAP_CSS = `
   .maplibregl-map { height: 100%; width: 100%; font-family: inherit; }
   .maplibregl-ctrl-top-right { margin-top: 140px; }
+
+  /* iOS hardening: a stationary press-and-hold on the map (Safari + the
+   * Capacitor webview) otherwise triggers the native selection callout /
+   * magnifier, which swallows or fights the long-press-to-drop-a-pin gesture.
+   * Scoped to the map canvas + markers only, so the selectable overlay UI
+   * (search, panels) is unaffected. maplibre's canvas already sets
+   * touch-action: none; this adds the callout/selection suppression. */
+  .maplibregl-canvas-container,
+  .maplibregl-canvas,
+  .maplibregl-marker,
+  .ln {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
 
   /* ================= Friend marker: profile pic above a boat ================= */
   .snap-marker { cursor: pointer; will-change: transform; }
