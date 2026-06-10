@@ -701,6 +701,17 @@ export function ProfilePage() {
                         <Link href={`/messages?user=${id}`}><MessageSquare className="w-4 h-4 mr-2" /> Message</Link>
                       </Button>
                     </div>
+                    {user.shareLocation && user.currentLat != null && user.currentLng != null ? (
+                      <Button variant="outline" className="w-full rounded-2xl" asChild>
+                        <Link href={`/map?lat=${user.currentLat}&lng=${user.currentLng}`}>
+                          <MapPin className="w-4 h-4 mr-2" /> Find on Map
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button variant="outline" className="w-full rounded-2xl" disabled>
+                        <MapPin className="w-4 h-4 mr-2" /> Location off
+                      </Button>
+                    )}
                     <div className="flex gap-2 justify-center">
                       <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" onClick={() => setReportOpen(true)}>
                         <Flag className="w-4 h-4 mr-2" /> Report
