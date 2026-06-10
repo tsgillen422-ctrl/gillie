@@ -76,7 +76,8 @@ import type {
   User,
   UserUpdate,
   VapidPublicKey,
-  WaiverAccept
+  WaiverAccept,
+  WaiverAcceptanceRecord
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -452,6 +453,83 @@ export function useGetAdmins<TData = Awaited<ReturnType<typeof getAdmins>>, TErr
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetAdminsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetWaiverAcceptancesUrl = () => {
+
+
+
+
+  return `/api/users/waiver-acceptances`
+}
+
+/**
+ * @summary List all waiver acceptance records (admin only)
+ */
+export const getWaiverAcceptances = async ( options?: RequestInit): Promise<WaiverAcceptanceRecord[]> => {
+
+  return customFetch<WaiverAcceptanceRecord[]>(getGetWaiverAcceptancesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetWaiverAcceptancesQueryKey = () => {
+    return [
+    `/api/users/waiver-acceptances`
+    ] as const;
+    }
+
+
+export const getGetWaiverAcceptancesQueryOptions = <TData = Awaited<ReturnType<typeof getWaiverAcceptances>>, TError = ErrorType<ErrorEnvelope>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWaiverAcceptances>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetWaiverAcceptancesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getWaiverAcceptances>>> = ({ signal }) => getWaiverAcceptances({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getWaiverAcceptances>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetWaiverAcceptancesQueryResult = NonNullable<Awaited<ReturnType<typeof getWaiverAcceptances>>>
+export type GetWaiverAcceptancesQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary List all waiver acceptance records (admin only)
+ */
+
+export function useGetWaiverAcceptances<TData = Awaited<ReturnType<typeof getWaiverAcceptances>>, TError = ErrorType<ErrorEnvelope>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getWaiverAcceptances>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetWaiverAcceptancesQueryOptions(options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

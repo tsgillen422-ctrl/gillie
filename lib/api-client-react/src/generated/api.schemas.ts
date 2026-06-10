@@ -106,6 +106,20 @@ export interface WaiverAccept {
   version: string;
 }
 
+export type WaiverAcceptanceRecordUser = {
+  id: number;
+  displayName: string;
+  username: string;
+  avatarUrl?: string | null;
+};
+
+export interface WaiverAcceptanceRecord {
+  id: number;
+  version: string;
+  acceptedAt: string;
+  user: WaiverAcceptanceRecordUser;
+}
+
 export interface UserUpdate {
   displayName?: string;
   bio?: string;

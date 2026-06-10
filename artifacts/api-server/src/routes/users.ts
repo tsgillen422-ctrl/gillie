@@ -25,7 +25,7 @@ import {
   nativePushTokensTable,
   waiverAcceptancesTable,
 } from "@workspace/db";
-import { eq, ilike, or, and, count, notInArray, inArray } from "drizzle-orm";
+import { eq, ilike, or, and, count, notInArray, inArray, desc } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { createNotifications } from "../lib/notify";
 
@@ -464,6 +464,37 @@ router.get("/admins", async (req, res) => {
     admins.map(async (u) => ({ ...formatUser(u), ...(await getFollowCounts(u.id)) }))
   );
   res.json(withCounts);
+});
+
+router.get("/waiver-acceptances", async (req, res) => {
+  const uid = currentUserId(req);
+  if (!(await isAdmin(uid))) return res.status(403).json({ error: "Admin access required" });
+  const rows = await db
+    .select({
+      id: waiverAcceptancesTable.id,
+      version: waiverAcceptancesTable.version,
+      acceptedAt: waiverAcceptancesTable.acceptedAt,
+      userId: usersTable.id,
+      displayName: usersTable.displayName,
+      username: usersTable.username,
+      avatarUrl: usersTable.avatarUrl,
+    })
+    .from(waiverAcceptancesTable)
+    .innerJoin(usersTable, eq(waiverAcceptancesTable.userId, usersTable.id))
+    .orderBy(desc(waiverAcceptancesTable.acceptedAt));
+  res.json(
+    rows.map((r) => ({
+      id: r.id,
+      version: r.version,
+      acceptedAt: r.acceptedAt.toISOString(),
+      user: {
+        id: r.userId,
+        displayName: r.displayName,
+        username: r.username,
+        avatarUrl: r.avatarUrl ?? null,
+      },
+    }))
+  );
 });
 
 router.patch("/:userId/admin", async (req, res) => {

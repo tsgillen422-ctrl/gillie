@@ -111,6 +111,27 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /users/waiver-acceptances:
+    get:
+      operationId: getWaiverAcceptances
+      tags: [users]
+      summary: List all waiver acceptance records (admin only)
+      responses:
+        "200":
+          description: Waiver acceptance history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WaiverAcceptanceRecord"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /users/{userId}/admin:
     patch:
       operationId: setUserAdmin
@@ -1825,6 +1846,31 @@ components:
       properties:
         version:
           type: string
+
+    WaiverAcceptanceRecord:
+      type: object
+      required: [id, version, acceptedAt, user]
+      properties:
+        id:
+          type: integer
+        version:
+          type: string
+        acceptedAt:
+          type: string
+          format: date-time
+        user:
+          type: object
+          required: [id, displayName, username]
+          properties:
+            id:
+              type: integer
+            displayName:
+              type: string
+            username:
+              type: string
+            avatarUrl:
+              type: string
+              nullable: true
 
     UserUpdate:
       type: object

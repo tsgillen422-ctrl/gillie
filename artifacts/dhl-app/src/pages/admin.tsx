@@ -7,6 +7,7 @@ import {
   useGetAdmins,
   useSearchUsers,
   useSetUserAdmin,
+  useGetWaiverAcceptances,
   getGetAdminsQueryKey,
   getSearchUsersQueryKey,
 } from "@workspace/api-client-react";
@@ -18,11 +19,11 @@ import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
-import { ShieldCheck, ShieldAlert, Flag, Trash2, Ban, AlertTriangle, Check, Search, ShieldPlus, ShieldMinus, Crown } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Flag, Trash2, Ban, AlertTriangle, Check, Search, ShieldPlus, ShieldMinus, Crown, FileSignature } from "lucide-react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 
 const REASON_LABELS: Record<string, string> = {
   spam: "Spam",
@@ -267,9 +268,63 @@ function MembersManager({ enabled, myId }: { enabled: boolean; myId?: number }) 
   );
 }
 
+function WaiverManager({ enabled }: { enabled: boolean }) {
+  const { data: records, isLoading } = useGetWaiverAcceptances({ query: { enabled } });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        {[0, 1, 2].map((i) => <Skeleton key={i} className="h-14 w-full rounded-lg" />)}
+      </div>
+    );
+  }
+
+  if (!records || records.length === 0) {
+    return (
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon"><FileSignature /></EmptyMedia>
+          <EmptyTitle>No acceptances yet</EmptyTitle>
+          <EmptyDescription>Waiver agreements will appear here as members accept them.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+  }
+
+  return (
+    <Card className="border-border/60">
+      <CardHeader className="p-4 pb-2">
+        <h2 className="font-semibold text-sm">Waiver acceptances</h2>
+        <p className="text-xs text-muted-foreground">{records.length} record{records.length === 1 ? "" : "s"}, newest first.</p>
+      </CardHeader>
+      <CardContent className="p-4 pt-2">
+        <div className="divide-y divide-border/60">
+          {records.map((r) => (
+            <div key={r.id} className="flex items-center justify-between gap-3 py-2.5">
+              <div className="flex items-center gap-2 min-w-0">
+                <UserAvatar name={r.user.displayName} username={r.user.username} avatarUrl={r.user.avatarUrl ?? undefined} className="w-8 h-8" />
+                <div className="min-w-0">
+                  <Link href={`/profile/${r.user.id}`} className="font-medium text-sm hover:underline truncate block">
+                    {r.user.displayName}
+                  </Link>
+                  <p className="text-xs text-muted-foreground truncate">@{r.user.username}</p>
+                </div>
+              </div>
+              <div className="text-right shrink-0">
+                <Badge variant="outline" className="text-[10px] mb-0.5">v{r.version}</Badge>
+                <p className="text-[11px] text-muted-foreground">{format(new Date(r.acceptedAt), "PP p")}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function AdminPage() {
   const { data: me, isLoading: meLoading } = useGetMe();
-  const [view, setView] = React.useState<"reports" | "members">("reports");
+  const [view, setView] = React.useState<"reports" | "members" | "waivers">("reports");
   const [tab, setTab] = React.useState<"pending" | "resolved" | "dismissed" | "all">("pending");
   const statusParam = tab === "all" ? undefined : tab;
   const { data: reports, isLoading } = useGetReports(
@@ -303,14 +358,17 @@ export function AdminPage() {
       </div>
 
       <Tabs value={view} onValueChange={(v) => setView(v as any)}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="members">Members</TabsTrigger>
+          <TabsTrigger value="waivers">Waivers</TabsTrigger>
         </TabsList>
       </Tabs>
 
       {view === "members" ? (
         <MembersManager enabled={!!me?.isAdmin} myId={me?.id} />
+      ) : view === "waivers" ? (
+        <WaiverManager enabled={!!me?.isAdmin} />
       ) : (
         <>
           <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>

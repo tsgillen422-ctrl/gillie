@@ -280,6 +280,23 @@ export const GetAdminsResponse = zod.array(GetAdminsResponseItem)
 
 
 /**
+ * @summary List all waiver acceptance records (admin only)
+ */
+export const GetWaiverAcceptancesResponseItem = zod.object({
+  "id": zod.number(),
+  "version": zod.string(),
+  "acceptedAt": zod.coerce.date(),
+  "user": zod.object({
+  "id": zod.number(),
+  "displayName": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullish()
+})
+})
+export const GetWaiverAcceptancesResponse = zod.array(GetWaiverAcceptancesResponseItem)
+
+
+/**
  * @summary Grant or revoke admin access for a user (admin only)
  */
 export const SetUserAdminParams = zod.object({
