@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams, Link, useLocation } from "wouter";
-import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useReactToPost, useDeletePost, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useDeleteUser, useGetFriends, useGetFollowers, useGetFollowing, useGetCatches, useGetFavoritePins, getGetUserQueryKey, getGetGalleryQueryKey, getGetPostsQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey } from "@workspace/api-client-react";
+import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useReactToPost, useDeletePost, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useDeleteUser, useGetFriends, useGetFollowers, useGetFollowing, useGetUserFriends, useGetCatches, useGetFavoritePins, getGetUserQueryKey, getGetGalleryQueryKey, getGetPostsQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey, getGetUserFriendsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -321,6 +321,8 @@ export function ProfilePage() {
 
   const showFollowers = (otherUser as any)?.showFollowers;
   const canViewFollows = isSelf || showFollowers !== false;
+  const showFriendsSetting = (otherUser as any)?.showFriends;
+  const canViewFriends = isSelf || showFriendsSetting !== false;
 
   const { data: posts, isLoading: loadingPosts } = useGetPosts({});
   const { data: pins, isLoading: loadingPins } = useGetPins(
@@ -339,6 +341,8 @@ export function ProfilePage() {
   const { data: favoritePins } = useGetFavoritePins({ query: { enabled: isSelf } });
   const followersQuery = useGetFollowers(id, { query: { enabled: !!id && canViewFollows } });
   const followingQuery = useGetFollowing(id, { query: { enabled: !!id && canViewFollows } });
+  const profileFriendsQuery = useGetUserFriends(id, { query: { enabled: !!id && canViewFriends } });
+  const profileFriends = profileFriendsQuery.data;
 
   const queryClient = useQueryClient();
   const reactPost = useReactToPost();
@@ -455,9 +459,10 @@ export function ProfilePage() {
     queryClient.invalidateQueries({ queryKey: getGetBlockedUsersQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetFollowersQueryKey(id) });
     queryClient.invalidateQueries({ queryKey: getGetFollowingQueryKey(id) });
+    queryClient.invalidateQueries({ queryKey: getGetUserFriendsQueryKey(id) });
   };
 
-  const [followList, setFollowList] = React.useState<"followers" | "following" | null>(null);
+  const [followList, setFollowList] = React.useState<"followers" | "following" | "friends" | null>(null);
   const [photoView, setPhotoView] = React.useState<{ src: string; alt: string } | null>(null);
   const friendStatus = (otherUser as any)?.friendStatus as string | undefined;
   const isFriend = friendStatus ? friendStatus === "accepted" : friends?.some((f) => f.id === id);
@@ -799,6 +804,45 @@ export function ProfilePage() {
               </div>
             )}
 
+            {/* Friends */}
+            {canViewFriends ? (
+              <div className={`${CARD} p-4`}>
+                <SectionTitle
+                  icon={Users}
+                  action={
+                    (profileFriends?.length ?? 0) > 9 ? (
+                      <button type="button" onClick={() => setFollowList("friends")} className="text-xs font-semibold text-primary flex items-center gap-0.5 hover:opacity-70">
+                        See all <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    ) : undefined
+                  }
+                >
+                  Friends{(profileFriends?.length ?? 0) > 0 ? ` · ${profileFriends!.length}` : ""}
+                </SectionTitle>
+                {profileFriends && profileFriends.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2.5">
+                    {profileFriends.slice(0, 9).map((f) => (
+                      <Link key={f.id} href={`/profile/${f.id}`} className="flex flex-col items-center gap-1.5">
+                        <UserAvatar name={f.displayName} username={f.username} avatarUrl={f.avatarUrl ?? undefined} className="w-16 h-16" />
+                        <span className="block w-full text-[11px] font-medium text-center leading-tight truncate">{f.displayName}</span>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-2">
+                    {isSelf ? "Find people you know on the lake to build your crew." : "No friends to show yet."}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className={`${CARD} p-4`}>
+                <SectionTitle icon={Users}>Friends</SectionTitle>
+                <p className="text-sm text-muted-foreground py-2 flex items-center gap-2">
+                  <Lock className="w-4 h-4" /> This captain keeps their friends list private.
+                </p>
+              </div>
+            )}
+
             <WaveDivider />
 
             {/* Gallery preview */}
@@ -1109,12 +1153,13 @@ function FollowListDialog({
   onOpenChange,
 }: {
   userId: number;
-  mode: "followers" | "following" | null;
+  mode: "followers" | "following" | "friends" | null;
   onOpenChange: (open: boolean) => void;
 }) {
   const followers = useGetFollowers(userId, { query: { enabled: mode === "followers" } });
   const following = useGetFollowing(userId, { query: { enabled: mode === "following" } });
-  const active = mode === "followers" ? followers : following;
+  const friends = useGetUserFriends(userId, { query: { enabled: mode === "friends" } });
+  const active = mode === "followers" ? followers : mode === "following" ? following : friends;
   const list = active.data;
   const isLoading = active.isLoading;
   const isError = active.isError;
@@ -1123,7 +1168,7 @@ function FollowListDialog({
     <Dialog open={mode !== null} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{mode === "followers" ? "Followers" : "Following"}</DialogTitle>
+          <DialogTitle>{mode === "followers" ? "Followers" : mode === "following" ? "Following" : "Friends"}</DialogTitle>
         </DialogHeader>
         <div className="max-h-[60vh] overflow-y-auto -mx-2 px-2">
           {isLoading ? (
@@ -1142,7 +1187,7 @@ function FollowListDialog({
             <p className="text-sm text-muted-foreground text-center py-8">This list is private.</p>
           ) : !list || list.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
-              {mode === "followers" ? "No followers yet." : "Not following anyone yet."}
+              {mode === "followers" ? "No followers yet." : mode === "following" ? "Not following anyone yet." : "No friends yet."}
             </p>
           ) : (
             <div className="space-y-1 py-1">

@@ -1447,6 +1447,83 @@ export function useGetFollowing<TData = Awaited<ReturnType<typeof getFollowing>>
 
 
 
+export const getGetUserFriendsUrl = (userId: number,) => {
+
+
+
+
+  return `/api/friends/${userId}/friends`
+}
+
+/**
+ * @summary Get a user's accepted friends list
+ */
+export const getUserFriends = async (userId: number, options?: RequestInit): Promise<User[]> => {
+
+  return customFetch<User[]>(getGetUserFriendsUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetUserFriendsQueryKey = (userId: number,) => {
+    return [
+    `/api/friends/${userId}/friends`
+    ] as const;
+    }
+
+
+export const getGetUserFriendsQueryOptions = <TData = Awaited<ReturnType<typeof getUserFriends>>, TError = ErrorType<void>>(userId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserFriends>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetUserFriendsQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUserFriends>>> = ({ signal }) => getUserFriends(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(userId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUserFriends>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetUserFriendsQueryResult = NonNullable<Awaited<ReturnType<typeof getUserFriends>>>
+export type GetUserFriendsQueryError = ErrorType<void>
+
+
+/**
+ * @summary Get a user's accepted friends list
+ */
+
+export function useGetUserFriends<TData = Awaited<ReturnType<typeof getUserFriends>>, TError = ErrorType<void>>(
+ userId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserFriends>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetUserFriendsQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getGetMutualFriendsUrl = (userId: number,) => {
 
 

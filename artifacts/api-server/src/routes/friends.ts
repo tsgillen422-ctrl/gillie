@@ -195,6 +195,45 @@ router.get("/:userId/followers", async (req, res) => {
   res.json(await Promise.all(users.map(formatUserWithCounts)));
 });
 
+router.get("/:userId/friends", async (req, res) => {
+  const targetId = parseInt(req.params.userId);
+  if (Number.isNaN(targetId)) return res.status(400).json({ error: "Invalid user id" });
+  const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
+  if (!target) return res.status(404).json({ error: "User not found" });
+  if (targetId !== currentUserId(req)) {
+    const blocked = await db.query.blocksTable.findFirst({
+      where: or(
+        and(eq(blocksTable.blockerId, currentUserId(req)), eq(blocksTable.blockedId, targetId)),
+        and(eq(blocksTable.blockerId, targetId), eq(blocksTable.blockedId, currentUserId(req)))
+      ),
+    });
+    if (blocked) return res.status(403).json({ error: "This user has hidden their friends" });
+    if (!target.showFriends) {
+      return res.status(403).json({ error: "This user has hidden their friends" });
+    }
+  }
+  const accepted = await db.query.friendRequestsTable.findMany({
+    where: and(
+      or(
+        eq(friendRequestsTable.followerId, targetId),
+        eq(friendRequestsTable.followeeId, targetId)
+      ),
+      eq(friendRequestsTable.status, "accepted")
+    ),
+  });
+  const blockedIds = await getBlockedUserIds(currentUserId(req));
+  const friendIds = [
+    ...new Set(
+      accepted
+        .map((r) => (r.followerId === targetId ? r.followeeId : r.followerId))
+        .filter((id) => id !== targetId && !blockedIds.includes(id))
+    ),
+  ];
+  if (!friendIds.length) return res.json([]);
+  const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, friendIds) });
+  res.json(await Promise.all(users.map(formatUserWithCounts)));
+});
+
 router.get("/:userId/mutual", async (req, res) => {
   const targetId = parseInt(req.params.userId);
   if (Number.isNaN(targetId)) return res.status(400).json({ error: "Invalid user id" });

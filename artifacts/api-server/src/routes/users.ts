@@ -264,6 +264,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     shareLocation: u.shareLocation,
     requireFollowApproval: u.requireFollowApproval,
     showFollowers: u.showFollowers,
+    showFriends: u.showFriends,
     isAdmin: u.isAdmin,
     isSuspended: u.isSuspended,
     warningCount: u.warningCount,
@@ -403,6 +404,12 @@ router.patch("/me", async (req, res) => {
       return res.status(400).json({ error: "showFollowers must be a boolean" });
     }
     updates.showFollowers = req.body.showFollowers;
+  }
+  if (req.body.showFriends !== undefined) {
+    if (typeof req.body.showFriends !== "boolean") {
+      return res.status(400).json({ error: "showFriends must be a boolean" });
+    }
+    updates.showFriends = req.body.showFriends;
   }
   const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, uid)).returning();
   res.json(formatUser(updated));

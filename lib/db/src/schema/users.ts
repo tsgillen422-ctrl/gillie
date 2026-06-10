@@ -32,6 +32,7 @@ export const usersTable = pgTable("users", {
   shareLocation: boolean("share_location").notNull().default(true),
   requireFollowApproval: boolean("require_follow_approval").notNull().default(false),
   showFollowers: boolean("show_followers").notNull().default(true),
+  showFriends: boolean("show_friends").notNull().default(true),
   followerCount: serial("follower_count"),
   followingCount: serial("following_count"),
   isAdmin: boolean("is_admin").notNull().default(false),

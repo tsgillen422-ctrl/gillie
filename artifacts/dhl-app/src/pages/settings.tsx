@@ -112,6 +112,7 @@ export function SettingsPage() {
   const [shareLocation, setShareLocation] = React.useState(true);
   const [requireFollowApproval, setRequireFollowApproval] = React.useState(false);
   const [showFollowers, setShowFollowers] = React.useState(true);
+  const [showFriends, setShowFriends] = React.useState(true);
   const [avatarUrl, setAvatarUrl] = React.useState<string | undefined>(undefined);
   const [coverUrl, setCoverUrl] = React.useState<string | undefined>(undefined);
   const [cropState, setCropState] = React.useState<{ kind: "avatar" | "cover"; fileName: string; src: string } | null>(null);
@@ -149,6 +150,7 @@ export function SettingsPage() {
       setShareLocation(me.shareLocation ?? true);
       setRequireFollowApproval((me as any).requireFollowApproval ?? false);
       setShowFollowers((me as any).showFollowers ?? true);
+      setShowFriends((me as any).showFriends ?? true);
       setAvatarUrl(me.avatarUrl ?? undefined);
       setCoverUrl(me.coverUrl ?? undefined);
     }
@@ -286,6 +288,24 @@ export function SettingsPage() {
     });
   };
 
+  const handleToggleShowFriends = (checked: boolean) => {
+    setShowFriends(checked);
+    updateMe.mutate({ data: { showFriends: checked } }, {
+      onSuccess: () => {
+        toast({
+          title: checked ? "Friends List Visible" : "Friends List Hidden",
+          description: checked
+            ? "Others can see your friends list on your profile."
+            : "Only you can see your friends list.",
+        });
+      },
+      onError: () => {
+        setShowFriends(!checked);
+        toast({ title: "Error", description: "Failed to update setting.", variant: "destructive" });
+      },
+    });
+  };
+
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
 
   return (
@@ -352,6 +372,24 @@ export function SettingsPage() {
                 </div>
               </div>
               <Switch checked={showFollowers} onCheckedChange={handleToggleShowFollowers} className="data-[state=checked]:bg-primary" />
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Friends List Visibility */}
+        <Card className="border-border shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-full ${showFriends ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                  {showFriends ? <Users className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Show Friends List</CardTitle>
+                  <CardDescription>Let others see your friends on your profile</CardDescription>
+                </div>
+              </div>
+              <Switch checked={showFriends} onCheckedChange={handleToggleShowFriends} className="data-[state=checked]:bg-primary" />
             </div>
           </CardHeader>
         </Card>

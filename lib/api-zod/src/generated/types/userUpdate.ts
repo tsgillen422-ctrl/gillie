@@ -35,4 +35,5 @@ export interface UserUpdate {
   shareLocation?: boolean;
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
+  showFriends?: boolean;
 }

@@ -55,6 +55,7 @@ export interface User {
   shareLocation?: boolean;
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
+  showFriends?: boolean;
   isAdmin?: boolean;
   isSuspended?: boolean;
   warningCount?: number;

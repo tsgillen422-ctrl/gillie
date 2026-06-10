@@ -367,6 +367,29 @@ paths:
         "403":
           description: Following list is hidden
 
+  /friends/{userId}/friends:
+    get:
+      operationId: getUserFriends
+      tags: [friends]
+      summary: Get a user's accepted friends list
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of the user's friends
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "403":
+          description: Friends list is hidden
+
   /friends/{userId}/mutual:
     get:
       operationId: getMutualFriends
@@ -1814,6 +1837,8 @@ components:
           type: boolean
         showFollowers:
           type: boolean
+        showFriends:
+          type: boolean
         isAdmin:
           type: boolean
         isSuspended:
@@ -1918,6 +1943,8 @@ components:
         requireFollowApproval:
           type: boolean
         showFollowers:
+          type: boolean
+        showFriends:
           type: boolean
 
     LocationUpdate:
