@@ -48,3 +48,57 @@ export function createPinIndex(): Supercluster {
     maxZoom: PIN_CLUSTER_MAXZOOM,
   });
 }
+
+// --- Same-boat (rafted crew) grouping -------------------------------------
+// Friends whose *live* GPS fixes are within this many meters of each other are
+// treated as sharing one boat (same hull / rafted together) and drawn as a
+// single "crew" marker. This is real-world distance (not screen pixels), so a
+// crew stays merged at every zoom level — unlike the supercluster grouping
+// above, which splits apart as you zoom in.
+export const SAME_BOAT_METERS = 25;
+
+// Great-circle distance between two lng/lat points, in meters.
+export function haversineMeters(aLng: number, aLat: number, bLng: number, bLat: number): number {
+  const R = 6371000; // Earth radius (m)
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const lat1 = toRad(aLat);
+  const lat2 = toRad(bLat);
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+// Single-linkage proximity grouping (union-find): any two items within `meters`
+// of each other end up in the same group, transitively. Returns arrays of the
+// original items, group order/contents stable for a given input.
+export function groupByProximity<T>(
+  items: T[],
+  getLngLat: (item: T) => [number, number],
+  meters: number,
+): T[][] {
+  const n = items.length;
+  const parent = Array.from({ length: n }, (_, i) => i);
+  const find = (x: number): number => (parent[x] === x ? x : (parent[x] = find(parent[x])));
+  const union = (a: number, b: number) => {
+    const ra = find(a);
+    const rb = find(b);
+    if (ra !== rb) parent[ra] = rb;
+  };
+  for (let i = 0; i < n; i++) {
+    const [aLng, aLat] = getLngLat(items[i]);
+    for (let j = i + 1; j < n; j++) {
+      const [bLng, bLat] = getLngLat(items[j]);
+      if (haversineMeters(aLng, aLat, bLng, bLat) <= meters) union(i, j);
+    }
+  }
+  const groups = new Map<number, T[]>();
+  for (let i = 0; i < n; i++) {
+    const r = find(i);
+    const g = groups.get(r);
+    if (g) g.push(items[i]);
+    else groups.set(r, [items[i]]);
+  }
+  return [...groups.values()];
+}

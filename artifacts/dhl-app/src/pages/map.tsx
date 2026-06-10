@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import Supercluster from "supercluster";
@@ -10,6 +10,8 @@ import {
   isClusterHot,
   createBoatIndex,
   createPinIndex,
+  SAME_BOAT_METERS,
+  groupByProximity,
 } from "@/lib/clustering";
 import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey } from "@workspace/api-client-react";
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
@@ -254,7 +256,8 @@ type Selected =
   | { kind: "pin"; data: any }
   | { kind: "me"; data: any }
   | { kind: "place"; data: LakePlace }
-  | { kind: "boatCluster"; data: { friends: any[]; lng: number; lat: number; expansionZoom: number } }
+  | { kind: "boatCluster"; data: { friends: any[]; boatCount: number; lng: number; lat: number; expansionZoom: number } }
+  | { kind: "boatGroup"; data: { members: any[]; lng: number; lat: number } }
   | { kind: "pinCluster"; data: { pins: any[]; lng: number; lat: number; expansionZoom: number } }
   | null;
 
@@ -347,6 +350,80 @@ function buildFriendEl(opts: {
   scale.appendChild(ring2);
   scale.appendChild(wake);
   scale.appendChild(bob);
+  root.appendChild(scale);
+  return { root, scale };
+}
+
+// --- Crew (same-boat) marker element: several friends rafted on one hull ---
+// Friends whose live GPS is within SAME_BOAT_METERS share one boat. We fan their
+// photos above a single hull and tag it "N aboard". Built to the same
+// .snap-marker > .snap-scale structure as buildFriendEl so zoom-scaling and the
+// on-land styling keep working.
+function buildCrewEl(opts: {
+  color: string;
+  boatType?: string | null;
+  members: Array<{ name: string; avatarUrl?: string | null; color: string; isMe?: boolean }>;
+}): { root: HTMLDivElement; scale: HTMLDivElement } {
+  const { color, boatType, members } = opts;
+  const root = el("div", "snap-marker snap-crew-marker") as HTMLDivElement;
+  const scale = el("div", "snap-scale") as HTMLDivElement;
+  scale.style.setProperty("--boat", color);
+
+  const ring1 = el("div", "snap-ring");
+  ring1.style.borderColor = color;
+  const ring2 = el("div", "snap-ring snap-ring-delay");
+  ring2.style.borderColor = color;
+  const wake = el("div", "snap-wake");
+
+  const bob = el("div", "snap-bob");
+
+  // boat hull, rocking on the water
+  const boat = el("div", "snap-boat");
+  boat.style.color = color;
+  boat.innerHTML = boatSvgFor(boatType); // static markup, no user data
+  bob.appendChild(boat);
+
+  // fanned crew photos sitting above the hull like passengers at the helm
+  const crew = el("div", "snap-crew");
+  for (const m of members.slice(0, 3)) {
+    const photo = el("div", `snap-photo snap-photo-mini${m.isMe ? " is-me" : ""}`);
+    photo.style.borderColor = m.color || color;
+    const resolved = resolveAvatarUrl(m.avatarUrl);
+    const showInitials = () => {
+      const initials = el("div", "snap-initials");
+      initials.style.background = m.color || color;
+      initials.textContent = initialsOf(m.name);
+      photo.appendChild(initials);
+    };
+    if (resolved) {
+      const img = el("img") as HTMLImageElement;
+      img.src = resolved;
+      img.alt = "";
+      img.onerror = () => {
+        img.remove();
+        if (!photo.querySelector(".snap-initials")) showInitials();
+      };
+      photo.appendChild(img);
+    } else {
+      showInitials();
+    }
+    crew.appendChild(photo);
+  }
+  if (members.length > 3) {
+    const more = el("div", "snap-crew-more");
+    more.textContent = "+" + (members.length - 3);
+    crew.appendChild(more);
+  }
+  bob.appendChild(crew);
+
+  const label = el("div", "snap-crew-label");
+  label.textContent = `${members.length} aboard`;
+
+  scale.appendChild(ring1);
+  scale.appendChild(ring2);
+  scale.appendChild(wake);
+  scale.appendChild(bob);
+  scale.appendChild(label);
   root.appendChild(scale);
   return { root, scale };
 }
@@ -475,6 +552,9 @@ export function MapPage() {
   // Latest friend record per userId, so a marker's click handler always opens the
   // freshest profile data even after the underlying data refreshes.
   const friendDataRef = useRef<Map<number, any>>(new Map());
+  // Latest crew rosters keyed by repId, refreshed every poll so a crew's tap
+  // sheet shows current member data even when the roster (sig) hasn't changed.
+  const crewDataRef = useRef<Map<number, any[]>>(new Map());
   // Transient boat-cluster bubbles (rebuilt on every view change).
   const boatClusterMarkers = useRef<maplibregl.Marker[]>([]);
   // In-flight position tweens per boat (rAF ids), so we can cancel/replace them.
@@ -821,7 +901,7 @@ export function MapPage() {
 
     const index = boatIndex.current;
     // userId -> target position/data for boats that should render individually now.
-    const target = new Map<number, { lng: number; lat: number; friend: any }>();
+    const target = new Map<number, { lng: number; lat: number; group: any }>();
 
     if (index) {
       const b = map.getBounds();
@@ -845,9 +925,9 @@ export function MapPage() {
             const expZoom = Math.min(index.getClusterExpansionZoom(c.properties.cluster_id), 18);
             const leaves = index.getLeaves(c.properties.cluster_id, Infinity) as any[];
             const groupFriends = leaves
-              .map((l) => friendDataRef.current.get(l.properties.userId) ?? l.properties.friend)
+              .flatMap((l) => ((l.properties.members as any[]) ?? [l.properties.friend]))
               .filter(Boolean);
-            setSelected({ kind: "boatCluster", data: { friends: groupFriends, lng, lat, expansionZoom: expZoom } });
+            setSelected({ kind: "boatCluster", data: { friends: groupFriends, boatCount: leaves.length, lng, lat, expansionZoom: expZoom } });
           });
           const marker = new maplibregl.Marker({ element: root, anchor: "center" })
             .setLngLat([lng, lat])
@@ -855,8 +935,8 @@ export function MapPage() {
           boatClusterMarkers.current.push(marker);
           scaleEls.current.add(scale);
         } else {
-          const f = c.properties.friend;
-          target.set(f.userId, { lng, lat, friend: f });
+          const g = c.properties.group;
+          target.set(g.repId, { lng, lat, group: g });
         }
       });
     }
@@ -872,32 +952,77 @@ export function MapPage() {
         if (tw) cancelAnimationFrame(tw);
         boatTweens.current.delete(id);
         friendDataRef.current.delete(id);
+        crewDataRef.current.delete(id);
         marker.remove();
         pool.delete(id);
       }
     }
-    // Create newcomers, glide existing boats to their fresh position.
+    // Create newcomers, glide existing boats to their fresh position. Markers
+    // carry a membership signature; if a crew's roster changes between polls
+    // (someone joins/leaves the boat) we rebuild the element so faces stay right.
     for (const [id, info] of target) {
-      friendDataRef.current.set(id, info.friend);
+      const g = info.group;
       let marker = pool.get(id);
+
+      // keep the crew roster fresh so the tap sheet shows current member data
+      // even on polls where the roster (sig) is unchanged.
+      if (g.isCrew) crewDataRef.current.set(id, g.members);
+      else crewDataRef.current.delete(id);
+
+      if (marker && marker.getElement().dataset.sig !== g.sig) {
+        const prevScale = marker.getElement().querySelector(".snap-scale") as HTMLDivElement | null;
+        if (prevScale) scaleEls.current.delete(prevScale);
+        const tw = boatTweens.current.get(id);
+        if (tw) cancelAnimationFrame(tw);
+        boatTweens.current.delete(id);
+        marker.remove();
+        pool.delete(id);
+        marker = undefined;
+      }
+
       if (!marker) {
-        const friend = info.friend;
-        const color = friend.boatColor || "#0ea5e9";
-        const { root, scale } = buildFriendEl({
-          color,
-          name: friend.displayName || friend.username || "Friend",
-          avatarUrl: friend.avatarUrl,
-          online: friend.isOnline,
-          boatType: friend.boatType,
-          boatNeon: friend.boatNeon,
-          boatFlag: friend.boatFlag,
-          boatAccent: friend.boatAccent,
-        });
+        const lead = g.members[0];
+        const color = lead.boatColor || "#0ea5e9";
+        let root: HTMLDivElement;
+        let scale: HTMLDivElement;
+        if (g.isCrew) {
+          const built = buildCrewEl({
+            color,
+            boatType: lead.boatType,
+            members: g.members.map((m: any) => ({
+              name: m.displayName || m.username || "Friend",
+              avatarUrl: m.avatarUrl,
+              color: m.boatColor || color,
+              isMe: m.isMe,
+            })),
+          });
+          root = built.root;
+          scale = built.scale;
+          root.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            setSelected({ kind: "boatGroup", data: { members: crewDataRef.current.get(id) ?? g.members, lng: info.lng, lat: info.lat } });
+          });
+        } else {
+          friendDataRef.current.set(id, lead);
+          const built = buildFriendEl({
+            color,
+            name: lead.displayName || lead.username || "Friend",
+            avatarUrl: lead.avatarUrl,
+            online: lead.isOnline,
+            boatType: lead.boatType,
+            boatNeon: lead.boatNeon,
+            boatFlag: lead.boatFlag,
+            boatAccent: lead.boatAccent,
+          });
+          root = built.root;
+          scale = built.scale;
+          root.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            setSelected({ kind: "friend", data: friendDataRef.current.get(id) ?? lead });
+          });
+        }
         root.dataset.userId = String(id);
-        root.addEventListener("click", (ev) => {
-          ev.stopPropagation();
-          setSelected({ kind: "friend", data: friendDataRef.current.get(id) ?? info.friend });
-        });
+        root.dataset.sig = g.sig;
         marker = new maplibregl.Marker({ element: root, anchor: "bottom", offset: [0, 13] })
           .setLngLat([info.lng, info.lat])
           .addTo(map);
@@ -912,17 +1037,88 @@ export function MapPage() {
     updateLandStates();
   }, [styleReady, applyZoomScale, updateLandStates, animateBoatTo, heatmapOn]);
 
-  // Build the boat supercluster index whenever the friend set changes, then render.
+  // --- Same-boat (rafted crew) grouping ---
+  // Before clustering, fold friends (and me) whose live GPS fixes are within
+  // SAME_BOAT_METERS into a single "crew". Only fresh/online fixes are grouped
+  // so stale "ghost" boats don't get rafted in; stale boats stay solo.
+  const boatGroups = useMemo(() => {
+    const isFresh = (m: any) =>
+      m.isMe ||
+      (m.isOnline && (!m.lastSeen || Date.now() - Date.parse(m.lastSeen) < 5 * 60 * 1000));
+
+    const list: any[] = (friends ?? [])
+      .filter((f: any) => f.lat != null && f.lng != null)
+      .map((f: any) => ({ ...f }));
+
+    // include myself so I can share a boat with friends
+    if (me?.shareLocation && me?.currentLat != null && me?.currentLng != null) {
+      list.push({
+        userId: me.id,
+        displayName: me.displayName,
+        username: me.username,
+        avatarUrl: me.avatarUrl,
+        boatName: me.boatName,
+        boatColor: me.boatColor,
+        boatType: me.boatType,
+        boatNeon: me.boatNeon,
+        boatFlag: me.boatFlag,
+        boatAccent: me.boatAccent,
+        isOnline: me.isOnline,
+        lastSeen: me.lastSeen,
+        lat: me.currentLat,
+        lng: me.currentLng,
+        isMe: true,
+      });
+    }
+
+    const groupable = list.filter(isFresh);
+    const solo = list.filter((m) => !isFresh(m));
+    const rawGroups: any[][] = [
+      ...groupByProximity(groupable, (m) => [m.lng, m.lat], SAME_BOAT_METERS),
+      ...solo.map((m) => [m]),
+    ];
+
+    return rawGroups.map((members) => {
+      const lng = members.reduce((s, m) => s + m.lng, 0) / members.length;
+      const lat = members.reduce((s, m) => s + m.lat, 0) / members.length;
+      const sorted = [...members].sort((a, b) => a.userId - b.userId);
+      return {
+        repId: sorted[0].userId,
+        members: sorted,
+        lng,
+        lat,
+        isCrew: members.length > 1,
+        sig: sorted.map((m) => m.userId).join("-"),
+      };
+    });
+  }, [friends, me]);
+
+  // Whether I'm currently rafted into a multi-person crew, so the standalone
+  // "me" marker can step aside and let the crew marker show my face instead.
+  const meInCrew = useMemo(
+    () => boatGroups.some((g) => g.isCrew && g.members.some((m: any) => m.isMe)),
+    [boatGroups],
+  );
+
+  // Build the boat supercluster index whenever the grouped set changes, then
+  // render. A solo "me" group is excluded here — the dedicated me-marker effect
+  // draws it — but a crew that includes me IS indexed so my face shows aboard.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !styleReady) return;
 
-    const points = (friends ?? [])
-      .filter((f: any) => f.lat != null && f.lng != null)
-      .map((f: any) => ({
+    const points = boatGroups
+      .filter((g) => !(g.members.length === 1 && g.members[0].isMe))
+      .map((g) => ({
         type: "Feature" as const,
-        properties: { friend: f, userId: f.userId },
-        geometry: { type: "Point" as const, coordinates: [f.lng, f.lat] },
+        properties: {
+          group: g,
+          members: g.members,
+          userId: g.repId,
+          isCrew: g.isCrew,
+          friend: g.members[0],
+        },
+        geometry: { type: "Point" as const, coordinates: [g.lng, g.lat] },
       }));
 
     const index = createBoatIndex();
@@ -930,7 +1126,7 @@ export function MapPage() {
     boatIndex.current = index;
 
     renderBoats();
-  }, [friends, styleReady, renderBoats]);
+  }, [boatGroups, styleReady, renderBoats]);
 
   // --- Render pin markers (with clustering + tiering) ---
   // Re-runs on every map move/zoom so clusters re-form for the current view.
@@ -1210,7 +1406,9 @@ export function MapPage() {
       meMarker.current = null;
     }
 
-    if (me?.shareLocation && me?.currentLat != null && me?.currentLng != null) {
+    // When I'm rafted into a crew, the crew marker shows my face — skip the
+    // standalone me-marker so I'm not drawn twice.
+    if (!meInCrew && me?.shareLocation && me?.currentLat != null && me?.currentLng != null) {
       const color = me.boatColor || "#0284c7";
       const { root, scale } = buildFriendEl({
         color,
@@ -1235,7 +1433,7 @@ export function MapPage() {
       applyZoomScale(map.getZoom());
       updateLandStates();
     }
-  }, [me, styleReady, applyZoomScale, updateLandStates]);
+  }, [me, meInCrew, styleReady, applyZoomScale, updateLandStates]);
 
   const zoomBy = (delta: number) => {
     const map = mapRef.current;
@@ -1914,13 +2112,13 @@ function DetailCard({
   const { data: freshPins } = useGetPins({});
 
   if (selected.kind === "boatCluster") {
-    const { friends, lng, lat, expansionZoom } = selected.data;
+    const { friends, boatCount, lng, lat, expansionZoom } = selected.data;
     return (
       <div className="mx-auto w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
         <div className="flex items-center gap-3 p-4">
           <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-2xl shrink-0">🚤</div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-lg leading-tight truncate">{friends.length} boats here</h3>
+            <h3 className="font-bold text-lg leading-tight truncate">{boatCount} boats here</h3>
             <p className="text-xs text-muted-foreground">Tap someone to see their boat</p>
           </div>
           <Button size="icon" variant="ghost" className="h-8 w-8 -mr-1 -mt-1" onClick={onClose}>
@@ -1949,6 +2147,45 @@ function DetailCard({
           <Button variant="outline" className="flex-1" onClick={() => onZoom?.(lng, lat, expansionZoom)}>
             <Search className="w-4 h-4 mr-2" /> Zoom in to spread out
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (selected.kind === "boatGroup") {
+    const { members } = selected.data;
+    return (
+      <div className="mx-auto w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
+        <div className="flex items-center gap-3 p-4">
+          <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-2xl shrink-0">🚤</div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-lg leading-tight truncate">{members.length} aboard</h3>
+            <p className="text-xs text-muted-foreground">On one boat together</p>
+          </div>
+          <Button size="icon" variant="ghost" className="h-8 w-8 -mr-1 -mt-1" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <div className="max-h-64 overflow-y-auto px-2 pb-3">
+          {members.map((m) => (
+            <button
+              key={m.userId}
+              onClick={() => onSelect?.(m.isMe ? { kind: "me", data: me } : { kind: "friend", data: m })}
+              className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted text-left transition-colors"
+            >
+              <UserAvatar name={m.displayName} username={m.username} avatarUrl={m.avatarUrl} online={m.isOnline} className="w-11 h-11" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold truncate">
+                  {m.displayName || m.username || "Friend"}
+                  {m.isMe && <span className="text-muted-foreground font-normal"> (You)</span>}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {m.boatName ? `🚤 ${m.boatName}` : m.isOnline ? "Online now" : "On the lake"}
+                </p>
+              </div>
+              {m.isOnline && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />}
+            </button>
+          ))}
         </div>
       </div>
     );
@@ -2333,6 +2570,57 @@ const MAP_CSS = `
     0% { transform: scale(0.5); opacity: 0.6; }
     100% { transform: scale(2.6); opacity: 0; }
   }
+
+  /* ---- Crew (same-boat) marker: fanned photos sitting above one shared hull ---- */
+  .snap-crew {
+    position: absolute;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    z-index: 4;
+  }
+  /* override the single-captain absolute photo so faces sit side-by-side */
+  .snap-photo-mini {
+    position: relative;
+    left: auto; bottom: auto;
+    transform: none;
+    width: 30px; height: 30px;
+    border-width: 2px;
+    margin-left: -10px;
+  }
+  .snap-photo-mini:first-child { margin-left: 0; }
+  .snap-photo-mini.is-me {
+    box-shadow: 0 4px 9px rgba(0,0,0,0.32), 0 0 0 3px #38bdf8;
+  }
+  .snap-crew-more {
+    margin-left: -8px;
+    min-width: 26px; height: 28px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: #0f2942;
+    color: #fff;
+    font-size: 12px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #fff;
+    box-shadow: 0 4px 9px rgba(0,0,0,0.3);
+  }
+  .snap-crew-label {
+    position: absolute;
+    left: 50%; bottom: 2px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 11px; font-weight: 800;
+    color: #fff;
+    background: rgba(8,25,40,0.85);
+    padding: 1px 8px;
+    border-radius: 999px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    z-index: 5;
+  }
+  .snap-marker.on-land .snap-crew { bottom: 0; }
 
   /* ---- On land: hide the boat + all water effects, show only the profile photo ---- */
   .snap-marker.on-land .snap-boat,
