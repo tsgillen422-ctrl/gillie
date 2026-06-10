@@ -1,0 +1,190 @@
+Do NOT treat everything as a standard map marker.
+
+Instead, implement a 3-layer map system:
+
+Layer 1: LIVE USERS (boats)
+
+Real-time moving users on the lake.
+
+Rules:
+
+* Represent users as SMALL boat icons with minimal avatar (NOT full profile image at default zoom)
+* No usernames at low/mid zoom
+* Movement updates smoothly (animated transitions)
+* Add optional faint “wake trail” for movement
+* Must support clustering at zoomed-out levels
+
+Behavior by zoom:
+
+* Zoomed out: dots only or clusters
+* Mid zoom: small boat + avatar circle
+* Close zoom: full avatar + name + boat style
+
+⸻
+
+Layer 2: COMMUNITY PINS (user posts)
+
+User-generated map content.
+
+Pin types:
+
+* fishing
+* meetup
+* party/social
+* hazard/warning
+
+Rules:
+
+* Use icon-first design (NOT images)
+* No text labels visible unless selected or zoomed in
+* Pins must NEVER dominate boat visibility
+* Pins must support clustering by type and location
+
+Pin behavior:
+
+* New pins slightly glow or pulse
+* Popular pins can have subtle emphasis (not size inflation)
+* Old pins fade over time or reduce visual intensity
+
+⸻
+
+Layer 3: LANDMARKS (static map data)
+
+Permanent lake features.
+
+Examples:
+
+* marinas
+* boat ramps
+* bridges
+* restricted/no-wake zones
+
+Rules:
+
+* low visual priority
+* desaturated colors
+* minimal labels
+* only show full labels at mid/close zoom
+
+⸻
+
+🧩 CLUSTERING SYSTEM (REQUIRED)
+
+Implement clustering for BOTH:
+
+* boats (users)
+* pins (posts)
+
+Rules:
+
+* Small groups (1–5): show individually
+* Medium groups (6–20): cluster bubble
+* Large groups (20+): aggregated cluster with count
+
+Cluster labels:
+
+* “8 boats here”
+* “3 fishing spots”
+* “12 activity points”
+
+Clusters must expand smoothly on zoom.
+
+⸻
+
+🔍 ZOOM-BASED VISUAL RULES
+
+Zoom Level 1 (Entire lake view)
+
+* Only clusters visible
+* No names
+* No avatars
+* Only major landmarks
+
+Zoom Level 2 (regional view)
+
+* Boats appear as small icons
+* Pins appear as icons
+* Landmarks lightly labeled
+
+Zoom Level 3 (close view)
+
+* Full avatars shown
+* Pin labels appear
+* Landmarks fully readable
+
+⸻
+
+👥 LIVE USER DESIGN RULES
+
+* Default icon = small boat + optional color ring
+* Avatar image is OPTIONAL and only shown at close zoom
+* Must support smooth position updates
+* Prevent visual overlap using clustering
+
+⸻
+
+📍 PIN DESIGN RULES
+
+* One simple icon per category
+* No text directly on map pins at default state
+* Use color coding:
+    * blue = fishing
+    * orange = social/meetup
+    * red = hazard
+    * green = general meetup/anchor
+
+Pin states:
+
+* new → subtle pulse
+* normal → static icon
+* trending → slight glow (NOT size increase)
+
+⸻
+
+🪧 LANDMARK DESIGN RULES
+
+* Simple icons only
+* Low saturation colors
+* Always visually secondary to boats and pins
+* Only expand labels on zoom or tap
+
+⸻
+
+⚡ PERFORMANCE REQUIREMENTS
+
+* Must handle 500–5000 map objects smoothly
+* Use clustering + virtualization
+* Avoid DOM overload (use canvas or map-native rendering where possible)
+* Smooth animation for movement updates
+* Debounce real-time updates if needed
+
+⸻
+
+🎯 INTERACTION RULES
+
+* Tap boat → mini profile card
+* Tap pin → preview card (expandable)
+* Long press map → create pin menu
+* Tap cluster → zoom into area or expand cluster
+
+⸻
+
+🌊 OPTIONAL (HIGH VALUE FEATURE)
+
+Add a toggle mode:
+
+“Activity Mode”
+
+* highlights dense boat areas
+* subtly emphasizes hotspots
+* clusters glow slightly based on activity
+
+⸻
+
+🧱 FINAL GOAL
+
+The map should feel like:
+
+* Snapchat Map clarity (clean social layer)
+* Google Maps stability (accurate navigation)
+* A live lake community (boats + activity visible but not cluttered)
