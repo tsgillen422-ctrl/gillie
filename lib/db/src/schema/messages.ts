@@ -15,6 +15,7 @@ export const conversationParticipantsTable = pgTable("conversation_participants"
   conversationId: integer("conversation_id").notNull().references(() => conversationsTable.id),
   userId: integer("user_id").notNull().references(() => usersTable.id),
   lastReadAt: timestamp("last_read_at"),
+  muted: boolean("muted").notNull().default(false),
 });
 
 export const messagesTable = pgTable("messages", {

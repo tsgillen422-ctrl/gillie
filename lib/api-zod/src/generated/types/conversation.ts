@@ -16,5 +16,6 @@ export interface Conversation {
   participants?: User[];
   lastMessage?: Message;
   unreadCount?: number;
+  muted?: boolean;
   createdAt: string;
 }

@@ -1430,6 +1430,7 @@ export const GetConversationsResponseItem = zod.object({
   "createdAt": zod.string()
 }).optional(),
   "unreadCount": zod.number().optional(),
+  "muted": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 export const GetConversationsResponse = zod.array(GetConversationsResponseItem)
@@ -1551,6 +1552,18 @@ export const DeleteConversationParams = zod.object({
  */
 export const MarkConversationReadParams = zod.object({
   "conversationId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Mute or unmute notifications for a conversation
+ */
+export const MuteConversationParams = zod.object({
+  "conversationId": zod.coerce.number()
+})
+
+export const MuteConversationBody = zod.object({
+  "muted": zod.boolean()
 })
 
 

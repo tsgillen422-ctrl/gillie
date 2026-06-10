@@ -565,6 +565,27 @@ paths:
         "200":
           description: Marked as read
 
+  /messages/conversations/{conversationId}/mute:
+    post:
+      operationId: muteConversation
+      tags: [messages]
+      summary: Mute or unmute notifications for a conversation
+      parameters:
+        - name: conversationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MuteConversationInput"
+      responses:
+        "200":
+          description: Mute state updated
+
   /messages/conversations/group:
     post:
       operationId: createGroupConversation
@@ -2093,8 +2114,17 @@ components:
           $ref: "#/components/schemas/Message"
         unreadCount:
           type: integer
+        muted:
+          type: boolean
         createdAt:
           type: string
+
+    MuteConversationInput:
+      type: object
+      required: [muted]
+      properties:
+        muted:
+          type: boolean
 
     ConversationInput:
       type: object

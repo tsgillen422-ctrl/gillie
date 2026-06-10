@@ -259,7 +259,12 @@ export interface Conversation {
   participants?: User[];
   lastMessage?: Message;
   unreadCount?: number;
+  muted?: boolean;
   createdAt: string;
+}
+
+export interface MuteConversationInput {
+  muted: boolean;
 }
 
 export interface ConversationInput {

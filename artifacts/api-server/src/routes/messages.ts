@@ -132,6 +132,7 @@ router.get("/conversations", async (req, res) => {
         participants: participantUsers.filter(Boolean).map((u) => formatUser(u!)),
         lastMessage: formattedLastMessage,
         unreadCount: unreadCount.length,
+        muted: Boolean(p.muted),
         createdAt: conv.createdAt.toISOString(),
       };
     })
@@ -302,6 +303,24 @@ router.post("/conversations/:conversationId/read", async (req, res) => {
   res.json({ success: true });
 });
 
+router.post("/conversations/:conversationId/mute", async (req, res) => {
+  const conversationId = parseInt(req.params.conversationId);
+  if (!(await isParticipant(conversationId, currentUserId(req)))) {
+    return res.status(403).json({ error: "You are not a participant in this conversation" });
+  }
+  const muted = Boolean(req.body?.muted);
+  await db
+    .update(conversationParticipantsTable)
+    .set({ muted })
+    .where(
+      and(
+        eq(conversationParticipantsTable.conversationId, conversationId),
+        eq(conversationParticipantsTable.userId, currentUserId(req))
+      )
+    );
+  res.json({ muted });
+});
+
 router.post("/conversations/:conversationId", async (req, res) => {
   const conversationId = parseInt(req.params.conversationId);
   if (!(await isParticipant(conversationId, currentUserId(req)))) {
@@ -329,6 +348,7 @@ router.post("/conversations/:conversationId", async (req, res) => {
       and(
         eq(conversationParticipantsTable.conversationId, conversationId),
         ne(conversationParticipantsTable.userId, msg.senderId),
+        eq(conversationParticipantsTable.muted, false),
       ),
     );
   if (recipients.length) {

@@ -20,6 +20,7 @@ import { MapPage } from "@/pages/map";
 import { FeedPage } from "@/pages/feed";
 import { MessagesPage } from "@/pages/messages";
 import { MessageThreadPage } from "@/pages/message-thread";
+import { MessageSettingsPage } from "@/pages/message-settings";
 import { FriendsPage } from "@/pages/friends";
 import { PinsPage } from "@/pages/pins";
 import { SettingsPage } from "@/pages/settings";
@@ -178,6 +179,7 @@ function AuthedApp() {
         <Route path="/map" component={MapPage} />
         <Route path="/feed" component={FeedPage} />
         <Route path="/messages" component={MessagesPage} />
+        <Route path="/messages/:id/settings" component={MessageSettingsPage} />
         <Route path="/messages/:id" component={MessageThreadPage} />
         <Route path="/friends" component={FriendsPage} />
         <Route path="/pins" component={PinsPage} />

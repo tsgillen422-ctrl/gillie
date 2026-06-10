@@ -50,6 +50,7 @@ export * from './messageReactionCounts';
 export * from './messageReactionInput';
 export * from './messageReactionType';
 export * from './moonPhase';
+export * from './muteConversationInput';
 export * from './mutualFriends';
 export * from './nativePushTokenInput';
 export * from './nativePushUnregisterInput';

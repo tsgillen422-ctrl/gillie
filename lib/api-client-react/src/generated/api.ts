@@ -46,6 +46,7 @@ import type {
   Message,
   MessageInput,
   MessageReactionInput,
+  MuteConversationInput,
   MutualFriends,
   NativePushTokenInput,
   NativePushUnregisterInput,
@@ -2248,6 +2249,78 @@ export const useMarkConversationRead = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getMarkConversationReadMutationOptions(options));
+    }
+
+export const getMuteConversationUrl = (conversationId: number,) => {
+
+
+
+
+  return `/api/messages/conversations/${conversationId}/mute`
+}
+
+/**
+ * @summary Mute or unmute notifications for a conversation
+ */
+export const muteConversation = async (conversationId: number,
+    muteConversationInput: MuteConversationInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getMuteConversationUrl(conversationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      muteConversationInput,)
+  }
+);}
+
+
+
+
+export const getMuteConversationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof muteConversation>>, TError,{conversationId: number;data: BodyType<MuteConversationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof muteConversation>>, TError,{conversationId: number;data: BodyType<MuteConversationInput>}, TContext> => {
+
+const mutationKey = ['muteConversation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof muteConversation>>, {conversationId: number;data: BodyType<MuteConversationInput>}> = (props) => {
+          const {conversationId,data} = props ?? {};
+
+          return  muteConversation(conversationId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MuteConversationMutationResult = NonNullable<Awaited<ReturnType<typeof muteConversation>>>
+    export type MuteConversationMutationBody = BodyType<MuteConversationInput>
+    export type MuteConversationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Mute or unmute notifications for a conversation
+ */
+export const useMuteConversation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof muteConversation>>, TError,{conversationId: number;data: BodyType<MuteConversationInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof muteConversation>>,
+        TError,
+        {conversationId: number;data: BodyType<MuteConversationInput>},
+        TContext
+      > => {
+      return useMutation(getMuteConversationMutationOptions(options));
     }
 
 export const getCreateGroupConversationUrl = () => {

@@ -50,7 +50,6 @@ import {
   Sunset,
   Navigation,
   CalendarHeart,
-  Images,
   Image as ImageIcon,
   Video as VideoIcon,
   Film as GifIcon,
@@ -145,30 +144,6 @@ function LakeCompatibility({ me, other }: { me: any; other: any }) {
             </div>
           );
         })}
-      </div>
-    </div>
-  );
-}
-
-function MemoriesCarousel({ photos }: { photos: string[] }) {
-  if (!photos.length) return null;
-  return (
-    <div className={`${CARD} p-4`}>
-      <h3 className="text-sm font-semibold flex items-center gap-1.5 mb-3">
-        <span className="grid place-items-center w-6 h-6 rounded-lg bg-primary/10 text-primary">
-          <Images className="w-3.5 h-3.5" />
-        </span>
-        Shared Memories
-      </h3>
-      <div className="flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1 snap-x">
-        {photos.map((src, i) => (
-          <ClickableImage
-            key={i}
-            src={src}
-            alt="Shared memory"
-            className="h-24 w-24 shrink-0 rounded-2xl object-cover border border-card-border snap-start"
-          />
-        ))}
       </div>
     </div>
   );
@@ -529,10 +504,6 @@ export function MessageThreadPage() {
     inputRef.current?.focus();
   };
 
-  const sharedPhotos = (messages ?? [])
-    .filter((m) => m.mediaUrl && m.mediaType === "image")
-    .map((m) => mediaSrc(m.mediaUrl as string));
-
   const mutualCount = mutual?.count ?? null;
   const hasMessages = !!messages?.length;
 
@@ -546,7 +517,10 @@ export function MessageThreadPage() {
           </Button>
         </Link>
         {isGroup ? (
-          <div className="flex items-center gap-3 min-w-0">
+          <Link
+            href={`/messages/${convId}/settings`}
+            className="flex items-center gap-3 min-w-0 rounded-full -ml-1 pl-1 pr-2 py-1 hover-elevate active-elevate-2"
+          >
             <div className="w-10 h-10 rounded-full bg-primary/15 border border-border flex items-center justify-center text-primary font-semibold text-sm shrink-0">
               {(conversation?.name?.[0] || "G").toUpperCase()}
             </div>
@@ -556,10 +530,10 @@ export function MessageThreadPage() {
                 {headerSubtitle}
               </p>
             </div>
-          </div>
+          </Link>
         ) : (
           <Link
-            href={otherUserId ? `/profile/${otherUserId}` : "#"}
+            href={`/messages/${convId}/settings`}
             className="flex items-center gap-3 min-w-0 rounded-full -ml-1 pl-1 pr-2 py-1 hover-elevate active-elevate-2"
           >
             <UserAvatar
@@ -613,7 +587,6 @@ export function MessageThreadPage() {
               <div className="space-y-3 pb-1">
                 <ProfileHero other={otherUser} fallbackName={headerTitle} mutualCount={mutualCount} />
                 <LakeCompatibility me={me} other={otherUser} />
-                <MemoriesCarousel photos={sharedPhotos} />
                 <div className="flex items-center gap-3 pt-1">
                   <div className="h-px flex-1 bg-border" />
                   <span className="text-[11px] text-muted-foreground">Messages</span>
