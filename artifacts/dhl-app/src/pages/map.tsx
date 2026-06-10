@@ -13,7 +13,7 @@ import {
   SAME_BOAT_METERS,
   groupByProximity,
 } from "@/lib/clustering";
-import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey } from "@workspace/api-client-react";
+import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey, useGetDockLabels, useCreateDockLabel, useDeleteDockLabel, getGetDockLabelsQueryKey } from "@workspace/api-client-react";
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
 import { ClickableImage } from "@/components/ClickableImage";
@@ -259,6 +259,7 @@ type Selected =
   | { kind: "boatCluster"; data: { friends: any[]; boatCount: number; lng: number; lat: number; expansionZoom: number } }
   | { kind: "boatGroup"; data: { members: any[]; lng: number; lat: number } }
   | { kind: "pinCluster"; data: { pins: any[]; lng: number; lat: number; expansionZoom: number } }
+  | { kind: "dockLabel"; data: any }
   | null;
 
 const el = (tag: string, className?: string) => {
@@ -431,6 +432,39 @@ function buildCrewEl(opts: {
 // --- Lake pin (emoji pill) marker element ---
 // High-priority pins render as a large labelled pill; low-priority pins render
 // as a compact icon-only chip (details appear on tap).
+// Minimum zoom at which admin dock signs fade into view; they fade away when
+// zoomed further out so far views stay uncluttered.
+const DOCK_LABEL_MIN_ZOOM = 12;
+
+// --- Admin "dock sign" marker: a weathered-wood hanging sign that looks moored
+// to the shoreline. Combines a gentle bob, a slight hanging sway, and a wave
+// shimmer beneath; the whole element fades in on zoom (toggled by the caller). ---
+function buildDockSignEl(label: string): HTMLDivElement {
+  const root = el("div", "dock-sign") as HTMLDivElement;
+  const bob = el("div", "dock-sign-bob");
+
+  const beam = el("div", "dock-beam");
+  const hang = el("div", "dock-hang");
+  const ropeL = el("span", "dock-rope left");
+  const ropeR = el("span", "dock-rope right");
+  const board = el("div", "dock-board");
+  const text = el("span", "dock-board-text");
+  text.textContent = label;
+  board.appendChild(text);
+  for (const pos of ["tl", "tr", "bl", "br"]) board.appendChild(el("span", `dock-nail ${pos}`));
+  hang.appendChild(ropeL);
+  hang.appendChild(ropeR);
+  hang.appendChild(board);
+
+  const shimmer = el("div", "dock-shimmer");
+
+  bob.appendChild(beam);
+  bob.appendChild(hang);
+  bob.appendChild(shimmer);
+  root.appendChild(bob);
+  return root;
+}
+
 function buildPinEl(opts: {
   emoji: string;
   title: string;
@@ -533,7 +567,9 @@ export function MapPage() {
   const { data: me } = useGetMe();
   const { data: friends } = useGetFriendLocations();
   const { data: pins } = useGetPins({});
+  const { data: dockLabels } = useGetDockLabels();
   const createPin = useCreatePin();
+  const createDockLabel = useCreateDockLabel();
   const updateLocation = useUpdateMyLocation();
   const queryClient = useQueryClient();
 
@@ -562,6 +598,8 @@ export function MapPage() {
   // Supercluster index over boats (friends) for clustering + viewport culling.
   const boatIndex = useRef<Supercluster | null>(null);
   const pinMarkers = useRef<maplibregl.Marker[]>([]);
+  // Admin dock-sign markers (rebuilt when the dock-label set changes).
+  const dockLabelMarkers = useRef<maplibregl.Marker[]>([]);
   const meMarker = useRef<maplibregl.Marker | null>(null);
   const placeMarker = useRef<maplibregl.Marker | null>(null);
   // Water fill layer ids, used to detect whether a marker sits on water or land.
@@ -592,7 +630,7 @@ export function MapPage() {
   const [pinTitle, setPinTitle] = useState("");
   const [pinDesc, setPinDesc] = useState("");
   const [pinType, setPinType] = useState<PinInputType>("fishing_spot");
-  const [pinMode, setPinMode] = useState<"pin" | "landmark">("pin");
+  const [pinMode, setPinMode] = useState<"pin" | "landmark" | "dock">("pin");
   const [pinVisibility, setPinVisibility] = useState<"friends" | "public" | "community">("friends");
   const [pinStart, setPinStart] = useState("");
   const [pinEnd, setPinEnd] = useState("");
@@ -1276,6 +1314,48 @@ export function MapPage() {
     };
   }, [styleReady, renderPins, renderBoats, updateLandStates]);
 
+  // --- Admin dock signs: (re)build markers whenever the dock-label set changes ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    dockLabelMarkers.current.forEach((m) => m.remove());
+    dockLabelMarkers.current = [];
+    const faded = map.getZoom() < DOCK_LABEL_MIN_ZOOM;
+    (dockLabels ?? []).forEach((dl) => {
+      if (dl.lat == null || dl.lng == null) return;
+      const root = buildDockSignEl(dl.label);
+      if (faded) root.classList.add("is-faded");
+      root.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        setSelected({ kind: "dockLabel", data: dl });
+      });
+      const marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
+        .setLngLat([dl.lng, dl.lat])
+        .addTo(map);
+      dockLabelMarkers.current.push(marker);
+    });
+    return () => {
+      dockLabelMarkers.current.forEach((m) => m.remove());
+      dockLabelMarkers.current = [];
+    };
+  }, [dockLabels, styleReady]);
+
+  // Fade dock signs in as you zoom past the threshold, out as you zoom away.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    const onZoom = () => {
+      const faded = map.getZoom() < DOCK_LABEL_MIN_ZOOM;
+      dockLabelMarkers.current.forEach((m) =>
+        m.getElement().classList.toggle("is-faded", faded),
+      );
+    };
+    map.on("zoom", onZoom);
+    return () => {
+      map.off("zoom", onZoom);
+    };
+  }, [styleReady]);
+
   // --- Live activity heatmap ---
   // Turns the lake into a heatmap of where people are: low density reads blue
   // (quiet), rising through green (moderate) and yellow (busy) up to red
@@ -1579,6 +1659,20 @@ export function MapPage() {
     setPinSeverity("medium");
     setPinExpiresHours("24");
     setPinImageUrl(null);
+  };
+
+  const submitDockLabel = () => {
+    if (pinDialog.lat == null || pinDialog.lng == null) return;
+    createDockLabel.mutate(
+      { data: { label: pinTitle.trim() || "Dock", lat: pinDialog.lat, lng: pinDialog.lng } },
+      {
+        onSuccess: () => {
+          toast.success("Dock sign placed!");
+          closePinDialog();
+          queryClient.invalidateQueries({ queryKey: getGetDockLabelsQueryKey() });
+        },
+      },
+    );
   };
 
   const submitPin = () => {
@@ -1893,16 +1987,18 @@ export function MapPage() {
       <Dialog open={pinDialog.open} onOpenChange={(open) => !open && closePinDialog()}>
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle>{pinMode === "landmark" ? "Name a Landmark" : "Drop a Pin"}</DialogTitle>
+            <DialogTitle>{pinMode === "dock" ? "Place a Dock Sign" : pinMode === "landmark" ? "Name a Landmark" : "Drop a Pin"}</DialogTitle>
             <DialogDescription>
-              {pinMode === "landmark"
+              {pinMode === "dock"
+                ? "Add a wooden sign that labels a dock or shoreline spot for everyone."
+                : pinMode === "landmark"
                 ? "Give a place on the lake a name everyone can find."
                 : "Mark a spot on the lake for others to see."}
             </DialogDescription>
           </DialogHeader>
 
           {/* Choose what you're adding */}
-          <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted p-1">
+          <div className={`grid ${me?.isAdmin ? "grid-cols-3" : "grid-cols-2"} gap-2 rounded-xl bg-muted p-1`}>
             <button
               type="button"
               onClick={() => setPinMode("pin")}
@@ -1921,6 +2017,17 @@ export function MapPage() {
             >
               📍 Landmark
             </button>
+            {me?.isAdmin && (
+              <button
+                type="button"
+                onClick={() => setPinMode("dock")}
+                className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
+                  pinMode === "dock" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                🪧 Dock Sign
+              </button>
+            )}
           </div>
 
           <div className="grid gap-4 py-4">
@@ -1980,15 +2087,17 @@ export function MapPage() {
             )}
 
             <div className="grid gap-2">
-              <Label htmlFor="title">{pinMode === "landmark" ? "Landmark name" : "Title"}</Label>
+              <Label htmlFor="title">{pinMode === "dock" ? "Sign text" : pinMode === "landmark" ? "Landmark name" : "Title"}</Label>
               <Input
                 id="title"
-                placeholder={pinMode === "landmark" ? "e.g. Eagle Point" : "e.g. Great Bass Spot"}
+                placeholder={pinMode === "dock" ? "e.g. Sunset Marina" : pinMode === "landmark" ? "e.g. Eagle Point" : "e.g. Great Bass Spot"}
                 value={pinTitle}
                 onChange={(e) => setPinTitle(e.target.value)}
               />
             </div>
 
+            {pinMode !== "dock" && (
+            <>
             <div className="grid gap-2">
               <Label htmlFor="desc">Description (Optional)</Label>
               <Textarea id="desc" placeholder="Any tips or warnings?" value={pinDesc} onChange={(e) => setPinDesc(e.target.value)} className="resize-none" />
@@ -2059,6 +2168,8 @@ export function MapPage() {
                 </p>
               )}
             </div>
+            </>
+            )}
 
             {pinMode === "pin" && (
               <div className="grid grid-cols-2 gap-3">
@@ -2076,8 +2187,13 @@ export function MapPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={closePinDialog}>Cancel</Button>
-            <Button onClick={submitPin} disabled={!pinTitle || createPin.isPending}>
-              {pinNeedsApproval
+            <Button
+              onClick={pinMode === "dock" ? submitDockLabel : submitPin}
+              disabled={!pinTitle || (pinMode === "dock" ? createDockLabel.isPending : createPin.isPending)}
+            >
+              {pinMode === "dock"
+                ? "Place Dock Sign"
+                : pinNeedsApproval
                 ? pinMode === "landmark"
                   ? "Submit Landmark"
                   : "Submit Pin"
@@ -2109,6 +2225,7 @@ function DetailCard({
   const likePin = useLikePin();
   const favoritePin = useToggleFavoritePin();
   const deletePin = useDeletePin();
+  const deleteDockLabel = useDeleteDockLabel();
   const { data: freshPins } = useGetPins({});
 
   if (selected.kind === "boatCluster") {
@@ -2227,6 +2344,47 @@ function DetailCard({
             <Plus className="w-4 h-4 mr-2" /> Zoom in
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  if (selected.kind === "dockLabel") {
+    const d = selected.data;
+    return (
+      <div className="mx-auto w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
+        <div className="flex items-center gap-3 p-4">
+          <div className="w-12 h-12 rounded-2xl bg-muted flex items-center justify-center text-2xl shrink-0">🪧</div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-lg leading-tight truncate">{d.label}</h3>
+            <p className="text-xs text-muted-foreground">Dock sign</p>
+          </div>
+          <Button size="icon" variant="ghost" className="h-8 w-8 -mr-1 -mt-1" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        {me?.isAdmin && (
+          <div className="p-4 pt-0">
+            <Button
+              variant="destructive"
+              className="w-full"
+              disabled={deleteDockLabel.isPending}
+              onClick={() =>
+                deleteDockLabel.mutate(
+                  { labelId: d.id },
+                  {
+                    onSuccess: () => {
+                      toast.success("Dock sign removed");
+                      queryClient.invalidateQueries({ queryKey: getGetDockLabelsQueryKey() });
+                      onClose();
+                    },
+                  },
+                )
+              }
+            >
+              <Trash2 className="w-4 h-4 mr-2" /> Remove sign
+            </Button>
+          </div>
+        )}
       </div>
     );
   }
@@ -2742,5 +2900,59 @@ const MAP_CSS = `
     border-radius: 12px !important;
     overflow: hidden;
     box-shadow: 0 4px 14px rgba(0,0,0,0.18) !important;
+  }
+
+  /* ================= Admin dock signs ================= */
+  /* A weathered-wood hanging sign that looks moored to the shoreline. */
+  .dock-sign { cursor: pointer; opacity: 1; transition: opacity 0.45s ease; will-change: transform, opacity; }
+  .dock-sign.is-faded { opacity: 0; pointer-events: none; }
+  .dock-sign-bob {
+    position: relative; display: flex; flex-direction: column; align-items: center;
+    animation: dockBob 4s ease-in-out infinite;
+  }
+  @keyframes dockBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+  .dock-beam {
+    width: 58px; height: 5px; border-radius: 3px;
+    background: linear-gradient(180deg, #6b4423, #3f2611);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.45);
+  }
+  .dock-hang {
+    position: relative; display: flex; flex-direction: column; align-items: center;
+    transform-origin: top center; animation: dockSway 5s ease-in-out infinite;
+  }
+  @keyframes dockSway { 0%, 100% { transform: rotate(-2.2deg); } 50% { transform: rotate(2.2deg); } }
+  .dock-rope { position: absolute; top: 1px; width: 2px; height: 12px; background: #c9a468; border-radius: 1px; }
+  .dock-rope.left { left: 13px; transform: rotate(9deg); }
+  .dock-rope.right { right: 13px; transform: rotate(-9deg); }
+  .dock-board {
+    position: relative; margin-top: 11px; padding: 6px 14px; border-radius: 7px;
+    background:
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.10) 0 1px, transparent 1px 7px),
+      linear-gradient(170deg, #b07d45 0%, #8a5a2b 52%, #6d441e 100%);
+    border: 2px solid #46290f;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -3px 6px rgba(0,0,0,0.4), 0 7px 14px rgba(0,0,0,0.4);
+  }
+  .dock-board-text {
+    font-size: 13px; font-weight: 800; letter-spacing: 0.2px; white-space: nowrap;
+    color: #fdeacc; text-shadow: 0 1px 1px rgba(0,0,0,0.6), 0 -1px 0 rgba(255,255,255,0.12);
+  }
+  .dock-nail {
+    position: absolute; width: 4px; height: 4px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #ecdab8, #5e472b);
+    box-shadow: 0 0 1px rgba(0,0,0,0.55);
+  }
+  .dock-nail.tl { top: 3px; left: 4px; }
+  .dock-nail.tr { top: 3px; right: 4px; }
+  .dock-nail.bl { bottom: 3px; left: 4px; }
+  .dock-nail.br { bottom: 3px; right: 4px; }
+  /* Wave shimmer reflection beneath the sign — ties it to the water. */
+  .dock-shimmer {
+    margin-top: 4px; width: 40px; height: 7px; border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(170,214,235,0.6), rgba(170,214,235,0) 70%);
+    filter: blur(1px); animation: dockShimmer 2.6s ease-in-out infinite;
+  }
+  @keyframes dockShimmer {
+    0%, 100% { opacity: 0.3; transform: scaleX(0.82); }
+    50% { opacity: 0.75; transform: scaleX(1.12); }
   }
 `;

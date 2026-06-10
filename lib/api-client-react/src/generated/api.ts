@@ -27,6 +27,8 @@ import type {
   Conditions,
   Conversation,
   ConversationInput,
+  DockLabel,
+  DockLabelInput,
   ErrorEnvelope,
   FriendLocation,
   FriendRequest,
@@ -3060,6 +3062,224 @@ export const useApprovePin = <TError = ErrorType<ErrorEnvelope>,
         TContext
       > => {
       return useMutation(getApprovePinMutationOptions(options));
+    }
+
+export const getGetDockLabelsUrl = () => {
+
+
+
+
+  return `/api/dock-labels`
+}
+
+/**
+ * @summary Get all dock labels on the lake
+ */
+export const getDockLabels = async ( options?: RequestInit): Promise<DockLabel[]> => {
+
+  return customFetch<DockLabel[]>(getGetDockLabelsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDockLabelsQueryKey = () => {
+    return [
+    `/api/dock-labels`
+    ] as const;
+    }
+
+
+export const getGetDockLabelsQueryOptions = <TData = Awaited<ReturnType<typeof getDockLabels>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDockLabels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDockLabelsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDockLabels>>> = ({ signal }) => getDockLabels({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDockLabels>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDockLabelsQueryResult = NonNullable<Awaited<ReturnType<typeof getDockLabels>>>
+export type GetDockLabelsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get all dock labels on the lake
+ */
+
+export function useGetDockLabels<TData = Awaited<ReturnType<typeof getDockLabels>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDockLabels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDockLabelsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateDockLabelUrl = () => {
+
+
+
+
+  return `/api/dock-labels`
+}
+
+/**
+ * @summary Place a dock label (admin only)
+ */
+export const createDockLabel = async (dockLabelInput: DockLabelInput, options?: RequestInit): Promise<DockLabel> => {
+
+  return customFetch<DockLabel>(getCreateDockLabelUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      dockLabelInput,)
+  }
+);}
+
+
+
+
+export const getCreateDockLabelMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDockLabel>>, TError,{data: BodyType<DockLabelInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createDockLabel>>, TError,{data: BodyType<DockLabelInput>}, TContext> => {
+
+const mutationKey = ['createDockLabel'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createDockLabel>>, {data: BodyType<DockLabelInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createDockLabel(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateDockLabelMutationResult = NonNullable<Awaited<ReturnType<typeof createDockLabel>>>
+    export type CreateDockLabelMutationBody = BodyType<DockLabelInput>
+    export type CreateDockLabelMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Place a dock label (admin only)
+ */
+export const useCreateDockLabel = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createDockLabel>>, TError,{data: BodyType<DockLabelInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createDockLabel>>,
+        TError,
+        {data: BodyType<DockLabelInput>},
+        TContext
+      > => {
+      return useMutation(getCreateDockLabelMutationOptions(options));
+    }
+
+export const getDeleteDockLabelUrl = (labelId: number,) => {
+
+
+
+
+  return `/api/dock-labels/${labelId}`
+}
+
+/**
+ * @summary Remove a dock label (admin only)
+ */
+export const deleteDockLabel = async (labelId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteDockLabelUrl(labelId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteDockLabelMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDockLabel>>, TError,{labelId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteDockLabel>>, TError,{labelId: number}, TContext> => {
+
+const mutationKey = ['deleteDockLabel'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteDockLabel>>, {labelId: number}> = (props) => {
+          const {labelId} = props ?? {};
+
+          return  deleteDockLabel(labelId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteDockLabelMutationResult = NonNullable<Awaited<ReturnType<typeof deleteDockLabel>>>
+
+    export type DeleteDockLabelMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Remove a dock label (admin only)
+ */
+export const useDeleteDockLabel = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteDockLabel>>, TError,{labelId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteDockLabel>>,
+        TError,
+        {labelId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteDockLabelMutationOptions(options));
     }
 
 export const getGetPostsUrl = (params?: GetPostsParams,) => {

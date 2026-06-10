@@ -17,6 +17,8 @@ export * from './commentMyReaction';
 export * from './conditions';
 export * from './conversation';
 export * from './conversationInput';
+export * from './dockLabel';
+export * from './dockLabelInput';
 export * from './errorEnvelope';
 export * from './fishingPressure';
 export * from './fishingPressureLevel';

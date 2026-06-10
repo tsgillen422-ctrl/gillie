@@ -2203,6 +2203,38 @@ export const ApprovePinResponse = zod.object({
 
 
 /**
+ * @summary Get all dock labels on the lake
+ */
+export const GetDockLabelsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "label": zod.string(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "createdAt": zod.string()
+})
+export const GetDockLabelsResponse = zod.array(GetDockLabelsResponseItem)
+
+
+/**
+ * @summary Place a dock label (admin only)
+ */
+export const CreateDockLabelBody = zod.object({
+  "label": zod.string(),
+  "lat": zod.number(),
+  "lng": zod.number()
+})
+
+
+/**
+ * @summary Remove a dock label (admin only)
+ */
+export const DeleteDockLabelParams = zod.object({
+  "labelId": zod.coerce.number()
+})
+
+
+/**
  * @summary Get community feed posts and events
  */
 export const GetPostsQueryParams = zod.object({

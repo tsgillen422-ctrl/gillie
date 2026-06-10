@@ -3,6 +3,7 @@ export * from "./waiverAcceptances";
 export * from "./friends";
 export * from "./messages";
 export * from "./pins";
+export * from "./dockLabels";
 export * from "./posts";
 export * from "./notifications";
 export * from "./catches";

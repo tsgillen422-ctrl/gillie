@@ -406,6 +406,21 @@ export interface PinInput {
   expiresAt?: string | null;
 }
 
+export interface DockLabel {
+  id: number;
+  userId: number;
+  label: string;
+  lat: number;
+  lng: number;
+  createdAt: string;
+}
+
+export interface DockLabelInput {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
 export type PostPostType = typeof PostPostType[keyof typeof PostPostType];
 
 

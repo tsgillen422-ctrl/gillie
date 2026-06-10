@@ -17,6 +17,8 @@ tags:
     description: Messaging operations
   - name: pins
     description: Map pin operations
+  - name: dockLabels
+    description: Admin-placed dock/shoreline labels
   - name: posts
     description: Post and event operations
   - name: notifications
@@ -768,6 +770,66 @@ paths:
                 $ref: "#/components/schemas/Pin"
         "403":
           description: Not the app owner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /dock-labels:
+    get:
+      operationId: getDockLabels
+      tags: [dockLabels]
+      summary: Get all dock labels on the lake
+      responses:
+        "200":
+          description: List of dock labels
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DockLabel"
+
+    post:
+      operationId: createDockLabel
+      tags: [dockLabels]
+      summary: Place a dock label (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DockLabelInput"
+      responses:
+        "201":
+          description: Dock label created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DockLabel"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /dock-labels/{labelId}:
+    delete:
+      operationId: deleteDockLabel
+      tags: [dockLabels]
+      summary: Remove a dock label (admin only)
+      parameters:
+        - name: labelId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+        "403":
+          description: Not an admin
           content:
             application/json:
               schema:
@@ -2202,6 +2264,34 @@ components:
           enum: [low, medium, high]
         expiresAt:
           type: ["string", "null"]
+
+    DockLabel:
+      type: object
+      required: [id, userId, label, lat, lng, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        label:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        createdAt:
+          type: string
+
+    DockLabelInput:
+      type: object
+      required: [label, lat, lng]
+      properties:
+        label:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
 
     Post:
       type: object
