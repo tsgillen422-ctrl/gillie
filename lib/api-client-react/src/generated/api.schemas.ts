@@ -457,6 +457,14 @@ export interface DockLabelInput {
   lng: number;
 }
 
+export interface HiddenPlace {
+  placeKey: string;
+}
+
+export interface HiddenPlaceInput {
+  placeKey: string;
+}
+
 export type PostPostType = typeof PostPostType[keyof typeof PostPostType];
 
 

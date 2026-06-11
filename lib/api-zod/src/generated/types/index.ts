@@ -41,6 +41,8 @@ export * from './getReportsStatus';
 export * from './gifResult';
 export * from './groupConversationInput';
 export * from './healthStatus';
+export * from './hiddenPlace';
+export * from './hiddenPlaceInput';
 export * from './locationUpdate';
 export * from './message';
 export * from './messageInput';

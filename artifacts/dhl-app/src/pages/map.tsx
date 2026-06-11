@@ -13,7 +13,7 @@ import {
   SAME_BOAT_METERS,
   groupByProximity,
 } from "@/lib/clustering";
-import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey, useGetDockLabels, useCreateDockLabel, useDeleteDockLabel, getGetDockLabelsQueryKey } from "@workspace/api-client-react";
+import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey, useGetDockLabels, useCreateDockLabel, useDeleteDockLabel, getGetDockLabelsQueryKey, useGetHiddenPlaces, useHidePlace, getGetHiddenPlacesQueryKey } from "@workspace/api-client-react";
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
 import { ClickableImage } from "@/components/ClickableImage";
@@ -608,6 +608,15 @@ export function MapPage() {
   const { data: friends } = useGetFriendLocations();
   const { data: pins } = useGetPins({});
   const { data: dockLabels } = useGetDockLabels();
+  const { data: hiddenPlaces } = useGetHiddenPlaces();
+  const hiddenPlaceKeys = useMemo(
+    () => new Set((hiddenPlaces ?? []).map((h) => h.placeKey)),
+    [hiddenPlaces],
+  );
+  const visiblePlaces = useMemo(
+    () => LAKE_PLACES.filter((p) => !hiddenPlaceKeys.has(p.name)),
+    [hiddenPlaceKeys],
+  );
   const createPin = useCreatePin();
   const createDockLabel = useCreateDockLabel();
   const updateLocation = useUpdateMyLocation();
@@ -1713,7 +1722,7 @@ export function MapPage() {
         });
       }
     }
-    for (const pl of LAKE_PLACES) {
+    for (const pl of visiblePlaces) {
       const hay = [pl.name, pl.category, ...(pl.aliases ?? [])].join(" ").toLowerCase();
       if (hay.includes(q)) {
         results.push({
@@ -2375,6 +2384,7 @@ function DetailCard({
   const favoritePin = useToggleFavoritePin();
   const deletePin = useDeletePin();
   const deleteDockLabel = useDeleteDockLabel();
+  const hidePlace = useHidePlace();
   const { data: freshPins } = useGetPins({});
 
   if (selected.kind === "boatCluster") {
@@ -2561,6 +2571,29 @@ function DetailCard({
             </a>
           </Button>
         </div>
+        {me?.isAdmin && (
+          <div className="p-4 pt-0">
+            <Button
+              variant="destructive"
+              className="w-full"
+              disabled={hidePlace.isPending}
+              onClick={() =>
+                hidePlace.mutate(
+                  { data: { placeKey: place.name } },
+                  {
+                    onSuccess: () => {
+                      toast.success("Place removed for everyone");
+                      queryClient.invalidateQueries({ queryKey: getGetHiddenPlacesQueryKey() });
+                      onClose();
+                    },
+                  },
+                )
+              }
+            >
+              <Trash2 className="w-4 h-4 mr-2" /> Remove place
+            </Button>
+          </div>
+        )}
       </div>
     );
   }

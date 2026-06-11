@@ -871,6 +871,44 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /hidden-places:
+    get:
+      operationId: getHiddenPlaces
+      tags: [hiddenPlaces]
+      summary: Get the built-in places that are hidden from the map for everyone
+      responses:
+        "200":
+          description: List of hidden place keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HiddenPlace"
+    post:
+      operationId: hidePlace
+      tags: [hiddenPlaces]
+      summary: Permanently hide a built-in place for everyone (admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HiddenPlaceInput"
+      responses:
+        "201":
+          description: Place hidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HiddenPlace"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /posts:
     get:
       operationId: getPosts
@@ -2367,6 +2405,20 @@ components:
           type: number
         lng:
           type: number
+
+    HiddenPlace:
+      type: object
+      required: [placeKey]
+      properties:
+        placeKey:
+          type: string
+
+    HiddenPlaceInput:
+      type: object
+      required: [placeKey]
+      properties:
+        placeKey:
+          type: string
 
     Post:
       type: object

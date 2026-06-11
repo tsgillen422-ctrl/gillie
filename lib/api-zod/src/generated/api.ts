@@ -2268,6 +2268,23 @@ export const DeleteDockLabelParams = zod.object({
 
 
 /**
+ * @summary Get the built-in places that are hidden from the map for everyone
+ */
+export const GetHiddenPlacesResponseItem = zod.object({
+  "placeKey": zod.string()
+})
+export const GetHiddenPlacesResponse = zod.array(GetHiddenPlacesResponseItem)
+
+
+/**
+ * @summary Permanently hide a built-in place for everyone (admin only)
+ */
+export const HidePlaceBody = zod.object({
+  "placeKey": zod.string()
+})
+
+
+/**
  * @summary Get community feed posts and events
  */
 export const GetPostsQueryParams = zod.object({

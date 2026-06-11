@@ -4,6 +4,7 @@ export * from "./friends";
 export * from "./messages";
 export * from "./pins";
 export * from "./dockLabels";
+export * from "./hiddenPlaces";
 export * from "./posts";
 export * from "./notifications";
 export * from "./catches";

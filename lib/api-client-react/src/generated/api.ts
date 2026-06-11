@@ -42,6 +42,8 @@ import type {
   GifResult,
   GroupConversationInput,
   HealthStatus,
+  HiddenPlace,
+  HiddenPlaceInput,
   LocationUpdate,
   Message,
   MessageInput,
@@ -3431,6 +3433,154 @@ export const useDeleteDockLabel = <TError = ErrorType<ErrorEnvelope>,
         TContext
       > => {
       return useMutation(getDeleteDockLabelMutationOptions(options));
+    }
+
+export const getGetHiddenPlacesUrl = () => {
+
+
+
+
+  return `/api/hidden-places`
+}
+
+/**
+ * @summary Get the built-in places that are hidden from the map for everyone
+ */
+export const getHiddenPlaces = async ( options?: RequestInit): Promise<HiddenPlace[]> => {
+
+  return customFetch<HiddenPlace[]>(getGetHiddenPlacesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetHiddenPlacesQueryKey = () => {
+    return [
+    `/api/hidden-places`
+    ] as const;
+    }
+
+
+export const getGetHiddenPlacesQueryOptions = <TData = Awaited<ReturnType<typeof getHiddenPlaces>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHiddenPlaces>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHiddenPlacesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHiddenPlaces>>> = ({ signal }) => getHiddenPlaces({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHiddenPlaces>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetHiddenPlacesQueryResult = NonNullable<Awaited<ReturnType<typeof getHiddenPlaces>>>
+export type GetHiddenPlacesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the built-in places that are hidden from the map for everyone
+ */
+
+export function useGetHiddenPlaces<TData = Awaited<ReturnType<typeof getHiddenPlaces>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHiddenPlaces>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetHiddenPlacesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getHidePlaceUrl = () => {
+
+
+
+
+  return `/api/hidden-places`
+}
+
+/**
+ * @summary Permanently hide a built-in place for everyone (admin only)
+ */
+export const hidePlace = async (hiddenPlaceInput: HiddenPlaceInput, options?: RequestInit): Promise<HiddenPlace> => {
+
+  return customFetch<HiddenPlace>(getHidePlaceUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      hiddenPlaceInput,)
+  }
+);}
+
+
+
+
+export const getHidePlaceMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof hidePlace>>, TError,{data: BodyType<HiddenPlaceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof hidePlace>>, TError,{data: BodyType<HiddenPlaceInput>}, TContext> => {
+
+const mutationKey = ['hidePlace'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof hidePlace>>, {data: BodyType<HiddenPlaceInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  hidePlace(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type HidePlaceMutationResult = NonNullable<Awaited<ReturnType<typeof hidePlace>>>
+    export type HidePlaceMutationBody = BodyType<HiddenPlaceInput>
+    export type HidePlaceMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Permanently hide a built-in place for everyone (admin only)
+ */
+export const useHidePlace = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof hidePlace>>, TError,{data: BodyType<HiddenPlaceInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof hidePlace>>,
+        TError,
+        {data: BodyType<HiddenPlaceInput>},
+        TContext
+      > => {
+      return useMutation(getHidePlaceMutationOptions(options));
     }
 
 export const getGetPostsUrl = (params?: GetPostsParams,) => {
