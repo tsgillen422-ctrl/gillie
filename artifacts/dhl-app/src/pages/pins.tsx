@@ -44,6 +44,9 @@ const PIN_TYPES = [
   { value: 'waterfall', label: 'Falls', emoji: '💧' },
   { value: 'rope_swing', label: 'Rope Swings', emoji: '🪢' },
   { value: 'shallow_water', label: 'Shallow Water', emoji: '🏖️' },
+  { value: 'tubing', label: 'Tubing', emoji: '🛟' },
+  { value: 'skiing', label: 'Skiing', emoji: '🎿' },
+  { value: 'houseboat', label: 'Houseboats', emoji: '🛥️' },
   { value: 'hazard', label: 'Hazards', emoji: '⚠️' },
 ];
 

@@ -185,6 +185,9 @@ const getPinEmoji = (type: string) => {
     case "waterfall": return "💧";
     case "rope_swing": return "🪢";
     case "shallow_water": return "🏖️";
+    case "tubing": return "🛟";
+    case "skiing": return "🎿";
+    case "houseboat": return "🛥️";
     case "landmark": return "📍";
     case "hazard": return "⚠️";
     case "marina": return "⛵";
@@ -201,6 +204,9 @@ const getPinColor = (type: string) => {
     case "waterfall": return "#0891b2";
     case "rope_swing": return "#0d9488";
     case "shallow_water": return "#d97706";
+    case "tubing": return "#e11d48";
+    case "skiing": return "#2563eb";
+    case "houseboat": return "#9333ea";
     case "landmark": return "#db2777";
     case "hazard": return "#dc2626";
     case "marina": return "#ea7317";
@@ -217,6 +223,9 @@ const getPinCategory = (type: string) => {
     case "waterfall": return "Waterfall";
     case "rope_swing": return "Rope Swing";
     case "shallow_water": return "Shallow Water";
+    case "tubing": return "Tubing";
+    case "skiing": return "Skiing";
+    case "houseboat": return "Houseboat";
     case "landmark": return "Landmark";
     case "hazard": return "Hazard";
     case "marina": return "Marina";
@@ -2151,6 +2160,9 @@ export function MapPage() {
                     <SelectItem value="waterfall">💧 Waterfall</SelectItem>
                     <SelectItem value="rope_swing">🪢 Rope Swing</SelectItem>
                     <SelectItem value="shallow_water">🏖️ Shallow Water</SelectItem>
+                    <SelectItem value="tubing">🛟 Tubing</SelectItem>
+                    <SelectItem value="skiing">🎿 Skiing</SelectItem>
+                    <SelectItem value="houseboat">🛥️ Houseboat</SelectItem>
                     <SelectItem value="campsite">🏕️ Campsite</SelectItem>
                     <SelectItem value="marina">⛵ Marina</SelectItem>
                     <SelectItem value="hazard">⚠️ Hazard</SelectItem>

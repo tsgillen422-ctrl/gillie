@@ -15,6 +15,9 @@ function pinEmoji(type: string) {
     case "cliff": return "🏔️";
     case "rope_swing": return "🪢";
     case "shallow_water": return "🏖️";
+    case "tubing": return "🛟";
+    case "skiing": return "🎿";
+    case "houseboat": return "🛥️";
     case "campsite": return "🏕️";
     case "hazard": return "⚠️";
     default: return "📍";
