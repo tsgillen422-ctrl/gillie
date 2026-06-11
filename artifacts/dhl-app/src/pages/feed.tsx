@@ -5,7 +5,7 @@ import { GifPickerDialog } from "@/components/GifPickerDialog";
 import { UserAvatar } from "@/components/UserAvatar";
 import { HazardBanner } from "@/components/HazardBanner";
 import { TrendingSection } from "@/components/TrendingSection";
-import { SuggestedFriendsDrawer } from "@/components/SuggestedFriends";
+import { SuggestedFriendsDrawer, SuggestedFriendsButton } from "@/components/SuggestedFriends";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -568,6 +568,9 @@ export function FeedPage() {
                 <Link href="/pins" aria-label="Pins" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md hover:bg-white/25 active:scale-95 transition">
                   <MapPin className="h-[18px] w-[18px]" />
                 </Link>
+                <Link href="/friends" aria-label="Friends" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md hover:bg-white/25 active:scale-95 transition">
+                  <Users className="h-[18px] w-[18px]" />
+                </Link>
                 <Link href="/notifications" aria-label="Notifications" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md hover:bg-white/25 active:scale-95 transition">
                   <Bell className="h-[18px] w-[18px]" />
                 </Link>
@@ -709,6 +712,8 @@ export function FeedPage() {
               </div>
             </div>
           )}
+
+          <SuggestedFriendsButton />
 
           {conditions?.fishingPressure && (() => {
             const style = pressureStyles[conditions.fishingPressure.level] ?? pressureStyles.moderate;

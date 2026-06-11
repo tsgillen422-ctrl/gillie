@@ -17,6 +17,13 @@ import { UserPlus, Check, Sparkles, Users } from "lucide-react";
 import { toast } from "sonner";
 
 const DISMISS_KEY = "dhl-suggested-friends-dismissed";
+const OPEN_EVENT = "dhl:open-suggested-friends";
+
+/** Reopen the suggested-friends bottom sheet on demand (e.g. from a feed button). */
+export function openSuggestedFriends() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(OPEN_EVENT));
+}
 
 const BOAT_LABELS: Record<string, string> = {
   speedboat: "Speedboat",
@@ -151,6 +158,14 @@ export function SuggestedFriendsDrawer() {
     if (data && data.length > 0) setOpen(true);
   }, [data]);
 
+  // Allow reopening on demand (e.g. the feed button), even after dismissal.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = () => setOpen(true);
+    window.addEventListener(OPEN_EVENT, handler);
+    return () => window.removeEventListener(OPEN_EVENT, handler);
+  }, []);
+
   const handleOpenChange = (next: boolean) => {
     setOpen(next);
     if (!next && typeof window !== "undefined") {
@@ -173,8 +188,43 @@ export function SuggestedFriendsDrawer() {
           {data.map((user) => (
             <SuggestionCard key={user.id} user={user} />
           ))}
+          <Link
+            href="/friends?tab=suggested"
+            onClick={() => setOpen(false)}
+            className="block w-full rounded-xl border border-border py-2.5 text-center text-sm font-semibold text-primary hover-elevate active:scale-[0.99]"
+          >
+            See all on Friends page
+          </Link>
         </div>
       </DrawerContent>
     </Drawer>
+  );
+}
+
+/**
+ * Lightweight feed entry point: reopens the suggested-friends sheet on demand,
+ * so users can get back to suggestions after dismissing the auto-popup.
+ */
+export function SuggestedFriendsButton() {
+  const { data } = useGetFriendSuggestions();
+  if (!data || data.length === 0) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={openSuggestedFriends}
+      className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-3 text-left hover-elevate active:scale-[0.99] transition-transform"
+    >
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <Sparkles className="h-5 w-5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-semibold text-foreground">Suggested friends</div>
+        <div className="truncate text-xs text-muted-foreground">
+          {data.length} {data.length === 1 ? "person" : "people"} you may know around Dale Hollow
+        </div>
+      </div>
+      <UserPlus className="h-5 w-5 shrink-0 text-muted-foreground" />
+    </button>
   );
 }
