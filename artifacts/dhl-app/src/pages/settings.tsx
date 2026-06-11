@@ -567,6 +567,13 @@ export function SettingsPage() {
 
         <MutedUsersCard />
 
+        {/* Legal & Safety */}
+        <div className="pt-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
+            Legal & Safety
+          </h2>
+        </div>
+
         {/* Rules & Waiver */}
         <Card className="border-border shadow-sm hover-elevate cursor-pointer" onClick={() => setShowWaiver(true)}>
           <CardHeader className="pb-4">
