@@ -3,6 +3,7 @@ import {
   useGetPins,
   useGetFavoritePins,
   useGetPendingPins,
+  useGetDockLabels,
   useApprovePin,
   useDeletePin,
   useGetMe,
@@ -12,7 +13,7 @@ import {
 } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, MapPin, Navigation, Check, Lock, Globe, Users, Bookmark, Trash2, Flag } from "lucide-react";
+import { Search, MapPin, Navigation, Check, Lock, Globe, Users, Bookmark, Trash2, Flag, Anchor } from "lucide-react";
 import { ReportDialog } from "@/components/ReportDialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -96,6 +97,7 @@ export function PinsPage() {
     query: { enabled: isSaved },
   });
   const { data: pendingPins } = useGetPendingPins({ query: { enabled: isOwner } });
+  const { data: dockLabels } = useGetDockLabels();
   const approvePin = useApprovePin();
   const deletePin = useDeletePin();
   const queryClient = useQueryClient();
@@ -137,6 +139,15 @@ export function PinsPage() {
     );
   }, [sourcePins, search]);
 
+  // Dock signs live in a separate collection from pins/landmarks, so surface
+  // matching ones in the search results. Only when actively searching the
+  // general list (not the Saved view or a pin-type filter).
+  const matchingDockLabels = React.useMemo(() => {
+    if (isSaved || filter !== "all" || !search || !dockLabels) return [];
+    const lowerSearch = search.toLowerCase();
+    return dockLabels.filter(d => d.label.toLowerCase().includes(lowerSearch));
+  }, [dockLabels, search, isSaved, filter]);
+
   return (
     <div className="flex flex-col h-full bg-background">
       <div className="p-4 border-b border-border bg-card shadow-sm sticky top-0 z-10 space-y-4">
@@ -145,7 +156,7 @@ export function PinsPage() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
           <Input
-            placeholder="Search spots..."
+            placeholder="Search spots, landmarks & docks..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 bg-muted border-none"
@@ -212,8 +223,34 @@ export function PinsPage() {
           Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-24 w-full rounded-xl" />
           ))
-        ) : filteredPins.length ? (
-          filteredPins.map(pin => {
+        ) : filteredPins.length || matchingDockLabels.length ? (
+          <>
+          {matchingDockLabels.map(dock => (
+            <Card key={`dock-${dock.id}`} className="hover-elevate overflow-hidden border-border/50">
+              <CardContent className="p-4 flex gap-4 items-center">
+                <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center text-3xl shrink-0 shadow-inner">
+                  {dock.emoji || "🪧"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-bold text-base truncate">{dock.label}</h3>
+                    <Badge variant="secondary" className="gap-1 text-[10px]">
+                      <Anchor className="w-3 h-3" /> Dock sign
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground line-clamp-1">Dock marker on the lake</p>
+                </div>
+                <div className="flex flex-col items-center gap-1 shrink-0">
+                  <Button size="icon" variant="ghost" className="text-primary hover:bg-primary/10" asChild>
+                    <Link href={`/map?lat=${dock.lat}&lng=${dock.lng}`}>
+                      <Navigation className="w-5 h-5" />
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+          {filteredPins.map(pin => {
             const window = formatWindow(pin.startTime, pin.endTime);
             return (
               <Card key={pin.id} className="hover-elevate overflow-hidden border-border/50">
@@ -287,7 +324,8 @@ export function PinsPage() {
                 </CardContent>
               </Card>
             );
-          })
+          })}
+          </>
         ) : (
           <div className="text-center py-16">
             {isSaved ? (
