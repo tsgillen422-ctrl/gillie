@@ -1,0 +1,163 @@
+High-Risk Items (Fix Before Submission)
+
+1. User-Generated Content Moderation
+
+Since users can post photos, comments, pins, and community updates, Apple expects:
+
+* Report Post
+* Report User
+* Block User
+* Content removal process
+* Community guidelines
+
+Gillie recommendation:
+Tap user profile → Report / Block.
+
+⸻
+
+2. Location Sharing Controls
+
+Because your app shows boaters on a map:
+
+* Users must choose whether to share location.
+* Users should be able to hide themselves.
+* Users should be able to stop sharing anytime.
+
+Recommended settings:
+
+* Visible to Everyone
+* Visible to Friends Only
+* Invisible / Ghost Mode
+
+This is a major trust feature and helps with App Store approval.
+
+⸻
+
+3. Account Deletion
+
+Apple has become strict about this.
+
+Inside the app:
+
+Settings → Account → Delete Account
+
+The user should not have to email support.
+
+⸻
+
+4. Privacy Policy
+
+Your policy should explain:
+
+* What data is collected
+* Why location is used
+* Whether posts are public
+* How users can delete data
+
+⸻
+
+⚠️ Medium-Risk Items
+
+5. Empty Community Feed
+
+Apple reviewers sometimes reject apps that appear inactive.
+
+Before review:
+
+* Seed the community with lake-related content.
+* Add landmarks.
+* Add marina information.
+* Add a few example posts.
+
+The app should look alive.
+
+⸻
+
+6. Map Clutter
+
+You already noticed this.
+
+If the map becomes crowded with:
+
+* Profile circles
+* Pins
+* Landmarks
+* Docks
+
+reviewers may see it as confusing.
+
+A good structure:
+
+🟢 User locations
+
+📍 Temporary user pins
+
+⚓ Permanent landmarks
+
+🏞️ Community hotspots
+
+Each should have a distinct icon style.
+
+⸻
+
+7. Permissions
+
+Avoid asking for everything on launch.
+
+Instead:
+
+* Ask for location when entering the map.
+* Ask for camera when creating a post.
+* Ask for notifications when following activity.
+
+Apple prefers contextual permission requests.
+
+⸻
+
+✅ Features Apple Will Likely Like
+
+Community Feed
+
+A dedicated lake community has a clear purpose.
+
+Friends
+
+Friend requests and friend lists are common and expected.
+
+Suggested Friends
+
+Good feature if based on:
+
+* Mutual friends
+* Same lake activity
+* Same marina
+* Same groups
+
+Landmark System
+
+Permanent dock, marina, and restaurant markers add real utility.
+
+⸻
+
+⭐ Features That Could Help Gillie Stand Out
+
+Lake Hotspots
+
+Show where boaters are gathering.
+
+Examples:
+
+* “20 boats near Sunset Cove”
+* “Most active area right now”
+
+Water Conditions
+
+Weather, water temperature, and lake conditions.
+
+Dock Check-In
+
+Users can check in at marinas and restaurants.
+
+Events
+
+Poker runs, raft-ups, concerts, fireworks, fishing tournaments.
