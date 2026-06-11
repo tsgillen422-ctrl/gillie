@@ -22,6 +22,7 @@ export const postsTable = pgTable("posts", {
   sharedPostId: integer("shared_post_id"),
   visibility: text("visibility").notNull().default("community"),
   likeCount: integer("like_count").notNull().default(0),
+  isMature: boolean("is_mature").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -61,6 +62,7 @@ export const postCommentsTable = pgTable("post_comments", {
   imageUrl: text("image_url"),
   videoUrl: text("video_url"),
   likeCount: integer("like_count").notNull().default(0),
+  isMature: boolean("is_mature").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

@@ -5,6 +5,7 @@ import { eq, and, ne, desc, gt, inArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { broadcastToConversation } from "../lib/realtime";
 import { createNotifications } from "../lib/notify";
+import { moderateContent } from "../lib/moderation";
 
 const router = Router();
 
@@ -120,6 +121,7 @@ router.get("/conversations", async (req, res) => {
           content: lastMessage.content,
           mediaUrl: lastMessage.mediaUrl,
           mediaType: lastMessage.mediaType,
+          isMature: lastMessage.isMature,
           read: lastMessage.read,
           createdAt: lastMessage.createdAt.toISOString(),
         };
@@ -333,6 +335,7 @@ router.get("/conversations/:conversationId", async (req, res) => {
         content: m.content,
         mediaUrl: m.mediaUrl,
         mediaType: m.mediaType,
+        isMature: m.isMature,
         read,
         reactions: counts.get(m.id) ?? emptyReactionCounts(),
         myReaction: mine.get(m.id) ?? null,
@@ -384,9 +387,13 @@ router.post("/conversations/:conversationId", async (req, res) => {
     return res.status(403).json({ error: "You are not a participant in this conversation" });
   }
   const { content, mediaUrl, mediaType } = req.body;
+  const isMature = await moderateContent({
+    texts: [content],
+    imagePaths: mediaType === "video" ? [] : [mediaUrl],
+  });
   const [msg] = await db
     .insert(messagesTable)
-    .values({ conversationId, senderId: currentUserId(req), content: content ?? "", mediaUrl: mediaUrl ?? null, mediaType: mediaType ?? null })
+    .values({ conversationId, senderId: currentUserId(req), content: content ?? "", mediaUrl: mediaUrl ?? null, mediaType: mediaType ?? null, isMature })
     .returning();
   const sender = await db.query.usersTable.findFirst({ where: eq(usersTable.id, currentUserId(req)) });
   broadcastToConversation(conversationId, {
@@ -438,6 +445,7 @@ router.post("/conversations/:conversationId", async (req, res) => {
     content: msg.content,
     mediaUrl: msg.mediaUrl,
     mediaType: msg.mediaType,
+    isMature: msg.isMature,
     read: msg.read,
     reactions: emptyReactionCounts(),
     myReaction: null,
@@ -551,6 +559,7 @@ router.post("/:messageId/react", async (req, res) => {
     content: msg.content,
     mediaUrl: msg.mediaUrl,
     mediaType: msg.mediaType,
+    isMature: msg.isMature,
     read,
     reactions: counts.get(messageId) ?? emptyReactionCounts(),
     myReaction: mine.get(messageId) ?? null,

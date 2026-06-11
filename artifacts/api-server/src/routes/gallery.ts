@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { usersTable, galleryItemsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
+import { moderateContent } from "../lib/moderation";
 
 const router = Router();
 
@@ -36,6 +37,7 @@ async function formatItem(g: typeof galleryItemsTable.$inferSelect) {
     mediaUrl: g.mediaUrl,
     mediaType: g.mediaType,
     caption: g.caption,
+    isMature: g.isMature,
     createdAt: g.createdAt.toISOString(),
   };
 }
@@ -58,13 +60,19 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "mediaUrl is required" });
   }
   const type = mediaType === "video" ? "video" : "image";
+  const trimmedMedia = String(mediaUrl).trim();
+  const isMature = await moderateContent({
+    texts: [caption],
+    imagePaths: type === "image" ? [trimmedMedia] : [],
+  });
   const [row] = await db
     .insert(galleryItemsTable)
     .values({
       userId: currentUserId(req),
-      mediaUrl: String(mediaUrl).trim(),
+      mediaUrl: trimmedMedia,
       mediaType: type,
       caption: caption ?? null,
+      isMature,
     })
     .returning();
   res.status(201).json(await formatItem(row));

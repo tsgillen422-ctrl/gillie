@@ -19,6 +19,7 @@ export const pinsTable = pgTable("pins", {
   startTime: timestamp("start_time"),
   endTime: timestamp("end_time"),
   likeCount: integer("like_count").notNull().default(0),
+  isMature: boolean("is_mature").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

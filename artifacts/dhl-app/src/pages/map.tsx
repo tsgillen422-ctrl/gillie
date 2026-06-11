@@ -17,6 +17,7 @@ import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCr
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
 import { ClickableImage } from "@/components/ClickableImage";
+import { MatureGate } from "@/components/MatureGate";
 import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X, ImagePlus, Heart, Star, Search, Trash2, Flame } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -2626,7 +2627,9 @@ function DetailCard({
             {getPinEmoji(pin.type)}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-lg leading-tight truncate">{pin.title}</h3>
+            <MatureGate isMature={(pin as any).isMature} label="Sensitive pin">
+              <h3 className="font-bold text-lg leading-tight truncate">{pin.title}</h3>
+            </MatureGate>
             <p className="text-xs text-muted-foreground uppercase tracking-wide">
               By {pin.user?.displayName || "Unknown"}
             </p>
@@ -2635,9 +2638,13 @@ function DetailCard({
             <X className="w-4 h-4" />
           </Button>
         </div>
-        {pin.description && <p className="px-4 -mt-1 text-sm text-muted-foreground">{pin.description}</p>}
-        {pin.imageUrl && (
-          <ClickableImage src={`/api/storage${pin.imageUrl}`} alt={pin.title} className="mt-3 w-full max-h-60 object-cover" />
+        {(pin.description || pin.imageUrl) && (
+          <MatureGate isMature={(pin as any).isMature} label="Sensitive pin" className="mx-4 mt-1">
+            {pin.description && <p className="px-4 -mt-1 text-sm text-muted-foreground">{pin.description}</p>}
+            {pin.imageUrl && (
+              <ClickableImage src={`/api/storage${pin.imageUrl}`} alt={pin.title} className="mt-3 w-full max-h-60 object-cover" />
+            )}
+          </MatureGate>
         )}
         {(pin.startTime || pin.endTime) && (
           <p className="px-4 mt-2 text-xs text-primary font-medium">{formatPinWindow(pin.startTime, pin.endTime)}</p>

@@ -25,6 +25,7 @@ export interface Catch {
   /** @nullable */
   lng?: number | null;
   isPrivate: boolean;
+  isMature?: boolean;
   caughtAt: string;
   createdAt: string;
 }

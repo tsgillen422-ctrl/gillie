@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { usersTable, catchesTable } from "@workspace/db";
 import { eq, and, desc, or } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
+import { moderateContent } from "../lib/moderation";
 
 const router = Router();
 
@@ -41,6 +42,7 @@ async function formatCatch(c: typeof catchesTable.$inferSelect) {
     lat: c.lat,
     lng: c.lng,
     isPrivate: c.isPrivate,
+    isMature: c.isMature,
     caughtAt: c.caughtAt.toISOString(),
     createdAt: c.createdAt.toISOString(),
   };
@@ -80,6 +82,10 @@ router.post("/", async (req, res) => {
   if (isNaN(caught.getTime())) {
     return res.status(400).json({ error: "Invalid catch date" });
   }
+  const isMature = await moderateContent({
+    texts: [species, notes],
+    imagePaths: [imageUrl],
+  });
   const [row] = await db
     .insert(catchesTable)
     .values({
@@ -92,6 +98,7 @@ router.post("/", async (req, res) => {
       lat: lat ?? null,
       lng: lng ?? null,
       isPrivate: !!isPrivate,
+      isMature,
       caughtAt: caught,
     })
     .returning();

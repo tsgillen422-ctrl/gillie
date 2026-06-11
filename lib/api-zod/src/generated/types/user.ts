@@ -59,6 +59,7 @@ export interface User {
   followerSeeLocation?: boolean;
   followerSeePosts?: boolean;
   followerSendMessages?: boolean;
+  showMatureContent?: boolean;
   isAdmin?: boolean;
   isSuspended?: boolean;
   warningCount?: number;

@@ -1981,6 +1981,8 @@ components:
           type: boolean
         followerSendMessages:
           type: boolean
+        showMatureContent:
+          type: boolean
         isAdmin:
           type: boolean
         isSuspended:
@@ -2093,6 +2095,8 @@ components:
         followerSeePosts:
           type: boolean
         followerSendMessages:
+          type: boolean
+        showMatureContent:
           type: boolean
 
     LocationUpdate:
@@ -2232,6 +2236,8 @@ components:
           enum: [image, video, null]
         read:
           type: boolean
+        isMature:
+          type: boolean
         reactions:
           $ref: "#/components/schemas/MessageReactionCounts"
         myReaction:
@@ -2351,6 +2357,8 @@ components:
         likedByMe:
           type: boolean
         favoritedByMe:
+          type: boolean
+        isMature:
           type: boolean
         createdAt:
           type: string
@@ -2504,6 +2512,8 @@ components:
           oneOf:
             - type: "null"
             - $ref: "#/components/schemas/Poll"
+        isMature:
+          type: boolean
         createdAt:
           type: string
 
@@ -2713,6 +2723,8 @@ components:
           enum: [thumbsup, thumbsdown, heart, laugh, sad, angry, null]
         reactionCounts:
           $ref: "#/components/schemas/ReactionCounts"
+        isMature:
+          type: boolean
         createdAt:
           type: string
 
@@ -2835,6 +2847,8 @@ components:
           type: ["number", "null"]
         isPrivate:
           type: boolean
+        isMature:
+          type: boolean
         caughtAt:
           type: string
         createdAt:
@@ -2880,6 +2894,8 @@ components:
           enum: [image, video]
         caption:
           type: ["string", "null"]
+        isMature:
+          type: boolean
         createdAt:
           type: string
 

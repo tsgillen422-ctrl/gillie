@@ -91,6 +91,7 @@ export interface User {
   followerSeeLocation?: boolean;
   followerSeePosts?: boolean;
   followerSendMessages?: boolean;
+  showMatureContent?: boolean;
   isAdmin?: boolean;
   isSuspended?: boolean;
   warningCount?: number;
@@ -157,6 +158,7 @@ export interface UserUpdate {
   followerSeeLocation?: boolean;
   followerSeePosts?: boolean;
   followerSendMessages?: boolean;
+  showMatureContent?: boolean;
 }
 
 export interface LocationUpdate {
@@ -254,6 +256,7 @@ export interface Message {
   /** @nullable */
   mediaType?: MessageMediaType;
   read?: boolean;
+  isMature?: boolean;
   reactions?: MessageReactionCounts;
   myReaction?: MessageReactionType | null;
   createdAt: string;
@@ -388,6 +391,7 @@ export interface Pin {
   likeCount?: number;
   likedByMe?: boolean;
   favoritedByMe?: boolean;
+  isMature?: boolean;
   createdAt: string;
 }
 
@@ -585,6 +589,7 @@ export interface Post {
   sharedPost?: null | Post;
   visibility?: PostVisibility;
   poll?: null | Poll;
+  isMature?: boolean;
   createdAt: string;
 }
 
@@ -728,6 +733,7 @@ export interface Comment {
   /** @nullable */
   myReaction?: CommentMyReaction;
   reactionCounts: ReactionCounts;
+  isMature?: boolean;
   createdAt: string;
 }
 
@@ -835,6 +841,7 @@ export interface Catch {
   /** @nullable */
   lng?: number | null;
   isPrivate: boolean;
+  isMature?: boolean;
   caughtAt: string;
   createdAt: string;
 }
@@ -867,6 +874,7 @@ export interface GalleryItem {
   mediaType: GalleryItemMediaType;
   /** @nullable */
   caption?: string | null;
+  isMature?: boolean;
   createdAt: string;
 }
 

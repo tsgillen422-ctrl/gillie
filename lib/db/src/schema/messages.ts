@@ -26,6 +26,7 @@ export const messagesTable = pgTable("messages", {
   mediaUrl: text("media_url"),
   mediaType: text("media_type"),
   read: boolean("read").notNull().default(false),
+  isMature: boolean("is_mature").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

@@ -21,6 +21,7 @@ export interface Message {
   /** @nullable */
   mediaType?: MessageMediaType;
   read?: boolean;
+  isMature?: boolean;
   reactions?: MessageReactionCounts;
   myReaction?: MessageReactionType | null;
   createdAt: string;

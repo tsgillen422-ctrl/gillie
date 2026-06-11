@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ClickableImage } from "@/components/ClickableImage";
+import { MatureGate } from "@/components/MatureGate";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BadgeRow } from "@/components/Badges";
 import {
@@ -659,6 +660,7 @@ export function MessageThreadPage() {
                           : "bg-card text-foreground rounded-bl-md border border-card-border"
                       }`}
                     >
+                      <MatureGate isMature={(msg as any).isMature} label="Sensitive message">
                       {msg.mediaUrl && msg.mediaType === "image" && (
                         <ClickableImage
                           src={mediaSrc(msg.mediaUrl)}
@@ -674,6 +676,7 @@ export function MessageThreadPage() {
                         />
                       )}
                       {hasText && <p className={`text-sm ${msg.mediaUrl ? "px-3 pb-1" : ""}`}>{msg.content}</p>}
+                      </MatureGate>
                     </div>
                   </div>
 

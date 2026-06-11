@@ -238,10 +238,14 @@ export function MessagesPage() {
                                 const senderFirst = mine
                                   ? "You"
                                   : (conv.participants ?? []).find((p) => p.id === conv.lastMessage!.senderId)?.displayName?.split(" ")[0];
+                                const showMature = !!(me as any)?.showMatureContent;
+                                const preview = (conv.lastMessage as any).isMature && !showMature
+                                  ? <span className="italic text-muted-foreground">Sensitive content hidden</span>
+                                  : conv.lastMessage.content;
                                 return (mine || isGroup) && senderFirst ? (
-                                  <><span className="font-medium text-foreground/70">{senderFirst}:</span> {conv.lastMessage.content}</>
+                                  <><span className="font-medium text-foreground/70">{senderFirst}:</span> {preview}</>
                                 ) : (
-                                  conv.lastMessage.content
+                                  preview
                                 );
                               })() : (
                                 <span className="italic">No messages yet</span>

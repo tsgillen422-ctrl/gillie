@@ -8,6 +8,7 @@ import {
 } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ClickableImage } from "@/components/ClickableImage";
+import { MatureGate } from "@/components/MatureGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -184,17 +185,19 @@ export function CatchesPage() {
                     </AlertDialog>
                   )}
                 </div>
-                {c.imageUrl && (
-                  <div className="rounded-xl overflow-hidden bg-muted aspect-video mb-2">
-                    <ClickableImage src={resolveImageSrc(c.imageUrl)} alt={c.species} className="object-cover w-full h-full" />
+                <MatureGate isMature={c.isMature} rounded="rounded-xl" label="Sensitive catch">
+                  {c.imageUrl && (
+                    <div className="rounded-xl overflow-hidden bg-muted aspect-video mb-2">
+                      <ClickableImage src={resolveImageSrc(c.imageUrl)} alt={c.species} className="object-cover w-full h-full" />
+                    </div>
+                  )}
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="font-bold text-lg">{c.species}</span>
+                    {c.weight != null && <span className="text-sm text-muted-foreground">{c.weight} lb</span>}
+                    {c.length != null && <span className="text-sm text-muted-foreground">{c.length} in</span>}
                   </div>
-                )}
-                <div className="flex items-baseline gap-2 flex-wrap">
-                  <span className="font-bold text-lg">{c.species}</span>
-                  {c.weight != null && <span className="text-sm text-muted-foreground">{c.weight} lb</span>}
-                  {c.length != null && <span className="text-sm text-muted-foreground">{c.length} in</span>}
-                </div>
-                {c.notes && <p className="text-sm mt-1 whitespace-pre-wrap">{c.notes}</p>}
+                  {c.notes && <p className="text-sm mt-1 whitespace-pre-wrap">{c.notes}</p>}
+                </MatureGate>
               </CardContent>
             </Card>
           ))

@@ -39,4 +39,5 @@ export interface UserUpdate {
   followerSeeLocation?: boolean;
   followerSeePosts?: boolean;
   followerSendMessages?: boolean;
+  showMatureContent?: boolean;
 }

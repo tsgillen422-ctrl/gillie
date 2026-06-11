@@ -35,5 +35,6 @@ export interface Pin {
   likeCount?: number;
   likedByMe?: boolean;
   favoritedByMe?: boolean;
+  isMature?: boolean;
   createdAt: string;
 }

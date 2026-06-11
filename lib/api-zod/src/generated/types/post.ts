@@ -67,5 +67,6 @@ export interface Post {
   sharedPost?: null | Post;
   visibility?: PostVisibility;
   poll?: null | Poll;
+  isMature?: boolean;
   createdAt: string;
 }

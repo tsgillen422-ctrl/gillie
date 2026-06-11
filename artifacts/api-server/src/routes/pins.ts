@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { usersTable, pinsTable, pinLikesTable, pinFavoritesTable, friendRequestsTable } from "@workspace/db";
 import { eq, and, or, sql, inArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
+import { moderateContent } from "../lib/moderation";
 
 const router = Router();
 
@@ -84,6 +85,7 @@ async function formatPin(pin: typeof pinsTable.$inferSelect, viewerId: number) {
     startTime: pin.startTime ? pin.startTime.toISOString() : null,
     endTime: pin.endTime ? pin.endTime.toISOString() : null,
     likeCount: pin.likeCount,
+    isMature: pin.isMature,
     likedByMe: !!like,
     favoritedByMe: !!favorite,
     createdAt: pin.createdAt.toISOString(),
@@ -154,6 +156,11 @@ router.post("/", async (req, res) => {
   const needsApproval = (vis === "public" || vis === "community") && (!isTimed || isLandmark);
   const approved = !needsApproval;
 
+  const isMature = await moderateContent({
+    texts: [title, description],
+    imagePaths: [imageUrl],
+  });
+
   const [pin] = await db
     .insert(pinsTable)
     .values({
@@ -170,6 +177,7 @@ router.post("/", async (req, res) => {
       expiresAt: expires,
       startTime: start,
       endTime: end,
+      isMature,
     })
     .returning();
   res.status(201).json(await formatPin(pin, uid));

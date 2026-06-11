@@ -268,6 +268,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     followerSeeLocation: u.followerSeeLocation,
     followerSeePosts: u.followerSeePosts,
     followerSendMessages: u.followerSendMessages,
+    showMatureContent: u.showMatureContent,
     isAdmin: u.isAdmin,
     isSuspended: u.isSuspended,
     warningCount: u.warningCount,
@@ -437,6 +438,12 @@ router.patch("/me", async (req, res) => {
       return res.status(400).json({ error: "followerSendMessages must be a boolean" });
     }
     updates.followerSendMessages = req.body.followerSendMessages;
+  }
+  if (req.body.showMatureContent !== undefined) {
+    if (typeof req.body.showMatureContent !== "boolean") {
+      return res.status(400).json({ error: "showMatureContent must be a boolean" });
+    }
+    updates.showMatureContent = req.body.showMatureContent;
   }
   const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, uid)).returning();
   res.json(formatUser(updated));

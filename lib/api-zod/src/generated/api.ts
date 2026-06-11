@@ -51,6 +51,7 @@ export const GetMeResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -106,7 +107,8 @@ export const UpdateMeBody = zod.object({
   "showFriends": zod.boolean().optional(),
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
-  "followerSendMessages": zod.boolean().optional()
+  "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional()
 })
 
 export const UpdateMeResponse = zod.object({
@@ -141,6 +143,7 @@ export const UpdateMeResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -209,6 +212,7 @@ export const UpdateMyLocationResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -271,6 +275,7 @@ export const GetAdminsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -359,6 +364,7 @@ export const SetUserAdminResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -425,6 +431,7 @@ export const SearchUsersResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -492,6 +499,7 @@ export const GetUserResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -562,6 +570,7 @@ export const GetFriendsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -654,6 +663,7 @@ export const GetFriendRequestsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -711,6 +721,7 @@ export const GetFriendRequestsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -802,6 +813,7 @@ export const FollowUserResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -859,6 +871,7 @@ export const FollowUserResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -931,6 +944,7 @@ export const GetBlockedUsersResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -998,6 +1012,7 @@ export const GetFollowersResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -1065,6 +1080,7 @@ export const GetFollowingResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -1132,6 +1148,7 @@ export const GetUserFriendsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -1201,6 +1218,7 @@ export const GetMutualFriendsResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -1289,6 +1307,7 @@ export const AcceptFriendRequestResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -1346,6 +1365,7 @@ export const AcceptFriendRequestResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -1414,6 +1434,7 @@ export const GetConversationsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -1475,6 +1496,7 @@ export const GetConversationsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -1504,6 +1526,7 @@ export const GetConversationsResponseItem = zod.object({
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.union([zod.literal('image'),zod.literal('video'),zod.literal(null)]).nullish(),
   "read": zod.boolean().optional(),
+  "isMature": zod.boolean().optional(),
   "reactions": zod.object({
   "heart": zod.number().optional(),
   "fish": zod.number().optional(),
@@ -1571,6 +1594,7 @@ export const GetConversationMessagesResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -1600,6 +1624,7 @@ export const GetConversationMessagesResponseItem = zod.object({
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.union([zod.literal('image'),zod.literal('video'),zod.literal(null)]).nullish(),
   "read": zod.boolean().optional(),
+  "isMature": zod.boolean().optional(),
   "reactions": zod.object({
   "heart": zod.number().optional(),
   "fish": zod.number().optional(),
@@ -1742,6 +1767,7 @@ export const GetPinsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -1782,6 +1808,7 @@ export const GetPinsResponseItem = zod.object({
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 export const GetPinsResponse = zod.array(GetPinsResponseItem)
@@ -1847,6 +1874,7 @@ export const GetPinResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -1887,6 +1915,7 @@ export const GetPinResponse = zod.object({
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -1941,6 +1970,7 @@ export const LikePinResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -1981,6 +2011,7 @@ export const LikePinResponse = zod.object({
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -2023,6 +2054,7 @@ export const GetFavoritePinsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -2063,6 +2095,7 @@ export const GetFavoritePinsResponseItem = zod.object({
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 export const GetFavoritePinsResponse = zod.array(GetFavoritePinsResponseItem)
@@ -2110,6 +2143,7 @@ export const ToggleFavoritePinResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -2150,6 +2184,7 @@ export const ToggleFavoritePinResponse = zod.object({
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -2192,6 +2227,7 @@ export const GetPendingPinsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -2232,6 +2268,7 @@ export const GetPendingPinsResponseItem = zod.object({
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 export const GetPendingPinsResponse = zod.array(GetPendingPinsResponseItem)
@@ -2279,6 +2316,7 @@ export const ApprovePinResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -2319,6 +2357,7 @@ export const ApprovePinResponse = zod.object({
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -2417,6 +2456,7 @@ export const GetPostsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -2481,6 +2521,7 @@ export const GetPostsResponseItem = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 export const GetPostsResponse = zod.array(GetPostsResponseItem)
@@ -2562,6 +2603,7 @@ export const GetPostResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -2626,6 +2668,7 @@ export const GetPostResponse = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -2684,6 +2727,7 @@ export const ReactToPostResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -2748,6 +2792,7 @@ export const ReactToPostResponse = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -2798,6 +2843,7 @@ export const VotePollResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -2862,6 +2908,7 @@ export const VotePollResponse = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -2923,6 +2970,7 @@ export const GetPostLikesResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -2995,6 +3043,7 @@ export const GetPostCommentsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -3034,6 +3083,7 @@ export const GetPostCommentsResponseItem = zod.object({
   "sad": zod.number().optional(),
   "angry": zod.number().optional()
 }),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 export const GetPostCommentsResponse = zod.array(GetPostCommentsResponseItem)
@@ -3110,6 +3160,7 @@ export const ReactToCommentResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -3149,6 +3200,7 @@ export const ReactToCommentResponse = zod.object({
   "sad": zod.number().optional(),
   "angry": zod.number().optional()
 }),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -3197,6 +3249,7 @@ export const GetPostsSummaryResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -3261,6 +3314,7 @@ export const GetPostsSummaryResponse = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })).optional(),
   "recentPins": zod.array(zod.object({
@@ -3298,6 +3352,7 @@ export const GetPostsSummaryResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -3338,6 +3393,7 @@ export const GetPostsSummaryResponse = zod.object({
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })).optional()
 })
@@ -3413,6 +3469,7 @@ export const ReactToMessageResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -3442,6 +3499,7 @@ export const ReactToMessageResponse = zod.object({
   "mediaUrl": zod.string().nullish(),
   "mediaType": zod.union([zod.literal('image'),zod.literal('video'),zod.literal(null)]).nullish(),
   "read": zod.boolean().optional(),
+  "isMature": zod.boolean().optional(),
   "reactions": zod.object({
   "heart": zod.number().optional(),
   "fish": zod.number().optional(),
@@ -3607,6 +3665,7 @@ export const GetActiveHazardsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -3647,6 +3706,7 @@ export const GetActiveHazardsResponseItem = zod.object({
   "likeCount": zod.number().optional(),
   "likedByMe": zod.boolean().optional(),
   "favoritedByMe": zod.boolean().optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 export const GetActiveHazardsResponse = zod.array(GetActiveHazardsResponseItem)
@@ -3694,6 +3754,7 @@ export const ToggleRsvpResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -3758,6 +3819,7 @@ export const ToggleRsvpResponse = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 
@@ -3803,6 +3865,7 @@ export const GetRsvpsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -3874,6 +3937,7 @@ export const GetCatchesResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -3907,6 +3971,7 @@ export const GetCatchesResponseItem = zod.object({
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish(),
   "isPrivate": zod.boolean(),
+  "isMature": zod.boolean().optional(),
   "caughtAt": zod.string(),
   "createdAt": zod.string()
 })
@@ -3979,6 +4044,7 @@ export const GetGalleryResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -4007,6 +4073,7 @@ export const GetGalleryResponseItem = zod.object({
   "mediaUrl": zod.string(),
   "mediaType": zod.enum(['image', 'video']),
   "caption": zod.string().nullish(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 export const GetGalleryResponse = zod.array(GetGalleryResponseItem)
@@ -4070,6 +4137,7 @@ export const SearchResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -4167,6 +4235,7 @@ export const AcceptWaiverResponse = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -4309,6 +4378,7 @@ export const GetSavedPostsResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),
@@ -4373,6 +4443,7 @@ export const GetSavedPostsResponseItem = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
 export const GetSavedPostsResponse = zod.array(GetSavedPostsResponseItem)
@@ -4429,6 +4500,7 @@ export const GetMutedUsersResponseItem = zod.object({
   "followerSeeLocation": zod.boolean().optional(),
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
   "isAdmin": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
   "warningCount": zod.number().optional(),

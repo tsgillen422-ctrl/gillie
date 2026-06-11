@@ -4,6 +4,7 @@ import { usersTable, postsTable, postLikesTable, postCommentsTable, commentLikes
 import { eq, and, gte, sql, desc, count, inArray, notInArray, or, asc } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { canViewPin, getFriendIds as getPinFriendIds } from "./pins";
+import { moderateContent } from "../lib/moderation";
 
 const router = Router();
 const ALLOWED_REACTIONS = ["thumbsup", "thumbsdown", "heart", "laugh", "sad", "angry"];
@@ -110,6 +111,7 @@ async function formatPost(post: typeof postsTable.$inferSelect, viewerId: number
     pinLat: post.pinLat,
     pinLng: post.pinLng,
     likeCount: post.likeCount,
+    isMature: post.isMature,
     likedByMe: !!like,
     myReaction: like?.reaction ?? null,
     reactionCounts,
@@ -211,6 +213,10 @@ router.post("/", async (req, res) => {
   const pollChoices = Array.isArray(pollOptions)
     ? pollOptions.map((p: unknown) => (typeof p === "string" ? p.trim() : "")).filter((p) => p.length > 0).slice(0, 10)
     : [];
+  const isMature = await moderateContent({
+    texts: [title, content, ...pollChoices],
+    imagePaths: [imageUrl, ...(photoList ?? [])],
+  });
   const [post] = await db
     .insert(postsTable)
     .values({
@@ -229,6 +235,7 @@ router.post("/", async (req, res) => {
       pinLat,
       pinLng,
       visibility: visibility === "friends" ? "friends" : "community",
+      isMature,
     })
     .returning();
   if (pollChoices.length >= 2) {
@@ -253,6 +260,7 @@ router.post("/:postId/share", async (req, res) => {
     if (!(await canViewPost(uid, source))) return res.status(404).json({ error: "Original post is no longer available" });
   }
   const content = typeof req.body?.content === "string" ? req.body.content : "";
+  const isMature = await moderateContent({ texts: [content] });
   const [post] = await db
     .insert(postsTable)
     .values({
@@ -261,6 +269,7 @@ router.post("/:postId/share", async (req, res) => {
       content,
       postType: "post",
       sharedPostId: sourceId,
+      isMature,
     })
     .returning();
   res.status(201).json(await formatPost(post, uid));
@@ -552,6 +561,7 @@ async function formatComment(c: typeof postCommentsTable.$inferSelect, viewerId:
     imageUrl: c.imageUrl,
     videoUrl: c.videoUrl,
     likeCount: c.likeCount,
+    isMature: c.isMature,
     likedByMe: !!like,
     myReaction: like?.reaction ?? null,
     reactionCounts,
@@ -587,9 +597,13 @@ router.post("/:postId/comments", async (req, res) => {
   const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
   if (!post) return res.status(404).json({ error: "Post not found" });
   if (!(await canViewPost(uid, post))) return res.status(404).json({ error: "Post not found" });
+  const isMature = await moderateContent({
+    texts: [trimmedContent],
+    imagePaths: [trimmedImageUrl],
+  });
   const [comment] = await db
     .insert(postCommentsTable)
-    .values({ postId, userId: uid, content: trimmedContent, imageUrl: trimmedImageUrl || null, videoUrl: trimmedVideoUrl || null })
+    .values({ postId, userId: uid, content: trimmedContent, imageUrl: trimmedImageUrl || null, videoUrl: trimmedVideoUrl || null, isMature })
     .returning();
   res.status(201).json(await formatComment(comment, uid));
 });

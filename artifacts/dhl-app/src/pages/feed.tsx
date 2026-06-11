@@ -42,6 +42,7 @@ import { useUpload } from "@workspace/object-storage-web";
 import { compressImage } from "@/lib/compress";
 import { resolveImageSrc } from "@/lib/assets";
 import { ClickableImage } from "@/components/ClickableImage";
+import { MatureGate } from "@/components/MatureGate";
 import { REACTIONS, REACTION_MAP, DEFAULT_REACTION, type ReactionKey } from "@/lib/reactions";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -1739,6 +1740,7 @@ export function PostCard({ post, onReact, canDelete, onDelete, currentUserId, on
           onOpen();
         } : undefined}
       >
+        <MatureGate isMature={post.isMature} label="Sensitive post">
         {post.sharedPostId && (
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-2">
             <Repeat2 className="w-3.5 h-3.5" />
@@ -1861,6 +1863,7 @@ export function PostCard({ post, onReact, canDelete, onDelete, currentUserId, on
             )}
           </>
         )}
+        </MatureGate>
       </CardContent>
 
       {likeTotal > 0 && (
@@ -1906,6 +1909,7 @@ export function PostCard({ post, onReact, canDelete, onDelete, currentUserId, on
                       </Link>
                       <span className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}</span>
                     </div>
+                    <MatureGate isMature={c.isMature} label="Sensitive comment">
                     {c.content && <p className="text-sm whitespace-pre-wrap break-words">{c.content}</p>}
                     {c.imageUrl && (
                       <div className="mt-2 rounded-lg overflow-hidden bg-muted">
@@ -1917,6 +1921,7 @@ export function PostCard({ post, onReact, canDelete, onDelete, currentUserId, on
                         <video src={c.videoUrl} controls className="w-full h-full" />
                       </div>
                     )}
+                    </MatureGate>
                   </div>
                   <div className="mt-1 pl-3">
                     <CommentReactionButton comment={c} onReact={(r) => handleReactComment(c.id, r)} />

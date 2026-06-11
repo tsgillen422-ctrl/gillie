@@ -117,6 +117,7 @@ export function SettingsPage() {
   const [followerSeeLocation, setFollowerSeeLocation] = React.useState(true);
   const [followerSeePosts, setFollowerSeePosts] = React.useState(true);
   const [followerSendMessages, setFollowerSendMessages] = React.useState(true);
+  const [showMatureContent, setShowMatureContent] = React.useState(false);
   const [avatarUrl, setAvatarUrl] = React.useState<string | undefined>(undefined);
   const [coverUrl, setCoverUrl] = React.useState<string | undefined>(undefined);
   const [cropState, setCropState] = React.useState<{ kind: "avatar" | "cover"; fileName: string; src: string } | null>(null);
@@ -158,6 +159,7 @@ export function SettingsPage() {
       setFollowerSeeLocation((me as any).followerSeeLocation ?? true);
       setFollowerSeePosts((me as any).followerSeePosts ?? true);
       setFollowerSendMessages((me as any).followerSendMessages ?? true);
+      setShowMatureContent((me as any).showMatureContent ?? false);
       setAvatarUrl(me.avatarUrl ?? undefined);
       setCoverUrl(me.coverUrl ?? undefined);
     }
@@ -367,6 +369,24 @@ export function SettingsPage() {
     });
   };
 
+  const handleToggleMature = (checked: boolean) => {
+    setShowMatureContent(checked);
+    updateMe.mutate({ data: { showMatureContent: checked } }, {
+      onSuccess: () => {
+        toast({
+          title: checked ? "Sensitive Content Shown" : "Sensitive Content Hidden",
+          description: checked
+            ? "Content flagged as mature will no longer be blurred."
+            : "Content flagged as mature will be blurred until you tap to view.",
+        });
+      },
+      onError: () => {
+        setShowMatureContent(!checked);
+        toast({ title: "Error", description: "Failed to update setting.", variant: "destructive" });
+      },
+    });
+  };
+
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
 
   return (
@@ -513,6 +533,24 @@ export function SettingsPage() {
             </Card>
           </div>
         </div>
+
+        {/* Sensitive / Mature Content */}
+        <Card className="border-border shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-full ${showMatureContent ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                  {showMatureContent ? <ShieldCheck className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                </div>
+                <div>
+                  <CardTitle className="text-lg">Show Sensitive Content</CardTitle>
+                  <CardDescription>Reveal posts, photos, and messages flagged as mature instead of blurring them</CardDescription>
+                </div>
+              </div>
+              <Switch checked={showMatureContent} onCheckedChange={handleToggleMature} className="data-[state=checked]:bg-primary" />
+            </div>
+          </CardHeader>
+        </Card>
 
         <BlockedUsersCard />
 

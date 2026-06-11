@@ -2,6 +2,7 @@ import React from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useReactToPost, useDeletePost, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useDeleteUser, useGetFriends, useGetFollowers, useGetFollowing, useGetUserFriends, useGetCatches, useGetFavoritePins, getGetUserQueryKey, getGetGalleryQueryKey, getGetPostsQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey, getGetUserFriendsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { MatureGate } from "@/components/MatureGate";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Fish, Tent, Anchor, Mountain, Waves, Camera, Image as ImageIcon, Bookmark, FileText, ChevronRight, Star } from "lucide-react";
@@ -875,6 +876,7 @@ export function ProfilePage() {
                       className="relative aspect-square rounded-2xl overflow-hidden bg-muted cursor-zoom-in"
                       aria-label={item.mediaType === "video" ? "View video" : "View photo"}
                     >
+                      <MatureGate isMature={(item as any).isMature} rounded="rounded-2xl" className="w-full h-full">
                       {item.mediaType === "video" ? (
                         <>
                           <video src={item.mediaUrl} className="w-full h-full object-cover" muted playsInline preload="metadata" />
@@ -887,6 +889,7 @@ export function ProfilePage() {
                       ) : (
                         <img src={item.mediaUrl} alt={item.caption ?? "Gallery item"} className="w-full h-full object-cover" />
                       )}
+                      </MatureGate>
                     </button>
                   ))}
                 </div>
@@ -1032,6 +1035,7 @@ export function ProfilePage() {
                             onClick={() => setViewerItem(item)}
                             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setViewerItem(item); } }}
                           >
+                            <MatureGate isMature={(item as any).isMature} rounded="rounded-2xl" className="w-full h-full">
                             {item.mediaType === "video" ? (
                               <>
                                 <video src={item.mediaUrl} className="w-full h-full object-cover" muted playsInline preload="metadata" />
@@ -1044,6 +1048,7 @@ export function ProfilePage() {
                             ) : (
                               <img src={item.mediaUrl} alt={item.caption ?? "Gallery item"} className="w-full h-full object-cover" />
                             )}
+                            </MatureGate>
                           </div>
                         </div>
                       ))}

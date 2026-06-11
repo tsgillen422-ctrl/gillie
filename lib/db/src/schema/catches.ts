@@ -14,6 +14,7 @@ export const catchesTable = pgTable("catches", {
   lat: real("lat"),
   lng: real("lng"),
   isPrivate: boolean("is_private").notNull().default(false),
+  isMature: boolean("is_mature").notNull().default(false),
   caughtAt: timestamp("caught_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

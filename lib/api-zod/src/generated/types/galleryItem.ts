@@ -16,5 +16,6 @@ export interface GalleryItem {
   mediaType: GalleryItemMediaType;
   /** @nullable */
   caption?: string | null;
+  isMature?: boolean;
   createdAt: string;
 }

@@ -24,5 +24,6 @@ export interface Comment {
   /** @nullable */
   myReaction?: CommentMyReaction;
   reactionCounts: ReactionCounts;
+  isMature?: boolean;
   createdAt: string;
 }
