@@ -229,18 +229,36 @@ function WelcomeCard({
   return (
     <div className="flex flex-col items-center justify-center py-6 px-1">
       <div className={`${CARD} w-full max-w-sm p-6 flex flex-col items-center text-center`}>
-        <div className="relative">
-          <UserAvatar
-            name={name}
-            username={other?.username || ""}
-            avatarUrl={other?.avatarUrl}
-            className="w-24 h-24 ring-4 ring-white dark:ring-card shadow-soft-lg"
-          />
-          {online && (
-            <span className="absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-card" />
-          )}
-        </div>
-        <h2 className="mt-4 text-xl font-bold leading-tight">{name}</h2>
+        {other?.id ? (
+          <Link href={`/profile/${other.id}`} className="relative rounded-full hover-elevate active-elevate-2" aria-label={`View ${name}'s profile`}>
+            <UserAvatar
+              name={name}
+              username={other?.username || ""}
+              avatarUrl={other?.avatarUrl}
+              className="w-24 h-24 ring-4 ring-white dark:ring-card shadow-soft-lg"
+            />
+            {online && (
+              <span className="absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-card" />
+            )}
+          </Link>
+        ) : (
+          <div className="relative">
+            <UserAvatar
+              name={name}
+              username={other?.username || ""}
+              avatarUrl={other?.avatarUrl}
+              className="w-24 h-24 ring-4 ring-white dark:ring-card shadow-soft-lg"
+            />
+            {online && (
+              <span className="absolute bottom-1.5 right-1.5 w-5 h-5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-card" />
+            )}
+          </div>
+        )}
+        {other?.id ? (
+          <Link href={`/profile/${other.id}`} className="mt-4 text-xl font-bold leading-tight hover:underline">{name}</Link>
+        ) : (
+          <h2 className="mt-4 text-xl font-bold leading-tight">{name}</h2>
+        )}
         <div className="mt-1.5 flex items-center gap-1.5 text-sm text-muted-foreground">
           {online && <span className="w-2 h-2 rounded-full bg-emerald-500" />}
           <span>{online ? "Active now" : "On the lake"}</span>
