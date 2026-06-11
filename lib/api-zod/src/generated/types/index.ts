@@ -80,6 +80,8 @@ export * from './postLikeUser';
 export * from './postMyReaction';
 export * from './postPostType';
 export * from './postsSummary';
+export * from './postUpdateInput';
+export * from './postUpdateInputVisibility';
 export * from './postVisibility';
 export * from './pushSubscriptionInput';
 export * from './pushSubscriptionInputKeys';

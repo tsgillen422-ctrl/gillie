@@ -2699,6 +2699,129 @@ export const GetPostResponse = zod.object({
 
 
 /**
+ * @summary Edit your own post
+ */
+export const UpdatePostParams = zod.object({
+  "postId": zod.coerce.number()
+})
+
+export const UpdatePostBody = zod.object({
+  "title": zod.string().optional(),
+  "content": zod.string().optional(),
+  "eventDate": zod.string().nullish().describe('ISO date for event\/tie-up posts. Send null to clear.'),
+  "engineSetup": zod.string().nullish(),
+  "horsepower": zod.number().nullish(),
+  "topSpeed": zod.number().nullish(),
+  "mods": zod.string().nullish(),
+  "visibility": zod.enum(['community', 'friends']).optional()
+}).describe('Partial update for a post you own. Only the provided fields are changed.')
+
+export const UpdatePostResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "relationshipStatus": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "interests": zod.array(zod.string()).optional(),
+  "shareLocation": zod.boolean().optional(),
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
+  "showFriends": zod.boolean().optional(),
+  "followerSeeLocation": zod.boolean().optional(),
+  "followerSeePosts": zod.boolean().optional(),
+  "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
+  "waiverAcceptedAt": zod.string().nullish(),
+  "waiverVersion": zod.string().nullish(),
+  "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
+  "createdAt": zod.string()
+}).optional(),
+  "title": zod.string(),
+  "content": zod.string(),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
+  "eventDate": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "videoUrl": zod.string().nullish(),
+  "photos": zod.array(zod.string()).nullish().describe('Gallery photo URLs (used by boat showcases).'),
+  "engineSetup": zod.string().nullish().describe('Engine setup description (boat showcase).'),
+  "horsepower": zod.number().nullish().describe('Engine horsepower (boat showcase).'),
+  "topSpeed": zod.number().nullish().describe('Top speed in mph (boat showcase).'),
+  "mods": zod.string().nullish().describe('Modifications list (boat showcase).'),
+  "pinLat": zod.number().nullish(),
+  "pinLng": zod.number().nullish(),
+  "likeCount": zod.number().optional(),
+  "likedByMe": zod.boolean().optional(),
+  "myReaction": zod.union([zod.literal('thumbsup'),zod.literal('thumbsdown'),zod.literal('heart'),zod.literal('laugh'),zod.literal('sad'),zod.literal('angry'),zod.literal(null)]).nullish(),
+  "reactionCounts": zod.object({
+  "thumbsup": zod.number().optional(),
+  "thumbsdown": zod.number().optional(),
+  "heart": zod.number().optional(),
+  "laugh": zod.number().optional(),
+  "sad": zod.number().optional(),
+  "angry": zod.number().optional()
+}).optional(),
+  "rsvpCount": zod.number().optional(),
+  "rsvpByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
+  "sharedPostId": zod.number().nullish(),
+  "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
+  "visibility": zod.enum(['community', 'friends']).optional(),
+  "poll": zod.union([zod.null(),zod.object({
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+})),
+  "totalVotes": zod.number(),
+  "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
+})]).optional(),
+  "isMature": zod.boolean().optional(),
+  "createdAt": zod.string()
+})
+
+
+/**
  * @summary Delete a post
  */
 export const DeletePostParams = zod.object({

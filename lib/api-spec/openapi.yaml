@@ -1067,6 +1067,30 @@ paths:
               schema:
                 $ref: "#/components/schemas/Post"
 
+    patch:
+      operationId: updatePost
+      tags: [posts]
+      summary: Edit your own post
+      parameters:
+        - name: postId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostUpdateInput"
+      responses:
+        "200":
+          description: Updated post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+
     delete:
       operationId: deletePost
       tags: [posts]
@@ -2703,6 +2727,34 @@ components:
           items:
             type: string
           description: 2-10 poll choices. When present, the post includes a poll.
+
+    PostUpdateInput:
+      type: object
+      description: Partial update for a post you own. Only the provided fields are changed.
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        eventDate:
+          type: string
+          nullable: true
+          description: ISO date for event/tie-up posts. Send null to clear.
+        engineSetup:
+          type: string
+          nullable: true
+        horsepower:
+          type: integer
+          nullable: true
+        topSpeed:
+          type: number
+          nullable: true
+        mods:
+          type: string
+          nullable: true
+        visibility:
+          type: string
+          enum: [community, friends]
 
     PostsSummary:
       type: object

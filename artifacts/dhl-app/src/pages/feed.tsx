@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useGetPostLikes, useCreatePostComment, useDeletePostComment, useReactToComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useShareToProfile, useVotePoll, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey, useGetConditions } from "@workspace/api-client-react";
+import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useGetPostLikes, useCreatePostComment, useDeletePostComment, useReactToComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useShareToProfile, useVotePoll, useUpdatePost, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey, useGetConditions } from "@workspace/api-client-react";
 import { PostInputPostType, PostInputVisibility } from "@workspace/api-client-react/src/generated/api.schemas";
 import { GifPickerDialog } from "@/components/GifPickerDialog";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Link, useSearch } from "wouter";
-import { Heart, MessageCircle, Share2, Calendar, CalendarPlus, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, MoreHorizontal, Flag, Bookmark, BookmarkCheck, VolumeX, Link2, Repeat2, Anchor, Sailboat, Search, Bell, Sun, Moon, Cloud, CloudSun, CloudMoon, CloudRain, CloudSnow, CloudFog, CloudLightning, Fish, Camera, Waves, Wind, Gauge, AlertTriangle, Info, CheckCircle2, Droplets, Sunrise, Sunset, ChevronRight, Smile, BarChart3, Hash, Globe, Lock } from "lucide-react";
+import { Heart, MessageCircle, Share2, Calendar, CalendarPlus, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, MoreHorizontal, Flag, Bookmark, BookmarkCheck, VolumeX, Link2, Repeat2, Anchor, Sailboat, Search, Bell, Sun, Moon, Cloud, CloudSun, CloudMoon, CloudRain, CloudSnow, CloudFog, CloudLightning, Fish, Camera, Waves, Wind, Gauge, AlertTriangle, Info, CheckCircle2, Droplets, Sunrise, Sunset, ChevronRight, Smile, BarChart3, Hash, Globe, Lock, Pencil } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
@@ -301,7 +301,75 @@ export function FeedPage() {
   const reactPost = useReactToPost();
   const deletePost = useDeletePost();
   const createPost = useCreatePost();
+  const updatePost = useUpdatePost();
   const queryClient = useQueryClient();
+
+  const [editPostId, setEditPostId] = React.useState<number | null>(null);
+  const [editType, setEditType] = React.useState<string>("post");
+  const [editTitle, setEditTitle] = React.useState("");
+  const [editContent, setEditContent] = React.useState("");
+  const [editVisibility, setEditVisibility] = React.useState<"community" | "friends">("community");
+  const [editEventDate, setEditEventDate] = React.useState("");
+  const [editEngineSetup, setEditEngineSetup] = React.useState("");
+  const [editHorsepower, setEditHorsepower] = React.useState("");
+  const [editTopSpeed, setEditTopSpeed] = React.useState("");
+  const [editMods, setEditMods] = React.useState("");
+
+  const toDatetimeLocal = (iso?: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    const off = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - off).toISOString().slice(0, 16);
+  };
+
+  const openEditPost = (post: any) => {
+    setEditPostId(post.id);
+    setEditType(post.postType || "post");
+    setEditTitle(post.title || "");
+    setEditContent(post.content || "");
+    setEditVisibility(post.visibility === "friends" ? "friends" : "community");
+    setEditEventDate(toDatetimeLocal(post.eventDate));
+    setEditEngineSetup(post.engineSetup || "");
+    setEditHorsepower(post.horsepower != null ? String(post.horsepower) : "");
+    setEditTopSpeed(post.topSpeed != null ? String(post.topSpeed) : "");
+    setEditMods(post.mods || "");
+  };
+
+  const handleUpdatePost = () => {
+    if (editPostId == null) return;
+    const isBoatEdit = editType === "boat_showcase";
+    const isGatheringEdit = editType === "event" || editType === "tie_up";
+    const hp = parseInt(editHorsepower, 10);
+    const speed = parseFloat(editTopSpeed);
+    updatePost.mutate(
+      {
+        postId: editPostId,
+        data: {
+          title: editTitle.trim(),
+          content: editContent,
+          visibility: editVisibility as PostInputVisibility,
+          ...(isGatheringEdit ? { eventDate: editEventDate ? new Date(editEventDate).toISOString() : null } : {}),
+          ...(isBoatEdit
+            ? {
+                engineSetup: editEngineSetup.trim() || null,
+                horsepower: Number.isNaN(hp) ? null : hp,
+                topSpeed: Number.isNaN(speed) ? null : speed,
+                mods: editMods.trim() || null,
+              }
+            : {}),
+        },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Post updated.");
+          setEditPostId(null);
+          refreshPosts();
+        },
+        onError: () => toast.error("Couldn't update that post."),
+      }
+    );
+  };
 
   const [composerOpen, setComposerOpen] = React.useState(false);
   const [openPostId, setOpenPostId] = React.useState<number | null>(null);
@@ -794,6 +862,7 @@ export function FeedPage() {
                 onReact={(reaction) => reactPost.mutate({ postId: post.id, data: { reaction } }, { onSuccess: refreshPosts })}
                 canDelete={me != null && (post.userId === me.id || me.isAdmin)}
                 onDelete={() => handleDeletePost(post.id)}
+                onEdit={() => openEditPost(post)}
                 currentUserId={me?.id}
                 onOpen={() => setOpenPostId(post.id)}
               />
@@ -826,9 +895,77 @@ export function FeedPage() {
               onReact={(reaction) => reactPost.mutate({ postId: openPost.id, data: { reaction } }, { onSuccess: refreshPosts })}
               canDelete={me != null && (openPost.userId === me.id || me.isAdmin)}
               onDelete={() => handleDeletePost(openPost.id)}
+              onEdit={() => openEditPost(openPost)}
               currentUserId={me?.id}
             />
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editPostId != null} onOpenChange={(o) => { if (!o) setEditPostId(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit post</DialogTitle>
+            <DialogDescription>Update the details of your post.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {(editType === "event" || editType === "tie_up" || editType === "boat_showcase") && (
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-title">Title</Label>
+                <Input id="edit-title" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} data-testid="input-edit-title" />
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-content">What's on your mind?</Label>
+              <Textarea id="edit-content" value={editContent} onChange={(e) => setEditContent(e.target.value)} rows={5} data-testid="input-edit-content" />
+            </div>
+            {(editType === "event" || editType === "tie_up") && (
+              <div className="space-y-1.5">
+                <Label htmlFor="edit-event-date">Date &amp; time</Label>
+                <Input id="edit-event-date" type="datetime-local" value={editEventDate} onChange={(e) => setEditEventDate(e.target.value)} data-testid="input-edit-event-date" />
+              </div>
+            )}
+            {editType === "boat_showcase" && (
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5 col-span-2">
+                  <Label htmlFor="edit-engine">Engine setup</Label>
+                  <Input id="edit-engine" value={editEngineSetup} onChange={(e) => setEditEngineSetup(e.target.value)} data-testid="input-edit-engine" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-hp">Horsepower</Label>
+                  <Input id="edit-hp" type="number" inputMode="numeric" value={editHorsepower} onChange={(e) => setEditHorsepower(e.target.value)} data-testid="input-edit-hp" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-speed">Top speed (mph)</Label>
+                  <Input id="edit-speed" type="number" inputMode="decimal" value={editTopSpeed} onChange={(e) => setEditTopSpeed(e.target.value)} data-testid="input-edit-speed" />
+                </div>
+                <div className="space-y-1.5 col-span-2">
+                  <Label htmlFor="edit-mods">Mods</Label>
+                  <Input id="edit-mods" value={editMods} onChange={(e) => setEditMods(e.target.value)} data-testid="input-edit-mods" />
+                </div>
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label htmlFor="edit-visibility">Who can see this?</Label>
+              <Select value={editVisibility} onValueChange={(v) => setEditVisibility(v as "community" | "friends")}>
+                <SelectTrigger id="edit-visibility" data-testid="select-edit-visibility">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="community">Community</SelectItem>
+                  <SelectItem value="friends">Friends</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button type="button" onClick={handleUpdatePost} disabled={updatePost.isPending} data-testid="button-save-edit">
+              {updatePost.isPending ? "Saving..." : "Save changes"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -1458,7 +1595,7 @@ function LikesDialog({ postId, open, onOpenChange }: { postId: number, open: boo
   );
 }
 
-export function PostCard({ post, onReact, canDelete, onDelete, currentUserId, onOpen }: { post: any, onReact: (reaction: ReactionKey) => void, canDelete?: boolean, onDelete?: () => void, currentUserId?: number, onOpen?: () => void }) {
+export function PostCard({ post, onReact, canDelete, onDelete, onEdit, currentUserId, onOpen }: { post: any, onReact: (reaction: ReactionKey) => void, canDelete?: boolean, onDelete?: () => void, onEdit?: () => void, currentUserId?: number, onOpen?: () => void }) {
   const isEvent = post.postType === "event";
   const isTieUp = post.postType === "tie_up";
   const isGathering = isEvent || isTieUp;
@@ -1701,6 +1838,12 @@ export function PostCard({ post, onReact, canDelete, onDelete, currentUserId, on
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
+                  {canDelete && onEdit && (
+                    <DropdownMenuItem onClick={onEdit} data-testid={`menu-edit-${post.id}`}>
+                      <Pencil className="w-4 h-4" />
+                      Edit Post
+                    </DropdownMenuItem>
+                  )}
                   {!isOwnPost && (
                     <DropdownMenuItem onClick={() => setReportOpen(true)} data-testid={`menu-report-${post.id}`}>
                       <Flag className="w-4 h-4" />

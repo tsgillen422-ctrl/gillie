@@ -389,6 +389,37 @@ router.delete("/:postId", async (req, res) => {
   res.json({ success: true });
 });
 
+router.patch("/:postId", async (req, res) => {
+  const uid = currentUserId(req);
+  const postId = parseInt(req.params.postId);
+  if (!Number.isInteger(postId)) return res.status(400).json({ error: "Invalid post id" });
+  const post = await db.query.postsTable.findFirst({ where: eq(postsTable.id, postId) });
+  if (!post) return res.status(404).json({ error: "Post not found" });
+  const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, uid) });
+  if (post.userId !== uid && !me?.isAdmin) {
+    return res.status(403).json({ error: "You can only edit your own posts" });
+  }
+  const { title, content, visibility, eventDate, engineSetup, horsepower, topSpeed, mods } = req.body;
+  const updates: Partial<typeof postsTable.$inferInsert> = {};
+  if (typeof title === "string") updates.title = title;
+  if (typeof content === "string") updates.content = content;
+  if (visibility === "friends" || visibility === "community") updates.visibility = visibility;
+  if (eventDate !== undefined) updates.eventDate = eventDate ? new Date(eventDate) : null;
+  if (engineSetup !== undefined) updates.engineSetup = typeof engineSetup === "string" ? engineSetup : null;
+  if (horsepower !== undefined) updates.horsepower = Number.isInteger(horsepower) ? horsepower : null;
+  if (topSpeed !== undefined) updates.topSpeed = typeof topSpeed === "number" && Number.isFinite(topSpeed) ? topSpeed : null;
+  if (mods !== undefined) updates.mods = typeof mods === "string" ? mods : null;
+  if (Object.keys(updates).length === 0) return res.json(await formatPost(post, uid));
+  if (updates.title !== undefined || updates.content !== undefined) {
+    updates.isMature = await moderateContent({
+      texts: [updates.title ?? post.title, updates.content ?? post.content],
+      imagePaths: [post.imageUrl, ...(post.photos ?? [])],
+    });
+  }
+  const [updated] = await db.update(postsTable).set(updates).where(eq(postsTable.id, postId)).returning();
+  res.json(await formatPost(updated, uid));
+});
+
 router.post("/:postId/save", async (req, res) => {
   const uid = currentUserId(req);
   const postId = parseInt(req.params.postId);

@@ -62,6 +62,7 @@ import type {
   Post,
   PostInput,
   PostLikeUser,
+  PostUpdateInput,
   PostsSummary,
   PushSubscriptionInput,
   PushUnsubscribeInput,
@@ -4176,6 +4177,78 @@ export function useGetPost<TData = Awaited<ReturnType<typeof getPost>>, TError =
 
 
 
+
+export const getUpdatePostUrl = (postId: number,) => {
+
+
+
+
+  return `/api/posts/${postId}`
+}
+
+/**
+ * @summary Edit your own post
+ */
+export const updatePost = async (postId: number,
+    postUpdateInput: PostUpdateInput, options?: RequestInit): Promise<Post> => {
+
+  return customFetch<Post>(getUpdatePostUrl(postId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      postUpdateInput,)
+  }
+);}
+
+
+
+
+export const getUpdatePostMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePost>>, TError,{postId: number;data: BodyType<PostUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updatePost>>, TError,{postId: number;data: BodyType<PostUpdateInput>}, TContext> => {
+
+const mutationKey = ['updatePost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updatePost>>, {postId: number;data: BodyType<PostUpdateInput>}> = (props) => {
+          const {postId,data} = props ?? {};
+
+          return  updatePost(postId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdatePostMutationResult = NonNullable<Awaited<ReturnType<typeof updatePost>>>
+    export type UpdatePostMutationBody = BodyType<PostUpdateInput>
+    export type UpdatePostMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Edit your own post
+ */
+export const useUpdatePost = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updatePost>>, TError,{postId: number;data: BodyType<PostUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updatePost>>,
+        TError,
+        {postId: number;data: BodyType<PostUpdateInput>},
+        TContext
+      > => {
+      return useMutation(getUpdatePostMutationOptions(options));
+    }
 
 export const getDeletePostUrl = (postId: number,) => {
 

@@ -663,6 +663,29 @@ export interface PostInput {
   pollOptions?: string[];
 }
 
+export type PostUpdateInputVisibility = typeof PostUpdateInputVisibility[keyof typeof PostUpdateInputVisibility];
+
+
+export const PostUpdateInputVisibility = {
+  community: 'community',
+  friends: 'friends',
+} as const;
+
+/**
+ * Partial update for a post you own. Only the provided fields are changed.
+ */
+export interface PostUpdateInput {
+  title?: string;
+  content?: string;
+  /** ISO date for event/tie-up posts. Send null to clear. */
+  eventDate?: string | null;
+  engineSetup?: string | null;
+  horsepower?: number | null;
+  topSpeed?: number | null;
+  mods?: string | null;
+  visibility?: PostUpdateInputVisibility;
+}
+
 export interface PostsSummary {
   totalPosts: number;
   totalEvents: number;
