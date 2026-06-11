@@ -10,6 +10,8 @@ import {
   postLikesTable,
   postCommentsTable,
   commentLikesTable,
+  pollOptionsTable,
+  pollVotesTable,
   eventRsvpsTable,
   savedPostsTable,
   mutesTable,
@@ -92,6 +94,15 @@ export async function deleteUserAndData(tx: Tx, userId: number): Promise<void> {
   const rsvpConds = [eq(eventRsvpsTable.userId, userId)];
   if (postIds.length) rsvpConds.push(inArray(eventRsvpsTable.postId, postIds));
   await tx.delete(eventRsvpsTable).where(or(...rsvpConds));
+
+  // Poll votes by the user or on the user's poll posts, then the poll options on
+  // those posts (votes reference options, options reference posts).
+  const voteConds = [eq(pollVotesTable.userId, userId)];
+  if (postIds.length) voteConds.push(inArray(pollVotesTable.postId, postIds));
+  await tx.delete(pollVotesTable).where(or(...voteConds));
+  if (postIds.length) {
+    await tx.delete(pollOptionsTable).where(inArray(pollOptionsTable.postId, postIds));
+  }
 
   await tx.delete(postsTable).where(eq(postsTable.userId, userId));
 

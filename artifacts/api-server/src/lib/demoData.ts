@@ -5,8 +5,17 @@ import {
   postsTable,
   postLikesTable,
   postCommentsTable,
+  pollOptionsTable,
+  pollVotesTable,
+  eventRsvpsTable,
   catchesTable,
   pinsTable,
+  galleryItemsTable,
+  conversationsTable,
+  conversationParticipantsTable,
+  messagesTable,
+  messageReactionsTable,
+  notificationsTable,
 } from "@workspace/db";
 import { and, count, eq, inArray } from "drizzle-orm";
 import { deleteUserAndData } from "../routes/users";
@@ -14,13 +23,18 @@ import { logger } from "./logger";
 
 /**
  * Demo / seed data so an app-store reviewer (or a brand-new user) logging in
- * sees an active community: people on the map, a populated feed, catches and
- * pins. Demo accounts are flagged with users.isDemo so they can be refreshed
- * (to stay inside the 10-minute presence window) and removed in one shot.
+ * sees an active community on EVERY tab: people on the map, a populated feed
+ * (posts, an event, a tie-up, a boat showcase, a poll), catches, pins, photo
+ * galleries, plus a welcome conversation and alerts created for each new user.
+ *
+ * Demo accounts are flagged with users.isDemo so they can be refreshed (to stay
+ * inside the 10-minute presence window) and removed in one shot.
+ *
+ * All map coordinates below are sampled from the OpenStreetMap Dale Hollow Lake
+ * water polygon (relation 2898522) with a ~130m shore buffer, so boats and pins
+ * render on the water — and the presence jitter (±~80m) never drifts onto land.
  */
 
-// Boat home coordinates scattered across Dale Hollow Lake (TN/KY). The presence
-// refresher jitters around these so boats appear to drift while staying put.
 type DemoUserSeed = {
   username: string;
   displayName: string;
@@ -45,8 +59,8 @@ const DEMO_USERS: DemoUserSeed[] = [
     boatColor: "#2563eb",
     boatType: "wakeboat",
     interests: ["boating", "swimming", "bonfires"],
-    lat: 36.5782,
-    lng: -85.2051,
+    lat: 36.53784,
+    lng: -85.43484,
     autoFollow: true,
   },
   {
@@ -57,8 +71,8 @@ const DEMO_USERS: DemoUserSeed[] = [
     boatColor: "#16a34a",
     boatType: "bassboat",
     interests: ["fishing", "boating", "sunsets"],
-    lat: 36.6013,
-    lng: -85.2317,
+    lat: 36.59436,
+    lng: -85.3666,
     autoFollow: true,
   },
   {
@@ -69,8 +83,8 @@ const DEMO_USERS: DemoUserSeed[] = [
     boatColor: "#f59e0b",
     boatType: "pontoon",
     interests: ["sunsets", "swimming", "photography"],
-    lat: 36.5668,
-    lng: -85.3001,
+    lat: 36.62342,
+    lng: -85.29577,
     autoFollow: true,
   },
   {
@@ -81,8 +95,8 @@ const DEMO_USERS: DemoUserSeed[] = [
     boatColor: "#dc2626",
     boatType: "bassboat",
     interests: ["fishing", "wildlife"],
-    lat: 36.5891,
-    lng: -85.2624,
+    lat: 36.61134,
+    lng: -85.31723,
     autoFollow: true,
   },
   {
@@ -93,8 +107,8 @@ const DEMO_USERS: DemoUserSeed[] = [
     boatColor: "#0891b2",
     boatType: "kayak",
     interests: ["photography", "wildlife", "camping"],
-    lat: 36.6121,
-    lng: -85.1904,
+    lat: 36.55729,
+    lng: -85.38066,
     autoFollow: true,
   },
   {
@@ -105,8 +119,8 @@ const DEMO_USERS: DemoUserSeed[] = [
     boatColor: "#7c3aed",
     boatType: "cruiser",
     interests: ["boating", "fishing", "sunsets"],
-    lat: 36.5552,
-    lng: -85.3452,
+    lat: 36.56383,
+    lng: -85.39097,
     autoFollow: true,
   },
   {
@@ -117,8 +131,8 @@ const DEMO_USERS: DemoUserSeed[] = [
     boatColor: "#db2777",
     boatType: "speedboat",
     interests: ["swimming", "boating", "bonfires"],
-    lat: 36.5953,
-    lng: -85.1556,
+    lat: 36.63187,
+    lng: -85.26446,
     autoFollow: true,
   },
   {
@@ -129,8 +143,8 @@ const DEMO_USERS: DemoUserSeed[] = [
     boatColor: "#65a30d",
     boatType: "bassboat",
     interests: ["fishing", "photography"],
-    lat: 36.5721,
-    lng: -85.2782,
+    lat: 36.57497,
+    lng: -85.24403,
     autoFollow: true,
   },
   {
@@ -141,8 +155,8 @@ const DEMO_USERS: DemoUserSeed[] = [
     boatColor: "#ea580c",
     boatType: "pontoon",
     interests: ["sunsets", "boating"],
-    lat: 36.6201,
-    lng: -85.2153,
+    lat: 36.58571,
+    lng: -85.28328,
     autoFollow: false,
   },
   {
@@ -153,8 +167,8 @@ const DEMO_USERS: DemoUserSeed[] = [
     boatColor: "#0d9488",
     boatType: "jonboat",
     interests: ["camping", "fishing", "hiking"],
-    lat: 36.5604,
-    lng: -85.3204,
+    lat: 36.60489,
+    lng: -85.36099,
     autoFollow: false,
   },
   {
@@ -165,8 +179,8 @@ const DEMO_USERS: DemoUserSeed[] = [
     boatColor: "#4f46e5",
     boatType: "kayak",
     interests: ["wildlife", "photography", "swimming"],
-    lat: 36.6044,
-    lng: -85.2745,
+    lat: 36.56706,
+    lng: -85.42614,
     autoFollow: false,
   },
   {
@@ -177,8 +191,8 @@ const DEMO_USERS: DemoUserSeed[] = [
     boatColor: "#be123c",
     boatType: "speedboat",
     interests: ["boating", "swimming"],
-    lat: 36.5837,
-    lng: -85.2295,
+    lat: 36.53647,
+    lng: -85.39567,
     autoFollow: false,
   },
 ];
@@ -186,12 +200,19 @@ const DEMO_USERS: DemoUserSeed[] = [
 const AUTO_FOLLOW_USERNAMES = DEMO_USERS.filter((u) => u.autoFollow).map((u) => u.username);
 const HOME_BY_USERNAME = new Map(DEMO_USERS.map((u) => [u.username, { lat: u.lat, lng: u.lng }]));
 
+// The demo account that welcomes each new user with a DM + notification.
+const WELCOMER_USERNAME = "captainjoe";
+
 function avatarFor(username: string): string {
   return `https://api.dicebear.com/9.x/avataaars/svg?seed=${encodeURIComponent(username)}`;
 }
 
 function hoursAgo(h: number): Date {
   return new Date(Date.now() - h * 60 * 60 * 1000);
+}
+
+function hoursFromNow(h: number): Date {
+  return new Date(Date.now() + h * 60 * 60 * 1000);
 }
 
 // Image assets shipped in the frontend's public/seed dir. Stored as absolute
@@ -204,6 +225,16 @@ type PostSeed = {
   title: string;
   content: string;
   image?: string;
+  postType?: "post" | "event" | "tie_up" | "boat_showcase";
+  // For event / tie_up posts: when it happens (hours from now).
+  eventInHours?: number;
+  // For poll posts: 2-6 choices.
+  poll?: string[];
+  // For boat_showcase posts.
+  engineSetup?: string;
+  horsepower?: number;
+  topSpeed?: number;
+  mods?: string;
   hoursAgo: number;
 };
 
@@ -213,6 +244,14 @@ const DEMO_POSTS: PostSeed[] = [
   { username: "baitandbrews", title: "Largemouth on the topwater", content: "She hit a buzzbait right at sunrise. Released her healthy. What a morning!", image: SEED("catch-largemouth.png"), hoursAgo: 9 },
   { username: "anglerabe", title: "Bronze back beauty", content: "Smallmouth were stacked on the rocky points today. Light line, big fight.", image: SEED("catch-smallmouth.png"), hoursAgo: 14 },
   { username: "striperking", title: "Striper run is ON", content: "Found a school busting bait in the main channel. Hold on tight!", image: SEED("catch-striper.png"), hoursAgo: 20 },
+  // Event (shows on Feed "Events" tab + RSVP button)
+  { username: "captainjoe", title: "Fourth of July raft-up", content: "Annual fireworks raft-up at the main channel! Bring snacks, flags, and your best playlist. We tie up around 7pm. 🎆", postType: "event", eventInHours: 72, hoursAgo: 4 },
+  // Tie-up (shows on Tie-ups screen + RSVP)
+  { username: "tubetime", title: "Saturday sandbar tie-up", content: "Tying up at the big sandbar this Saturday afternoon. Floaties out, music on. Come find us!", postType: "tie_up", eventInHours: 48, hoursAgo: 7 },
+  // Boat showcase (shows on Boats screen with engine specs)
+  { username: "wakerider_tn", title: "Wake Machine — 23' Supra", content: "Three seasons of dialing in this build. Surf wave is finally perfect. AMA about ballast setup!", postType: "boat_showcase", engineSetup: "Indmar Raptor 575", horsepower: 575, topSpeed: 48.5, mods: "1,500 lb ballast, Surf Gate, tower speakers", hoursAgo: 10 },
+  // Poll
+  { username: "baitandbrews", title: "What's biting best right now?", content: "Curious what everyone's catching this week. Vote and drop your spot in the comments 👇", poll: ["Largemouth", "Smallmouth", "Striper", "Crappie"], hoursAgo: 5 },
   { username: "tubetime", title: "Sandbar day", content: "Anchored up at the sandbar with the whole crew. Water's perfect right now 🌊", hoursAgo: 5 },
   { username: "coveexplorer", title: "Found a new cove", content: "Paddled into the back of Sulphur Creek and had it all to myself. Saw two herons and a bald eagle.", hoursAgo: 11 },
   { username: "captainjoe", title: "Cruising the main channel", content: "Smooth ride today, light traffic. Waved at a few of you out there!", hoursAgo: 2 },
@@ -237,9 +276,9 @@ type CatchSeed = {
 };
 
 const DEMO_CATCHES: CatchSeed[] = [
-  { username: "baitandbrews", species: "Largemouth Bass", weight: 4.2, length: 19.5, notes: "Topwater buzzbait at sunrise.", image: SEED("catch-largemouth.png"), lat: 36.6013, lng: -85.2317, hoursAgo: 9 },
-  { username: "anglerabe", species: "Smallmouth Bass", weight: 3.1, length: 17.0, notes: "Rocky point on light line.", image: SEED("catch-smallmouth.png"), lat: 36.5721, lng: -85.2782, hoursAgo: 14 },
-  { username: "striperking", species: "Striped Bass", weight: 11.8, length: 31.0, notes: "Main channel, busting bait.", image: SEED("catch-striper.png"), lat: 36.5891, lng: -85.2624, hoursAgo: 20 },
+  { username: "baitandbrews", species: "Largemouth Bass", weight: 4.2, length: 19.5, notes: "Topwater buzzbait at sunrise.", image: SEED("catch-largemouth.png"), lat: 36.55999, lng: -85.43652, hoursAgo: 9 },
+  { username: "anglerabe", species: "Smallmouth Bass", weight: 3.1, length: 17.0, notes: "Rocky point on light line.", image: SEED("catch-smallmouth.png"), lat: 36.60839, lng: -85.37777, hoursAgo: 14 },
+  { username: "striperking", species: "Striped Bass", weight: 11.8, length: 31.0, notes: "Main channel, busting bait.", image: SEED("catch-striper.png"), lat: 36.513, lng: -85.39015, hoursAgo: 20 },
 ];
 
 type PinSeed = {
@@ -252,9 +291,21 @@ type PinSeed = {
 };
 
 const DEMO_PINS: PinSeed[] = [
-  { username: "baitandbrews", type: "fishing", title: "Good morning bite", description: "Topwater action on this point at first light.", lat: 36.6018, lng: -85.2322 },
-  { username: "captainjoe", type: "other", title: "No-wake reminder", description: "Idle speed through this narrow stretch — lots of kayaks.", lat: 36.5560, lng: -85.3448 },
-  { username: "tubetime", type: "other", title: "Popular sandbar", description: "Great spot to raft up on weekends. Shallow and sandy.", lat: 36.5949, lng: -85.1561 },
+  { username: "baitandbrews", type: "fishing", title: "Good morning bite", description: "Topwater action on this point at first light.", lat: 36.57414, lng: -85.3772 },
+  { username: "captainjoe", type: "other", title: "No-wake reminder", description: "Idle speed through this narrow stretch — lots of kayaks.", lat: 36.58912, lng: -85.37782 },
+  { username: "tubetime", type: "other", title: "Popular sandbar", description: "Great spot to raft up on weekends. Shallow and sandy.", lat: 36.60396, lng: -85.28465 },
+];
+
+type GallerySeed = { username: string; image: string; caption: string };
+
+const DEMO_GALLERY: GallerySeed[] = [
+  { username: "lakelifelauren", image: SEED("lake-sunset.png"), caption: "Golden hour from the cove" },
+  { username: "lakelifelauren", image: SEED("wakeboard.png"), caption: "Afternoon on the water" },
+  { username: "wakerider_tn", image: SEED("wakeboard.png"), caption: "Morning glass" },
+  { username: "baitandbrews", image: SEED("catch-largemouth.png"), caption: "Topwater largemouth" },
+  { username: "anglerabe", image: SEED("catch-smallmouth.png"), caption: "Bronze back" },
+  { username: "striperking", image: SEED("catch-striper.png"), caption: "Channel striper" },
+  { username: "captainjoe", image: SEED("lake-sunset.png"), caption: "Another perfect dusk" },
 ];
 
 export async function countDemoUsers(): Promise<number> {
@@ -320,23 +371,63 @@ export async function seedDemoData(): Promise<{ created: number; message: string
   }
   if (followRows.length) await db.insert(friendRequestsTable).values(followRows);
 
-  // Posts.
-  const postIdByIndex: number[] = [];
+  // Posts (incl. event / tie_up / boat_showcase / poll). Keep the inserted id
+  // alongside its seed so we can attach poll options, votes, and RSVPs.
+  const seededPosts: { id: number; seed: PostSeed }[] = [];
   for (const p of DEMO_POSTS) {
     const userId = idByUsername.get(p.username);
     if (!userId) continue;
+    const isEventLike = p.postType === "event" || p.postType === "tie_up";
     const [row] = await db
       .insert(postsTable)
       .values({
         userId,
         title: p.title,
         content: p.content,
+        postType: p.postType ?? "post",
+        eventDate: isEventLike && p.eventInHours != null ? hoursFromNow(p.eventInHours) : null,
         imageUrl: p.image ?? null,
+        engineSetup: p.engineSetup ?? null,
+        horsepower: p.horsepower ?? null,
+        topSpeed: p.topSpeed ?? null,
+        mods: p.mods ?? null,
         visibility: "community",
         createdAt: hoursAgo(p.hoursAgo),
       })
       .returning({ id: postsTable.id });
-    if (row) postIdByIndex.push(row.id);
+    if (row) seededPosts.push({ id: row.id, seed: p });
+  }
+  const postIdByIndex = seededPosts.map((s) => s.id);
+
+  // Poll options + votes.
+  for (const { id: postId, seed } of seededPosts) {
+    if (!seed.poll || seed.poll.length < 2) continue;
+    const opts = await db
+      .insert(pollOptionsTable)
+      .values(seed.poll.map((text, i) => ({ postId, text, position: i })))
+      .returning({ id: pollOptionsTable.id });
+    if (!opts.length) continue;
+    // Each demo user casts at most one vote (unique on post+user).
+    const voteRows: { postId: number; optionId: number; userId: number }[] = [];
+    for (const voterId of ids) {
+      if (Math.random() < 0.65) {
+        const opt = opts[Math.floor(Math.random() * opts.length)]!;
+        voteRows.push({ postId, optionId: opt.id, userId: voterId });
+      }
+    }
+    if (voteRows.length) await db.insert(pollVotesTable).values(voteRows);
+  }
+
+  // Event / tie-up RSVPs.
+  for (const { id: postId, seed } of seededPosts) {
+    if (seed.postType !== "event" && seed.postType !== "tie_up") continue;
+    const rsvpRows: { postId: number; userId: number; status: string }[] = [];
+    for (const uid of ids) {
+      const r = Math.random();
+      if (r < 0.55) rsvpRows.push({ postId, userId: uid, status: "going" });
+      else if (r < 0.7) rsvpRows.push({ postId, userId: uid, status: "maybe" });
+    }
+    if (rsvpRows.length) await db.insert(eventRsvpsTable).values(rsvpRows);
   }
 
   // Likes + comments for social proof.
@@ -390,6 +481,18 @@ export async function seedDemoData(): Promise<{ created: number; message: string
     });
   }
 
+  // Photo galleries (Profile tab).
+  for (const g of DEMO_GALLERY) {
+    const userId = idByUsername.get(g.username);
+    if (!userId) continue;
+    await db.insert(galleryItemsTable).values({
+      userId,
+      mediaUrl: g.image,
+      mediaType: "image",
+      caption: g.caption,
+    });
+  }
+
   // Pins.
   for (const p of DEMO_PINS) {
     const userId = idByUsername.get(p.username);
@@ -416,6 +519,34 @@ export async function clearDemoData(): Promise<{ removed: number }> {
   if (!demos.length) return { removed: 0 };
   await db.transaction(async (tx) => {
     for (const d of demos) await deleteUserAndData(tx, d.id);
+
+    // Removing a demo host leaves the welcome conversation it created with a real
+    // user as a 1-participant orphan (deleteUserAndData only drops a conversation
+    // once it hits ZERO participants). A 1:1 thread with fewer than 2 participants
+    // is unusable, so GC every such conversation along with its messages,
+    // reactions, participant rows, and the "message" alert that pointed at it —
+    // so a new user isn't left with a dead thread and a dangling notification.
+    const partRows = await tx
+      .select({ conversationId: conversationParticipantsTable.conversationId })
+      .from(conversationParticipantsTable);
+    const partCount = new Map<number, number>();
+    for (const r of partRows) partCount.set(r.conversationId, (partCount.get(r.conversationId) ?? 0) + 1);
+    const allConvs = await tx.select({ id: conversationsTable.id }).from(conversationsTable);
+    const orphanIds = allConvs.map((c) => c.id).filter((id) => (partCount.get(id) ?? 0) < 2);
+    if (orphanIds.length) {
+      const msgIds = (
+        await tx.select({ id: messagesTable.id }).from(messagesTable).where(inArray(messagesTable.conversationId, orphanIds))
+      ).map((m) => m.id);
+      if (msgIds.length) {
+        await tx.delete(messageReactionsTable).where(inArray(messageReactionsTable.messageId, msgIds));
+      }
+      await tx.delete(messagesTable).where(inArray(messagesTable.conversationId, orphanIds));
+      await tx.delete(conversationParticipantsTable).where(inArray(conversationParticipantsTable.conversationId, orphanIds));
+      await tx
+        .delete(notificationsTable)
+        .where(and(eq(notificationsTable.type, "message"), inArray(notificationsTable.relatedId, orphanIds)));
+      await tx.delete(conversationsTable).where(inArray(conversationsTable.id, orphanIds));
+    }
   });
   logger.info({ removed: demos.length }, "Cleared demo data");
   return { removed: demos.length };
@@ -424,7 +555,8 @@ export async function clearDemoData(): Promise<{ removed: number }> {
 /**
  * Keep demo boats inside the live presence window and gently drift them so the
  * map looks alive whenever a reviewer opens the app. No-op when there are no
- * demo users.
+ * demo users. Jitter (~80m) stays well within the shore buffer used to pick the
+ * home coordinates, so boats never drift onto land.
  */
 export async function refreshDemoPresence(): Promise<void> {
   const demos = await db
@@ -435,7 +567,7 @@ export async function refreshDemoPresence(): Promise<void> {
   const now = new Date();
   for (const d of demos) {
     const home = HOME_BY_USERNAME.get(d.username) ?? { lat: d.currentLat ?? 36.58, lng: d.currentLng ?? -85.25 };
-    const jitter = () => (Math.random() - 0.5) * 0.0018; // ~100m
+    const jitter = () => (Math.random() - 0.5) * 0.0016; // ~80m, < the 130m shore buffer
     await db
       .update(usersTable)
       .set({
@@ -452,7 +584,7 @@ export async function refreshDemoPresence(): Promise<void> {
 /**
  * Make a newly provisioned user follow (and be followed back by) a subset of the
  * demo accounts, so their map and feed are populated on first launch. Best-effort
- * and only does anything while demo data exists. Skips if already linked.
+ * and only does anything while demo data exists. Heals partial follow state.
  */
 export async function autoFollowDemoUsers(newUserId: number): Promise<void> {
   const targets = await db
@@ -477,6 +609,104 @@ export async function autoFollowDemoUsers(newUserId: number): Promise<void> {
     rows.push({ followerId: id, followeeId: newUserId, status: "accepted" });
   }
   if (rows.length) await db.insert(friendRequestsTable).values(rows);
+}
+
+/**
+ * Give a newly provisioned user content on the Messages and Alerts tabs: a
+ * welcome 1:1 conversation (with unread messages from a demo host) plus a few
+ * notifications. Best-effort, idempotent, and only acts while demo data exists.
+ * clearDemoData removes the welcome conversation and its message alert (it GCs
+ * the orphaned thread left when the demo host is deleted); the generic welcome
+ * notifications reference no demo data and read as a normal first-run greeting,
+ * so they are intentionally left in place.
+ */
+export async function seedNewUserExtras(newUserId: number): Promise<void> {
+  const [host] = await db
+    .select({ id: usersTable.id, displayName: usersTable.displayName })
+    .from(usersTable)
+    .where(and(eq(usersTable.isDemo, true), eq(usersTable.username, WELCOMER_USERNAME)));
+  if (!host) return;
+
+  // Welcome conversation — idempotent: skip if one already links the two users.
+  const myConvs = (
+    await db
+      .select({ conversationId: conversationParticipantsTable.conversationId })
+      .from(conversationParticipantsTable)
+      .where(eq(conversationParticipantsTable.userId, newUserId))
+  ).map((r) => r.conversationId);
+  let hasWelcome = false;
+  if (myConvs.length) {
+    const [shared] = await db
+      .select({ id: conversationParticipantsTable.id })
+      .from(conversationParticipantsTable)
+      .where(
+        and(
+          eq(conversationParticipantsTable.userId, host.id),
+          inArray(conversationParticipantsTable.conversationId, myConvs),
+        ),
+      )
+      .limit(1);
+    hasWelcome = !!shared;
+  }
+
+  if (!hasWelcome) {
+    const [conv] = await db
+      .insert(conversationsTable)
+      .values({ isGroup: false })
+      .returning({ id: conversationsTable.id });
+    if (conv) {
+      await db.insert(conversationParticipantsTable).values([
+        { conversationId: conv.id, userId: host.id, lastReadAt: new Date() },
+        { conversationId: conv.id, userId: newUserId, lastReadAt: null },
+      ]);
+      await db.insert(messagesTable).values([
+        {
+          conversationId: conv.id,
+          senderId: host.id,
+          content: "Welcome to Dale Hollow! 👋 I'm Joe — glad to have you on the water.",
+          createdAt: hoursAgo(2),
+        },
+        {
+          conversationId: conv.id,
+          senderId: host.id,
+          content: "Tap the map to see who's out right now, and post a photo when you catch something. Wave if you see Second Wind out there!",
+          createdAt: hoursAgo(1.9),
+        },
+      ]);
+
+      // Message alert pointing at the new conversation.
+      await db.insert(notificationsTable).values({
+        userId: newUserId,
+        type: "message",
+        message: `${host.displayName} sent you a welcome message`,
+        relatedId: conv.id,
+        read: false,
+      });
+    }
+  }
+
+  // Welcome + community notifications — idempotent: skip if user already has any.
+  const [existingNotif] = await db
+    .select({ id: notificationsTable.id })
+    .from(notificationsTable)
+    .where(and(eq(notificationsTable.userId, newUserId), eq(notificationsTable.type, "system")))
+    .limit(1);
+  if (!existingNotif) {
+    await db.insert(notificationsTable).values([
+      {
+        userId: newUserId,
+        type: "system",
+        message: "Welcome to Gillie! Set your boat name and interests in Settings to get started.",
+        read: false,
+      },
+      {
+        userId: newUserId,
+        type: "friend_request",
+        message: "The Dale Hollow community added you — check out who you're following.",
+        read: false,
+      },
+    ]);
+  }
 }
 
 let refresherStarted = false;

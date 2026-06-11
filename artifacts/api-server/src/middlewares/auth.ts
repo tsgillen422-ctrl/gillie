@@ -3,7 +3,7 @@ import { getAuth, clerkClient } from "@clerk/express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { logger } from "../lib/logger";
-import { autoFollowDemoUsers } from "../lib/demoData";
+import { autoFollowDemoUsers, seedNewUserExtras } from "../lib/demoData";
 
 // Clerk user IDs that should always have admin access. Lets the app owner
 // bootstrap admin in any environment (incl. a fresh production database)
@@ -82,6 +82,13 @@ export async function provisionLocalUser(clerkUserId: string) {
       await autoFollowDemoUsers(inserted[0].id);
     } catch (err) {
       logger.warn({ err, userId: inserted[0].id }, "auto-follow demo users failed");
+    }
+    // Give the new user a welcome conversation + notifications (Messages/Alerts
+    // tabs). Best-effort: never block sign-up on this.
+    try {
+      await seedNewUserExtras(inserted[0].id);
+    } catch (err) {
+      logger.warn({ err, userId: inserted[0].id }, "seed new user extras failed");
     }
     return inserted[0];
   }
