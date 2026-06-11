@@ -886,19 +886,45 @@ export function MapPage() {
   }, [search]);
 
   // --- Share my location ---
+  // A user only gets a boat once their device has actually reported a GPS fix.
+  // The old one-shot getCurrentPosition had no timeout/options and no error
+  // handler, so on real devices it could hang or fail silently (permission
+  // denied, position unavailable) — leaving share_location on but coordinates
+  // null, so the user never appeared on the map. We now grab an immediate fix
+  // AND keep a live watch while the map is open, with an error handler so
+  // failures are at least visible, so positions (and last_seen freshness) stay
+  // current.
+  const lastLocSentRef = useRef(0);
   useEffect(() => {
     if (!me || !me.shareLocation) return;
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        updateLocation.mutate({
-          data: {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            onWater: !meOnLandRef.current,
-          },
-        });
+    if (!navigator.geolocation) return;
+    const report = (pos: GeolocationPosition) => {
+      // watchPosition can fire rapidly while moving; throttle writes so we keep
+      // the position fresh without hammering the backend.
+      const now = Date.now();
+      if (now - lastLocSentRef.current < 15000) return;
+      lastLocSentRef.current = now;
+      updateLocation.mutate({
+        data: {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          onWater: !meOnLandRef.current,
+        },
       });
-    }
+    };
+    const onError = (err: GeolocationPositionError) => {
+      // Permission denied / unavailable / timeout — nothing to report, but log
+      // so this common "my boat never shows up" cause isn't fully silent.
+      console.warn("location share failed:", err.code, err.message);
+    };
+    const opts: PositionOptions = {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 30000,
+    };
+    navigator.geolocation.getCurrentPosition(report, onError, opts);
+    const watchId = navigator.geolocation.watchPosition(report, onError, opts);
+    return () => navigator.geolocation.clearWatch(watchId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.shareLocation]);
 
