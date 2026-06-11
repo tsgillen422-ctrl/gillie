@@ -2542,7 +2542,7 @@ function DetailCard({
 
   if (selected.kind === "pin") {
     const pin = freshPins?.find((p) => p.id === selected.data.id) ?? selected.data;
-    const isOwner = me != null && pin.userId === me.id;
+    const isOwner = me != null && (pin.userId === me.id || me.isAdmin);
     const isLandmark = pin.type === "landmark";
     const refreshPins = () => {
       queryClient.invalidateQueries({ queryKey: getGetPinsQueryKey() });
