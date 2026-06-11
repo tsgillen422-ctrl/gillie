@@ -10,6 +10,10 @@ import {
   useGetWaiverAcceptances,
   getGetAdminsQueryKey,
   getSearchUsersQueryKey,
+  useGetDemoDataStatus,
+  useSeedDemoData,
+  useClearDemoData,
+  getGetDemoDataStatusQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -322,9 +326,81 @@ function WaiverManager({ enabled }: { enabled: boolean }) {
   );
 }
 
+function DemoDataManager({ enabled }: { enabled: boolean }) {
+  const queryClient = useQueryClient();
+  const { data: status, isLoading } = useGetDemoDataStatus({ query: { enabled } });
+  const count = status?.demoUserCount ?? 0;
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: getGetDemoDataStatusQueryKey() });
+  const seed = useSeedDemoData();
+  const clear = useClearDemoData();
+
+  const onSeed = () => {
+    seed.mutate(undefined, {
+      onSuccess: (res) => {
+        toast.success(res.message ?? "Demo data generated.");
+        refresh();
+      },
+      onError: () => toast.error("Failed to generate demo data."),
+    });
+  };
+  const onClear = () => {
+    clear.mutate(undefined, {
+      onSuccess: (res) => {
+        toast.success(`Removed ${res.removed} demo accounts.`);
+        refresh();
+      },
+      onError: () => toast.error("Failed to remove demo data."),
+    });
+  };
+
+  return (
+    <Card className="border-border/60">
+      <CardHeader className="p-4 pb-2">
+        <h2 className="font-semibold text-sm">Demo data for App Review</h2>
+        <p className="text-xs text-muted-foreground">
+          Populate the app with demo boaters, posts, catches and map pins so a
+          reviewer (or any new user) sees an active community. New accounts
+          automatically follow the demo boaters, and their boats stay live on the
+          map. Remove it once review is complete.
+        </p>
+      </CardHeader>
+      <CardContent className="p-4 pt-2 space-y-3">
+        <div className="text-sm">
+          {isLoading ? (
+            <Skeleton className="h-5 w-40" />
+          ) : count > 0 ? (
+            <span className="inline-flex items-center gap-2">
+              <Badge variant="secondary">Active</Badge>
+              {count} demo accounts on the lake
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-2">
+              <Badge variant="outline">Off</Badge>
+              No demo data
+            </span>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={onSeed} disabled={seed.isPending || count > 0}>
+            {seed.isPending ? "Generating…" : "Generate demo data"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={onClear}
+            disabled={clear.isPending || count === 0}
+          >
+            {clear.isPending ? "Removing…" : "Remove demo data"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function AdminPage() {
   const { data: me, isLoading: meLoading } = useGetMe();
-  const [view, setView] = React.useState<"reports" | "members" | "waivers">("reports");
+  const [view, setView] = React.useState<"reports" | "members" | "waivers" | "demo">("reports");
   const [tab, setTab] = React.useState<"pending" | "resolved" | "dismissed" | "all">("pending");
   const statusParam = tab === "all" ? undefined : tab;
   const { data: reports, isLoading } = useGetReports(
@@ -358,10 +434,11 @@ export function AdminPage() {
       </div>
 
       <Tabs value={view} onValueChange={(v) => setView(v as any)}>
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="reports">Reports</TabsTrigger>
           <TabsTrigger value="members">Members</TabsTrigger>
           <TabsTrigger value="waivers">Waivers</TabsTrigger>
+          <TabsTrigger value="demo">Demo</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -369,6 +446,8 @@ export function AdminPage() {
         <MembersManager enabled={!!me?.isAdmin} myId={me?.id} />
       ) : view === "waivers" ? (
         <WaiverManager enabled={!!me?.isAdmin} />
+      ) : view === "demo" ? (
+        <DemoDataManager enabled={!!me?.isAdmin} />
       ) : (
         <>
           <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>

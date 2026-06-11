@@ -263,13 +263,20 @@ export async function countDemoUsers(): Promise<number> {
 }
 
 /**
- * Create the full demo world. Idempotent: if any demo users already exist it
- * does nothing (call clearDemoData first to reset).
+ * Create the full demo world. Idempotent and self-healing: if the complete set
+ * of demo users already exists it does nothing; if a *partial* set exists (a
+ * prior seed failed midway) it resets and rebuilds so the reviewer always gets a
+ * complete demo world.
  */
 export async function seedDemoData(): Promise<{ created: number; message: string }> {
   const existing = await countDemoUsers();
-  if (existing > 0) {
+  if (existing >= DEMO_USERS.length) {
     return { created: 0, message: `Demo data already present (${existing} demo users).` };
+  }
+  if (existing > 0) {
+    // Partial seed from a prior failure — reset so we rebuild a complete world
+    // (re-inserting would also collide on the unique username constraint).
+    await clearDemoData();
   }
 
   const now = new Date();
@@ -459,10 +466,13 @@ export async function autoFollowDemoUsers(newUserId: number): Promise<void> {
     .select({ followeeId: friendRequestsTable.followeeId })
     .from(friendRequestsTable)
     .where(and(eq(friendRequestsTable.followerId, newUserId), inArray(friendRequestsTable.followeeId, targetIds)));
-  if (already.length) return;
+  // Heal partial follow state: only insert the demo targets not already linked.
+  const alreadyIds = new Set(already.map((a) => a.followeeId));
+  const missing = targetIds.filter((id) => !alreadyIds.has(id));
+  if (!missing.length) return;
 
   const rows: { followerId: number; followeeId: number; status: string }[] = [];
-  for (const id of targetIds) {
+  for (const id of missing) {
     rows.push({ followerId: newUserId, followeeId: id, status: "accepted" });
     rows.push({ followerId: id, followeeId: newUserId, status: "accepted" });
   }
