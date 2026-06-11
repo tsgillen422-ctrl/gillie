@@ -26,8 +26,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, BellOff, Images, Trash2, User as UserIcon, ChevronRight } from "lucide-react";
+import { ArrowLeft, BellOff, Images, Trash2, User as UserIcon, ChevronRight, Flag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { ReportDialog } from "@/components/ReportDialog";
 
 const CARD = "rounded-3xl border border-card-border bg-card shadow-soft";
 
@@ -60,6 +61,7 @@ export function MessageSettingsPage() {
       ? otherParticipants.map((p) => p.displayName).join(", ") || "Group chat"
       : otherUser?.displayName || otherParticipants[0]?.displayName || "Conversation";
 
+  const [reportOpen, setReportOpen] = React.useState(false);
   const [muted, setMuted] = React.useState(false);
   React.useEffect(() => {
     if (conversation) setMuted(Boolean(conversation.muted));
@@ -198,6 +200,23 @@ export function MessageSettingsPage() {
               </div>
             )}
 
+            {/* Report user (1:1) */}
+            {!isGroup && otherUserId && (
+              <button
+                onClick={() => setReportOpen(true)}
+                className={`${CARD} p-4 flex items-center gap-3 w-full text-left hover-elevate active-elevate-2`}
+              >
+                <span className="grid place-items-center w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-500 shrink-0">
+                  <Flag className="w-4 h-4" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Report user</p>
+                  <p className="text-[11px] text-muted-foreground">Flag this person for a moderator to review</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </button>
+            )}
+
             {/* Delete conversation */}
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -229,6 +248,15 @@ export function MessageSettingsPage() {
           </>
         )}
       </div>
+
+      {otherUserId && (
+        <ReportDialog
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          targetType="user"
+          targetId={otherUserId}
+        />
+      )}
     </div>
   );
 }
