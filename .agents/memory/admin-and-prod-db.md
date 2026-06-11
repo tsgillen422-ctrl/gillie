@@ -28,3 +28,11 @@ against `environment: "production"` is **read-only (SELECT only)** — you canno
 UPDATE/INSERT prod directly. Any data/privilege fix that must land in production
 has to run *inside the app* (e.g. a login-time bootstrap) and then be deployed,
 not written directly.
+
+## "Admin can't delete in the live app" = stale prod bundle, not a code/permission bug
+Delete-any-pin (and similar owner powers) is fully wired: frontend gates on
+`me.isAdmin`, backend allows `isAdmin(uid)`, and `/me` serializes `isAdmin`.
+If a *confirmed* prod admin (correct `is_admin=t` row, clerk_id in
+`ADMIN_CLERK_IDS`, actively logging in) still sees no delete option, the live
+deploy predates the feature. **Fix is republish + hard-refresh, NOT a code or
+admin-grant change.** Verify the prod admin row before assuming a permission gap.
