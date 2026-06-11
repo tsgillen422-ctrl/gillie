@@ -144,6 +144,9 @@ export function MessagesPage() {
             <Button size="icon" variant="ghost" className="rounded-full" onClick={() => setGroupOpen(true)} aria-label="New group chat">
               <MessageSquarePlus className="w-5 h-5" />
             </Button>
+            <Button size="icon" variant="ghost" className="rounded-full" asChild aria-label="Friends">
+              <Link href="/friends"><Users className="w-5 h-5" /></Link>
+            </Button>
             <Link href="/profile/me" aria-label="Your profile" className="ml-1">
               <UserAvatar name={me?.displayName ?? "You"} username={me?.username ?? "you"} avatarUrl={me?.avatarUrl} className="w-9 h-9" />
             </Link>

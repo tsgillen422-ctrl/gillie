@@ -592,6 +592,13 @@ export function ProfilePage() {
                 <Link href={isSelf ? "/" : "/friends"}><ArrowLeft className="w-5 h-5" /></Link>
               </Button>
             </div>
+            {isSelf && (
+              <div className="absolute top-4 right-4 z-10">
+                <Button size="icon" variant="secondary" asChild className="rounded-full bg-white/85 text-foreground hover:bg-white shadow-soft backdrop-blur">
+                  <Link href="/friends" aria-label="Friends"><Users className="w-5 h-5" /></Link>
+                </Button>
+              </div>
+            )}
 
             {/* Identity card overlapping the cover */}
             <div className="px-3 -mt-14 relative z-10">
