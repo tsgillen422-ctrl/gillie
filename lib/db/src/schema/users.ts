@@ -37,6 +37,7 @@ export const usersTable = pgTable("users", {
   followerSeePosts: boolean("follower_see_posts").notNull().default(true),
   followerSendMessages: boolean("follower_send_messages").notNull().default(true),
   showMatureContent: boolean("show_mature_content").notNull().default(false),
+  isDemo: boolean("is_demo").notNull().default(false),
   followerCount: serial("follower_count"),
   followingCount: serial("following_count"),
   isAdmin: boolean("is_admin").notNull().default(false),

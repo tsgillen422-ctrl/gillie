@@ -25,6 +25,8 @@ tags:
     description: Notification operations
   - name: Storage
     description: Object storage upload and serving endpoints.
+  - name: admin
+    description: Admin-only maintenance operations.
 
 paths:
   /healthz:
@@ -170,6 +172,59 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/User"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /admin/demo-data:
+    get:
+      operationId: getDemoDataStatus
+      tags: [admin]
+      summary: Get demo data status (admin only)
+      responses:
+        "200":
+          description: Demo data status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoDataStatus"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    post:
+      operationId: seedDemoData
+      tags: [admin]
+      summary: Generate demo data (admin only)
+      responses:
+        "200":
+          description: Seed result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoDataSeedResult"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    delete:
+      operationId: clearDemoData
+      tags: [admin]
+      summary: Remove demo data (admin only)
+      responses:
+        "200":
+          description: Clear result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DemoDataClearResult"
         "403":
           description: Not an admin
           content:
@@ -2707,6 +2762,29 @@ components:
       properties:
         error:
           type: string
+
+    DemoDataStatus:
+      type: object
+      required: [demoUserCount]
+      properties:
+        demoUserCount:
+          type: integer
+
+    DemoDataSeedResult:
+      type: object
+      required: [created, message]
+      properties:
+        created:
+          type: integer
+        message:
+          type: string
+
+    DemoDataClearResult:
+      type: object
+      required: [removed]
+      properties:
+        removed:
+          type: integer
 
     Comment:
       type: object

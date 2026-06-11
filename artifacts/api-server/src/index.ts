@@ -3,6 +3,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { initRealtime } from "./lib/realtime";
 import { backfillReciprocalFollows } from "./lib/backfillReciprocalFollows";
+import { startDemoPresenceRefresher } from "./lib/demoData";
 
 const rawPort = process.env["PORT"];
 
@@ -29,4 +30,5 @@ server.listen(port, (err?: Error) => {
 
   logger.info({ port }, "Server listening");
   void backfillReciprocalFollows();
+  startDemoPresenceRefresher();
 });

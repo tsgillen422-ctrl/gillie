@@ -27,6 +27,9 @@ import type {
   Conditions,
   Conversation,
   ConversationInput,
+  DemoDataClearResult,
+  DemoDataSeedResult,
+  DemoDataStatus,
   DockLabel,
   DockLabelInput,
   ErrorEnvelope,
@@ -688,6 +691,223 @@ export const useSetUserAdmin = <TError = ErrorType<ErrorEnvelope>,
         TContext
       > => {
       return useMutation(getSetUserAdminMutationOptions(options));
+    }
+
+export const getGetDemoDataStatusUrl = () => {
+
+
+
+
+  return `/api/admin/demo-data`
+}
+
+/**
+ * @summary Get demo data status (admin only)
+ */
+export const getDemoDataStatus = async ( options?: RequestInit): Promise<DemoDataStatus> => {
+
+  return customFetch<DemoDataStatus>(getGetDemoDataStatusUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetDemoDataStatusQueryKey = () => {
+    return [
+    `/api/admin/demo-data`
+    ] as const;
+    }
+
+
+export const getGetDemoDataStatusQueryOptions = <TData = Awaited<ReturnType<typeof getDemoDataStatus>>, TError = ErrorType<ErrorEnvelope>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDemoDataStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetDemoDataStatusQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDemoDataStatus>>> = ({ signal }) => getDemoDataStatus({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getDemoDataStatus>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetDemoDataStatusQueryResult = NonNullable<Awaited<ReturnType<typeof getDemoDataStatus>>>
+export type GetDemoDataStatusQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary Get demo data status (admin only)
+ */
+
+export function useGetDemoDataStatus<TData = Awaited<ReturnType<typeof getDemoDataStatus>>, TError = ErrorType<ErrorEnvelope>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDemoDataStatus>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetDemoDataStatusQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getSeedDemoDataUrl = () => {
+
+
+
+
+  return `/api/admin/demo-data`
+}
+
+/**
+ * @summary Generate demo data (admin only)
+ */
+export const seedDemoData = async ( options?: RequestInit): Promise<DemoDataSeedResult> => {
+
+  return customFetch<DemoDataSeedResult>(getSeedDemoDataUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getSeedDemoDataMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof seedDemoData>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof seedDemoData>>, TError,void, TContext> => {
+
+const mutationKey = ['seedDemoData'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof seedDemoData>>, void> = () => {
+
+
+          return  seedDemoData(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SeedDemoDataMutationResult = NonNullable<Awaited<ReturnType<typeof seedDemoData>>>
+
+    export type SeedDemoDataMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Generate demo data (admin only)
+ */
+export const useSeedDemoData = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof seedDemoData>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof seedDemoData>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getSeedDemoDataMutationOptions(options));
+    }
+
+export const getClearDemoDataUrl = () => {
+
+
+
+
+  return `/api/admin/demo-data`
+}
+
+/**
+ * @summary Remove demo data (admin only)
+ */
+export const clearDemoData = async ( options?: RequestInit): Promise<DemoDataClearResult> => {
+
+  return customFetch<DemoDataClearResult>(getClearDemoDataUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getClearDemoDataMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearDemoData>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof clearDemoData>>, TError,void, TContext> => {
+
+const mutationKey = ['clearDemoData'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearDemoData>>, void> = () => {
+
+
+          return  clearDemoData(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClearDemoDataMutationResult = NonNullable<Awaited<ReturnType<typeof clearDemoData>>>
+
+    export type ClearDemoDataMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Remove demo data (admin only)
+ */
+export const useClearDemoData = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearDemoData>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof clearDemoData>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getClearDemoDataMutationOptions(options));
     }
 
 export const getSearchUsersUrl = (params: SearchUsersParams,) => {

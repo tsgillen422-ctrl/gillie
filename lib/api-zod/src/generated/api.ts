@@ -393,6 +393,31 @@ export const SetUserAdminResponse = zod.object({
 
 
 /**
+ * @summary Get demo data status (admin only)
+ */
+export const GetDemoDataStatusResponse = zod.object({
+  "demoUserCount": zod.number()
+})
+
+
+/**
+ * @summary Generate demo data (admin only)
+ */
+export const SeedDemoDataResponse = zod.object({
+  "created": zod.number(),
+  "message": zod.string()
+})
+
+
+/**
+ * @summary Remove demo data (admin only)
+ */
+export const ClearDemoDataResponse = zod.object({
+  "removed": zod.number()
+})
+
+
+/**
  * @summary Search users by name or username
  */
 export const SearchUsersQueryParams = zod.object({

@@ -16,6 +16,7 @@ import galleryRouter from "./gallery";
 import reportsRouter from "./reports";
 import pushRouter from "./push";
 import gifsRouter from "./gifs";
+import adminRouter from "./admin";
 import { requireAuth } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -40,5 +41,6 @@ router.use("/gallery", galleryRouter);
 router.use("/reports", reportsRouter);
 router.use("/push", pushRouter);
 router.use("/gifs", gifsRouter);
+router.use("/admin", adminRouter);
 
 export default router;

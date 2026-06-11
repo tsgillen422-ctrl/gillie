@@ -46,7 +46,7 @@ const VALID_INTERESTS = [
 ];
 
 // Permanently delete a user and every record that references them.
-async function deleteUserAndData(tx: Tx, userId: number): Promise<void> {
+export async function deleteUserAndData(tx: Tx, userId: number): Promise<void> {
   const postIds = (
     await tx.select({ id: postsTable.id }).from(postsTable).where(eq(postsTable.userId, userId))
   ).map((r) => r.id);

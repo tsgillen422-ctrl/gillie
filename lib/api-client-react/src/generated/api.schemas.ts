@@ -703,6 +703,19 @@ export interface ErrorEnvelope {
   error: string;
 }
 
+export interface DemoDataStatus {
+  demoUserCount: number;
+}
+
+export interface DemoDataSeedResult {
+  created: number;
+  message: string;
+}
+
+export interface DemoDataClearResult {
+  removed: number;
+}
+
 /**
  * @nullable
  */
