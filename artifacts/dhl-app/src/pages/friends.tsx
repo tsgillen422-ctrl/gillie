@@ -8,6 +8,7 @@ import { Search, UserPlus, Check, X, UserMinus, Navigation, Users } from "lucide
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link, useSearch } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SuggestedFriendsList } from "@/components/SuggestedFriends";
 
 export function FriendsPage() {
   const [search, setSearch] = React.useState("");
@@ -16,7 +17,7 @@ export function FriendsPage() {
 
   React.useEffect(() => {
     const t = new URLSearchParams(searchParams).get("tab");
-    if (t === "requests" || t === "friends") setTab(t);
+    if (t === "requests" || t === "friends" || t === "suggested") setTab(t);
   }, [searchParams]);
   const { data: friends, isLoading: loadingFriends } = useGetFriends();
   const { data: requests, isLoading: loadingRequests } = useGetFriendRequests();
@@ -65,6 +66,7 @@ export function FriendsPage() {
           <Tabs value={tab} onValueChange={setTab} className="w-full">
             <TabsList className="w-full mb-4">
               <TabsTrigger value="friends" className="flex-1">My Crew</TabsTrigger>
+              <TabsTrigger value="suggested" className="flex-1">Suggested</TabsTrigger>
               <TabsTrigger value="requests" className="flex-1 relative">
                 Requests
                 {requests && requests.length > 0 && (
@@ -106,6 +108,10 @@ export function FriendsPage() {
               )}
             </TabsContent>
             
+            <TabsContent value="suggested" className="space-y-4 m-0">
+              <SuggestedFriendsList />
+            </TabsContent>
+
             <TabsContent value="requests" className="space-y-4 m-0">
               {loadingRequests ? (
                 <div className="space-y-3">

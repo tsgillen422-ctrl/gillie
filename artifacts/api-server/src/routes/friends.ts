@@ -1,11 +1,33 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, friendRequestsTable, blocksTable, mutesTable } from "@workspace/db";
-import { eq, or, and, inArray } from "drizzle-orm";
+import {
+  usersTable,
+  friendRequestsTable,
+  blocksTable,
+  mutesTable,
+  eventRsvpsTable,
+  pinFavoritesTable,
+  pinsTable,
+  postLikesTable,
+  postCommentsTable,
+  postsTable,
+} from "@workspace/db";
+import { eq, or, and, inArray, desc } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { createNotification } from "../lib/notify";
 
 const router = Router();
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
 
 async function getFollowCounts(userId: number): Promise<{ followerCount: number; followingCount: number }> {
   const accepted = await db.query.friendRequestsTable.findMany({
@@ -175,6 +197,156 @@ router.get("/requests", async (req, res) => {
       };
     })
   );
+  res.json(formatted);
+});
+
+// Recommend people to connect with, scored across community-relevant signals:
+// mutual friends, frequent interactions, shared favorite spots, common marinas,
+// nearby boaters, and same-event attendees. Falls back to recent joiners so new
+// members of the Dale Hollow community always surface.
+router.get("/suggestions", async (req, res) => {
+  const me = currentUserId(req);
+  const meUser = await db.query.usersTable.findFirst({ where: eq(usersTable.id, me) });
+
+  // Existing relationships we must never suggest.
+  const myRequests = await db.query.friendRequestsTable.findMany({
+    where: or(eq(friendRequestsTable.followerId, me), eq(friendRequestsTable.followeeId, me)),
+  });
+  const myFriendIds = new Set<number>();
+  const pendingPeerIds = new Set<number>();
+  for (const r of myRequests) {
+    const other = r.followerId === me ? r.followeeId : r.followerId;
+    if (r.status === "accepted") myFriendIds.add(other);
+    else pendingPeerIds.add(other);
+  }
+  const blockedIds = new Set(await getBlockedUserIds(me));
+  const exclude = new Set<number>([me, ...myFriendIds, ...pendingPeerIds, ...blockedIds]);
+
+  const scores = new Map<number, number>();
+  const mutualCounts = new Map<number, number>();
+  const reasons = new Map<number, string>();
+  const bestSignalWeight = new Map<number, number>();
+
+  const addSignal = (uid: number, weight: number, label: string) => {
+    if (exclude.has(uid)) return;
+    scores.set(uid, (scores.get(uid) ?? 0) + weight);
+    if (weight > (bestSignalWeight.get(uid) ?? 0)) {
+      bestSignalWeight.set(uid, weight);
+      reasons.set(uid, label);
+    }
+  };
+
+  // 1. Mutual friends (friends-of-friends).
+  if (myFriendIds.size) {
+    const friendArr = [...myFriendIds];
+    const fofRows = await db.query.friendRequestsTable.findMany({
+      where: and(
+        or(
+          inArray(friendRequestsTable.followerId, friendArr),
+          inArray(friendRequestsTable.followeeId, friendArr)
+        ),
+        eq(friendRequestsTable.status, "accepted")
+      ),
+    });
+    for (const r of fofRows) {
+      const { followerId: a, followeeId: b } = r;
+      if (myFriendIds.has(a) && !myFriendIds.has(b) && !exclude.has(b)) {
+        mutualCounts.set(b, (mutualCounts.get(b) ?? 0) + 1);
+      }
+      if (myFriendIds.has(b) && !myFriendIds.has(a) && !exclude.has(a)) {
+        mutualCounts.set(a, (mutualCounts.get(a) ?? 0) + 1);
+      }
+    }
+    for (const [c, count] of mutualCounts) {
+      addSignal(c, 3 * count, `${count} mutual friend${count > 1 ? "s" : ""}`);
+    }
+  }
+
+  // 2. Same events (shared RSVPs).
+  const myRsvps = await db.query.eventRsvpsTable.findMany({ where: eq(eventRsvpsTable.userId, me) });
+  const myEventPostIds = [...new Set(myRsvps.map((r) => r.postId))];
+  if (myEventPostIds.length) {
+    const coRsvps = await db.query.eventRsvpsTable.findMany({
+      where: inArray(eventRsvpsTable.postId, myEventPostIds),
+    });
+    for (const r of coRsvps) addSignal(r.userId, 2, "Going to the same event");
+  }
+
+  // 3. Shared favorite locations + common marinas.
+  const myFavs = await db.query.pinFavoritesTable.findMany({ where: eq(pinFavoritesTable.userId, me) });
+  const myFavPinIds = [...new Set(myFavs.map((f) => f.pinId))];
+  if (myFavPinIds.length) {
+    const favPins = await db.query.pinsTable.findMany({ where: inArray(pinsTable.id, myFavPinIds) });
+    const marinaPinIds = new Set(favPins.filter((p) => p.type === "marina").map((p) => p.id));
+    const coFavs = await db.query.pinFavoritesTable.findMany({
+      where: inArray(pinFavoritesTable.pinId, myFavPinIds),
+    });
+    for (const f of coFavs) {
+      if (marinaPinIds.has(f.pinId)) addSignal(f.userId, 2.5, "Keeps a boat at the same marina");
+      else addSignal(f.userId, 1.5, "Likes the same spots");
+    }
+  }
+
+  // 4. Frequent interactions (posts I liked or commented on -> their authors).
+  const [myLikes, myComments] = await Promise.all([
+    db.query.postLikesTable.findMany({ where: eq(postLikesTable.userId, me) }),
+    db.query.postCommentsTable.findMany({ where: eq(postCommentsTable.userId, me) }),
+  ]);
+  const interactedPostIds = [...new Set([...myLikes.map((l) => l.postId), ...myComments.map((c) => c.postId)])];
+  if (interactedPostIds.length) {
+    const posts = await db.query.postsTable.findMany({ where: inArray(postsTable.id, interactedPostIds) });
+    const authorCounts = new Map<number, number>();
+    for (const p of posts) authorCounts.set(p.userId, (authorCounts.get(p.userId) ?? 0) + 1);
+    for (const [author, count] of authorCounts) {
+      addSignal(author, Math.min(count, 5), "You interact with their posts");
+    }
+  }
+
+  // 5. Nearby boaters (sharing location, within ~40km of me).
+  if (meUser?.currentLat != null && meUser?.currentLng != null) {
+    const located = await db.query.usersTable.findMany({ where: eq(usersTable.shareLocation, true) });
+    for (const u of located) {
+      if (u.currentLat == null || u.currentLng == null) continue;
+      const d = haversineKm(meUser.currentLat, meUser.currentLng, u.currentLat, u.currentLng);
+      if (d <= 40) addSignal(u.id, 1.5, "Boating nearby");
+    }
+  }
+
+  // 6. Community fallback: surface recent joiners so new members are discoverable.
+  if (scores.size < 10) {
+    const recent = await db.query.usersTable.findMany({
+      orderBy: [desc(usersTable.createdAt)],
+      limit: 30,
+    });
+    for (const u of recent) addSignal(u.id, 0.5, "New to Dale Hollow");
+  }
+
+  const rankedIds = [...scores.keys()].sort((a, b) => {
+    const sd = (scores.get(b) ?? 0) - (scores.get(a) ?? 0);
+    if (sd !== 0) return sd;
+    return (mutualCounts.get(b) ?? 0) - (mutualCounts.get(a) ?? 0);
+  });
+  if (!rankedIds.length) return res.json([]);
+
+  const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, rankedIds) });
+  const byId = new Map(users.map((u) => [u.id, u]));
+  // Minimal payload by design: never expose a non-friend's live location or
+  // last-seen. The suggestion UI only needs identity, boat, mutual count, reason.
+  const formatted = rankedIds
+    .map((id) => byId.get(id))
+    .filter((u): u is typeof usersTable.$inferSelect => !!u && !u.isSuspended)
+    .slice(0, 20)
+    .map((u) => ({
+      id: u.id,
+      username: u.username,
+      displayName: u.displayName,
+      avatarUrl: u.avatarUrl,
+      isOnline: u.isOnline,
+      boatType: u.boatType,
+      boatName: u.boatName,
+      mutualFriendCount: mutualCounts.get(u.id) ?? 0,
+      reason: reasons.get(u.id) ?? "Suggested for you",
+    }));
   res.json(formatted);
 });
 

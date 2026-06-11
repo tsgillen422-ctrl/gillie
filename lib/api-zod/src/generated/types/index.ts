@@ -104,6 +104,7 @@ export * from './setAdminInput';
 export * from './shareInput';
 export * from './sosInput';
 export * from './sosResult';
+export * from './suggestedUser';
 export * from './uploadUrlRequest';
 export * from './uploadUrlResponse';
 export * from './user';

@@ -274,6 +274,21 @@ paths:
                 items:
                   $ref: "#/components/schemas/FriendRequest"
 
+  /friends/suggestions:
+    get:
+      operationId: getFriendSuggestions
+      tags: [friends]
+      summary: Get recommended people to connect with
+      responses:
+        "200":
+          description: Ranked friend suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SuggestedUser"
+
   /friends/{userId}/follow:
     post:
       operationId: followUser
@@ -2220,6 +2235,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/User"
+
+    SuggestedUser:
+      type: object
+      required: [id, username, displayName, mutualFriendCount, reason]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        isOnline:
+          type: boolean
+        boatType:
+          type: ["string", "null"]
+        boatName:
+          type: ["string", "null"]
+        mutualFriendCount:
+          type: integer
+        reason:
+          type: string
 
     Pin:
       type: object

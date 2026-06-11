@@ -24,3 +24,4 @@
 - [Map WebGL e2e limitation](map-webgl-e2e-limitation.md) — Playwright harness has no WebGL so maplibre map pages can't be visually e2e'd; verify cluster logic via headless supercluster instead.
 - [Map iOS long-press](map-ios-longpress.md) — pin-drop needs -webkit-touch-callout/user-select:none on map canvas+markers (.ln) or iOS callout/magnifier eats the gesture; scope to canvas/markers, not overlays.
 - [Two mute systems](two-mute-systems.md) — feed mute (useMuteUser/ns table, hides posts) vs conversation mute (conversation_participants.muted, silences msg notifs); don't confuse them.
+- [Friend suggestions privacy](friend-suggestions-privacy.md) — /friends/suggestions must NOT return non-friends' currentLat/Lng/lastSeen; use a minimal DTO, not formatUserWithCounts.

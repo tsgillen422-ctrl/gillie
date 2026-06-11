@@ -5,6 +5,7 @@ import { GifPickerDialog } from "@/components/GifPickerDialog";
 import { UserAvatar } from "@/components/UserAvatar";
 import { HazardBanner } from "@/components/HazardBanner";
 import { TrendingSection } from "@/components/TrendingSection";
+import { SuggestedFriendsDrawer } from "@/components/SuggestedFriends";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -635,6 +636,8 @@ export function FeedPage() {
         </div>
 
         <ConditionsDrawer conditions={conditions ?? null} open={conditionsOpen} onOpenChange={setConditionsOpen} />
+
+        <SuggestedFriendsDrawer />
 
         {/* Stats + composer */}
         <div className="space-y-3 px-4 pt-4">

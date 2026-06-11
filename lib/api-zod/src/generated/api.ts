@@ -709,6 +709,23 @@ export const GetFriendRequestsResponse = zod.array(GetFriendRequestsResponseItem
 
 
 /**
+ * @summary Get recommended people to connect with
+ */
+export const GetFriendSuggestionsResponseItem = zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "boatType": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "mutualFriendCount": zod.number(),
+  "reason": zod.string()
+})
+export const GetFriendSuggestionsResponse = zod.array(GetFriendSuggestionsResponseItem)
+
+
+/**
  * @summary Send a friend request / follow a user
  */
 export const FollowUserParams = zod.object({

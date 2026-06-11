@@ -301,6 +301,21 @@ export interface MutualFriends {
   users?: User[];
 }
 
+export interface SuggestedUser {
+  id: number;
+  username: string;
+  displayName: string;
+  /** @nullable */
+  avatarUrl?: string | null;
+  isOnline?: boolean;
+  /** @nullable */
+  boatType?: string | null;
+  /** @nullable */
+  boatName?: string | null;
+  mutualFriendCount: number;
+  reason: string;
+}
+
 export type PinType = typeof PinType[keyof typeof PinType];
 
 
