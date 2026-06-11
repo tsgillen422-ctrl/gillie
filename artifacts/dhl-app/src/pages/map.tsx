@@ -444,6 +444,7 @@ const DOCK_EMOJIS = [
   "🗼", "🌊", "🏮", "🕯️", "⛵️", "🦅", "🪶", "🛟",
   "🏞️", "🌿", "💧", "🍃", "🦋", "🌲", "🍂", "⛰️",
   "🌤️", "💦", "🪨", "🕊️", "🛶", "🌅", "🌞", "🌴",
+  "🐺",
 ];
 
 // Smoothly maps zoom → label scale, clamped so signs never become billboards.
