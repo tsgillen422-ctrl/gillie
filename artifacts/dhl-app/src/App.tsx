@@ -31,6 +31,7 @@ import { TieUpsPage } from "@/pages/tie-ups";
 import { BoatsPage } from "@/pages/boats";
 import { SearchPage } from "@/pages/search";
 import { AdminPage } from "@/pages/admin";
+import { PrivacyPolicyPage, CommunityGuidelinesPage } from "@/pages/legal";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -189,6 +190,8 @@ function AuthedApp() {
         <Route path="/search" component={SearchPage} />
         <Route path="/notifications" component={NotificationsPage} />
         <Route path="/settings" component={SettingsPage} />
+        <Route path="/privacy-policy" component={PrivacyPolicyPage} />
+        <Route path="/community-guidelines" component={CommunityGuidelinesPage} />
         <Route path="/admin" component={AdminPage} />
         <Route path="/profile/:userId" component={ProfilePage} />
         <Route component={NotFound} />

@@ -323,6 +323,76 @@ export const useUpdateMe = <TError = ErrorType<unknown>,
       return useMutation(getUpdateMeMutationOptions(options));
     }
 
+export const getDeleteCurrentUserUrl = () => {
+
+
+
+
+  return `/api/users/me`
+}
+
+/**
+ * @summary Permanently delete your own account and all of your content
+ */
+export const deleteCurrentUser = async ( options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteCurrentUserUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteCurrentUserMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCurrentUser>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCurrentUser>>, TError,void, TContext> => {
+
+const mutationKey = ['deleteCurrentUser'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCurrentUser>>, void> = () => {
+
+
+          return  deleteCurrentUser(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCurrentUserMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCurrentUser>>>
+
+    export type DeleteCurrentUserMutationError = ErrorType<void>
+
+    /**
+ * @summary Permanently delete your own account and all of your content
+ */
+export const useDeleteCurrentUser = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCurrentUser>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCurrentUser>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getDeleteCurrentUserMutationOptions(options));
+    }
+
 export const getUpdateMyLocationUrl = () => {
 
 

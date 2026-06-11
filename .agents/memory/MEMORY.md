@@ -24,6 +24,7 @@
 - [Map WebGL e2e limitation](map-webgl-e2e-limitation.md) — Playwright harness has no WebGL so maplibre map pages can't be visually e2e'd; verify cluster logic via headless supercluster instead.
 - [Map iOS long-press](map-ios-longpress.md) — pin-drop needs -webkit-touch-callout/user-select:none on map canvas+markers (.ln) or iOS callout/magnifier eats the gesture; scope to canvas/markers, not overlays.
 - [Two mute systems](two-mute-systems.md) — feed mute (useMuteUser/ns table, hides posts) vs conversation mute (conversation_participants.muted, silences msg notifs); don't confuse them.
+- [Self-serve account deletion](account-deletion.md) — DELETE /users/me must be registered before /:userId; also delete the Clerk user or re-login resurrects a ghost account.
 - [Mature content gating](mature-content-gating.md) — moderation is item-level; gate EVERY moderated field everywhere it renders (incl. pin title, catch species, conversation-list preview), or it leaks.
 - [One-way follow model](follow-model.md) — accepted row = directional follow; mutual = both rows; follower-privacy (location/posts/messages) must be gated at EVERY surface incl. group DM creation.
 - [Hidden built-in places](hidden-places.md) — LAKE_PLACES have no id (keyed by name) & are only search-selectable; admin "remove place" hides via hidden_places table; only search needs filtering.

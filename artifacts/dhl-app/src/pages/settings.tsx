@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import { Link } from "wouter";
 import { useClerk } from "@clerk/react";
-import { useGetMe, useUpdateMe, useGetBlockedUsers, useUnblockUser, useGetMutedUsers, useUnmuteUser, getGetBlockedUsersQueryKey, getGetMutedUsersQueryKey } from "@workspace/api-client-react";
+import { useGetMe, useUpdateMe, useGetBlockedUsers, useUnblockUser, useGetMutedUsers, useUnmuteUser, useDeleteCurrentUser, getGetBlockedUsersQueryKey, getGetMutedUsersQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUpload } from "@workspace/object-storage-web";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -13,8 +13,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor, VolumeX, Volume2, ShieldCheck, Bookmark, ChevronRight, Heart, ScrollText, MessageSquare } from "lucide-react";
+import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor, VolumeX, Volume2, ShieldCheck, Bookmark, ChevronRight, Heart, ScrollText, MessageSquare, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { WaiverBody } from "@/lib/waiver";
 import { INTEREST_DEFS } from "@/lib/interests";
 import { useToast } from "@/hooks/use-toast";
@@ -588,6 +599,46 @@ export function SettingsPage() {
           </DialogContent>
         </Dialog>
 
+        {/* Community Guidelines */}
+        <Link href="/community-guidelines">
+          <Card className="border-border shadow-sm hover-elevate cursor-pointer">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-primary/10 text-primary">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Community Guidelines</CardTitle>
+                    <CardDescription>What's allowed and how we keep Gillie safe</CardDescription>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </div>
+            </CardHeader>
+          </Card>
+        </Link>
+
+        {/* Privacy Policy */}
+        <Link href="/privacy-policy">
+          <Card className="border-border shadow-sm hover-elevate cursor-pointer">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-primary/10 text-primary">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Privacy Policy</CardTitle>
+                    <CardDescription>How your data and location are handled</CardDescription>
+                  </div>
+                </div>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </div>
+            </CardHeader>
+          </Card>
+        </Link>
+
         {me?.isAdmin && (
           <Link href="/admin">
             <Card className="border-border shadow-sm hover-elevate cursor-pointer">
@@ -896,8 +947,83 @@ export function SettingsPage() {
           <LogoutButton />
           <SosButton />
         </div>
+
+        <DeleteAccountCard />
       </div>
     </div>
+  );
+}
+
+function DeleteAccountCard() {
+  const { signOut } = useClerk();
+  const { toast } = useToast();
+  const deleteAccount = useDeleteCurrentUser();
+  const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+  const handleDelete = () => {
+    deleteAccount.mutate(undefined, {
+      onSuccess: () => {
+        signOut({ redirectUrl: basePath || "/" });
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to delete your account. Please try again.",
+          variant: "destructive",
+        });
+      },
+    });
+  };
+
+  return (
+    <Card className="border-destructive/30 shadow-sm mt-6">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-full bg-destructive/10 text-destructive">
+            <Trash2 className="w-5 h-5" />
+          </div>
+          <div>
+            <CardTitle className="text-lg">Delete Account</CardTitle>
+            <CardDescription>
+              Permanently delete your account and all of your content
+            </CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" className="w-full" disabled={deleteAccount.isPending}>
+              {deleteAccount.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Delete My Account
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This permanently deletes your account along with your posts, photos,
+                catches, pins, messages, and other content. This action cannot be
+                undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete Account
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </CardContent>
+    </Card>
   );
 }
 

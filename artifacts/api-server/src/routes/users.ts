@@ -26,8 +26,10 @@ import {
   waiverAcceptancesTable,
 } from "@workspace/db";
 import { eq, ilike, or, and, count, notInArray, inArray, desc } from "drizzle-orm";
+import { clerkClient } from "@clerk/express";
 import { currentUserId } from "../middlewares/auth";
 import { createNotifications } from "../lib/notify";
+import { logger } from "../lib/logger";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -536,6 +538,31 @@ router.get("/waiver-acceptances", async (req, res) => {
       },
     }))
   );
+});
+
+// Self-serve account deletion. Removes the user's Clerk identity FIRST so a
+// re-login can't resurrect a ghost account, then deletes all of their data.
+// If the Clerk delete fails we abort before touching any data and report an
+// error, so the client never reports a "successful" deletion that can be undone.
+router.delete("/me", async (req, res) => {
+  const uid = currentUserId(req);
+  const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, uid) });
+  if (!me) return res.status(404).json({ error: "User not found" });
+
+  if (me.clerkId) {
+    try {
+      await clerkClient.users.deleteUser(me.clerkId);
+    } catch (err) {
+      logger.error({ err, userId: uid }, "Failed to delete Clerk user; aborting account deletion");
+      return res.status(502).json({ error: "Failed to delete your account. Please try again." });
+    }
+  }
+
+  await db.transaction(async (tx) => {
+    await deleteUserAndData(tx, uid);
+  });
+
+  return res.json({ success: true });
 });
 
 router.patch("/:userId/admin", async (req, res) => {

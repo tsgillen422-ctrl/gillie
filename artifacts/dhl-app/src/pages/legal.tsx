@@ -1,0 +1,46 @@
+import { Link } from "wouter";
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  PrivacyPolicyBody,
+  CommunityGuidelinesBody,
+} from "@/lib/legal";
+
+function LegalPageShell({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col h-full bg-muted/20 overflow-y-auto">
+      <div className="p-4 border-b border-border bg-card shadow-sm sticky top-0 z-10 flex items-center gap-3">
+        <Link href="/settings">
+          <Button variant="ghost" size="icon" aria-label="Back">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+        </Link>
+        <h1 className="text-2xl font-bold text-primary">{title}</h1>
+      </div>
+
+      <div className="p-5 max-w-md mx-auto w-full pb-20">{children}</div>
+    </div>
+  );
+}
+
+export function PrivacyPolicyPage() {
+  return (
+    <LegalPageShell title="Privacy Policy">
+      <PrivacyPolicyBody />
+    </LegalPageShell>
+  );
+}
+
+export function CommunityGuidelinesPage() {
+  return (
+    <LegalPageShell title="Community Guidelines">
+      <CommunityGuidelinesBody />
+    </LegalPageShell>
+  );
+}
