@@ -555,13 +555,14 @@ function buildPinEl(opts: {
 // Shows a representative emoji for the group; the bubble grows with the count.
 // For multi-point clusters a friendly count label (e.g. "8 boats here") sits to
 // the right of the bubble; singletons render as a bare bubble (current look).
-function buildClusterEl(count: number, emoji: string, label?: string): { root: HTMLDivElement; scale: HTMLDivElement } {
+function buildClusterEl(count: number, emoji: string, label?: string, kind: "pin" | "boat" = "boat"): { root: HTMLDivElement; scale: HTMLDivElement } {
   const root = el("div", "lake-pin") as HTMLDivElement;
   const scale = el("div", "lake-pin-scale") as HTMLDivElement;
   const row = el("div", "cluster-row");
   // larger bubble for denser clusters
   const sizeClass = count >= 25 ? "cluster-lg" : count >= 10 ? "cluster-md" : "cluster-sm";
-  const bubble = el("div", `pin-cluster ${sizeClass}`);
+  const variantClass = kind === "pin" ? "pin-cluster--pin" : "";
+  const bubble = el("div", `pin-cluster ${variantClass} ${sizeClass}`);
   const emojiEl = el("span", "pin-cluster-emoji");
   emojiEl.textContent = emoji;
   bubble.appendChild(emojiEl);
@@ -1304,7 +1305,7 @@ export function MapPage() {
           // count label ("3 fishing spots"), and expands on tap.
           const count = c.properties.point_count as number;
           const domType = dominantClusterType(index, c.properties.cluster_id);
-          const { root, scale } = buildClusterEl(count, getPinEmoji(domType), clusterPinLabel(domType, count));
+          const { root, scale } = buildClusterEl(count, getPinEmoji(domType), clusterPinLabel(domType, count), "pin");
           if (heatmapOn && isClusterHot(count)) {
             (root.querySelector(".pin-cluster") as HTMLElement | null)?.classList.add("cluster-hot");
           }
@@ -1326,7 +1327,7 @@ export function MapPage() {
         } else {
           // Zoomed out: show even a lone low-priority pin as a single-emoji bubble
           // so nothing silently disappears while still hiding the detail chip.
-          const { root, scale } = buildClusterEl(1, getPinEmoji(c.properties.pin?.type));
+          const { root, scale } = buildClusterEl(1, getPinEmoji(c.properties.pin?.type), undefined, "pin");
           root.addEventListener("click", (ev) => {
             ev.stopPropagation();
             map.easeTo({ center: [lng, lat], zoom: SECONDARY_PIN_ZOOM });
@@ -2982,12 +2983,12 @@ const MAP_CSS = `
     box-shadow: 0 5px 13px rgba(0,0,0,0.28);
   }
   .place-badge.tier-low {
-    width: 26px; height: 26px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.24);
+    width: 20px; height: 20px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.24);
   }
   .place-badge-emoji { line-height: 1; }
   .place-badge.tier-high .place-badge-emoji { font-size: 17px; }
-  .place-badge.tier-low .place-badge-emoji { font-size: 13px; }
+  .place-badge.tier-low .place-badge-emoji { font-size: 11px; }
   .place-text {
     display: flex;
     flex-direction: column;
@@ -3032,6 +3033,13 @@ const MAP_CSS = `
   .pin-cluster.cluster-sm .pin-cluster-emoji { font-size: 18px; }
   .pin-cluster.cluster-md .pin-cluster-emoji { font-size: 22px; }
   .pin-cluster.cluster-lg .pin-cluster-emoji { font-size: 26px; }
+  /* Pin/landmark clusters are smaller than boat clusters (user request). */
+  .pin-cluster.pin-cluster--pin.cluster-sm { width: 29px; height: 29px; }
+  .pin-cluster.pin-cluster--pin.cluster-md { width: 36px; height: 36px; }
+  .pin-cluster.pin-cluster--pin.cluster-lg { width: 45px; height: 45px; }
+  .pin-cluster.pin-cluster--pin.cluster-sm .pin-cluster-emoji { font-size: 14px; }
+  .pin-cluster.pin-cluster--pin.cluster-md .pin-cluster-emoji { font-size: 18px; }
+  .pin-cluster.pin-cluster--pin.cluster-lg .pin-cluster-emoji { font-size: 22px; }
   /* Bubble + friendly count label sit on a single row (no bobbing). */
   .cluster-row {
     display: flex;
