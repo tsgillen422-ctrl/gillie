@@ -47,6 +47,7 @@ const PIN_TYPES = [
   { value: 'tubing', label: 'Tubing', emoji: '🛟' },
   { value: 'skiing', label: 'Skiing', emoji: '🎿' },
   { value: 'houseboat', label: 'Houseboats', emoji: '🛥️' },
+  { value: 'divers', label: 'Divers', emoji: '🤿' },
   { value: 'hazard', label: 'Hazards', emoji: '⚠️' },
 ];
 

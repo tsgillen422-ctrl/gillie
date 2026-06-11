@@ -188,6 +188,7 @@ const getPinEmoji = (type: string) => {
     case "tubing": return "🛟";
     case "skiing": return "🎿";
     case "houseboat": return "🛥️";
+    case "divers": return "🤿";
     case "landmark": return "📍";
     case "hazard": return "⚠️";
     case "marina": return "⛵";
@@ -207,6 +208,7 @@ const getPinColor = (type: string) => {
     case "tubing": return "#e11d48";
     case "skiing": return "#2563eb";
     case "houseboat": return "#9333ea";
+    case "divers": return "#0ea5e9";
     case "landmark": return "#db2777";
     case "hazard": return "#dc2626";
     case "marina": return "#ea7317";
@@ -226,6 +228,7 @@ const getPinCategory = (type: string) => {
     case "tubing": return "Tubing";
     case "skiing": return "Skiing";
     case "houseboat": return "Houseboat";
+    case "divers": return "Divers";
     case "landmark": return "Landmark";
     case "hazard": return "Hazard";
     case "marina": return "Marina";
@@ -2163,6 +2166,7 @@ export function MapPage() {
                     <SelectItem value="tubing">🛟 Tubing</SelectItem>
                     <SelectItem value="skiing">🎿 Skiing</SelectItem>
                     <SelectItem value="houseboat">🛥️ Houseboat</SelectItem>
+                    <SelectItem value="divers">🤿 Divers</SelectItem>
                     <SelectItem value="campsite">🏕️ Campsite</SelectItem>
                     <SelectItem value="marina">⛵ Marina</SelectItem>
                     <SelectItem value="hazard">⚠️ Hazard</SelectItem>

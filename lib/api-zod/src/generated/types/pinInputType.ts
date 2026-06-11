@@ -18,6 +18,7 @@ export const PinInputType = {
   tubing: 'tubing',
   skiing: 'skiing',
   houseboat: 'houseboat',
+  divers: 'divers',
   landmark: 'landmark',
   hazard: 'hazard',
   marina: 'marina',
