@@ -36,4 +36,7 @@ export interface UserUpdate {
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
   showFriends?: boolean;
+  followerSeeLocation?: boolean;
+  followerSeePosts?: boolean;
+  followerSendMessages?: boolean;
 }

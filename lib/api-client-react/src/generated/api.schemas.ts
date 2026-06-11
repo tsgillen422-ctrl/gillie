@@ -88,6 +88,9 @@ export interface User {
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
   showFriends?: boolean;
+  followerSeeLocation?: boolean;
+  followerSeePosts?: boolean;
+  followerSendMessages?: boolean;
   isAdmin?: boolean;
   isSuspended?: boolean;
   warningCount?: number;
@@ -151,6 +154,9 @@ export interface UserUpdate {
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
   showFriends?: boolean;
+  followerSeeLocation?: boolean;
+  followerSeePosts?: boolean;
+  followerSendMessages?: boolean;
 }
 
 export interface LocationUpdate {

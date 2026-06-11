@@ -124,20 +124,29 @@ async function formatPost(post: typeof postsTable.$inferSelect, viewerId: number
   };
 }
 
+// Authors whose friends-only posts this viewer may see: people the viewer
+// follows, where the author follows back (mutual) OR the author lets non-mutual
+// followers see their posts (followerSeePosts). Blocked users are excluded.
 async function getFriendIds(userId: number): Promise<number[]> {
-  const accepted = await db.query.friendRequestsTable.findMany({
-    where: and(
-      or(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.followeeId, userId)),
-      eq(friendRequestsTable.status, "accepted")
-    ),
-  });
+  const [iFollow, followMe] = await Promise.all([
+    db.query.friendRequestsTable.findMany({
+      where: and(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.status, "accepted")),
+    }),
+    db.query.friendRequestsTable.findMany({
+      where: and(eq(friendRequestsTable.followeeId, userId), eq(friendRequestsTable.status, "accepted")),
+    }),
+  ]);
+  const followeeIds = [...new Set(iFollow.map((r) => r.followeeId).filter((id) => id !== userId))];
+  if (!followeeIds.length) return [];
+  const mutual = new Set(followMe.map((r) => r.followerId));
   const blocks = await db.query.blocksTable.findMany({
     where: or(eq(blocksTable.blockerId, userId), eq(blocksTable.blockedId, userId)),
   });
   const blockedIds = new Set(blocks.map((b) => (b.blockerId === userId ? b.blockedId : b.blockerId)));
-  return accepted
-    .map((r) => (r.followerId === userId ? r.followeeId : r.followerId))
-    .filter((id) => !blockedIds.has(id));
+  const authors = await db.query.usersTable.findMany({ where: inArray(usersTable.id, followeeIds) });
+  return authors
+    .filter((a) => !blockedIds.has(a.id) && (mutual.has(a.id) || a.followerSeePosts))
+    .map((a) => a.id);
 }
 
 // A post is visible to a viewer when it is shared with the whole community, or

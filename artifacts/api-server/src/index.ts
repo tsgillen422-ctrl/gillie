@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import app from "./app";
 import { logger } from "./lib/logger";
 import { initRealtime } from "./lib/realtime";
+import { backfillReciprocalFollows } from "./lib/backfillReciprocalFollows";
 
 const rawPort = process.env["PORT"];
 
@@ -27,4 +28,5 @@ server.listen(port, (err?: Error) => {
   }
 
   logger.info({ port }, "Server listening");
+  void backfillReciprocalFollows();
 });

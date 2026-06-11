@@ -265,6 +265,9 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     requireFollowApproval: u.requireFollowApproval,
     showFollowers: u.showFollowers,
     showFriends: u.showFriends,
+    followerSeeLocation: u.followerSeeLocation,
+    followerSeePosts: u.followerSeePosts,
+    followerSendMessages: u.followerSendMessages,
     isAdmin: u.isAdmin,
     isSuspended: u.isSuspended,
     warningCount: u.warningCount,
@@ -277,15 +280,21 @@ function formatUser(u: typeof usersTable.$inferSelect) {
 }
 
 async function getFollowCounts(userId: number): Promise<{ followerCount: number; followingCount: number }> {
-  const accepted = await db.query.friendRequestsTable.findMany({
+  // One-way follow model: followers (people who follow me) and following (people
+  // I follow) are independent sets, so the two counts can differ.
+  const rows = await db.query.friendRequestsTable.findMany({
     where: and(
       or(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.followeeId, userId)),
       eq(friendRequestsTable.status, "accepted")
     ),
   });
-  const ids = new Set(accepted.map((r) => (r.followerId === userId ? r.followeeId : r.followerId)));
-  ids.delete(userId);
-  return { followerCount: ids.size, followingCount: ids.size };
+  const followers = new Set<number>();
+  const following = new Set<number>();
+  for (const r of rows) {
+    if (r.followeeId === userId && r.followerId !== userId) followers.add(r.followerId);
+    if (r.followerId === userId && r.followeeId !== userId) following.add(r.followeeId);
+  }
+  return { followerCount: followers.size, followingCount: following.size };
 }
 
 async function getBlockedUserIds(userId: number): Promise<number[]> {
@@ -410,6 +419,24 @@ router.patch("/me", async (req, res) => {
       return res.status(400).json({ error: "showFriends must be a boolean" });
     }
     updates.showFriends = req.body.showFriends;
+  }
+  if (req.body.followerSeeLocation !== undefined) {
+    if (typeof req.body.followerSeeLocation !== "boolean") {
+      return res.status(400).json({ error: "followerSeeLocation must be a boolean" });
+    }
+    updates.followerSeeLocation = req.body.followerSeeLocation;
+  }
+  if (req.body.followerSeePosts !== undefined) {
+    if (typeof req.body.followerSeePosts !== "boolean") {
+      return res.status(400).json({ error: "followerSeePosts must be a boolean" });
+    }
+    updates.followerSeePosts = req.body.followerSeePosts;
+  }
+  if (req.body.followerSendMessages !== undefined) {
+    if (typeof req.body.followerSendMessages !== "boolean") {
+      return res.status(400).json({ error: "followerSendMessages must be a boolean" });
+    }
+    updates.followerSendMessages = req.body.followerSendMessages;
   }
   const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, uid)).returning();
   res.json(formatUser(updated));

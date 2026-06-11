@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor, VolumeX, Volume2, ShieldCheck, Bookmark, ChevronRight, Heart, ScrollText } from "lucide-react";
+import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor, VolumeX, Volume2, ShieldCheck, Bookmark, ChevronRight, Heart, ScrollText, MessageSquare } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { WaiverBody } from "@/lib/waiver";
 import { INTEREST_DEFS } from "@/lib/interests";
@@ -114,6 +114,9 @@ export function SettingsPage() {
   const [requireFollowApproval, setRequireFollowApproval] = React.useState(false);
   const [showFollowers, setShowFollowers] = React.useState(true);
   const [showFriends, setShowFriends] = React.useState(true);
+  const [followerSeeLocation, setFollowerSeeLocation] = React.useState(true);
+  const [followerSeePosts, setFollowerSeePosts] = React.useState(true);
+  const [followerSendMessages, setFollowerSendMessages] = React.useState(true);
   const [avatarUrl, setAvatarUrl] = React.useState<string | undefined>(undefined);
   const [coverUrl, setCoverUrl] = React.useState<string | undefined>(undefined);
   const [cropState, setCropState] = React.useState<{ kind: "avatar" | "cover"; fileName: string; src: string } | null>(null);
@@ -152,6 +155,9 @@ export function SettingsPage() {
       setRequireFollowApproval((me as any).requireFollowApproval ?? false);
       setShowFollowers((me as any).showFollowers ?? true);
       setShowFriends((me as any).showFriends ?? true);
+      setFollowerSeeLocation((me as any).followerSeeLocation ?? true);
+      setFollowerSeePosts((me as any).followerSeePosts ?? true);
+      setFollowerSendMessages((me as any).followerSendMessages ?? true);
       setAvatarUrl(me.avatarUrl ?? undefined);
       setCoverUrl(me.coverUrl ?? undefined);
     }
@@ -307,6 +313,60 @@ export function SettingsPage() {
     });
   };
 
+  const handleToggleFollowerSeeLocation = (checked: boolean) => {
+    setFollowerSeeLocation(checked);
+    updateMe.mutate({ data: { followerSeeLocation: checked } }, {
+      onSuccess: () => {
+        toast({
+          title: checked ? "Location Shared with Followers" : "Location Hidden from Followers",
+          description: checked
+            ? "Followers you don't follow back can see you on the map."
+            : "Only people you follow back can see you on the map.",
+        });
+      },
+      onError: () => {
+        setFollowerSeeLocation(!checked);
+        toast({ title: "Error", description: "Failed to update setting.", variant: "destructive" });
+      },
+    });
+  };
+
+  const handleToggleFollowerSeePosts = (checked: boolean) => {
+    setFollowerSeePosts(checked);
+    updateMe.mutate({ data: { followerSeePosts: checked } }, {
+      onSuccess: () => {
+        toast({
+          title: checked ? "Posts Shared with Followers" : "Posts Hidden from Followers",
+          description: checked
+            ? "Followers you don't follow back can see your friends-only posts."
+            : "Only people you follow back can see your friends-only posts.",
+        });
+      },
+      onError: () => {
+        setFollowerSeePosts(!checked);
+        toast({ title: "Error", description: "Failed to update setting.", variant: "destructive" });
+      },
+    });
+  };
+
+  const handleToggleFollowerSendMessages = (checked: boolean) => {
+    setFollowerSendMessages(checked);
+    updateMe.mutate({ data: { followerSendMessages: checked } }, {
+      onSuccess: () => {
+        toast({
+          title: checked ? "Followers Can Message You" : "Follower Messages Off",
+          description: checked
+            ? "Followers you don't follow back can start a chat with you."
+            : "Only people you follow back can message you.",
+        });
+      },
+      onError: () => {
+        setFollowerSendMessages(!checked);
+        toast({ title: "Error", description: "Failed to update setting.", variant: "destructive" });
+      },
+    });
+  };
+
   if (isLoading) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
 
   return (
@@ -394,6 +454,65 @@ export function SettingsPage() {
             </div>
           </CardHeader>
         </Card>
+
+        {/* What followers you don't follow back can see */}
+        <div className="pt-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
+            Followers you don't follow back
+          </h2>
+          <div className="space-y-6">
+            <Card className="border-border shadow-sm">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${followerSeeLocation ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                      <Map className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">See My Location</CardTitle>
+                      <CardDescription>Show your boat on the map to followers you don't follow back</CardDescription>
+                    </div>
+                  </div>
+                  <Switch checked={followerSeeLocation} onCheckedChange={handleToggleFollowerSeeLocation} className="data-[state=checked]:bg-primary" />
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-border shadow-sm">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${followerSeePosts ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                      <ScrollText className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">See My Posts</CardTitle>
+                      <CardDescription>Let them see your friends-only posts</CardDescription>
+                    </div>
+                  </div>
+                  <Switch checked={followerSeePosts} onCheckedChange={handleToggleFollowerSeePosts} className="data-[state=checked]:bg-primary" />
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-border shadow-sm">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${followerSendMessages ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                      <MessageSquare className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Message Me</CardTitle>
+                      <CardDescription>Let them start a direct message with you</CardDescription>
+                    </div>
+                  </div>
+                  <Switch checked={followerSendMessages} onCheckedChange={handleToggleFollowerSendMessages} className="data-[state=checked]:bg-primary" />
+                </div>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
 
         <BlockedUsersCard />
 

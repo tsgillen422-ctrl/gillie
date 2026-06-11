@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, conversationsTable, conversationParticipantsTable, messagesTable, messageReactionsTable } from "@workspace/db";
+import { usersTable, conversationsTable, conversationParticipantsTable, messagesTable, messageReactionsTable, friendRequestsTable } from "@workspace/db";
 import { eq, and, ne, desc, gt, inArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { broadcastToConversation } from "../lib/realtime";
@@ -143,6 +143,34 @@ router.get("/conversations", async (req, res) => {
 
 router.post("/conversations", async (req, res) => {
   const { participantId } = req.body;
+  const me = currentUserId(req);
+  if (typeof participantId !== "number" || participantId === me) {
+    return res.status(400).json({ error: "Invalid participant" });
+  }
+  // One-way follow model: you may DM someone you have a mutual follow with, or
+  // someone you follow who lets non-mutual followers message them.
+  const [iFollow, followsMe, target] = await Promise.all([
+    db.query.friendRequestsTable.findFirst({
+      where: and(
+        eq(friendRequestsTable.followerId, me),
+        eq(friendRequestsTable.followeeId, participantId),
+        eq(friendRequestsTable.status, "accepted")
+      ),
+    }),
+    db.query.friendRequestsTable.findFirst({
+      where: and(
+        eq(friendRequestsTable.followerId, participantId),
+        eq(friendRequestsTable.followeeId, me),
+        eq(friendRequestsTable.status, "accepted")
+      ),
+    }),
+    db.query.usersTable.findFirst({ where: eq(usersTable.id, participantId) }),
+  ]);
+  if (!target) return res.status(404).json({ error: "User not found" });
+  const mutual = Boolean(iFollow && followsMe);
+  if (!mutual && !(iFollow && target.followerSendMessages)) {
+    return res.status(403).json({ error: "You can only message people you follow who allow follower messages" });
+  }
 
   // Reuse an existing 1:1 conversation between the two users if one exists,
   // so repeatedly opening "Message" with someone doesn't spawn duplicates.
@@ -217,6 +245,35 @@ router.post("/conversations/group", async (req, res) => {
         .filter((id: number) => !isNaN(id) && id !== currentUserId(req))
     )
   );
+  // Same one-way follow gate as 1:1 DMs, applied per invited participant: you may
+  // only add someone you have a mutual follow with, or someone you follow who
+  // lets non-mutual followers message them. Prevents the group path from being
+  // used to bypass followerSendMessages restrictions.
+  if (uniqueIds.length) {
+    const meId = currentUserId(req);
+    const [iFollowRows, followMeRows, targets] = await Promise.all([
+      db.query.friendRequestsTable.findMany({
+        where: and(eq(friendRequestsTable.followerId, meId), eq(friendRequestsTable.status, "accepted")),
+      }),
+      db.query.friendRequestsTable.findMany({
+        where: and(eq(friendRequestsTable.followeeId, meId), eq(friendRequestsTable.status, "accepted")),
+      }),
+      db.query.usersTable.findMany({ where: inArray(usersTable.id, uniqueIds) }),
+    ]);
+    const iFollow = new Set(iFollowRows.map((r) => r.followeeId));
+    const followsMe = new Set(followMeRows.map((r) => r.followerId));
+    const byId = new Map(targets.map((u) => [u.id, u]));
+    for (const id of uniqueIds) {
+      const target = byId.get(id);
+      if (!target) return res.status(404).json({ error: "User not found" });
+      const mutual = iFollow.has(id) && followsMe.has(id);
+      if (!mutual && !(iFollow.has(id) && target.followerSendMessages)) {
+        return res
+          .status(403)
+          .json({ error: "You can only add people you follow who allow follower messages" });
+      }
+    }
+  }
   const [conv] = await db
     .insert(conversationsTable)
     .values({ name: String(name).trim(), isGroup: true })

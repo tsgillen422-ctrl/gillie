@@ -29,16 +29,26 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
-async function getFollowCounts(userId: number): Promise<{ followerCount: number; followingCount: number }> {
-  const accepted = await db.query.friendRequestsTable.findMany({
-    where: and(
-      or(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.followeeId, userId)),
-      eq(friendRequestsTable.status, "accepted")
-    ),
+// One-way follow model: an accepted row means followerId follows followeeId in
+// that single direction. "following" = people I follow; "followers" = people who
+// follow me; "mutual" = both rows exist.
+async function getFollowingIds(userId: number): Promise<number[]> {
+  const rows = await db.query.friendRequestsTable.findMany({
+    where: and(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.status, "accepted")),
   });
-  const ids = new Set(accepted.map((r) => (r.followerId === userId ? r.followeeId : r.followerId)));
-  ids.delete(userId);
-  return { followerCount: ids.size, followingCount: ids.size };
+  return [...new Set(rows.map((r) => r.followeeId).filter((id) => id !== userId))];
+}
+
+async function getFollowerIds(userId: number): Promise<number[]> {
+  const rows = await db.query.friendRequestsTable.findMany({
+    where: and(eq(friendRequestsTable.followeeId, userId), eq(friendRequestsTable.status, "accepted")),
+  });
+  return [...new Set(rows.map((r) => r.followerId).filter((id) => id !== userId))];
+}
+
+async function getFollowCounts(userId: number): Promise<{ followerCount: number; followingCount: number }> {
+  const [followers, following] = await Promise.all([getFollowerIds(userId), getFollowingIds(userId)]);
+  return { followerCount: followers.length, followingCount: following.length };
 }
 
 function formatUser(u: typeof usersTable.$inferSelect) {
@@ -61,6 +71,9 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     boatAccent: u.boatAccent,
     shareLocation: u.shareLocation,
     requireFollowApproval: u.requireFollowApproval,
+    followerSeeLocation: u.followerSeeLocation,
+    followerSeePosts: u.followerSeePosts,
+    followerSendMessages: u.followerSendMessages,
     followerCount: 0,
     followingCount: 0,
     createdAt: u.createdAt.toISOString(),
@@ -88,39 +101,19 @@ async function getBlockedUserIds(userId: number): Promise<number[]> {
   return rows.map((b) => (b.blockerId === userId ? b.blockedId : b.blockerId));
 }
 
-// Friendships are mutual: an accepted friend_request links two users in both
-// directions, so followers, following, and friends all resolve to the same set.
-async function getAcceptedConnectionIds(targetId: number, requesterId: number): Promise<number[]> {
-  const accepted = await db.query.friendRequestsTable.findMany({
-    where: and(
-      or(eq(friendRequestsTable.followerId, targetId), eq(friendRequestsTable.followeeId, targetId)),
-      eq(friendRequestsTable.status, "accepted")
-    ),
-  });
+// The set of people the current user has a relationship with for a given
+// direction, with the requester's blocked users removed.
+async function getDirectionalIds(
+  ids: number[],
+  requesterId: number
+): Promise<number[]> {
   const blockedIds = await getBlockedUserIds(requesterId);
-  return [
-    ...new Set(
-      accepted
-        .map((r) => (r.followerId === targetId ? r.followeeId : r.followerId))
-        .filter((id) => id !== targetId && !blockedIds.includes(id))
-    ),
-  ];
+  return ids.filter((id) => !blockedIds.includes(id));
 }
 
 router.get("/", async (req, res) => {
-  const accepted = await db.query.friendRequestsTable.findMany({
-    where: and(
-      or(
-        eq(friendRequestsTable.followerId, currentUserId(req)),
-        eq(friendRequestsTable.followeeId, currentUserId(req))
-      ),
-      eq(friendRequestsTable.status, "accepted")
-    ),
-  });
-  const blockedIds = await getBlockedUserIds(currentUserId(req));
-  const friendIds = accepted
-    .map((r) => (r.followerId === currentUserId(req) ? r.followeeId : r.followerId))
-    .filter((id) => !blockedIds.includes(id));
+  const me = currentUserId(req);
+  const friendIds = await getDirectionalIds(await getFollowingIds(me), me);
   if (!friendIds.length) return res.json([]);
   const friends = await Promise.all(
     friendIds.map((id) =>
@@ -131,27 +124,23 @@ router.get("/", async (req, res) => {
 });
 
 router.get("/locations", async (req, res) => {
-  const accepted = await db.query.friendRequestsTable.findMany({
-    where: and(
-      or(
-        eq(friendRequestsTable.followerId, currentUserId(req)),
-        eq(friendRequestsTable.followeeId, currentUserId(req))
-      ),
-      eq(friendRequestsTable.status, "accepted")
-    ),
-  });
-  const blockedIds = await getBlockedUserIds(currentUserId(req));
-  const friendIds = accepted
-    .map((r) => (r.followerId === currentUserId(req) ? r.followeeId : r.followerId))
-    .filter((id) => !blockedIds.includes(id));
-  if (!friendIds.length) return res.json([]);
+  const me = currentUserId(req);
+  // The map shows people I follow. A non-mutual followee can hide their live
+  // location from followers they don't follow back via followerSeeLocation.
+  const [followingIds, myFollowerIds] = await Promise.all([
+    getDirectionalIds(await getFollowingIds(me), me),
+    getFollowerIds(me),
+  ]);
+  if (!followingIds.length) return res.json([]);
+  const mutualSet = new Set(myFollowerIds);
   const friends = await Promise.all(
-    friendIds.map((id) =>
+    followingIds.map((id) =>
       db.query.usersTable.findFirst({ where: eq(usersTable.id, id) })
     )
   );
   const locations = friends
     .filter(Boolean)
+    .filter((u) => mutualSet.has(u!.id) || u!.followerSeeLocation)
     .map((u) => ({
       userId: u!.id,
       displayName: u!.displayName,
@@ -377,7 +366,7 @@ router.get("/:userId/followers", async (req, res) => {
       return res.status(403).json({ error: "This user has hidden their followers" });
     }
   }
-  const ids = await getAcceptedConnectionIds(targetId, currentUserId(req));
+  const ids = await getDirectionalIds(await getFollowerIds(targetId), currentUserId(req));
   if (!ids.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, ids) });
   res.json(await Promise.all(users.map(formatUserWithCounts)));
@@ -400,7 +389,16 @@ router.get("/:userId/friends", async (req, res) => {
       return res.status(403).json({ error: "This user has hidden their friends" });
     }
   }
-  const friendIds = await getAcceptedConnectionIds(targetId, currentUserId(req));
+  // "Friends" in the one-way model = mutual follows (both directions exist).
+  const [tFollowers, tFollowing] = await Promise.all([
+    getFollowerIds(targetId),
+    getFollowingIds(targetId),
+  ]);
+  const followingSet = new Set(tFollowing);
+  const friendIds = await getDirectionalIds(
+    tFollowers.filter((id) => followingSet.has(id)),
+    currentUserId(req)
+  );
   if (!friendIds.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, friendIds) });
   res.json(await Promise.all(users.map(formatUserWithCounts)));
@@ -449,7 +447,7 @@ router.get("/:userId/following", async (req, res) => {
       return res.status(403).json({ error: "This user has hidden who they follow" });
     }
   }
-  const ids = await getAcceptedConnectionIds(targetId, currentUserId(req));
+  const ids = await getDirectionalIds(await getFollowingIds(targetId), currentUserId(req));
   if (!ids.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, ids) });
   res.json(await Promise.all(users.map(formatUserWithCounts)));
@@ -480,28 +478,9 @@ router.post("/:userId/follow", async (req, res) => {
   });
   if (outgoing) return res.json(serializeRequest(outgoing));
 
-  const incoming = await db.query.friendRequestsTable.findFirst({
-    where: and(
-      eq(friendRequestsTable.followerId, targetId),
-      eq(friendRequestsTable.followeeId, currentUserId(req)),
-      eq(friendRequestsTable.status, "pending")
-    ),
-  });
-  if (incoming) {
-    const [updated] = await db
-      .update(friendRequestsTable)
-      .set({ status: "accepted" })
-      .where(eq(friendRequestsTable.id, incoming.id))
-      .returning();
-    await createNotification({
-      userId: targetId,
-      type: "friend_request",
-      message: `${me?.displayName ?? "Someone"} accepted your follow request`,
-      relatedId: currentUserId(req),
-    });
-    return res.json(serializeRequest(updated));
-  }
-
+  // One-way follow: this only creates my -> target. If the target already
+  // follows me, that's their separate row; following them does not auto-accept
+  // it (the relationship only becomes mutual when both rows exist).
   const status = target.requireFollowApproval ? "pending" : "accepted";
   const [request] = await db
     .insert(friendRequestsTable)
@@ -524,9 +503,9 @@ router.delete("/:userId/unfollow", async (req, res) => {
   await db
     .delete(friendRequestsTable)
     .where(
-      or(
-        and(eq(friendRequestsTable.followerId, currentUserId(req)), eq(friendRequestsTable.followeeId, targetId)),
-        and(eq(friendRequestsTable.followerId, targetId), eq(friendRequestsTable.followeeId, currentUserId(req)))
+      and(
+        eq(friendRequestsTable.followerId, currentUserId(req)),
+        eq(friendRequestsTable.followeeId, targetId)
       )
     );
   res.json({ success: true });

@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetFriends, useGetFriendRequests, useSearchUsers, useFollowUser, useUnfollowUser, useAcceptFriendRequest } from "@workspace/api-client-react";
+import { useGetFriends, useGetFriendRequests, useSearchUsers, useFollowUser, useUnfollowUser, useAcceptFriendRequest, useGetFollowers, useGetMe } from "@workspace/api-client-react";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,9 +17,11 @@ export function FriendsPage() {
 
   React.useEffect(() => {
     const t = new URLSearchParams(searchParams).get("tab");
-    if (t === "requests" || t === "friends" || t === "suggested") setTab(t);
+    if (t === "requests" || t === "friends" || t === "followers" || t === "suggested") setTab(t);
   }, [searchParams]);
+  const { data: me } = useGetMe();
   const { data: friends, isLoading: loadingFriends } = useGetFriends();
+  const { data: followers, isLoading: loadingFollowers } = useGetFollowers(me?.id ?? 0, { query: { enabled: !!me?.id } });
   const { data: requests, isLoading: loadingRequests } = useGetFriendRequests();
   const { data: searchResults, isLoading: loadingSearch } = useSearchUsers({ q: search }, { query: { enabled: search.length > 2 } });
   
@@ -65,7 +67,8 @@ export function FriendsPage() {
         ) : (
           <Tabs value={tab} onValueChange={setTab} className="w-full">
             <TabsList className="w-full mb-4">
-              <TabsTrigger value="friends" className="flex-1">My Crew</TabsTrigger>
+              <TabsTrigger value="friends" className="flex-1">Following</TabsTrigger>
+              <TabsTrigger value="followers" className="flex-1">Followers</TabsTrigger>
               <TabsTrigger value="suggested" className="flex-1">Suggested</TabsTrigger>
               <TabsTrigger value="requests" className="flex-1 relative">
                 Requests
@@ -102,12 +105,36 @@ export function FriendsPage() {
                   <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                     <Users className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <h3 className="font-semibold text-lg mb-1">No friends yet</h3>
-                  <p className="text-muted-foreground text-sm">Search above to find people you know on the lake.</p>
+                  <h3 className="font-semibold text-lg mb-1">Not following anyone yet</h3>
+                  <p className="text-muted-foreground text-sm">Search above to find people to follow on the lake.</p>
                 </div>
               )}
             </TabsContent>
-            
+
+            <TabsContent value="followers" className="space-y-4 m-0">
+              {loadingFollowers ? (
+                <div className="space-y-3">
+                  {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+                </div>
+              ) : followers?.length ? (
+                followers.map(follower => (
+                  <UserCard key={follower.id} user={follower} action={
+                    <Button size="sm" variant="secondary" onClick={() => followUser.mutate({ userId: follower.id })}>
+                      <UserPlus className="w-4 h-4 mr-1" /> Follow
+                    </Button>
+                  } />
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Users className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="font-semibold text-lg mb-1">No followers yet</h3>
+                  <p className="text-muted-foreground text-sm">When people follow you, they'll show up here.</p>
+                </div>
+              )}
+            </TabsContent>
+
             <TabsContent value="suggested" className="space-y-4 m-0">
               <SuggestedFriendsList />
             </TabsContent>
