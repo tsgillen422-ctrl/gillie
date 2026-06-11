@@ -13,6 +13,8 @@ export const GetPinsType = {
   fishing_spot: 'fishing_spot',
   cliff: 'cliff',
   waterfall: 'waterfall',
+  rope_swing: 'rope_swing',
+  shallow_water: 'shallow_water',
   landmark: 'landmark',
   hazard: 'hazard',
   marina: 'marina',

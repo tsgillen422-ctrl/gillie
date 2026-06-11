@@ -42,6 +42,8 @@ const PIN_TYPES = [
   { value: 'marina', label: 'Marinas', emoji: '⛵' },
   { value: 'cliff', label: 'Cliffs', emoji: '🏔️' },
   { value: 'waterfall', label: 'Falls', emoji: '💧' },
+  { value: 'rope_swing', label: 'Rope Swings', emoji: '🪢' },
+  { value: 'shallow_water', label: 'Shallow Water', emoji: '🏖️' },
   { value: 'hazard', label: 'Hazards', emoji: '⚠️' },
 ];
 

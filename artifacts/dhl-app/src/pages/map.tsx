@@ -183,6 +183,8 @@ const getPinEmoji = (type: string) => {
     case "fishing_spot": return "🎣";
     case "cliff": return "🏔️";
     case "waterfall": return "💧";
+    case "rope_swing": return "🪢";
+    case "shallow_water": return "🏖️";
     case "landmark": return "📍";
     case "hazard": return "⚠️";
     case "marina": return "⛵";
@@ -197,6 +199,8 @@ const getPinColor = (type: string) => {
     case "fishing_spot": return "#0284c7";
     case "cliff": return "#7c3aed";
     case "waterfall": return "#0891b2";
+    case "rope_swing": return "#0d9488";
+    case "shallow_water": return "#d97706";
     case "landmark": return "#db2777";
     case "hazard": return "#dc2626";
     case "marina": return "#ea7317";
@@ -211,6 +215,8 @@ const getPinCategory = (type: string) => {
     case "fishing_spot": return "Fishing Spot";
     case "cliff": return "Cliff";
     case "waterfall": return "Waterfall";
+    case "rope_swing": return "Rope Swing";
+    case "shallow_water": return "Shallow Water";
     case "landmark": return "Landmark";
     case "hazard": return "Hazard";
     case "marina": return "Marina";
@@ -2143,6 +2149,8 @@ export function MapPage() {
                     <SelectItem value="fishing_spot">🎣 Fishing Spot</SelectItem>
                     <SelectItem value="cliff">🏔️ Cliff Jumping</SelectItem>
                     <SelectItem value="waterfall">💧 Waterfall</SelectItem>
+                    <SelectItem value="rope_swing">🪢 Rope Swing</SelectItem>
+                    <SelectItem value="shallow_water">🏖️ Shallow Water</SelectItem>
                     <SelectItem value="campsite">🏕️ Campsite</SelectItem>
                     <SelectItem value="marina">⛵ Marina</SelectItem>
                     <SelectItem value="hazard">⚠️ Hazard</SelectItem>
