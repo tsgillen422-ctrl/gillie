@@ -47,6 +47,8 @@
         </array>
         <key>UIViewControllerBasedStatusBarAppearance</key>
         <true/>
+        <key>NSLocationWhenInUseUsageDescription</key>
+        <string>Gillie uses your location to show your boat on the lake map, help friends find you on the water, and let you drop pins at your current spot. You can turn location sharing off at any time.</string>
         <key>NSPhotoLibraryUsageDescription</key>
         <string>Gillie needs access to your photos so you can share pictures and videos in your messages and posts.</string>
         <key>NSPhotoLibraryAddUsageDescription</key>
