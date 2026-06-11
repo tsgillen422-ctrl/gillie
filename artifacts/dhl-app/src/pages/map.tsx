@@ -1625,8 +1625,24 @@ export function MapPage() {
   // belong in the "Who's on the lake" presence list and its count. Businesses
   // (marinas, restaurants, shops) are fixed land places and are always excluded;
   // regular people are additionally hidden when the map detects them over land.
+  // A friend counts as "on the water" only when their OWN device has reported
+  // is_on_water (the only client that can tell water from land) and they've been
+  // seen recently. is_on_water is never cleared server-side, so the freshness
+  // window drops people who have since left. We do NOT default unknown friends to
+  // "on water": the viewer's client-side onLandIds only classifies markers that
+  // are currently on-screen, so off-screen friends used to wrongly show as on the
+  // lake. onLandIds remains a secondary guard for friends the viewer can see.
+  const PRESENCE_WINDOW_MS = 10 * 60 * 1000;
+  const isFreshlySeen = (f: any) =>
+    f.lastSeen != null && Date.now() - new Date(f.lastSeen).getTime() < PRESENCE_WINDOW_MS;
   const onWaterFriends = (friends ?? []).filter(
-    (f: any) => f.lat != null && f.lng != null && !f.isBusiness && !onLandIds.has(f.userId)
+    (f: any) =>
+      f.lat != null &&
+      f.lng != null &&
+      !f.isBusiness &&
+      f.isOnWater === true &&
+      isFreshlySeen(f) &&
+      !onLandIds.has(f.userId)
   );
   const onlineFriends = onWaterFriends.filter((f: any) => f.isOnline);
   const meOnWater = me?.currentLat != null && me?.currentLng != null && !meOnLand;

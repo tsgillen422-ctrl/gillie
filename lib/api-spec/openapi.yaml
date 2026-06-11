@@ -2073,6 +2073,8 @@ components:
           type: ["boolean", "null"]
         isOnline:
           type: boolean
+        isOnWater:
+          type: ["boolean", "null"]
         lastSeen:
           type: ["string", "null"]
 

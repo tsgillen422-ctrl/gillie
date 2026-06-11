@@ -581,6 +581,7 @@ export const GetFriendLocationsResponseItem = zod.object({
   "lng": zod.number().nullish(),
   "isBusiness": zod.boolean().nullish(),
   "isOnline": zod.boolean().optional(),
+  "isOnWater": zod.boolean().nullish(),
   "lastSeen": zod.string().nullish()
 })
 export const GetFriendLocationsResponse = zod.array(GetFriendLocationsResponseItem)

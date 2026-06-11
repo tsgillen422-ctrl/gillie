@@ -32,5 +32,7 @@ export interface FriendLocation {
   isBusiness?: boolean | null;
   isOnline?: boolean;
   /** @nullable */
+  isOnWater?: boolean | null;
+  /** @nullable */
   lastSeen?: string | null;
 }

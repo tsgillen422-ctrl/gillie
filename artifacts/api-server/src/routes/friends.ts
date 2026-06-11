@@ -145,6 +145,7 @@ router.get("/locations", async (req, res) => {
       lng: u!.shareLocation ? u!.currentLng : null,
       isBusiness: u!.isBusiness,
       isOnline: u!.isOnline,
+      isOnWater: u!.isOnWater,
       lastSeen: u!.lastSeen ? u!.lastSeen.toISOString() : null,
     }));
   res.json(locations);
