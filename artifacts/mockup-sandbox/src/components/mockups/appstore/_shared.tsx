@@ -284,3 +284,37 @@ function TabItem({ icon, label, active }: { icon: string; label: string; active:
     </div>
   );
 }
+
+// Hosts a REAL screenshot of the live app inside the device. A solid strip at the
+// top hosts the iOS status bar; the capture (which includes the app's own header
+// and bottom nav) fills the rest at its native aspect ratio.
+export function RealScreen({
+  src,
+  strip = "#ffffff",
+  alt = "",
+}: {
+  src: string;
+  strip?: string;
+  alt?: string;
+}) {
+  return (
+    <div style={{ position: "absolute", inset: 0, background: strip }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "150px", background: strip, zIndex: 5 }} />
+      <img
+        src={src}
+        style={{
+          position: "absolute",
+          top: "150px",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          width: "100%",
+          height: "calc(100% - 150px)",
+          objectFit: "cover",
+          objectPosition: "top",
+        }}
+        alt={alt}
+      />
+    </div>
+  );
+}
