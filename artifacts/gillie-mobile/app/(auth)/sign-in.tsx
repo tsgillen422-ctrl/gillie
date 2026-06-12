@@ -47,16 +47,17 @@ export default function SignInScreen() {
 
   const handleSubmit = async () => {
     if (Platform.OS !== "web") void Haptics.selectionAsync();
-    const { error } = await signIn.password({ emailAddress, password });
+    const { error } = await signIn.password({
+      emailAddress: emailAddress.trim(),
+      password,
+    });
     if (error) return;
-    if (signIn.status === "complete") {
-      await signIn.finalize({
-        navigate: ({ session }) => {
-          if (session?.currentTask) return;
-          router.replace("/");
-        },
-      });
-    }
+    await signIn.finalize({
+      navigate: async ({ session }) => {
+        if (session?.currentTask) return;
+        router.replace("/");
+      },
+    });
   };
 
   const handleGoogle = useCallback(async () => {
@@ -66,13 +67,8 @@ export default function SignInScreen() {
         redirectUrl: AuthSession.makeRedirectUri(),
       });
       if (createdSessionId && setActive) {
-        await setActive({
-          session: createdSessionId,
-          navigate: async ({ session }) => {
-            if (session?.currentTask) return;
-            router.replace("/");
-          },
-        });
+        await setActive({ session: createdSessionId });
+        router.replace("/");
       }
     } catch (err) {
       console.error(JSON.stringify(err, null, 2));

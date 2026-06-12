@@ -30,35 +30,39 @@ export default function SignUpScreen() {
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [code, setCode] = React.useState("");
+  const [verifying, setVerifying] = React.useState(false);
 
   const loading = fetchStatus === "fetching";
 
   const handleSubmit = async () => {
     if (Platform.OS !== "web") void Haptics.selectionAsync();
-    const { error } = await signUp.password({ emailAddress, password });
+    const { error } = await signUp.password({
+      emailAddress: emailAddress.trim(),
+      password,
+    });
     if (error) return;
-    await signUp.verifications.sendEmailCode();
+    const { error: sendError } = await signUp.verifications.sendEmailCode();
+    if (sendError) return;
+    setVerifying(true);
   };
 
   const handleVerify = async () => {
     if (Platform.OS !== "web") void Haptics.selectionAsync();
-    await signUp.verifications.verifyEmailCode({ code });
-    if (signUp.status === "complete") {
-      await signUp.finalize({
-        navigate: ({ session }) => {
-          if (session?.currentTask) return;
-          router.replace("/");
-        },
-      });
-    }
+    const { error } = await signUp.verifications.verifyEmailCode({ code });
+    if (error) return;
+    await signUp.finalize({
+      navigate: async ({ session }) => {
+        if (session?.currentTask) return;
+        router.replace("/");
+      },
+    });
   };
 
-  if (signUp.status === "complete" || isSignedIn) return null;
+  const handleResend = async () => {
+    await signUp.verifications.sendEmailCode();
+  };
 
-  const verifying =
-    signUp.status === "missing_requirements" &&
-    signUp.unverifiedFields.includes("email_address") &&
-    signUp.missingFields.length === 0;
+  if (isSignedIn) return null;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
@@ -104,6 +108,11 @@ export default function SignUpScreen() {
                   {errors.fields.code.message}
                 </Text>
               )}
+              {errors?.global?.[0] && (
+                <Text style={[styles.error, { color: colors.destructive }]}>
+                  {errors.global[0].message}
+                </Text>
+              )}
               <Pressable
                 style={({ pressed }) => [
                   styles.button,
@@ -121,10 +130,7 @@ export default function SignUpScreen() {
                   </Text>
                 )}
               </Pressable>
-              <Pressable
-                style={styles.resend}
-                onPress={() => signUp.verifications.sendEmailCode()}
-              >
+              <Pressable style={styles.resend} onPress={handleResend}>
                 <Text style={{ color: colors.primary, fontFamily: fonts.sansSemibold }}>
                   Resend code
                 </Text>
