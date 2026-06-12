@@ -26,6 +26,8 @@ import { useColors } from "@/hooks/useColors";
 
 WebBrowser.maybeCompleteAuthSession();
 
+type MfaStrategy = "totp" | "phone_code" | "backup_code";
+
 export default function SignInScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -43,8 +45,51 @@ export default function SignInScreen() {
 
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [secondFactor, setSecondFactor] = React.useState(false);
+  const [mfaStrategy, setMfaStrategy] = React.useState<MfaStrategy>("totp");
+  const [mfaHint, setMfaHint] = React.useState("");
+  const [mfaCode, setMfaCode] = React.useState("");
 
   const loading = fetchStatus === "fetching";
+
+  const finalizeSignIn = useCallback(async () => {
+    await signIn.finalize({ navigate: async () => router.replace("/") });
+  }, [signIn, router]);
+
+  const beginSecondFactor = useCallback(async () => {
+    const factors = signIn.supportedSecondFactors ?? [];
+    const totp = factors.find((f) => f.strategy === "totp");
+    const phone = factors.find((f) => f.strategy === "phone_code");
+    const backup = factors.find((f) => f.strategy === "backup_code");
+
+    if (totp) {
+      setMfaStrategy("totp");
+      setMfaHint("Enter the 6-digit code from your authenticator app.");
+    } else if (phone) {
+      const { error } = await signIn.mfa.sendPhoneCode();
+      if (error) {
+        Alert.alert("Couldn't send code", error.message ?? "Please try again.");
+        return;
+      }
+      setMfaStrategy("phone_code");
+      setMfaHint(
+        phone.safeIdentifier
+          ? `Enter the code we texted to ${phone.safeIdentifier}.`
+          : "Enter the code we texted to your phone.",
+      );
+    } else if (backup) {
+      setMfaStrategy("backup_code");
+      setMfaHint("Enter one of your backup codes.");
+    } else {
+      Alert.alert(
+        "Can't complete sign in",
+        "Your account uses a two-step method this app doesn't support yet. Please sign in on the website instead.",
+      );
+      return;
+    }
+    setMfaCode("");
+    setSecondFactor(true);
+  }, [signIn]);
 
   const handleSubmit = async () => {
     if (Platform.OS !== "web") void Haptics.selectionAsync();
@@ -60,6 +105,10 @@ export default function SignInScreen() {
         );
         return;
       }
+      if (signIn.status === "needs_second_factor") {
+        await beginSecondFactor();
+        return;
+      }
       if (signIn.status !== "complete") {
         Alert.alert(
           "One more step",
@@ -67,13 +116,54 @@ export default function SignInScreen() {
         );
         return;
       }
-      await signIn.finalize({ navigate: async () => router.replace("/") });
+      await finalizeSignIn();
     } catch (err) {
       Alert.alert(
         "Sign in error",
         err instanceof Error ? err.message : String(err),
       );
     }
+  };
+
+  const handleVerifyMfa = async () => {
+    if (Platform.OS !== "web") void Haptics.selectionAsync();
+    try {
+      const code = mfaCode.trim();
+      let result: { error: { message?: string } | null };
+      if (mfaStrategy === "totp") {
+        result = await signIn.mfa.verifyTOTP({ code });
+      } else if (mfaStrategy === "phone_code") {
+        result = await signIn.mfa.verifyPhoneCode({ code });
+      } else {
+        result = await signIn.mfa.verifyBackupCode({ code });
+      }
+      if (result.error) {
+        Alert.alert(
+          "Verification failed",
+          result.error.message ?? "That code didn't work. Please try again.",
+        );
+        return;
+      }
+      if (signIn.status !== "complete") {
+        Alert.alert(
+          "One more step",
+          `Almost there (status: ${signIn.status}).`,
+        );
+        return;
+      }
+      await finalizeSignIn();
+    } catch (err) {
+      Alert.alert(
+        "Sign in error",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  };
+
+  const useBackupCode = () => {
+    setMfaStrategy("backup_code");
+    setMfaHint("Enter one of your backup codes.");
+    setMfaCode("");
   };
 
   const handleGoogle = useCallback(async () => {
@@ -114,106 +204,185 @@ export default function SignInScreen() {
           contentContainerStyle={styles.form}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={[styles.heading, { color: colors.foreground }]}>
-            Welcome back
-          </Text>
-
-          <Text style={[styles.label, { color: colors.mutedForeground }]}>
-            Email
-          </Text>
-          <TextInput
-            style={[
-              styles.input,
-              { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.card },
-            ]}
-            autoCapitalize="none"
-            autoComplete="email"
-            keyboardType="email-address"
-            placeholder="you@example.com"
-            placeholderTextColor={colors.mutedForeground}
-            value={emailAddress}
-            onChangeText={setEmailAddress}
-          />
-          {errors?.fields?.identifier && (
-            <Text style={[styles.error, { color: colors.destructive }]}>
-              {errors.fields.identifier.message}
-            </Text>
-          )}
-
-          <Text style={[styles.label, { color: colors.mutedForeground }]}>
-            Password
-          </Text>
-          <TextInput
-            style={[
-              styles.input,
-              { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.card },
-            ]}
-            secureTextEntry
-            placeholder="••••••••"
-            placeholderTextColor={colors.mutedForeground}
-            value={password}
-            onChangeText={setPassword}
-          />
-          {errors?.fields?.password && (
-            <Text style={[styles.error, { color: colors.destructive }]}>
-              {errors.fields.password.message}
-            </Text>
-          )}
-          {errors?.global?.[0] && (
-            <Text style={[styles.error, { color: colors.destructive }]}>
-              {errors.global[0].message}
-            </Text>
-          )}
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              { backgroundColor: colors.primary, opacity: pressed || loading ? 0.85 : 1 },
-              (!emailAddress || !password) && { opacity: 0.5 },
-            ]}
-            onPress={handleSubmit}
-            disabled={!emailAddress || !password || loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.primaryForeground} />
-            ) : (
-              <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
-                Sign in
+          {secondFactor ? (
+            <>
+              <Text style={[styles.heading, { color: colors.foreground }]}>
+                Two-step verification
               </Text>
-            )}
-          </Pressable>
-
-          <View style={styles.dividerRow}>
-            <View style={[styles.divider, { backgroundColor: colors.border }]} />
-            <Text style={[styles.dividerText, { color: colors.mutedForeground }]}>
-              or
-            </Text>
-            <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          </View>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.googleButton,
-              { borderColor: colors.border, backgroundColor: colors.card, opacity: pressed ? 0.85 : 1 },
-            ]}
-            onPress={handleGoogle}
-          >
-            <Ionicons name="logo-google" size={20} color={colors.foreground} />
-            <Text style={[styles.googleText, { color: colors.foreground }]}>
-              Continue with Google
-            </Text>
-          </Pressable>
-
-          <View style={styles.footer}>
-            <Text style={{ color: colors.mutedForeground, fontFamily: fonts.sans }}>
-              New here?{" "}
-            </Text>
-            <Link href="/sign-up">
-              <Text style={{ color: colors.primary, fontFamily: fonts.sansSemibold }}>
-                Create an account
+              <Text style={[styles.label, { color: colors.mutedForeground }]}>
+                {mfaHint}
               </Text>
-            </Link>
-          </View>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    borderColor: colors.border,
+                    color: colors.foreground,
+                    backgroundColor: colors.card,
+                    letterSpacing: mfaStrategy === "backup_code" ? 1 : 6,
+                    textAlign: "center",
+                  },
+                ]}
+                value={mfaCode}
+                placeholder={mfaStrategy === "backup_code" ? "backup code" : "••••••"}
+                placeholderTextColor={colors.mutedForeground}
+                onChangeText={setMfaCode}
+                keyboardType={mfaStrategy === "backup_code" ? "default" : "number-pad"}
+                autoCapitalize="none"
+                autoFocus
+              />
+              {errors?.fields?.code && (
+                <Text style={[styles.error, { color: colors.destructive }]}>
+                  {errors.fields.code.message}
+                </Text>
+              )}
+              {errors?.global?.[0] && (
+                <Text style={[styles.error, { color: colors.destructive }]}>
+                  {errors.global[0].message}
+                </Text>
+              )}
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.button,
+                  { backgroundColor: colors.primary, opacity: pressed || loading ? 0.85 : 1 },
+                  !mfaCode && { opacity: 0.5 },
+                ]}
+                onPress={handleVerifyMfa}
+                disabled={!mfaCode || loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={colors.primaryForeground} />
+                ) : (
+                  <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
+                    Verify
+                  </Text>
+                )}
+              </Pressable>
+
+              {mfaStrategy !== "backup_code" && (
+                <Pressable style={styles.altAction} onPress={useBackupCode}>
+                  <Text style={{ color: colors.primary, fontFamily: fonts.sansSemibold }}>
+                    Use a backup code instead
+                  </Text>
+                </Pressable>
+              )}
+              <Pressable
+                style={styles.altAction}
+                onPress={() => {
+                  setSecondFactor(false);
+                  setMfaCode("");
+                }}
+              >
+                <Text style={{ color: colors.mutedForeground, fontFamily: fonts.sansMedium }}>
+                  Back
+                </Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Text style={[styles.heading, { color: colors.foreground }]}>
+                Welcome back
+              </Text>
+
+              <Text style={[styles.label, { color: colors.mutedForeground }]}>
+                Email
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.card },
+                ]}
+                autoCapitalize="none"
+                autoComplete="email"
+                keyboardType="email-address"
+                placeholder="you@example.com"
+                placeholderTextColor={colors.mutedForeground}
+                value={emailAddress}
+                onChangeText={setEmailAddress}
+              />
+              {errors?.fields?.identifier && (
+                <Text style={[styles.error, { color: colors.destructive }]}>
+                  {errors.fields.identifier.message}
+                </Text>
+              )}
+
+              <Text style={[styles.label, { color: colors.mutedForeground }]}>
+                Password
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.card },
+                ]}
+                secureTextEntry
+                placeholder="••••••••"
+                placeholderTextColor={colors.mutedForeground}
+                value={password}
+                onChangeText={setPassword}
+              />
+              {errors?.fields?.password && (
+                <Text style={[styles.error, { color: colors.destructive }]}>
+                  {errors.fields.password.message}
+                </Text>
+              )}
+              {errors?.global?.[0] && (
+                <Text style={[styles.error, { color: colors.destructive }]}>
+                  {errors.global[0].message}
+                </Text>
+              )}
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.button,
+                  { backgroundColor: colors.primary, opacity: pressed || loading ? 0.85 : 1 },
+                  (!emailAddress || !password) && { opacity: 0.5 },
+                ]}
+                onPress={handleSubmit}
+                disabled={!emailAddress || !password || loading}
+              >
+                {loading ? (
+                  <ActivityIndicator color={colors.primaryForeground} />
+                ) : (
+                  <Text style={[styles.buttonText, { color: colors.primaryForeground }]}>
+                    Sign in
+                  </Text>
+                )}
+              </Pressable>
+
+              <View style={styles.dividerRow}>
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                <Text style={[styles.dividerText, { color: colors.mutedForeground }]}>
+                  or
+                </Text>
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
+              </View>
+
+              <Pressable
+                style={({ pressed }) => [
+                  styles.googleButton,
+                  { borderColor: colors.border, backgroundColor: colors.card, opacity: pressed ? 0.85 : 1 },
+                ]}
+                onPress={handleGoogle}
+              >
+                <Ionicons name="logo-google" size={20} color={colors.foreground} />
+                <Text style={[styles.googleText, { color: colors.foreground }]}>
+                  Continue with Google
+                </Text>
+              </Pressable>
+
+              <View style={styles.footer}>
+                <Text style={{ color: colors.mutedForeground, fontFamily: fonts.sans }}>
+                  New here?{" "}
+                </Text>
+                <Link href="/sign-up">
+                  <Text style={{ color: colors.primary, fontFamily: fonts.sansSemibold }}>
+                    Create an account
+                  </Text>
+                </Link>
+              </View>
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -255,6 +424,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   buttonText: { fontSize: 16, fontFamily: fonts.sansBold },
+  altAction: { alignItems: "center", marginTop: 16 },
   dividerRow: { flexDirection: "row", alignItems: "center", gap: 12, marginVertical: 20 },
   divider: { flex: 1, height: 1 },
   dividerText: { fontSize: 13, fontFamily: fonts.sans },

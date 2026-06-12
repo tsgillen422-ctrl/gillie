@@ -25,3 +25,9 @@ description: gillie-mobile uses Clerk's new signals useSignIn/useSignUp; finaliz
 Nothing redirects from the `(auth)` group to `(home)` automatically — `finalize`'s `navigate` callback doing `router.replace("/")` is what moves the user in; the `(home)/_layout` guard only handles the signed-OUT → sign-in direction.
 
 Google SSO is separate: it uses `useSSO().startSSOFlow(...)` which DOES return `{ createdSessionId, setActive }` (classic-style), then `setActive({ session }) + router.replace("/")`.
+
+**Second factor (2FA) is a REAL non-complete status, not an error.** Accounts with 2FA enabled return `signIn.status === "needs_second_factor"` after a successful `password()`. The web app (dhl-app) never hits this in custom code because it uses Clerk's prebuilt `<SignIn>` component which handles all factors. A custom Expo flow must handle it explicitly or sign-in is impossible for those users.
+
+- Read available factors from `signIn.supportedSecondFactors` (`SignInSecondFactor[]`; strategies `totp` | `phone_code` | `backup_code` | `email_code` — but the future API only verifies the first three).
+- MFA methods live under the `signIn.mfa` namespace (NOT top-level): `signIn.mfa.sendPhoneCode()`, `signIn.mfa.verifyPhoneCode({code})`, `signIn.mfa.verifyTOTP({code})`, `signIn.mfa.verifyBackupCode({code})`. There is NO email second-factor verify method.
+- Flow: after `password()` with no error, `if (signIn.status === "needs_second_factor")` → show a code-entry step. For `totp` just prompt; for `phone_code` call `sendPhoneCode()` first; offer `verifyBackupCode` as fallback. After verify with no error, re-check `status === "complete"` then `finalize()`.
