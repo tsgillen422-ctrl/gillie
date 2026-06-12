@@ -30,11 +30,11 @@ export function Scene5() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="mb-6"
         >
-          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="Gillie Logo" className="w-28 h-28 mx-auto drop-shadow-lg" />
+          <img src={`${import.meta.env.BASE_URL}images/app-icon.png`} alt="Gillie Logo" className="w-32 h-32 mx-auto rounded-[24%] object-cover drop-shadow-2xl" />
         </motion.div>
 
         <motion.h1 
-          className="text-[16vw] font-black tracking-tight text-white mb-4 drop-shadow-xl"
+          className="text-[12vw] font-black tracking-tight text-white mb-4 drop-shadow-xl"
           style={{ fontFamily: 'var(--font-display)' }}
           initial={{ y: 30, opacity: 0 }}
           animate={phase >= 2 ? { y: 0, opacity: 1 } : { y: 30, opacity: 0 }}

@@ -36,6 +36,12 @@ uri = "file://artifacts/dhl-app/src/assets/dhl-logo.png"
 type = "image"
 title = "gillie lake wordmark logo"
 
+[[generated]]
+id = "859ZX4AZoqpVgFL8lYndU"
+uri = "file://artifacts/gillie-ad/public/images/phone-on-boat.png"
+type = "image"
+title = "Phone on boat map app"
+
 [[outputs]]
 id = "T5YDjCAIoQUUwTlifm7eU"
 uri = "file://screenshots/gallery-fixed.jpg"

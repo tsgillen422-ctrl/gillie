@@ -42,7 +42,7 @@ export function Scene2() {
         />
 
         <motion.h2 
-          className="text-[12vw] font-bold leading-tight mb-4 drop-shadow-lg"
+          className="text-[10vw] font-bold leading-tight mb-4 drop-shadow-lg"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           <motion.div

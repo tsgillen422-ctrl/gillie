@@ -45,7 +45,7 @@ export function Scene1() {
         </motion.div>
 
         <motion.h1 
-          className="text-[20vw] font-black tracking-tight leading-none mb-4 drop-shadow-2xl"
+          className="text-[15vw] font-black tracking-tight leading-none mb-4 drop-shadow-2xl"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           {'GILLIE'.split('').map((char, i) => (

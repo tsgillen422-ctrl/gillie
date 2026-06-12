@@ -43,7 +43,7 @@ export function Scene4() {
         </motion.div>
 
         <motion.h2 
-          className="text-[13vw] font-bold leading-tight mb-4"
+          className="text-[10vw] font-bold leading-tight mb-4"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           <motion.div

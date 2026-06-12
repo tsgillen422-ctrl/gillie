@@ -23,7 +23,7 @@ export function Scene3() {
     >
       <div className="absolute inset-0 z-0">
         <motion.img 
-          src={`${import.meta.env.BASE_URL}images/fishing.jpg`}
+          src={`${import.meta.env.BASE_URL}images/phone-on-boat.png`}
           className="w-full h-full object-cover opacity-80"
           initial={{ scale: 1.2, x: 30 }}
           animate={{ scale: 1, x: 0 }}
@@ -41,7 +41,7 @@ export function Scene3() {
         />
 
         <motion.h2 
-          className="text-[12vw] font-bold leading-tight mb-4 drop-shadow-lg"
+          className="text-[10vw] font-bold leading-tight mb-4 drop-shadow-lg"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           <motion.div
