@@ -21,12 +21,18 @@ export function UserAvatar({
   const colors = useColors();
   const resolved = resolveAssetUrl(avatarUrl);
   const dot = Math.max(10, Math.round(size * 0.28));
+  const [failed, setFailed] = React.useState(false);
+
+  React.useEffect(() => {
+    setFailed(false);
+  }, [resolved]);
 
   return (
     <View style={{ width: size, height: size }}>
-      {resolved ? (
+      {resolved && !failed ? (
         <Image
           source={{ uri: resolved }}
+          onError={() => setFailed(true)}
           style={{
             width: size,
             height: size,
