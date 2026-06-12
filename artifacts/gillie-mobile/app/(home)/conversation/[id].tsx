@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, FlatList, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, StyleSheet, FlatList, TextInput, Pressable, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { useGetConversationMessages, useSendMessage, useMarkConversationRead, useGetMe, getGetConversationMessagesQueryKey, getGetConversationsQueryKey } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { fonts } from "@/constants/fonts";
@@ -36,13 +36,19 @@ export default function ConversationScreen() {
   }, [convId, markRead, queryClient]);
 
   const handleSend = async () => {
-    if (!content.trim()) return;
-    await sendMessage.mutateAsync({
-      conversationId: convId,
-      data: { content: content.trim() }
-    });
+    const text = content.trim();
+    if (!text) return;
     setContent("");
-    refetch();
+    try {
+      await sendMessage.mutateAsync({
+        conversationId: convId,
+        data: { content: text }
+      });
+      refetch();
+    } catch {
+      setContent(text);
+      Alert.alert("Message not sent", "Something went wrong. Please try again.");
+    }
   };
 
   if (isLoading && !messages) {

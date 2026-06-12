@@ -24,9 +24,12 @@ export default function NotificationsScreen() {
       case 'friend_request': return '/friends';
       case 'message': return notif.relatedId != null ? `/conversation/${notif.relatedId}` : '/messages';
       case 'post_like':
-      case 'event': return notif.relatedId != null ? `/post/${notif.relatedId}` : '/feed';
+      case 'event':
+      case 'rsvp': return notif.relatedId != null ? `/post/${notif.relatedId}` : '/feed';
       case 'pin_like': return notif.relatedId != null ? `/pin/${notif.relatedId}` : '/feed';
       case 'system': return '/settings';
+      case 'sos':
+      case 'warning': return '/conditions';
       default: return null;
     }
   };

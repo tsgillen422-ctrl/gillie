@@ -43,11 +43,29 @@ export default function CatchesScreen() {
       Alert.alert("Error", "Please enter a species.");
       return;
     }
+    let weightVal: number | undefined;
+    if (weight.trim()) {
+      const w = parseFloat(weight);
+      if (!Number.isFinite(w) || w < 0) {
+        Alert.alert("Error", "Please enter a valid weight.");
+        return;
+      }
+      weightVal = w;
+    }
+    let lengthVal: number | undefined;
+    if (length.trim()) {
+      const l = parseFloat(length);
+      if (!Number.isFinite(l) || l < 0) {
+        Alert.alert("Error", "Please enter a valid length.");
+        return;
+      }
+      lengthVal = l;
+    }
     createCatch.mutate({
       data: {
         species: species.trim(),
-        weight: weight ? parseFloat(weight) : undefined,
-        length: length ? parseFloat(length) : undefined,
+        weight: weightVal,
+        length: lengthVal,
         notes: notes.trim() || undefined,
         isPrivate,
       }
