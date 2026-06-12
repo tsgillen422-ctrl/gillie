@@ -19,7 +19,7 @@ function Avatar({ o, mini }: { o: Occ; mini?: boolean }) {
   );
 }
 
-function Boat({ left, top, occ }: { left: string; top: string; occ: Occ[] }) {
+function Boat({ left, top, occ, noBoat }: { left: string; top: string; occ: Occ[]; noBoat?: boolean }) {
   const crew = occ.length > 1;
   return (
     <div className={`snap-marker${crew ? " crew" : ""}`} style={{ left, top }}>
@@ -33,7 +33,7 @@ function Boat({ left, top, occ }: { left: string; top: string; occ: Occ[] }) {
         ) : (
           <Avatar o={occ[0]} />
         )}
-        <div className="snap-boat">🚤</div>
+        {!noBoat && <div className="snap-boat">🚤</div>}
       </div>
       {crew && <div className="crew-label">{occ.length} aboard</div>}
     </div>
@@ -70,15 +70,14 @@ export function AppMapStill() {
       <div className="water-tint" />
 
       {/* ---- avatar-boat markers over the water ---- */}
-      <Boat left="44%" top="22%" occ={[{ initials: "JS", color: "#0ea5e9" }, { initials: "MA", color: "#f97316" }, { initials: "PR", color: "#a855f7" }, { initials: "DA", color: "#22c55e" }]} />
-      <Boat left="62%" top="13%" occ={[{ initials: "SA", color: "#0ea5e9" }]} />
+      <Boat left="43%" top="41%" occ={[{ initials: "JS", color: "#0ea5e9" }, { initials: "MA", color: "#f97316" }, { initials: "PR", color: "#a855f7" }, { initials: "DA", color: "#22c55e" }]} />
+      <Boat left="70%" top="17%" occ={[{ initials: "SA", color: "#0ea5e9" }]} />
       <Boat left="74%" top="33%" occ={[{ initials: "TA", color: "#f97316" }]} />
       <Boat left="13%" top="40%" occ={[{ initials: "WA", color: "#22c55e" }]} />
-      <Boat left="31%" top="52%" occ={[{ initials: "LU", color: "#ec4899" }]} />
+      <Boat left="31%" top="52%" occ={[{ initials: "LU", color: "#ec4899" }]} noBoat />
 
       {/* ---- place pins ---- */}
       <PinCluster left="46%" top="30%" emoji="🎣" label="3 fishing spots" />
-      <PinSingle left="58%" top="48%" emoji="🛥️" label="Boat ramp" />
 
       {/* ---- app chrome: search pill ---- */}
       <div className="search-pill">
