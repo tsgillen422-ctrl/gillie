@@ -2,5 +2,15 @@
 type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
 export const modules: ModuleMap = {
   "./components/mockups/map-demo/AppMapStill.tsx": () => import("../components/mockups/map-demo/AppMapStill.tsx"),
-  "./components/mockups/map-demo/ClusterDemo.tsx": () => import("../components/mockups/map-demo/ClusterDemo.tsx")
+  "./components/mockups/map-demo/ClusterDemo.tsx": () => import("../components/mockups/map-demo/ClusterDemo.tsx"),
+  "./components/mockups/appstore/Frame01.tsx": () => import("../components/mockups/appstore/Frame01.tsx"),
+  "./components/mockups/appstore/Frame02.tsx": () => import("../components/mockups/appstore/Frame02.tsx"),
+  "./components/mockups/appstore/Frame03.tsx": () => import("../components/mockups/appstore/Frame03.tsx"),
+  "./components/mockups/appstore/Frame04.tsx": () => import("../components/mockups/appstore/Frame04.tsx"),
+  "./components/mockups/appstore/Frame05.tsx": () => import("../components/mockups/appstore/Frame05.tsx"),
+  "./components/mockups/appstore/Frame06.tsx": () => import("../components/mockups/appstore/Frame06.tsx"),
+  "./components/mockups/appstore/Frame07.tsx": () => import("../components/mockups/appstore/Frame07.tsx"),
+  "./components/mockups/appstore/Frame08.tsx": () => import("../components/mockups/appstore/Frame08.tsx"),
+  "./components/mockups/appstore/Frame09.tsx": () => import("../components/mockups/appstore/Frame09.tsx"),
+  "./components/mockups/appstore/Frame10.tsx": () => import("../components/mockups/appstore/Frame10.tsx")
 };

@@ -83,3 +83,63 @@ id = "4noJn6jQtL65YCpDwzfxk"
 uri = "file://artifacts/gillie-ad/public/audio/bg_music.mp3"
 type = "audio"
 title = "upbeat summer background music"
+
+[[outputs]]
+id = "djg3RR9CQsTnYcWZfkPqW"
+uri = "file://appstore-screenshots/01.jpg"
+type = "image"
+title = "01 — Map & Crew"
+
+[[outputs]]
+id = "3swsgC8FxbhW7JeT7cqqw"
+uri = "file://appstore-screenshots/02.jpg"
+type = "image"
+title = "02 — Community Feed"
+
+[[outputs]]
+id = "kwwEdJKTXuCxRbRxx3oQB"
+uri = "file://appstore-screenshots/03.jpg"
+type = "image"
+title = "03 — Trophy Catch Log"
+
+[[outputs]]
+id = "hGH54iXBugLLMc5jeHkW6"
+uri = "file://appstore-screenshots/04.jpg"
+type = "image"
+title = "04 — Lake Conditions"
+
+[[outputs]]
+id = "nCoJFpIdM_p50yRWG_5YS"
+uri = "file://appstore-screenshots/05.jpg"
+type = "image"
+title = "05 — Group Tie-Ups"
+
+[[outputs]]
+id = "u2KM9NobTGghVAZmK89Xa"
+uri = "file://appstore-screenshots/06.jpg"
+type = "image"
+title = "06 — Pins & Hazards"
+
+[[outputs]]
+id = "mhXxKj6RC_mHXFLV1n_li"
+uri = "file://appstore-screenshots/07.jpg"
+type = "image"
+title = "07 — Ranks & Badges"
+
+[[outputs]]
+id = "65Dyw6iJJ7gSytNh5fdni"
+uri = "file://appstore-screenshots/08.jpg"
+type = "image"
+title = "08 — Ghost Mode & SOS"
+
+[[outputs]]
+id = "pkkpFrjOMg8EMRmv7891W"
+uri = "file://appstore-screenshots/09.jpg"
+type = "image"
+title = "09 — Lake Activity"
+
+[[outputs]]
+id = "vq8e4HH6BD_1iD5Pf_12B"
+uri = "file://appstore-screenshots/10.jpg"
+type = "image"
+title = "10 — Closing Lockup"
