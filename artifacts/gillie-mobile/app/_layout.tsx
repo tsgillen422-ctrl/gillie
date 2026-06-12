@@ -88,7 +88,7 @@ export default function RootLayout() {
             <QueryClientProvider client={queryClient}>
               <GestureHandlerRootView style={{ flex: 1 }}>
                 <KeyboardProvider>
-                  <StatusBar style="auto" />
+                  <StatusBar style="dark" />
                   <RootLayoutNav />
                 </KeyboardProvider>
               </GestureHandlerRootView>

@@ -136,11 +136,15 @@ export default function CatchesScreen() {
             </View>
 
             {item.imageUrl && (
-              <Image 
-                source={{ uri: resolveAssetUrl(item.imageUrl) }} 
-                style={styles.catchImage} 
-                contentFit="cover" 
-              />
+              <View style={[styles.catchImageWrap, { backgroundColor: colors.muted }]}>
+                <Ionicons name="fish" size={44} color={colors.mutedForeground} style={styles.catchImagePlaceholder} />
+                <Image 
+                  source={{ uri: resolveAssetUrl(item.imageUrl) }} 
+                  style={styles.catchImage} 
+                  contentFit="cover" 
+                  transition={200}
+                />
+              </View>
             )}
 
             <View style={styles.cardBody}>
@@ -267,7 +271,9 @@ const styles = StyleSheet.create({
   cardHeaderInfo: { flex: 1, marginLeft: 10 },
   authorName: { fontFamily: fonts.sansSemibold, fontSize: 14 },
   timeAgo: { fontFamily: fonts.sans, fontSize: 12, marginTop: 2 },
-  catchImage: { width: '100%', aspectRatio: 4/3, backgroundColor: '#f0f0f0' },
+  catchImageWrap: { width: '100%', aspectRatio: 4/3, alignItems: 'center', justifyContent: 'center' },
+  catchImagePlaceholder: { position: 'absolute', opacity: 0.6 },
+  catchImage: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
   cardBody: { padding: 16 },
   species: { fontFamily: fonts.displayBold, fontSize: 20, marginBottom: 8 },
   statsRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
