@@ -81,9 +81,11 @@ export default function SignInScreen() {
       setMfaStrategy("backup_code");
       setMfaHint("Enter one of your backup codes.");
     } else {
+      const found = factors.map((f) => f.strategy).join(", ") || "none";
+      console.log("[sign-in] unsupported second factors:", JSON.stringify(factors));
       Alert.alert(
-        "Can't complete sign in",
-        "Your account uses a two-step method this app doesn't support yet. Please sign in on the website instead.",
+        "Two-step method",
+        `Your account's two-step method isn't handled yet.\n\nReported factors: ${found}\n\nPlease tell the developer this exact list.`,
       );
       return;
     }
