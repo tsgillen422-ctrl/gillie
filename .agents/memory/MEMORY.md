@@ -23,6 +23,7 @@
 - [Post visibility enforcement](post-visibility-enforcement.md) — friends-only audience only guarded on feed list, GET /:id, and poll vote; save/share/comments still bypassable (IDOR).
 - [Map WebGL e2e limitation](map-webgl-e2e-limitation.md) — Playwright harness has no WebGL so maplibre map pages can't be visually e2e'd; verify cluster logic via headless supercluster instead.
 - [Map iOS long-press](map-ios-longpress.md) — pin-drop needs -webkit-touch-callout/user-select:none on map canvas+markers (.ln) or iOS callout/magnifier eats the gesture; scope to canvas/markers, not overlays.
+- [api-client-react gen hooks](api-client-react-gen-hooks.md) — query hooks need explicit queryKey when passing options; mutation arg shapes vary; no friend-request decline endpoint.
 - [Two mute systems](two-mute-systems.md) — feed mute (useMuteUser/ns table, hides posts) vs conversation mute (conversation_participants.muted, silences msg notifs); don't confuse them.
 - [Clerk Expo signals finalize](clerk-expo-signals-finalize.md) — gillie-mobile new signals API: finalize() THROWS unless status==="complete"; gate on (live) status + try/catch, never call it unconditionally.
 - [App Store frame gotchas](appstore-frame-gotchas.md) — translucent bg-gradient classes render LIGHT (kill white captions); status bar is 150px absolute overlay so in-screen headers need ≥150px top padding.
