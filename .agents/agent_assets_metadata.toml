@@ -88,58 +88,58 @@ title = "upbeat summer background music"
 id = "djg3RR9CQsTnYcWZfkPqW"
 uri = "file://appstore-screenshots/01.jpg"
 type = "image"
-title = "01 — Map & Crew"
+title = "01 — Map & Crew (real app map)"
 
 [[outputs]]
 id = "3swsgC8FxbhW7JeT7cqqw"
 uri = "file://appstore-screenshots/02.jpg"
 type = "image"
-title = "02 — Community Feed"
+title = "02 — Home Feed (real screen)"
 
 [[outputs]]
 id = "kwwEdJKTXuCxRbRxx3oQB"
 uri = "file://appstore-screenshots/03.jpg"
 type = "image"
-title = "03 — Trophy Catch Log"
+title = "03 — Catch Log (real screen)"
 
 [[outputs]]
 id = "hGH54iXBugLLMc5jeHkW6"
 uri = "file://appstore-screenshots/04.jpg"
 type = "image"
-title = "04 — Lake Conditions"
+title = "04 — Lake Conditions (placeholder — pending real capture)"
 
 [[outputs]]
 id = "nCoJFpIdM_p50yRWG_5YS"
 uri = "file://appstore-screenshots/05.jpg"
 type = "image"
-title = "05 — Group Tie-Ups"
+title = "05 — Tie-ups (real screen)"
 
 [[outputs]]
 id = "u2KM9NobTGghVAZmK89Xa"
 uri = "file://appstore-screenshots/06.jpg"
 type = "image"
-title = "06 — Pins & Hazards"
+title = "06 — Pins & Hazards (real screen)"
 
 [[outputs]]
 id = "mhXxKj6RC_mHXFLV1n_li"
 uri = "file://appstore-screenshots/07.jpg"
 type = "image"
-title = "07 — Ranks & Badges"
+title = "07 — Ranks & Badges (real screen)"
 
 [[outputs]]
 id = "65Dyw6iJJ7gSytNh5fdni"
 uri = "file://appstore-screenshots/08.jpg"
 type = "image"
-title = "08 — Ghost Mode & SOS"
+title = "08 — Safety & SOS (placeholder — pending real capture)"
 
 [[outputs]]
 id = "pkkpFrjOMg8EMRmv7891W"
 uri = "file://appstore-screenshots/09.jpg"
 type = "image"
-title = "09 — Lake Activity"
+title = "09 — Lake Activity (placeholder — needs your phone shot)"
 
 [[outputs]]
 id = "vq8e4HH6BD_1iD5Pf_12B"
 uri = "file://appstore-screenshots/10.jpg"
 type = "image"
-title = "10 — Closing Lockup"
+title = "10 — Closing lockup"
