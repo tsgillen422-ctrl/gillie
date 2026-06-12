@@ -70,7 +70,7 @@ export function AppMapStill() {
       <div className="water-tint" />
 
       {/* ---- avatar-boat markers over the water ---- */}
-      <Boat left="43%" top="41%" occ={[{ initials: "JS", color: "#0ea5e9" }, { initials: "MA", color: "#f97316" }, { initials: "PR", color: "#a855f7" }, { initials: "DA", color: "#22c55e" }]} />
+      <Boat left="40%" top="36%" occ={[{ initials: "JS", color: "#0ea5e9" }, { initials: "MA", color: "#f97316" }, { initials: "PR", color: "#a855f7" }, { initials: "DA", color: "#22c55e" }]} />
       <Boat left="70%" top="17%" occ={[{ initials: "SA", color: "#0ea5e9" }]} />
       <Boat left="74%" top="33%" occ={[{ initials: "TA", color: "#f97316" }]} />
       <Boat left="13%" top="40%" occ={[{ initials: "WA", color: "#22c55e" }]} />
