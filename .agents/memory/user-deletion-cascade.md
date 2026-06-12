@@ -14,5 +14,9 @@ There are no DB-level `ON DELETE CASCADE` constraints, so deleting a user requir
 
 **How to apply:** Any future change to user/account deletion (or GDPR-style "delete my data") must preserve other participants' content. Same principle applies to any other shared/many-to-many resource: delete the user's slice, only remove the shared parent when it becomes orphaned.
 
+## Self-delete uses /me, not the admin endpoint
+For a user deleting their OWN account, use `useDeleteCurrentUser()` (void args, hits `/api/users/me`). `useDeleteUser({ userId })` is the admin-style `/api/users/{id}` operation and is the wrong choice on a settings/self screen.
+**Why:** they share a name shape but target different routes/authorization; using the admin one on a self screen can fail for normal users.
+
 ## Coverage reminder
 Cascade must hit every table FK-referencing users/posts/pins (likes, comments, comment_likes, event_rsvps, saved_posts, pins + pin_likes/pin_favorites, catches, gallery, friend_requests, blocks, mutes, notifications, reports.reporterId + user-target reports, push_subscriptions, native_push_tokens, messages/participants/conversations). If a new table referencing any of these is added, extend the cascade or deletion will throw on the FK.

@@ -368,15 +368,25 @@ export default function ProfileScreen() {
                     >
                       {p.title}
                     </Text>
-                    <Text
-                      style={[
-                        styles.postContent,
-                        { color: colors.mutedForeground },
-                      ]}
-                      numberOfLines={2}
-                    >
-                      {p.content}
-                    </Text>
+                    {p.content ? (
+                      <Text
+                        style={[
+                          styles.postContent,
+                          { color: colors.mutedForeground },
+                        ]}
+                        numberOfLines={2}
+                      >
+                        {p.content}
+                      </Text>
+                    ) : null}
+                    {p.imageUrl ? (
+                      <Image
+                        source={{ uri: resolveAssetUrl(p.imageUrl) }}
+                        style={styles.postImage}
+                        contentFit="cover"
+                        transition={150}
+                      />
+                    ) : null}
                   </SoftCard>
                 </Pressable>
               ))
@@ -588,6 +598,7 @@ const styles = StyleSheet.create({
   },
   postTitle: { fontFamily: fonts.displaySemibold, fontSize: 17, marginBottom: 4 },
   postContent: { fontFamily: fonts.sans, fontSize: 14, lineHeight: 20 },
+  postImage: { width: "100%", height: 180, borderRadius: 12, marginTop: 12 },
   catchRow: { flexDirection: "row", alignItems: "center" },
   catchImg: { width: 60, height: 60, borderRadius: 10, marginRight: 12 },
   catchImgPlaceholder: { alignItems: "center", justifyContent: "center" },
