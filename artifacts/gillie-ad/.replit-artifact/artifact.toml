@@ -1,0 +1,31 @@
+kind = "video"
+previewPath = "/gillie-ad/"
+title = "Gillie Ad"
+version = "1.0.0"
+id = "artifacts/gillie-ad"
+router = "path"
+
+[[integratedSkills]]
+name = "video-js"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/gillie-ad/" ]
+localPort = 23639
+
+[services.development]
+run = "pnpm --filter @workspace/gillie-ad run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/gillie-ad", "run", "build" ]
+publicDir = "artifacts/gillie-ad/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23639"
+BASE_PATH = "/gillie-ad/"

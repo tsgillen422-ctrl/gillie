@@ -47,3 +47,27 @@ id = "3C3qQcrdLBGgII4Wl5fPg"
 uri = "file://screenshots/delete-btn-zoom.png"
 type = "image"
 title = "Close-up of the delete buttons"
+
+[[outputs]]
+id = "5KY8frcwI8WS4tXp_cTjk"
+uri = "file://artifacts/gillie-ad/public/images/friends-boat.jpg"
+type = "image"
+title = "happy friends having fun on a boat at the lake"
+
+[[outputs]]
+id = "LUZZbEBTWxXOeG_ALxyIb"
+uri = "file://artifacts/gillie-ad/public/images/fishing.jpg"
+type = "image"
+title = "bass fishing on a beautiful lake at sunrise"
+
+[[outputs]]
+id = "nieI7x6gONDNjGrZQsZlw"
+uri = "file://artifacts/gillie-ad/public/images/tie-up.jpg"
+type = "image"
+title = "boats tied up together party cove at lake"
+
+[[outputs]]
+id = "4noJn6jQtL65YCpDwzfxk"
+uri = "file://artifacts/gillie-ad/public/audio/bg_music.mp3"
+type = "audio"
+title = "background music"
