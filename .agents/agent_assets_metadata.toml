@@ -48,6 +48,12 @@ uri = "file://artifacts/gillie-ad/public/images/friends-on-boat.png"
 type = "image"
 title = "Friends on a boat"
 
+[[generated]]
+id = "rfZ0DA1aNSF_gO5HW9FQ0"
+uri = "file://artifacts/gillie-mobile/assets/images/icon.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "T5YDjCAIoQUUwTlifm7eU"
 uri = "file://screenshots/gallery-fixed.jpg"

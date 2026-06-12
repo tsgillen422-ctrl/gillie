@@ -31,3 +31,4 @@
 - [One-way follow model](follow-model.md) — accepted row = directional follow; mutual = both rows; follower-privacy (location/posts/messages) must be gated at EVERY surface incl. group DM creation.
 - [Hidden built-in places](hidden-places.md) — LAKE_PLACES have no id (keyed by name) & are only search-selectable; admin "remove place" hides via hidden_places table; only search needs filtering.
 - [Friend suggestions privacy](friend-suggestions-privacy.md) — /friends/suggestions must NOT return non-friends' currentLat/Lng/lastSeen; use a minimal DTO, not formatUserWithCounts.
+- [Expo native-only web bundle](expo-native-only-web-bundle.md) — react-native-maps crashes the web Metro bundle; fix by component-level .web.tsx split (route-level split fails b/c expo-router globs routes).
