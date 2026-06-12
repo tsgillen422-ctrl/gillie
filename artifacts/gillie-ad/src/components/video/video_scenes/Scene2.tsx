@@ -16,33 +16,33 @@ export function Scene2() {
 
   return (
     <motion.div 
-      className="absolute inset-0 flex items-center bg-[#020617] overflow-hidden"
-      initial={{ x: '100%', opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}
-      exit={{ x: '-100%', opacity: 0, scale: 0.9 }}
+      className="absolute inset-0 flex flex-col justify-end bg-[#020617] overflow-hidden pb-32"
+      initial={{ y: '100%', opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: '-100%', opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="w-1/2 h-full relative">
+      <div className="absolute inset-0 z-0">
         <motion.img 
           src={`${import.meta.env.BASE_URL}images/friends-boat.jpg`}
-          className="w-full h-full object-cover"
-          initial={{ scale: 1.2, x: -50 }}
-          animate={{ scale: 1, x: 0 }}
-          transition={{ duration: 4, ease: "easeOut" }}
+          className="w-full h-full object-cover opacity-80"
+          initial={{ scale: 1.2, y: -20 }}
+          animate={{ scale: 1, y: 0 }}
+          transition={{ duration: 5, ease: "easeOut" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#020617]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/50 to-transparent" />
       </div>
 
-      <div className="w-1/2 px-16 relative z-10">
+      <div className="px-8 relative z-10 w-full">
         <motion.div
           initial={{ width: 0 }}
           animate={phase >= 1 ? { width: '100px' } : { width: 0 }}
           transition={{ duration: 0.6 }}
-          className="h-1 bg-accent mb-8"
+          className="h-1 bg-accent mb-6"
         />
 
         <motion.h2 
-          className="text-6xl font-bold leading-tight mb-6"
+          className="text-[12vw] font-bold leading-tight mb-4 drop-shadow-lg"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           <motion.div
@@ -63,12 +63,12 @@ export function Scene2() {
         </motion.h2>
 
         <motion.p 
-          className="text-xl text-gray-400 max-w-md"
+          className="text-[5vw] text-gray-200"
           initial={{ opacity: 0, x: 20 }}
           animate={phase >= 3 ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }}
           transition={{ duration: 0.6 }}
         >
-          Live map tracking so you never miss out on the action. Connect with your crew instantly.
+          Live map tracking so you never miss out on the action.
         </motion.p>
       </div>
     </motion.div>

@@ -15,26 +15,26 @@ export function Scene4() {
 
   return (
     <motion.div 
-      className="absolute inset-0 overflow-hidden bg-[#020617]"
-      initial={{ scale: 1.5, opacity: 0, rotate: 5 }}
-      animate={{ scale: 1, opacity: 1, rotate: 0 }}
-      exit={{ opacity: 0, scale: 0.9 }}
+      className="absolute inset-0 flex flex-col justify-center bg-[#020617] overflow-hidden"
+      initial={{ scale: 1.2, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ opacity: 0, y: 100 }}
       transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="absolute inset-0 z-0">
         <motion.img 
           src={`${import.meta.env.BASE_URL}images/tie-up.jpg`}
-          className="w-full h-full object-cover opacity-50"
+          className="w-full h-full object-cover opacity-70"
           initial={{ scale: 1 }}
           animate={{ scale: 1.1 }}
           transition={{ duration: 5, ease: "linear" }}
         />
-        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-black/50" />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-10">
+      <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-6">
         <motion.div
-          className="w-24 h-24 rounded-full border-4 border-accent mb-8 flex items-center justify-center text-4xl font-bold bg-accent/20"
+          className="w-20 h-20 rounded-full border-4 border-accent mb-6 flex items-center justify-center text-3xl font-bold bg-accent/20"
           initial={{ scale: 0, rotate: -180 }}
           animate={phase >= 1 ? { scale: 1, rotate: 0 } : { scale: 0, rotate: -180 }}
           transition={{ type: 'spring', bounce: 0.5, duration: 0.8 }}
@@ -43,7 +43,7 @@ export function Scene4() {
         </motion.div>
 
         <motion.h2 
-          className="text-7xl font-bold leading-tight mb-6"
+          className="text-[13vw] font-bold leading-tight mb-4"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           <motion.div
@@ -64,12 +64,12 @@ export function Scene4() {
         </motion.h2>
 
         <motion.p 
-          className="text-2xl text-gray-300 max-w-2xl"
+          className="text-[5vw] text-gray-200"
           initial={{ opacity: 0, y: 20 }}
           animate={phase >= 3 ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6 }}
         >
-          Discover where the party is. Join public tie-ups or create private ones for your friends.
+          Discover where the party is. Join public tie-ups or create private ones.
         </motion.p>
       </div>
     </motion.div>

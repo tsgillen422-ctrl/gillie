@@ -45,7 +45,7 @@ export function Scene1() {
         </motion.div>
 
         <motion.h1 
-          className="text-8xl md:text-[8vw] font-black tracking-tight leading-none mb-6 drop-shadow-2xl"
+          className="text-[20vw] font-black tracking-tight leading-none mb-4 drop-shadow-2xl"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           {'GILLIE'.split('').map((char, i) => (
@@ -59,7 +59,7 @@ export function Scene1() {
         </motion.h1>
 
         <motion.p 
-          className="text-2xl md:text-3xl font-light text-gray-200 max-w-3xl"
+          className="text-[6vw] font-light text-gray-200"
           initial={{ opacity: 0, y: 20, filter: 'blur(10px)' }}
           animate={phase >= 3 ? { opacity: 1, y: 0, filter: 'blur(0px)' } : { opacity: 0, y: 20, filter: 'blur(10px)' }}
           transition={{ duration: 1, ease: "easeOut" }}

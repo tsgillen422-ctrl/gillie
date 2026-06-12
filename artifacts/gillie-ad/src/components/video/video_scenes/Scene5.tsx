@@ -23,18 +23,18 @@ export function Scene5() {
     >
       <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
       
-      <div className="relative z-10 text-center flex flex-col items-center">
+      <div className="relative z-10 text-center flex flex-col items-center px-6">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={phase >= 1 ? { scale: 1, opacity: 1 } : { scale: 0.8, opacity: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="mb-8"
+          className="mb-6"
         >
-          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="Gillie Logo" className="w-32 h-32 mx-auto drop-shadow-lg" />
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="Gillie Logo" className="w-28 h-28 mx-auto drop-shadow-lg" />
         </motion.div>
 
         <motion.h1 
-          className="text-8xl font-black tracking-tight text-white mb-6 drop-shadow-xl"
+          className="text-[16vw] font-black tracking-tight text-white mb-4 drop-shadow-xl"
           style={{ fontFamily: 'var(--font-display)' }}
           initial={{ y: 30, opacity: 0 }}
           animate={phase >= 2 ? { y: 0, opacity: 1 } : { y: 30, opacity: 0 }}
@@ -44,7 +44,7 @@ export function Scene5() {
         </motion.h1>
 
         <motion.p 
-          className="text-3xl text-white/90 font-light mb-12"
+          className="text-[6vw] text-white/90 font-light mb-12"
           initial={{ y: 20, opacity: 0 }}
           animate={phase >= 2 ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
           transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
@@ -56,13 +56,10 @@ export function Scene5() {
           initial={{ y: 20, opacity: 0 }}
           animate={phase >= 3 ? { y: 0, opacity: 1 } : { y: 20, opacity: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="flex gap-6"
+          className="w-full max-w-sm"
         >
-          <div className="bg-black text-white px-8 py-4 rounded-xl font-bold text-xl flex items-center shadow-2xl">
-            Download on iOS
-          </div>
-          <div className="bg-black text-white px-8 py-4 rounded-xl font-bold text-xl flex items-center shadow-2xl">
-            Get it on Android
+          <div className="bg-black text-white px-8 py-5 rounded-2xl font-bold text-2xl flex justify-center items-center shadow-2xl w-full">
+            Download on the App Store
           </div>
         </motion.div>
       </div>

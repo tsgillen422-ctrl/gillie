@@ -15,33 +15,33 @@ export function Scene3() {
 
   return (
     <motion.div 
-      className="absolute inset-0 flex flex-row-reverse items-center bg-[#020617] overflow-hidden"
+      className="absolute inset-0 flex flex-col justify-end bg-[#020617] overflow-hidden pb-32"
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, y: 100 }}
+      exit={{ opacity: 0, x: '-100%' }}
       transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="w-1/2 h-full relative">
+      <div className="absolute inset-0 z-0">
         <motion.img 
           src={`${import.meta.env.BASE_URL}images/fishing.jpg`}
-          className="w-full h-full object-cover"
-          initial={{ scale: 1.2, x: 50 }}
+          className="w-full h-full object-cover opacity-80"
+          initial={{ scale: 1.2, x: 30 }}
           animate={{ scale: 1, x: 0 }}
-          transition={{ duration: 4, ease: "easeOut" }}
+          transition={{ duration: 5, ease: "easeOut" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-l from-transparent to-[#020617]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/50 to-transparent" />
       </div>
 
-      <div className="w-1/2 px-16 relative z-10 pl-24">
+      <div className="px-8 relative z-10 w-full text-right flex flex-col items-end">
         <motion.div
-          initial={{ height: 0 }}
-          animate={phase >= 1 ? { height: '100px' } : { height: 0 }}
+          initial={{ width: 0 }}
+          animate={phase >= 1 ? { width: '100px' } : { width: 0 }}
           transition={{ duration: 0.6 }}
-          className="w-1 bg-primary absolute left-12 top-0"
+          className="h-1 bg-primary mb-6"
         />
 
         <motion.h2 
-          className="text-6xl font-bold leading-tight mb-6"
+          className="text-[12vw] font-bold leading-tight mb-4 drop-shadow-lg"
           style={{ fontFamily: 'var(--font-display)' }}
         >
           <motion.div
@@ -62,12 +62,12 @@ export function Scene3() {
         </motion.h2>
 
         <motion.p 
-          className="text-xl text-gray-400 max-w-md"
+          className="text-[5vw] text-gray-200 max-w-[80%]"
           initial={{ opacity: 0, y: 20 }}
           animate={phase >= 3 ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6 }}
         >
-          Post fishing reports, share conditions, and show off your trophy bass to the community.
+          Post fishing reports, share conditions, and show off your trophy bass.
         </motion.p>
       </div>
     </motion.div>
