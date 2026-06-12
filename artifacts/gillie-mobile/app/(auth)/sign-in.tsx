@@ -8,6 +8,7 @@ import * as WebBrowser from "expo-web-browser";
 import React, { useCallback, useEffect } from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -47,21 +48,31 @@ export default function SignInScreen() {
 
   const handleSubmit = async () => {
     if (Platform.OS !== "web") void Haptics.selectionAsync();
-    const { error } = await signIn.password({
-      emailAddress: emailAddress.trim(),
-      password,
-    });
-    if (error) return;
-    if (signIn.status !== "complete") return;
     try {
-      await signIn.finalize({
-        navigate: async ({ session }) => {
-          if (session?.currentTask) return;
-          router.replace("/");
-        },
+      const { error } = await signIn.password({
+        emailAddress: emailAddress.trim(),
+        password,
       });
+      if (error) {
+        Alert.alert(
+          "Sign in failed",
+          error.message ?? "Please check your email and password and try again.",
+        );
+        return;
+      }
+      if (signIn.status !== "complete") {
+        Alert.alert(
+          "One more step",
+          `Your account needs an extra step to sign in (status: ${signIn.status}).`,
+        );
+        return;
+      }
+      await signIn.finalize({ navigate: async () => router.replace("/") });
     } catch (err) {
-      console.error("Sign-in finalize failed", err);
+      Alert.alert(
+        "Sign in error",
+        err instanceof Error ? err.message : String(err),
+      );
     }
   };
 
@@ -76,7 +87,10 @@ export default function SignInScreen() {
         router.replace("/");
       }
     } catch (err) {
-      console.error(JSON.stringify(err, null, 2));
+      Alert.alert(
+        "Google sign in error",
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }, [router, startSSOFlow]);
 

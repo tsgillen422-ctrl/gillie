@@ -5,6 +5,7 @@ import { Link, useRouter } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -36,30 +37,59 @@ export default function SignUpScreen() {
 
   const handleSubmit = async () => {
     if (Platform.OS !== "web") void Haptics.selectionAsync();
-    const { error } = await signUp.password({
-      emailAddress: emailAddress.trim(),
-      password,
-    });
-    if (error) return;
-    const { error: sendError } = await signUp.verifications.sendEmailCode();
-    if (sendError) return;
-    setVerifying(true);
+    try {
+      const { error } = await signUp.password({
+        emailAddress: emailAddress.trim(),
+        password,
+      });
+      if (error) {
+        Alert.alert(
+          "Sign up failed",
+          error.message ?? "Please check your details and try again.",
+        );
+        return;
+      }
+      const { error: sendError } = await signUp.verifications.sendEmailCode();
+      if (sendError) {
+        Alert.alert(
+          "Couldn't send code",
+          sendError.message ?? "We couldn't send a verification code. Try again.",
+        );
+        return;
+      }
+      setVerifying(true);
+    } catch (err) {
+      Alert.alert(
+        "Sign up error",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
   };
 
   const handleVerify = async () => {
     if (Platform.OS !== "web") void Haptics.selectionAsync();
-    const { error } = await signUp.verifications.verifyEmailCode({ code });
-    if (error) return;
-    if (signUp.status !== "complete") return;
     try {
-      await signUp.finalize({
-        navigate: async ({ session }) => {
-          if (session?.currentTask) return;
-          router.replace("/");
-        },
-      });
+      const { error } = await signUp.verifications.verifyEmailCode({ code });
+      if (error) {
+        Alert.alert(
+          "Verification failed",
+          error.message ?? "That code didn't work. Please try again.",
+        );
+        return;
+      }
+      if (signUp.status !== "complete") {
+        Alert.alert(
+          "One more step",
+          `Your account needs an extra step (status: ${signUp.status}).`,
+        );
+        return;
+      }
+      await signUp.finalize({ navigate: async () => router.replace("/") });
     } catch (err) {
-      console.error("Sign-up finalize failed", err);
+      Alert.alert(
+        "Sign up error",
+        err instanceof Error ? err.message : String(err),
+      );
     }
   };
 
