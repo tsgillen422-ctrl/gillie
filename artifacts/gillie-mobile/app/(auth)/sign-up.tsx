@@ -50,12 +50,17 @@ export default function SignUpScreen() {
     if (Platform.OS !== "web") void Haptics.selectionAsync();
     const { error } = await signUp.verifications.verifyEmailCode({ code });
     if (error) return;
-    await signUp.finalize({
-      navigate: async ({ session }) => {
-        if (session?.currentTask) return;
-        router.replace("/");
-      },
-    });
+    if (signUp.status !== "complete") return;
+    try {
+      await signUp.finalize({
+        navigate: async ({ session }) => {
+          if (session?.currentTask) return;
+          router.replace("/");
+        },
+      });
+    } catch (err) {
+      console.error("Sign-up finalize failed", err);
+    }
   };
 
   const handleResend = async () => {

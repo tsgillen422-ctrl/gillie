@@ -52,12 +52,17 @@ export default function SignInScreen() {
       password,
     });
     if (error) return;
-    await signIn.finalize({
-      navigate: async ({ session }) => {
-        if (session?.currentTask) return;
-        router.replace("/");
-      },
-    });
+    if (signIn.status !== "complete") return;
+    try {
+      await signIn.finalize({
+        navigate: async ({ session }) => {
+          if (session?.currentTask) return;
+          router.replace("/");
+        },
+      });
+    } catch (err) {
+      console.error("Sign-in finalize failed", err);
+    }
   };
 
   const handleGoogle = useCallback(async () => {

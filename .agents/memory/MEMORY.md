@@ -24,7 +24,7 @@
 - [Map WebGL e2e limitation](map-webgl-e2e-limitation.md) — Playwright harness has no WebGL so maplibre map pages can't be visually e2e'd; verify cluster logic via headless supercluster instead.
 - [Map iOS long-press](map-ios-longpress.md) — pin-drop needs -webkit-touch-callout/user-select:none on map canvas+markers (.ln) or iOS callout/magnifier eats the gesture; scope to canvas/markers, not overlays.
 - [Two mute systems](two-mute-systems.md) — feed mute (useMuteUser/ns table, hides posts) vs conversation mute (conversation_participants.muted, silences msg notifs); don't confuse them.
-- [Clerk Expo signals finalize](clerk-expo-signals-finalize.md) — gillie-mobile uses new signals useSignIn/useSignUp; never gate finalize() on stale signIn.status or auth silently stalls.
+- [Clerk Expo signals finalize](clerk-expo-signals-finalize.md) — gillie-mobile new signals API: finalize() THROWS unless status==="complete"; gate on (live) status + try/catch, never call it unconditionally.
 - [App Store frame gotchas](appstore-frame-gotchas.md) — translucent bg-gradient classes render LIGHT (kill white captions); status bar is 150px absolute overlay so in-screen headers need ≥150px top padding.
 - [Demo / seed data](demo-seed-data.md) — App-Review demo world: isDemo flag, auto-follow on signup + 2-min presence refresher make boats render; seeding must self-heal partial state.
 - [Self-serve account deletion](account-deletion.md) — DELETE /users/me must be registered before /:userId; also delete the Clerk user or re-login resurrects a ghost account.

@@ -13,8 +13,15 @@ description: gillie-mobile uses Clerk's new signals useSignIn/useSignUp; finaliz
 - Loading state = `fetchStatus === "fetching"`. Field errors read from the `errors` signal (`errors.fields.identifier/password/code`, `errors.global[0]`).
 - The classic `{ isLoaded, signIn, setActive }` shape lives at `@clerk/react/legacy` only — do not assume it.
 
-**The bug to avoid (cost a debugging session):** after a successful `password()`/`verifyEmailCode()`, you MUST call `signIn.finalize({ navigate })` / `signUp.finalize({ navigate })` to activate the session and route. Do NOT gate that call behind `if (signIn.status === "complete")` — the `signIn`/`signUp` captured in the async closure is a stale render snapshot, the status check is falsy, finalize never runs, and the user is silently stuck on the sign-in/sign-up screen even though Clerk authenticated them.
+**The wrapper is NOT stale.** The `SignInFuture`/`SignUpFuture` getters (`status`, `createdSessionId`, etc.) read live from the underlying resource (`this.#ev`), so reading `signIn.status` right after `await signIn.password(...)` in the same handler closure returns the FRESH value. An earlier "stale closure snapshot" theory was wrong — don't repeat it.
 
-**How to apply:** call `finalize()` whenever the preceding step returns no `error` (matches Clerk's official future-API custom-flow examples). For non-MFA password instances the status is already complete. Nothing redirects from the `(auth)` group to `(home)` automatically — `finalize`'s `navigate` callback doing `router.replace("/")` is what moves the user in; the `(home)/_layout` guard only handles the signed-OUT → sign-in direction.
+**The real precondition — finalize THROWS, it does not return `{ error }`, when the sign-in/up isn't complete.** In clerk-js the body is literally `if(!this.#ev.createdSessionId) throw Error("Cannot finalize sign-in without a created session.")` (same for sign-up). So calling `finalize()` unconditionally crashes with an UNCAUGHT "cannot finalize" error whenever `password()`/`verifyEmailCode()` succeeded but the attempt isn't `complete` (MFA/second factor, captcha, already-signed-in, or any non-complete status).
+
+**How to apply (correct pattern):**
+1. `const { error } = await signIn.password(...)` → `if (error) return;` (the `errors` signal renders the message).
+2. `if (signIn.status !== "complete") return;` — guard before finalize (status read is fresh/live).
+3. `try { await signIn.finalize({ navigate }) } catch (e) { console.error(e) }` — belt-and-suspenders so it can never surface as an uncaught error.
+
+Nothing redirects from the `(auth)` group to `(home)` automatically — `finalize`'s `navigate` callback doing `router.replace("/")` is what moves the user in; the `(home)/_layout` guard only handles the signed-OUT → sign-in direction.
 
 Google SSO is separate: it uses `useSSO().startSSOFlow(...)` which DOES return `{ createdSessionId, setActive }` (classic-style), then `setActive({ session }) + router.replace("/")`.
