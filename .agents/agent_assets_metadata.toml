@@ -42,6 +42,12 @@ uri = "file://artifacts/gillie-ad/public/images/phone-on-boat.png"
 type = "image"
 title = "Phone on boat map app"
 
+[[generated]]
+id = "OePRQTywU2paEsQ5j9VHk"
+uri = "file://artifacts/gillie-ad/public/images/friends-on-boat.png"
+type = "image"
+title = "Friends on a boat"
+
 [[outputs]]
 id = "T5YDjCAIoQUUwTlifm7eU"
 uri = "file://screenshots/gallery-fixed.jpg"

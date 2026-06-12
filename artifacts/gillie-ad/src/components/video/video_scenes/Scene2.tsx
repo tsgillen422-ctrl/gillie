@@ -24,7 +24,7 @@ export function Scene2() {
     >
       <div className="absolute inset-0 z-0">
         <motion.img 
-          src={`${import.meta.env.BASE_URL}images/friends-boat.jpg`}
+          src={`${import.meta.env.BASE_URL}images/friends-on-boat.png`}
           className="w-full h-full object-cover opacity-80"
           initial={{ scale: 1.2, y: -20 }}
           animate={{ scale: 1, y: 0 }}
