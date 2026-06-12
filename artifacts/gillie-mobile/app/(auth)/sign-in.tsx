@@ -1,4 +1,4 @@
-import { useSignIn, useSSO } from "@clerk/expo";
+import { getClerkInstance, useSignIn, useSSO } from "@clerk/expo";
 import { Ionicons } from "@expo/vector-icons";
 import * as AuthSession from "expo-auth-session";
 import * as Haptics from "expo-haptics";
@@ -26,7 +26,7 @@ import { useColors } from "@/hooks/useColors";
 
 WebBrowser.maybeCompleteAuthSession();
 
-type MfaStrategy = "totp" | "phone_code" | "backup_code";
+type MfaStrategy = "totp" | "phone_code" | "backup_code" | "email_code";
 
 export default function SignInScreen() {
   const colors = useColors();
@@ -60,6 +60,7 @@ export default function SignInScreen() {
     const factors = signIn.supportedSecondFactors ?? [];
     const totp = factors.find((f) => f.strategy === "totp");
     const phone = factors.find((f) => f.strategy === "phone_code");
+    const email = factors.find((f) => f.strategy === "email_code");
     const backup = factors.find((f) => f.strategy === "backup_code");
 
     if (totp) {
@@ -76,6 +77,32 @@ export default function SignInScreen() {
         phone.safeIdentifier
           ? `Enter the code we texted to ${phone.safeIdentifier}.`
           : "Enter the code we texted to your phone.",
+      );
+    } else if (email) {
+      // Clerk future API (signIn.mfa) has no email second-factor verify; use the
+      // classic SignInResource for email_code 2FA. Do not "simplify" to signIn.mfa.
+      const classic = getClerkInstance().client?.signIn;
+      if (!classic) {
+        Alert.alert("Couldn't send code", "Please try again.");
+        return;
+      }
+      try {
+        await classic.prepareSecondFactor({
+          strategy: "email_code",
+          emailAddressId: email.emailAddressId,
+        });
+      } catch (err) {
+        Alert.alert(
+          "Couldn't send code",
+          err instanceof Error ? err.message : "Please try again.",
+        );
+        return;
+      }
+      setMfaStrategy("email_code");
+      setMfaHint(
+        email.safeIdentifier
+          ? `Enter the code we emailed to ${email.safeIdentifier}.`
+          : "Enter the code we emailed you.",
       );
     } else if (backup) {
       setMfaStrategy("backup_code");
@@ -131,6 +158,25 @@ export default function SignInScreen() {
     if (Platform.OS !== "web") void Haptics.selectionAsync();
     try {
       const code = mfaCode.trim();
+      if (mfaStrategy === "email_code") {
+        const clerk = getClerkInstance();
+        const classic = clerk.client?.signIn;
+        if (!classic) {
+          Alert.alert("Verification failed", "Please try again.");
+          return;
+        }
+        const res = await classic.attemptSecondFactor({
+          strategy: "email_code",
+          code,
+        });
+        if (res.status !== "complete" || !res.createdSessionId) {
+          Alert.alert("One more step", `Almost there (status: ${res.status}).`);
+          return;
+        }
+        await clerk.setActive({ session: res.createdSessionId });
+        router.replace("/");
+        return;
+      }
       let result: { error: { message?: string } | null };
       if (mfaStrategy === "totp") {
         result = await signIn.mfa.verifyTOTP({ code });
