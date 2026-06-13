@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Pressable, Dimensions } from "react-native";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useColors } from "@/hooks/useColors";
@@ -41,7 +42,13 @@ export function ProfileHero({
 
   return (
     <View>
-      <View style={[styles.cover, { backgroundColor: colors.muted }]}>
+      <View style={styles.cover}>
+        <LinearGradient
+          colors={[colors.primary, colors.secondary, colors.primary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+        />
         {cover ? (
           <Image
             source={{ uri: cover }}
@@ -49,14 +56,14 @@ export function ProfileHero({
             contentFit="cover"
             transition={150}
           />
-        ) : (
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              { backgroundColor: colors.primary, opacity: 0.12 },
-            ]}
-          />
-        )}
+        ) : null}
+        <LinearGradient
+          colors={["rgba(0,0,0,0.35)", "rgba(0,0,0,0.05)", "rgba(0,0,0,0.15)"]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
       </View>
 
       <View style={styles.cardWrap}>
@@ -371,8 +378,8 @@ export function GalleryPreview({
 }
 
 const styles = StyleSheet.create({
-  cover: { height: 168, width: "100%" },
-  cardWrap: { paddingHorizontal: 12, marginTop: -52 },
+  cover: { height: 196, width: "100%" },
+  cardWrap: { paddingHorizontal: 12, marginTop: -56 },
   card: {
     borderRadius: 28,
     borderWidth: 1,

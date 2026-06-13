@@ -27,6 +27,7 @@
 - [Mobile theme + icon](mobile-theme-and-icon.md) — gillie-mobile locked to light palette (web is brand-light); icon rendered from dhl-app favicon.svg. Don't re-enable dark unless asked.
 - [Seed images cross-artifact](seed-image-cross-artifact.md) — demo SEED() photos are served by the web app (/dhl-app/seed), 404 on API origin/prod; give remote Images a placeholder.
 - [Two mute systems](two-mute-systems.md) — feed mute (useMuteUser/ns table, hides posts) vs conversation mute (conversation_participants.muted, silences msg notifs); don't confuse them.
+- [Mobile teal-gradient nuance](mobile-teal-gradient-nuance.md) — "match web" is per-component: feed conditions card = subtle tint, profile hero = BOLD teal gradient (even w/o coverUrl). Don't blanket-remove gradients.
 - [Mobile matches web chrome](mobile-matches-web-chrome.md) — gillie-mobile must mirror dhl-app's slim clean header; NO teal gradient banner headers (the root "looks nothing like web" cause).
 - [Clerk Expo signals finalize](clerk-expo-signals-finalize.md) — gillie-mobile new signals API: finalize() THROWS unless status==="complete"; gate on (live) status + try/catch, never call it unconditionally.
 - [App Store frame gotchas](appstore-frame-gotchas.md) — translucent bg-gradient classes render LIGHT (kill white captions); status bar is 150px absolute overlay so in-screen headers need ≥150px top padding.
