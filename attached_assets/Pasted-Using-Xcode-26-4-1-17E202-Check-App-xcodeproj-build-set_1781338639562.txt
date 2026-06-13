@@ -1,0 +1,29 @@
+Using Xcode 26.4.1 (17E202)
+Check App.xcodeproj build settings
+Execute "xcodebuild -project /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj -scheme App -showBuildSettings"
+
+Archive App.xcodeproj
+Execute "xcodebuild -project /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj -scheme App -archivePath /Users/builder/clone/build/ios/xcarchive/App_1yny7lcs.xcarchive archive COMPILER_INDEX_STORE_ENABLE=NO DEVELOPMENT_TEAM=T6769T4X35 'CODE_SIGN_IDENTITY=Apple Distribution' CODE_SIGN_STYLE=Manual"
+
+Using Xcode 26.4.1 (17E202)
+Check App.xcodeproj build settings
+Execute "xcodebuild -project /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj -scheme App -showBuildSettings"
+
+Archive App.xcodeproj
+Execute "xcodebuild -project /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj -scheme App -archivePath /Users/builder/clone/build/ios/xcarchive/App_1yny7lcs.xcarchive archive COMPILER_INDEX_STORE_ENABLE=NO DEVELOPMENT_TEAM=T6769T4X35 'CODE_SIGN_IDENTITY=Apple Distribution' CODE_SIGN_STYLE=Manual"
+
+Failed to archive /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj
+==================== xcodebuild errors ====================
+111:    CODESIGNING_FOLDER_PATH = /Users/builder/Library/Developer/Xcode/DerivedData/App-fxioetecqbptwbasozqerngcldqm/Build/Products/Debug-iphoneos/App.app
+114:    CODE_SIGN_CONTEXT_CLASS = XCiPhoneOSCodeSignContext
+115:    CODE_SIGN_ENTITLEMENTS = App/App.entitlements
+117:    CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES
+222:    ENTITLEMENTS_ALLOWED = YES
+223:    ENTITLEMENTS_DESTINATION = Signature
+224:    ENTITLEMENTS_REQUIRED = NO
+671:note: Using codesigning identity override: Apple Distribution
+733:/Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj: error: Provisioning profile "Gillie app store profile" doesn't include the Push Notifications capability. (in target 'App' from project 'App')
+734:/Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj: error: Provisioning profile "Gillie app store profile" doesn't include the aps-environment entitlement. (in target 'App' from project 'App')
+================ last 150 lines of log ===================
+    XCODE_PRODUCT_BUILD_VERSION = 17E202
+    XCODE_VERSION_ACTUAL = 2641
