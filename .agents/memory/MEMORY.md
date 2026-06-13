@@ -29,6 +29,7 @@
 - [Two mute systems](two-mute-systems.md) — feed mute (useMuteUser/ns table, hides posts) vs conversation mute (conversation_participants.muted, silences msg notifs); don't confuse them.
 - [Mobile teal-gradient nuance](mobile-teal-gradient-nuance.md) — "match web" is per-component: feed conditions card = subtle tint, profile hero = BOLD teal gradient (even w/o coverUrl). Don't blanket-remove gradients.
 - [pnpm version vs workspace overrides](pnpm-version-workspace-overrides.md) — CI must use pnpm >=10/11 (overrides+catalog live in pnpm-workspace.yaml); lockfileVersion '9.0' is NOT "use pnpm 9". pnpm 9 → ERR_PNPM_LOCKFILE_CONFIG_MISMATCH.
+- [pnpm ignored-builds deploy fail](pnpm-ignored-builds-deploy.md) — publish dies at `pnpm install` (ERR_PNPM_IGNORED_BUILDS, exit 1) not the build; fix = add pkg to onlyBuiltDependencies + `pnpm rebuild`; local frozen install hides it (exit 0).
 - [iOS via Codemagic cloud build](ios-codemagic-cloud-build.md) — dhl-app Capacitor iOS app built on Codemagic (codemagic.yaml at repo root); needed a shared App.xcscheme; user has no modern Mac.
 - [Mobile matches web chrome](mobile-matches-web-chrome.md) — gillie-mobile must mirror dhl-app's slim clean header; NO teal gradient banner headers (the root "looks nothing like web" cause).
 - [Clerk Expo signals finalize](clerk-expo-signals-finalize.md) — gillie-mobile new signals API: finalize() THROWS unless status==="complete"; gate on (live) status + try/catch, never call it unconditionally.
