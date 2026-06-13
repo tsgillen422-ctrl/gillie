@@ -83,15 +83,25 @@ workflows:
           # distribution cert -- or create one from it via --create -- and load the
           # signing identity into the build keychain.
           keychain initialize
-          # CERTIFICATE_PRIVATE_KEY is stored BASE64-encoded. A raw multi-line PEM
-          # loses its newlines when pasted into a Codemagic variable, which makes
-          # --certificate-key reject it ("Provided value ... is not valid").
-          # Base64 is single-line and paste-safe; decode it back to a real PEM here.
-          echo "$CERTIFICATE_PRIVATE_KEY" | openssl base64 -A -d > /tmp/cert_key.pem
-          # Sanity check: first line must be a PEM header, not garbage. (Header only;
-          # this does NOT print the secret key body.)
-          echo "==> Decoded private key header:"
+          # The signing private key arrives in CERTIFICATE_PRIVATE_KEY. We accept it
+          # either BASE64-encoded (preferred -- single line, paste-safe) OR as a raw
+          # PEM, and normalise it to a real PEM file at /tmp/cert_key.pem.
+          echo "==> CERTIFICATE_PRIVATE_KEY length (chars): ${#CERTIFICATE_PRIVATE_KEY}"
+          # First try base64-decoding it.
+          printf '%s' "$CERTIFICATE_PRIVATE_KEY" | openssl base64 -A -d > /tmp/cert_key.pem 2>/dev/null || true
+          if ! grep -q "PRIVATE KEY" /tmp/cert_key.pem 2>/dev/null; then
+            echo "   (value wasn't base64 -- writing it out as a raw PEM instead)"
+            printf '%s\n' "$CERTIFICATE_PRIVATE_KEY" > /tmp/cert_key.pem
+          fi
+          echo "==> /tmp/cert_key.pem size (bytes): $(wc -c < /tmp/cert_key.pem)"
+          echo "==> first line of resolved key (header only, not the secret body):"
           head -n 1 /tmp/cert_key.pem
+          if ! grep -q "PRIVATE KEY" /tmp/cert_key.pem 2>/dev/null; then
+            echo "!! CERTIFICATE_PRIVATE_KEY did not resolve to a valid PEM private key."
+            echo "!! It is most likely EMPTY or was not saved into the 'appstore_signing'"
+            echo "!! group as a Secure variable. Re-add it and rebuild."
+            exit 1
+          fi
           # Wipe any pre-installed provisioning profiles so a stale push-less one
           # can't be reused; --create then makes a fresh profile carrying every
           # capability currently on the App ID, including Push (aps-environment).
