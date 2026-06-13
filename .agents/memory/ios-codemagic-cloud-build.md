@@ -35,10 +35,32 @@ shared `App.xcscheme` so `xcode-project build-ipa --scheme App` resolves.
   was enabled on the App ID **at profile-creation time**. After enabling Push, OLD
   profiles stay push-less and automatic signing will happily reuse one → archive fails
   with "requires a provisioning profile with Push Notifications".
-- **Fix (no YAML/key changes):** delete the stale App Store profiles for the bundle in
-  the Apple Developer portal so automatic signing regenerates a fresh push-enabled one.
-  Local `rm` of installed `.mobileprovision` files does NOT delete the API/portal
-  profile, so it alone does not force regeneration.
+- **Portal deletion is unreliable here:** the user insisted the stale "Gillie app store
+  profile" was deleted, yet builds kept fetching+signing with it. The profile lived in
+  the Apple account the **Codemagic API key** talks to, which can differ from the portal
+  the user browses (different Apple ID, or it's marked Invalid and hidden by a filter).
+  Local `rm` of installed `.mobileprovision` files does NOT delete the API/portal profile.
+- **Deterministic fix (current approach):** a CI step ("Regenerate App Store profile with
+  Push") that runs AFTER auto-prep but BEFORE `use-profiles`, using the SAME API key, to:
+  rm local profiles → `bundle-ids list --bundle-id-identifier $BUNDLE_ID --strict-match-identifier --json`
+  for the bundle resource id → `certificates list --type DISTRIBUTION --json` for the cert id →
+  `profiles list --type IOS_APP_STORE --json` then delete (by NAME match: legacy
+  "Gillie app store profile" + prefix "Gillie CI AppStore", since profiles list has NO
+  bundle filter — matching by name avoids nuking other apps' profiles) → `profiles create
+  <BUNDLE_RESOURCE_ID> --certificate-ids <CERT_ID> --type IOS_APP_STORE --name "Gillie CI
+  AppStore <ts>" --save`. A freshly created profile inherits the App ID's CURRENT
+  capabilities (incl. Push); **no cert private key needed** (profiles reference the cert by
+  ID only), so this sidesteps the fetch-signing-files key trap.
+- **Why this over portal deletion:** it operates on the exact account Codemagic fetches
+  from, so it can't be defeated by the "I don't see it in the portal" discrepancy.
+- CLI flag gotchas: `profiles create` takes BUNDLE_ID_RESOURCE_ID as a **positional** arg
+  and the flag is `--certificate-ids` (NOT --certificate-resource-ids). `certificates list`
+  modern Apple Distribution cert type is `DISTRIBUTION`. Codemagic JSON output is a bare
+  list; parse with `python3` (jq not guaranteed on the mac runner). Keep python as
+  single-line `-c` (YAML block indentation breaks multi-line/heredoc python).
+- The AppStoreConnect integration exports `APP_STORE_CONNECT_ISSUER_ID/KEY_IDENTIFIER/
+  PRIVATE_KEY` to the script env, so the `app-store-connect` CLI authenticates with no
+  explicit creds passed.
 - Keep a read-only diagnostic in the signing step: loop the installed
   `*.mobileprovision`, `security cms -D -i` each, and grep for `aps-environment` to print
   PUSH OK / PUSH MISSING. This tells you whether the profile is the problem without

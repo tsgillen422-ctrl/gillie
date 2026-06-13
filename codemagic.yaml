@@ -66,17 +66,76 @@ workflows:
           LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
           cd "$CM_BUILD_DIR/artifacts/dhl-app/ios/App"
           agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
+      - name: Regenerate App Store profile with Push
+        script: |
+          set -euo pipefail
+          # WHY: automatic signing keeps reusing a stale "Gillie app store profile"
+          # that was created BEFORE Push was enabled on the App ID, so it lacks the
+          # aps-environment entitlement and the archive fails. That profile still
+          # exists in the Apple account THIS API key talks to (even if it doesn't show
+          # in the portal you browse). So we use the SAME App Store Connect API key
+          # (provided by the AppStoreConnect integration via APP_STORE_CONNECT_* env
+          # vars) to delete the stale profile and mint a fresh one. A freshly created
+          # profile automatically inherits the App ID's CURRENT capabilities, including
+          # Push -- no private key needed (profiles reference the cert by ID only).
+          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$PROFILES_DIR"
+          # Auto-prep already installed the stale profile locally; clear it so only the
+          # fresh profile we create below remains for xcode-project use-profiles.
+          rm -f "$PROFILES_DIR/"*.mobileprovision 2>/dev/null || true
+
+          echo "==> Resolving Bundle ID resource for $BUNDLE_ID"
+          app-store-connect bundle-ids list --bundle-id-identifier "$BUNDLE_ID" --strict-match-identifier --json > /tmp/bundle_ids.json
+          BUNDLE_RESOURCE_ID=$(python3 -c "import json; d=json.load(open('/tmp/bundle_ids.json')); d=d.get('data',d) if isinstance(d,dict) else d; print(d[0]['id'] if d else '')")
+          echo "    bundle resource id: $BUNDLE_RESOURCE_ID"
+          [ -n "$BUNDLE_RESOURCE_ID" ] || { echo "!! No Bundle ID resource found for $BUNDLE_ID -- check the App Store Connect API key's account/team"; exit 1; }
+
+          echo "==> Resolving distribution certificate id"
+          app-store-connect certificates list --type DISTRIBUTION --json > /tmp/certs.json
+          CERT_ID=$(python3 -c "import json; d=json.load(open('/tmp/certs.json')); d=d.get('data',d) if isinstance(d,dict) else d; print(d[0]['id'] if d else '')")
+          echo "    distribution certificate id: $CERT_ID"
+          [ -n "$CERT_ID" ] || { echo "!! No DISTRIBUTION (Apple Distribution) certificate found"; exit 1; }
+          # If more than one distribution cert exists, the fresh profile might reference a
+          # different cert than the one automatic signing loaded into the keychain, which
+          # would break signing. There should be exactly one; warn loudly if not.
+          CERT_COUNT=$(python3 -c "import json; d=json.load(open('/tmp/certs.json')); d=d.get('data',d) if isinstance(d,dict) else d; print(len(d))")
+          [ "$CERT_COUNT" = "1" ] || echo "WARNING: $CERT_COUNT distribution certificates found; using the first ($CERT_ID). If the archive fails with a certificate/profile mismatch, prune the extra distribution certificates."
+
+          echo "==> Deleting stale App Store profiles (legacy name + any we previously created)"
+          app-store-connect profiles list --type IOS_APP_STORE --json > /tmp/profiles.json || echo '[]' > /tmp/profiles.json
+          python3 -c "import json; d=json.load(open('/tmp/profiles.json')); d=d.get('data',d) if isinstance(d,dict) else d; [print(p['id']) for p in d if (p.get('attributes',{}).get('name','')=='Gillie app store profile' or p.get('attributes',{}).get('name','').startswith('Gillie CI AppStore'))]" > /tmp/stale_ids.txt || true
+          while read -r PID; do
+            [ -n "$PID" ] || continue
+            echo "    deleting profile $PID"
+            app-store-connect profiles delete "$PID" --ignore-not-found || true
+          done < /tmp/stale_ids.txt
+
+          echo "==> Creating a fresh App Store profile (inherits Push from the App ID)"
+          app-store-connect profiles create "$BUNDLE_RESOURCE_ID" \
+            --certificate-ids "$CERT_ID" \
+            --type IOS_APP_STORE \
+            --name "Gillie CI AppStore $(date +%Y%m%d%H%M%S)" \
+            --save
+          echo "==> Profiles now installed locally:"
+          ls -la "$PROFILES_DIR" || true
+          # Hard gate: confirm the freshly created profile actually carries Push before we
+          # hand off to xcode-project use-profiles. Fail fast with a clear message instead
+          # of a cryptic archive error if Push isn't enabled on the App ID.
+          shopt -s nullglob
+          FOUND_PUSH=0
+          for p in "$PROFILES_DIR/"*.mobileprovision; do
+            if security cms -D -i "$p" 2>/dev/null | grep -qi "aps-environment"; then FOUND_PUSH=1; fi
+          done
+          [ "$FOUND_PUSH" = "1" ] || { echo "!! The freshly created profile is MISSING aps-environment. This means Push Notifications is NOT enabled on the App ID for $BUNDLE_ID. Enable it under Identifiers -> $BUNDLE_ID -> Push Notifications, then rebuild."; exit 1; }
+          echo "==> Fresh profile carries Push (aps-environment). Proceeding."
       - name: Fetch signing files
         script: |
           set -e
-          # Codemagic's AUTOMATIC code signing (the ios_signing block + the App Store
-          # Connect integration) has ALREADY fetched the distribution certificate AND
-          # its private key (which Codemagic manages for us -- Apple never exposes the
-          # key) plus a provisioning profile, BEFORE this step runs. We just verify and
-          # apply them. A profile only carries Push (aps-environment) if Push is enabled
-          # on the App ID AND no stale push-less profile is being reused -- if you see
-          # "PUSH MISSING" below, delete the old profiles in the Apple Developer portal
-          # so Codemagic regenerates a fresh one, then rebuild.
+          # The previous step deleted the stale profile and created a fresh one that
+          # includes Push. Verify it really carries aps-environment, then apply the
+          # certificate (loaded into the keychain by automatic signing) + this profile
+          # to the Xcode project. If you still see "PUSH MISSING" here, Push is not
+          # actually enabled on the App ID -- enable it under Identifiers and rebuild.
           echo "==> Provisioning profiles installed by automatic signing:"
           ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" || true
           echo "==> Inspecting each profile for the Push (aps-environment) entitlement:"
