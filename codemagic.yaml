@@ -66,67 +66,73 @@ workflows:
           LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
           cd "$CM_BUILD_DIR/artifacts/dhl-app/ios/App"
           agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
-      - name: Use existing 'Gillie Distribution' profile
+      - name: Select App Store profile for the bundle id
         script: |
           set -euo pipefail
-          # Per request: DO NOT regenerate (create/delete) provisioning profiles.
-          # Instead, use the existing App Store profile named "Gillie Distribution" that
-          # is already managed in the Apple Developer portal. We only FETCH it (read-only)
-          # via the AppStoreConnect integration's API key and install it locally --
-          # nothing is created or deleted in the Apple account.
+          # Per request: DO NOT regenerate (create/delete) profiles and DO NOT hard-code a
+          # profile name. Fetch the existing App Store profiles (read-only) and AUTOMATICALLY
+          # select the one whose embedded App ID matches our bundle id -- whatever it's named.
+          # Nothing is created or deleted in the Apple account.
           # Xcode tools read profiles from two locations depending on version, so install
           # into BOTH the legacy MobileDevice dir and the modern Xcode UserData dir.
-          PROFILE_NAME="Gillie Distribution"
+          BUNDLE_ID="app.dalehollowlake"
           LEGACY_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
           XCODE_DIR="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
           mkdir -p "$LEGACY_DIR" "$XCODE_DIR"
           # Clear any profile auto-prep installed so use-profiles can ONLY pick the one we
-          # install below. (Local cleanup only -- nothing is removed from the Apple account.)
+          # select below. (Local cleanup only -- nothing is removed from the Apple account.)
           rm -f "$LEGACY_DIR/"*.mobileprovision "$XCODE_DIR/"*.mobileprovision 2>/dev/null || true
 
-          echo "==> Listing App Store profiles and locating '$PROFILE_NAME'"
-          # `profiles list --save` downloads the matching profiles to disk; we then keep
-          # ONLY the one named "$PROFILE_NAME". (We match by name in python because the CLI
-          # has no reliable server-side name filter.)
+          echo "==> Downloading existing App Store profiles"
           app-store-connect profiles list --type IOS_APP_STORE --save --json > /tmp/profiles.json || echo '[]' > /tmp/profiles.json
-          MATCH_COUNT=$(python3 -c "import json; d=json.load(open('/tmp/profiles.json')); d=d.get('data',d) if isinstance(d,dict) else d; print(sum(1 for p in d if p.get('attributes',{}).get('name','')=='$PROFILE_NAME'))")
-          WANT_UUID=$(python3 -c "import json; d=json.load(open('/tmp/profiles.json')); d=d.get('data',d) if isinstance(d,dict) else d; print(next((p.get('attributes',{}).get('uuid','') for p in d if p.get('attributes',{}).get('name','')=='$PROFILE_NAME'), ''))")
-          [ -n "$WANT_UUID" ] || { echo "!! No IOS_APP_STORE provisioning profile named '$PROFILE_NAME' was found in the App Store Connect account this API key uses. Verify the profile's exact name and that it is an App Store distribution profile (team T6769T4X35)."; echo "    profiles found:"; python3 -c "import json; d=json.load(open('/tmp/profiles.json')); d=d.get('data',d) if isinstance(d,dict) else d; [print('     -', p.get('attributes',{}).get('name','?')) for p in d]" || true; exit 1; }
-          [ "$MATCH_COUNT" = "1" ] || echo "WARNING: $MATCH_COUNT profiles are named '$PROFILE_NAME'; using the first (UUID $WANT_UUID). Rename or remove duplicates if signing fails."
-          echo "    '$PROFILE_NAME' -> UUID $WANT_UUID"
 
-          # Remove every saved profile whose embedded UUID is NOT the one we want, so
-          # use-profiles can only apply "$PROFILE_NAME".
+          # Inspect each saved profile's embedded application-identifier and keep the one
+          # matching our bundle id. If several match (e.g. multiple CI profiles), pick the
+          # newest by CreationDate so we always use the most recent capabilities.
           shopt -s nullglob
+          BEST_FILE=""
+          BEST_DATE=""
           for p in "$LEGACY_DIR"/*.mobileprovision "$XCODE_DIR"/*.mobileprovision; do
-            security cms -D -i "$p" 2>/dev/null > /tmp/pp.plist || { rm -f "$p"; continue; }
-            UUID=$(plutil -extract UUID raw /tmp/pp.plist 2>/dev/null || true)
-            [ "$UUID" = "$WANT_UUID" ] || rm -f "$p"
+            security cms -D -i "$p" 2>/dev/null > /tmp/pp.plist || continue
+            APPID=$(plutil -extract Entitlements.application-identifier raw /tmp/pp.plist 2>/dev/null || true)
+            case "$APPID" in
+              *".$BUNDLE_ID") ;;
+              *) continue ;;
+            esac
+            CDATE=$(plutil -extract CreationDate raw /tmp/pp.plist 2>/dev/null || echo "")
+            PNAME=$(plutil -extract Name raw /tmp/pp.plist 2>/dev/null || echo "?")
+            echo "    candidate: '$PNAME' ($APPID, created $CDATE)"
+            if [ -z "$BEST_FILE" ] || [[ "$CDATE" > "$BEST_DATE" ]]; then
+              BEST_FILE="$p"; BEST_DATE="$CDATE"
+            fi
           done
-          # Mirror the kept profile into BOTH dirs so use-profiles / xcodebuild find it
-          # regardless of which default each tool reads.
-          for f in "$LEGACY_DIR"/*.mobileprovision "$XCODE_DIR"/*.mobileprovision; do
-            base=$(basename "$f")
-            [ -f "$LEGACY_DIR/$base" ] || cp -f "$f" "$LEGACY_DIR/"
-            [ -f "$XCODE_DIR/$base" ] || cp -f "$f" "$XCODE_DIR/"
+          [ -n "$BEST_FILE" ] || { echo "!! No App Store provisioning profile for bundle '$BUNDLE_ID' was found in the App Store Connect account this API key uses. Profiles found:"; python3 -c "import json; d=json.load(open('/tmp/profiles.json')); d=d.get('data',d) if isinstance(d,dict) else d; [print('     -', p.get('attributes',{}).get('name','?')) for p in d]" || true; exit 1; }
+          BEST_BASE=$(basename "$BEST_FILE")
+          echo "==> Selected profile file: $BEST_BASE (created $BEST_DATE)"
+
+          # Keep ONLY the selected profile, then mirror it into BOTH dirs so use-profiles /
+          # xcodebuild find it regardless of which default each tool reads.
+          for p in "$LEGACY_DIR"/*.mobileprovision "$XCODE_DIR"/*.mobileprovision; do
+            [ "$(basename "$p")" = "$BEST_BASE" ] || rm -f "$p"
           done
+          cp -f "$BEST_FILE" "$LEGACY_DIR/$BEST_BASE" 2>/dev/null || true
+          cp -f "$BEST_FILE" "$XCODE_DIR/$BEST_BASE" 2>/dev/null || true
           echo "==> Profiles now installed locally:"
           ls -la "$LEGACY_DIR" "$XCODE_DIR" || true
-          # Guard: ensure the wanted profile actually survived pruning. Without this,
-          # use-profiles can exit 0 with no profile and the archive fails later with a
-          # much more cryptic error.
+          # Guard: ensure the selected profile actually survived. Without this, use-profiles
+          # can exit 0 with no profile and the archive fails later with a cryptic error.
           remaining_files=("$LEGACY_DIR"/*.mobileprovision "$XCODE_DIR"/*.mobileprovision)
-          [ "${#remaining_files[@]}" != "0" ] || { echo "!! After selecting '$PROFILE_NAME' no .mobileprovision remained installed. The profile may not have downloaded correctly."; exit 1; }
+          [ "${#remaining_files[@]}" != "0" ] || { echo "!! After selecting the profile for '$BUNDLE_ID' no .mobileprovision remained installed."; exit 1; }
       - name: Fetch signing files
         script: |
           set -e
-          # The previous step installed the existing "Gillie Distribution" profile.
+          # The previous step installed the App Store profile selected by bundle id.
           # Print each installed profile's Push (aps-environment) status for diagnostics
           # (informational only -- this does NOT block the build), then apply the
           # certificate (loaded into the keychain by automatic signing) + the profile
           # to the Xcode project. If you see "PUSH MISSING" and the archive later fails
-          # on entitlements, the "Gillie Distribution" profile needs Push regenerated in
-          # the Apple portal.
+          # on entitlements, the selected profile needs Push regenerated in the Apple
+          # portal.
           echo "==> Provisioning profiles installed (both possible locations):"
           ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/" || true
           echo "==> Inspecting each profile for the Push (aps-environment) entitlement:"

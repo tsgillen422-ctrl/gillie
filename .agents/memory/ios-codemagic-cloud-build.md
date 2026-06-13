@@ -67,14 +67,16 @@ shared `App.xcscheme` so `xcode-project build-ipa --scheme App` resolves.
   looked in the legacy dir saw it empty and false-failed ("MISSING aps-environment")
   even though the profile was created fine. **Always handle BOTH dirs:** rm both, mirror
   the saved profile into both, and inspect/verify across both.
-- **User pivoted AWAY from regeneration:** despite the dir fix, the user wanted the
-  create/delete churn gone entirely. Current approach = "Use existing 'Gillie Distribution'
-  profile": read-only `profiles list --type IOS_APP_STORE --save --json`, select the entry
-  named "Gillie Distribution" by name in python, match its embedded UUID, keep ONLY that
-  profile locally (rm the rest), mirror into both dirs, use-profiles. NO blocking push gate
-  — push status is diagnostic-only. Don't reintroduce a hard aps-environment gate; the user
-  found it false-blocking and frustrating. The profile name must match EXACTLY in the
-  account the API key uses.
+- **User pivoted AWAY from regeneration, then away from name-matching too:** create/delete
+  churn is gone, AND hard-coding a profile name is gone (the account had only the leftover
+  "Gillie CI AppStore <ts>" profile, no "Gillie Distribution"). Current approach = "Select
+  App Store profile for the bundle id": read-only `profiles list --type IOS_APP_STORE --save
+  --json`, then decode each saved .mobileprovision (`security cms -D -i` + `plutil -extract
+  Entitlements.application-identifier raw`) and keep the one whose App ID ends with
+  ".app.dalehollowlake"; if several match, pick newest by CreationDate. Mirror into both
+  dirs, use-profiles. NO blocking push gate — push status is diagnostic-only; don't
+  reintroduce a hard aps-environment gate (user found it false-blocking/frustrating).
+  Selecting by BUNDLE ID (not name) is robust to whatever the profile happens to be called.
 - Keep a read-only diagnostic in the signing step: loop the installed
   `*.mobileprovision`, `security cms -D -i` each, and grep for `aps-environment` to print
   PUSH OK / PUSH MISSING. This tells you whether the profile is the problem without
