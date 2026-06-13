@@ -41,10 +41,22 @@ workflows:
           pnpm -v
       - name: Install dependencies
         script: |
-          pnpm install --reporter=ndjson
-      - name: Build web app
+          # This iOS app is a server.url webview (see capacitor.config.ts): it loads
+          # the live published site and never uses the bundled web assets, so CI needs
+          # NO native build binaries. --ignore-scripts skips dependency build scripts,
+          # which (a) avoids ERR_PNPM_IGNORED_BUILDS (esbuild's build is ignored even
+          # when allowlisted, because of its version-pinning override) and (b) sidesteps
+          # the macOS native-binary problem: the workspace overrides strip every
+          # non-linux-x64 platform binary (esbuild/rollup/lightningcss/oxide), so a real
+          # web build cannot run on the mac runner anyway.
+          pnpm install --ignore-scripts
+      - name: Prepare web assets (server.url webview)
         script: |
-          pnpm --filter @workspace/dhl-app run build
+          # The app loads server.url (the live site), so dist/public is only a
+          # placeholder that Capacitor copies into the native project. `dist` is
+          # gitignored, so create a minimal valid webDir for `cap sync` to copy.
+          mkdir -p artifacts/dhl-app/dist/public
+          echo '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Gillie</title></head><body></body></html>' > artifacts/dhl-app/dist/public/index.html
       - name: Capacitor sync (iOS)
         script: |
           pnpm --filter @workspace/dhl-app run cap:sync

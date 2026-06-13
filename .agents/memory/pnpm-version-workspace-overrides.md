@@ -37,9 +37,30 @@ Node 22). On Node 20 the corepack-fetched pnpm 11.6.0 crashes at load with
 `ERR_UNKNOWN_BUILTIN_MODULE: No such built-in module: node:sqlite`. So CI Node must be
 **22+** when using pnpm 11 — Node 20 and pnpm 11 are mutually exclusive.
 
+**ERR_PNPM_IGNORED_BUILDS on a foreign CI:** pnpm 10/11 refuses to run dependency build
+scripts unless allowlisted, and a fresh CI install HARD-FAILS (exit 1) if any build-script
+dep is neither allowed nor acknowledged. The `.modules.yaml ignoredBuilds` list (e.g.
+browser-tabs-lock, core-js) is local runtime state, NOT committed config, so CI doesn't
+inherit it. **esbuild gotcha:** esbuild is in `onlyBuiltDependencies` yet STILL gets ignored
+(reproducible) — because it has a version-pinning `overrides: esbuild: "0.27.3"` entry;
+the override breaks onlyBuiltDependencies name-matching for it (swc/msw/unrs in the same
+list build fine). `ignoredBuiltDependencies` did not silence it either in testing.
+
+**macOS CI can't run the web build:** the `overrides:` strip every non-`linux-x64`
+platform binary (esbuild/rollup/lightningcss/@tailwindcss-oxide darwin-*). On a mac runner
+those are gone, so `vite build` dies with `The package "@esbuild/darwin-arm64" could not be
+found`. The overrides are tuned for Replit's linux-x64 box, not cross-platform CI.
+
+**Webview CI fix (the winning move):** the dhl-app iOS app is a `server.url` webview
+(capacitor.config.ts → live site); bundled `dist/public` assets are NEVER loaded. So CI
+needs ZERO native binaries: install with **`pnpm install --ignore-scripts`** (exits 0, no
+ERR_PNPM_IGNORED_BUILDS, skips all native builds) and REPLACE the `vite build` step with a
+tiny placeholder `dist/public/index.html` (dist is gitignored) just so `cap sync` has a
+webDir to copy. No pnpm-workspace.yaml or lockfile changes needed.
+
 **How to apply:** Any CI / external build (Codemagic, GitHub Actions, etc.) must install
 pnpm **>=10** (use 11.6.0 to match local) AND run **Node 22+**. Codemagic pins it via corepack:
-`corepack enable && corepack prepare pnpm@11.6.0 --activate`, then
-`pnpm install --no-frozen-lockfile`. Don't "downgrade pnpm to match the lockfile version
-number." Verify lockfile sync with `pnpm install --lockfile-only` + `git diff`, never by
-changing the pnpm major.
+`corepack enable && corepack prepare pnpm@11.6.0 --activate`. For the iOS webview build use
+`pnpm install --ignore-scripts` (NOT a real build). Don't "downgrade pnpm to match the
+lockfile version number." Verify lockfile sync with `pnpm install --lockfile-only` +
+`git diff`, never by changing the pnpm major.
