@@ -21,16 +21,13 @@ workflows:
       node: 20
       xcode: latest
     scripts:
-      - name: Ensure pnpm is available
+      - name: Install pnpm
         script: |
-          if ! command -v pnpm >/dev/null 2>&1; then
-            corepack enable || npm install -g pnpm
-            corepack prepare pnpm@latest --activate || true
-          fi
+          npm install -g pnpm@9.0.0 --force
           pnpm --version
       - name: Install dependencies
         script: |
-          pnpm install --frozen-lockfile || pnpm install
+          pnpm install --frozen-lockfile
       - name: Build web app
         script: |
           pnpm --filter @workspace/dhl-app run build
