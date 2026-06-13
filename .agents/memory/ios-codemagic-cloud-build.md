@@ -10,37 +10,40 @@ live site) is built on Codemagic because the user has no modern Mac. Config is
 `codemagic.yaml` at the repo root; workflow key `ios-capacitor-appstore`. Needed a
 shared `App.xcscheme` so `xcode-project build-ipa --scheme App` resolves.
 
-## The signing private-key trap (the real blocker behind "profile lacks Push")
-- Apple's App Store Connect API only ever returns the **public** distribution
-  certificate. The matching **private key** exists ONLY on the machine that created
-  the cert. Codemagic cannot sign with a cert whose private key it doesn't hold.
-- Symptom: `fetch-signing-files` fails with `Cannot save Signing Certificates
-  without certificate private key`, even though `certificates list` shows a valid
-  "Apple Distribution: …" cert exists.
-- **Fix:** CI must own a private key. Generate one
-  (`ssh-keygen -t rsa -b 2048 -m PEM -f codemagic_private_key -q -N ""`), store its
-  PEM contents as a **secure** Codemagic env var `CERTIFICATE_PRIVATE_KEY` in an
-  env-var group (we use group `appstore_signing`, referenced via
-  `environment.groups`), then pass `--certificate-key @env:CERTIFICATE_PRIVATE_KEY`
-  to `fetch-signing-files` plus `--create`. With `--create`, the first build creates
-  ONE new distribution cert from that key and later builds reuse it (the stored key
-  matches the cert). Also need `keychain initialize` before and
-  `keychain add-certificates` after, so the identity lands in the build keychain.
-  **Why:** without a key you control, automatic signing keeps "finding" the keyless
-  cert and failing; a CI-owned key makes signing deterministic.
+## Use AUTOMATIC signing — do NOT hand-roll fetch-signing-files
+- The working setup is Codemagic **automatic** signing: `integrations.app_store_connect`
+  + `environment.ios_signing: {distribution_type: app_store, bundle_identifier}`, and a
+  single signing step that just runs `xcode-project use-profiles`. Codemagic's auto-prep
+  fetches the cert, its private key (which it generated and **stores in your Codemagic
+  account**), and a profile BEFORE the scripts run.
+- **The trap I fell into (regression):** switching to an explicit
+  `app-store-connect fetch-signing-files --certificate-key …` broke everything, because
+  Apple's API only returns the **public** cert — the private key lives wherever the cert
+  was created. Explicit fetch then fails with `Cannot save Signing Certificates without
+  certificate private key`, and trying to supply your own key via a Codemagic var is a
+  rabbit hole (multi-line PEM loses newlines when pasted; base64 paste can silently end
+  up EMPTY → `Provided value "" is not valid`). Automatic signing avoids all of this
+  because Codemagic owns the key. **Why:** the user's clue — "it wasn't throwing an error
+  until we tried to fix the build IPA" — was exactly right: automatic signing reached the
+  Build IPA step fine; the explicit path was strictly worse.
+- **Symptom that this regression is happening:** signing fails at the *fetch* step, not
+  the build-ipa/archive step. If the cert error shows up in fetch, you've over-engineered
+  — revert to automatic.
 
-## Provisioning-profile / Push gotchas
-- A profile only carries a capability (e.g. Push `aps-environment`) if that
-  capability was enabled on the App ID **at profile-creation time**. After enabling
-  Push, OLD profiles stay push-less. So wipe pre-installed profiles
-  (`rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision`)
-  and let `--create` mint a fresh one.
-- `xcode-project use-profiles` exits 0 even when NO profile was installed, silently
-  masking failures. Use `set -e` and hard-fail if no `.mobileprovision` is present.
-- CLI flag traps: there is NO `--profile-name` on `fetch-signing-files` (rejects it
-  with `unrecognized arguments`). `app-store-connect list-certificates` is
-  deprecated → use `app-store-connect certificates list`. Modern accounts use cert
-  type `DISTRIBUTION` ("Apple Distribution"), not legacy `IOS_DISTRIBUTION`.
+## Provisioning-profile / Push gotchas (the actual original blocker)
+- A profile only carries a capability (e.g. Push `aps-environment`) if that capability
+  was enabled on the App ID **at profile-creation time**. After enabling Push, OLD
+  profiles stay push-less and automatic signing will happily reuse one → archive fails
+  with "requires a provisioning profile with Push Notifications".
+- **Fix (no YAML/key changes):** delete the stale App Store profiles for the bundle in
+  the Apple Developer portal so automatic signing regenerates a fresh push-enabled one.
+  Local `rm` of installed `.mobileprovision` files does NOT delete the API/portal
+  profile, so it alone does not force regeneration.
+- Keep a read-only diagnostic in the signing step: loop the installed
+  `*.mobileprovision`, `security cms -D -i` each, and grep for `aps-environment` to print
+  PUSH OK / PUSH MISSING. This tells you whether the profile is the problem without
+  another guess-and-build cycle.
+- `xcode-project use-profiles` exits 0 even when NO profile was installed.
 
 ## Entitlements wiring (already correct, don't churn)
 - pbxproj Release config → `App.release.entitlements` (aps-environment=production);

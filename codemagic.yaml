@@ -8,11 +8,6 @@ workflows:
       # Name the key exactly "AppStoreConnect" (or change the name here to match).
       app_store_connect: AppStoreConnect
     environment:
-      groups:
-        # Codemagic env-var group that MUST contain CERTIFICATE_PRIVATE_KEY -- a PEM
-        # private key, marked as a SECURE variable. Apple never returns a cert's
-        # private key, so CI must own one to sign. See setup steps in chat.
-        - appstore_signing
       ios_signing:
         distribution_type: app_store
         bundle_identifier: app.dalehollowlake
@@ -73,53 +68,20 @@ workflows:
           agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
       - name: Fetch signing files
         script: |
-          # set -e: a real signing failure must STOP here and surface the actual
-          # error, instead of being silently masked by use-profiles (which exits 0
-          # even when no profile was installed).
           set -e
-          # Apple only ever returns the PUBLIC certificate; its private key lives on
-          # whoever created it. We supply our own private key (CERTIFICATE_PRIVATE_KEY,
-          # a Codemagic SECURE var) so fetch-signing-files can pair it with a
-          # distribution cert -- or create one from it via --create -- and load the
-          # signing identity into the build keychain.
-          keychain initialize
-          # The signing private key arrives in CERTIFICATE_PRIVATE_KEY. We accept it
-          # either BASE64-encoded (preferred -- single line, paste-safe) OR as a raw
-          # PEM, and normalise it to a real PEM file at /tmp/cert_key.pem.
-          echo "==> CERTIFICATE_PRIVATE_KEY length (chars): ${#CERTIFICATE_PRIVATE_KEY}"
-          # First try base64-decoding it.
-          printf '%s' "$CERTIFICATE_PRIVATE_KEY" | openssl base64 -A -d > /tmp/cert_key.pem 2>/dev/null || true
-          if ! grep -q "PRIVATE KEY" /tmp/cert_key.pem 2>/dev/null; then
-            echo "   (value wasn't base64 -- writing it out as a raw PEM instead)"
-            printf '%s\n' "$CERTIFICATE_PRIVATE_KEY" > /tmp/cert_key.pem
-          fi
-          echo "==> /tmp/cert_key.pem size (bytes): $(wc -c < /tmp/cert_key.pem)"
-          echo "==> first line of resolved key (header only, not the secret body):"
-          head -n 1 /tmp/cert_key.pem
-          if ! grep -q "PRIVATE KEY" /tmp/cert_key.pem 2>/dev/null; then
-            echo "!! CERTIFICATE_PRIVATE_KEY did not resolve to a valid PEM private key."
-            echo "!! It is most likely EMPTY or was not saved into the 'appstore_signing'"
-            echo "!! group as a Secure variable. Re-add it and rebuild."
-            exit 1
-          fi
-          # Wipe any pre-installed provisioning profiles so a stale push-less one
-          # can't be reused; --create then makes a fresh profile carrying every
-          # capability currently on the App ID, including Push (aps-environment).
-          rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision 2>/dev/null || true
-          echo "==> Fetching / creating App Store signing files for $BUNDLE_ID"
-          app-store-connect fetch-signing-files "$BUNDLE_ID" \
-            --type IOS_APP_STORE \
-            --certificate-key @file:/tmp/cert_key.pem \
-            --create
-          # Add the fetched/created distribution cert (+ our private key) to the keychain.
-          keychain add-certificates
-          echo "==> Provisioning profiles now installed:"
+          # Codemagic's AUTOMATIC code signing (the ios_signing block + the App Store
+          # Connect integration) has ALREADY fetched the distribution certificate AND
+          # its private key (which Codemagic manages for us -- Apple never exposes the
+          # key) plus a provisioning profile, BEFORE this step runs. We just verify and
+          # apply them. A profile only carries Push (aps-environment) if Push is enabled
+          # on the App ID AND no stale push-less profile is being reused -- if you see
+          # "PUSH MISSING" below, delete the old profiles in the Apple Developer portal
+          # so Codemagic regenerates a fresh one, then rebuild.
+          echo "==> Provisioning profiles installed by automatic signing:"
           ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" || true
           echo "==> Inspecting each profile for the Push (aps-environment) entitlement:"
           shopt -s nullglob
-          INSTALLED=0
           for p in "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision; do
-            INSTALLED=1
             echo "---- $p ----"
             security cms -D -i "$p" 2>/dev/null | grep -A1 "<key>Name</key>" || true
             if security cms -D -i "$p" 2>/dev/null | grep -qi "aps-environment"; then
@@ -128,11 +90,7 @@ workflows:
               echo "   PUSH MISSING: aps-environment is NOT in this profile"
             fi
           done
-          if [ "$INSTALLED" = "0" ]; then
-            echo "!! No provisioning profile was installed -- fetch-signing-files did not produce one."
-            exit 1
-          fi
-          # Apply the installed profile's signing settings to the Xcode project.
+          # Apply the installed certificate + profile to the Xcode project.
           xcode-project use-profiles
       - name: Build IPA
         script: |
