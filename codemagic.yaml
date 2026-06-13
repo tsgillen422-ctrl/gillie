@@ -20,7 +20,10 @@ workflows:
         APP_STORE_APPLE_ID: 6779852403
         # Keep corepack non-interactive so it never stalls waiting for a prompt.
         COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
-      node: 20
+      # pnpm 11.6.0 requires Node >= 22.13 (it uses the built-in node:sqlite module;
+      # Node 20 crashes with ERR_UNKNOWN_BUILTIN_MODULE). Pinned to 24 to match the
+      # local toolchain (Node 24 LTS) so CI and local stay in lockstep.
+      node: 24
       xcode: latest
     scripts:
       - name: Install pnpm

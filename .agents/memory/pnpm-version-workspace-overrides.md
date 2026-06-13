@@ -32,8 +32,13 @@ package.json — nearest-wins, so the runner's ancestor yarn field is ignored. K
 lockstep with the local pnpm version. `corepack prepare pnpm@X --activate` alone does NOT
 fix this (the shim still resolves the project's package manager via the ancestor file).
 
+**pnpm 11.6.0 needs Node >= 22.13** (it `require`s the built-in `node:sqlite`, added in
+Node 22). On Node 20 the corepack-fetched pnpm 11.6.0 crashes at load with
+`ERR_UNKNOWN_BUILTIN_MODULE: No such built-in module: node:sqlite`. So CI Node must be
+**22+** when using pnpm 11 — Node 20 and pnpm 11 are mutually exclusive.
+
 **How to apply:** Any CI / external build (Codemagic, GitHub Actions, etc.) must install
-pnpm **>=10** (use 11.6.0 to match local). Codemagic now pins it via corepack:
+pnpm **>=10** (use 11.6.0 to match local) AND run **Node 22+**. Codemagic pins it via corepack:
 `corepack enable && corepack prepare pnpm@11.6.0 --activate`, then
 `pnpm install --no-frozen-lockfile`. Don't "downgrade pnpm to match the lockfile version
 number." Verify lockfile sync with `pnpm install --lockfile-only` + `git diff`, never by
