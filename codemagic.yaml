@@ -68,17 +68,22 @@ workflows:
           agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
       - name: Fetch signing files
         script: |
-          # The stale "Gillie app store profile" lacked the Push capability and kept
-          # getting auto-selected (it persists in Codemagic even after portal deletion).
-          # 1) Wipe any pre-installed provisioning profiles so the stale one can't win.
+          # Push Notifications IS enabled on the App ID, but every provisioning
+          # profile that existed BEFORE Push was enabled is now stale/invalid.
+          # A plain fetch re-downloads those stale push-less profiles instead of
+          # regenerating them. So we force a BRAND-NEW profile with a unique name:
+          # --create has nothing to match, so it generates a fresh profile that
+          # includes every capability currently on the App ID (incl. Push).
+          # 1) Wipe any pre-installed provisioning profiles so no stale one can win.
           rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision 2>/dev/null || true
-          # 2) Create a FRESH App Store profile via the App Store Connect API. A newly
-          #    created profile automatically includes every capability currently enabled
-          #    on the App ID (now including Push Notifications / aps-environment).
+          # 2) Create + fetch a uniquely-named fresh App Store profile.
+          FRESH_PROFILE_NAME="Gillie App Store CI $(date +%Y%m%d%H%M%S)"
+          echo "Creating fresh provisioning profile: $FRESH_PROFILE_NAME"
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
+            --profile-name "$FRESH_PROFILE_NAME" \
             --create
-          # 3) Install the freshly fetched profile(s) into the Xcode project.
+          # 3) Install the freshly created profile into the Xcode project.
           xcode-project use-profiles
       - name: Build IPA
         script: |
