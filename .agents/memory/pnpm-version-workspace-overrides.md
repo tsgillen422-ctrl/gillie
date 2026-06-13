@@ -22,6 +22,16 @@ Proof pnpm 9.0.0 can't install this repo: `catalog:` deps (10 package.json files
 fail with `ERR_PNPM_SPEC_NOT_SUPPORTED_BY_ANY_RESOLVER  zod@catalog:` — catalogs need
 pnpm 9.5+, workspace overrides need pnpm 10+.
 
+**Codemagic corepack "configured to use yarn" trap:** on Codemagic mac runners, the
+build user's HOME has `/Users/builder/package.json` with `packageManager: yarn`. corepack
+searches UPWARD from cwd for the nearest `packageManager` field; the repo root had none,
+so corepack walked up to that yarn file and refused to run pnpm (`pnpm -v` failed with
+"This project is configured to use yarn because /Users/builder/package.json has a
+packageManager field"). FIX: add `"packageManager": "pnpm@11.6.0"` to the repo root
+package.json — nearest-wins, so the runner's ancestor yarn field is ignored. Keep it in
+lockstep with the local pnpm version. `corepack prepare pnpm@X --activate` alone does NOT
+fix this (the shim still resolves the project's package manager via the ancestor file).
+
 **How to apply:** Any CI / external build (Codemagic, GitHub Actions, etc.) must install
 pnpm **>=10** (use 11.6.0 to match local). Codemagic now pins it via corepack:
 `corepack enable && corepack prepare pnpm@11.6.0 --activate`, then
