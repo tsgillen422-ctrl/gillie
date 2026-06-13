@@ -78,11 +78,17 @@ workflows:
           # vars) to delete the stale profile and mint a fresh one. A freshly created
           # profile automatically inherits the App ID's CURRENT capabilities, including
           # Push -- no private key needed (profiles reference the cert by ID only).
-          PROFILES_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
-          mkdir -p "$PROFILES_DIR"
-          # Auto-prep already installed the stale profile locally; clear it so only the
-          # fresh profile we create below remains for xcode-project use-profiles.
-          rm -f "$PROFILES_DIR/"*.mobileprovision 2>/dev/null || true
+          # Xcode tools read provisioning profiles from two locations depending on
+          # version: codemagic-cli-tools `--save` writes to the modern Xcode UserData dir,
+          # while older tooling uses the legacy MobileDevice dir. Handle BOTH so the
+          # profile we create is found by use-profiles AND the archive, regardless of
+          # which default each tool uses.
+          LEGACY_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
+          XCODE_DIR="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+          mkdir -p "$LEGACY_DIR" "$XCODE_DIR"
+          # Auto-prep may have installed the stale profile; clear both dirs so only the
+          # fresh profile we create below remains.
+          rm -f "$LEGACY_DIR/"*.mobileprovision "$XCODE_DIR/"*.mobileprovision 2>/dev/null || true
 
           echo "==> Resolving Bundle ID resource for $BUNDLE_ID"
           app-store-connect bundle-ids list --bundle-id-identifier "$BUNDLE_ID" --strict-match-identifier --json > /tmp/bundle_ids.json
@@ -116,14 +122,21 @@ workflows:
             --type IOS_APP_STORE \
             --name "Gillie CI AppStore $(date +%Y%m%d%H%M%S)" \
             --save
+          # The CLI saved into one of the two dirs; mirror every profile into BOTH so
+          # whichever location use-profiles / xcodebuild reads, the profile is present.
+          shopt -s nullglob
+          for f in "$LEGACY_DIR"/*.mobileprovision "$XCODE_DIR"/*.mobileprovision; do
+            base=$(basename "$f")
+            [ -f "$LEGACY_DIR/$base" ] || cp -f "$f" "$LEGACY_DIR/"
+            [ -f "$XCODE_DIR/$base" ] || cp -f "$f" "$XCODE_DIR/"
+          done
           echo "==> Profiles now installed locally:"
-          ls -la "$PROFILES_DIR" || true
+          ls -la "$LEGACY_DIR" "$XCODE_DIR" || true
           # Hard gate: confirm the freshly created profile actually carries Push before we
           # hand off to xcode-project use-profiles. Fail fast with a clear message instead
           # of a cryptic archive error if Push isn't enabled on the App ID.
-          shopt -s nullglob
           FOUND_PUSH=0
-          for p in "$PROFILES_DIR/"*.mobileprovision; do
+          for p in "$LEGACY_DIR"/*.mobileprovision "$XCODE_DIR"/*.mobileprovision; do
             if security cms -D -i "$p" 2>/dev/null | grep -qi "aps-environment"; then FOUND_PUSH=1; fi
           done
           [ "$FOUND_PUSH" = "1" ] || { echo "!! The freshly created profile is MISSING aps-environment. This means Push Notifications is NOT enabled on the App ID for $BUNDLE_ID. Enable it under Identifiers -> $BUNDLE_ID -> Push Notifications, then rebuild."; exit 1; }
@@ -136,11 +149,11 @@ workflows:
           # certificate (loaded into the keychain by automatic signing) + this profile
           # to the Xcode project. If you still see "PUSH MISSING" here, Push is not
           # actually enabled on the App ID -- enable it under Identifiers and rebuild.
-          echo "==> Provisioning profiles installed by automatic signing:"
-          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" || true
+          echo "==> Provisioning profiles installed (both possible locations):"
+          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/" || true
           echo "==> Inspecting each profile for the Push (aps-environment) entitlement:"
           shopt -s nullglob
-          for p in "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision; do
+          for p in "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles/"*.mobileprovision; do
             echo "---- $p ----"
             security cms -D -i "$p" 2>/dev/null | grep -A1 "<key>Name</key>" || true
             if security cms -D -i "$p" 2>/dev/null | grep -qi "aps-environment"; then

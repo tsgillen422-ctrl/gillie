@@ -61,6 +61,13 @@ shared `App.xcscheme` so `xcode-project build-ipa --scheme App` resolves.
 - The AppStoreConnect integration exports `APP_STORE_CONNECT_ISSUER_ID/KEY_IDENTIFIER/
   PRIVATE_KEY` to the script env, so the `app-store-connect` CLI authenticates with no
   explicit creds passed.
+- **Two profile directories (bit me):** `profiles create --save` writes to the MODERN
+  Xcode dir `~/Library/Developer/Xcode/UserData/Provisioning Profiles/`, NOT the legacy
+  `~/Library/MobileDevice/Provisioning Profiles/`. A push-verification gate that only
+  looked in the legacy dir saw it empty and false-failed ("MISSING aps-environment")
+  even though the profile was created fine. **Always handle BOTH dirs:** rm both, mirror
+  the saved profile into both, and inspect/verify across both. The regeneration mechanics
+  (bundle-ids/certs/create) worked first try — only the dir assumption was wrong.
 - Keep a read-only diagnostic in the signing step: loop the installed
   `*.mobileprovision`, `security cms -D -i` each, and grep for `aps-environment` to print
   PUSH OK / PUSH MISSING. This tells you whether the profile is the problem without
