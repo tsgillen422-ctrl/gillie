@@ -83,6 +83,15 @@ workflows:
           # distribution cert -- or create one from it via --create -- and load the
           # signing identity into the build keychain.
           keychain initialize
+          # CERTIFICATE_PRIVATE_KEY is stored BASE64-encoded. A raw multi-line PEM
+          # loses its newlines when pasted into a Codemagic variable, which makes
+          # --certificate-key reject it ("Provided value ... is not valid").
+          # Base64 is single-line and paste-safe; decode it back to a real PEM here.
+          echo "$CERTIFICATE_PRIVATE_KEY" | openssl base64 -A -d > /tmp/cert_key.pem
+          # Sanity check: first line must be a PEM header, not garbage. (Header only;
+          # this does NOT print the secret key body.)
+          echo "==> Decoded private key header:"
+          head -n 1 /tmp/cert_key.pem
           # Wipe any pre-installed provisioning profiles so a stale push-less one
           # can't be reused; --create then makes a fresh profile carrying every
           # capability currently on the App ID, including Push (aps-environment).
@@ -90,7 +99,7 @@ workflows:
           echo "==> Fetching / creating App Store signing files for $BUNDLE_ID"
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
-            --certificate-key @env:CERTIFICATE_PRIVATE_KEY \
+            --certificate-key @file:/tmp/cert_key.pem \
             --create
           # Add the fetched/created distribution cert (+ our private key) to the keychain.
           keychain add-certificates
