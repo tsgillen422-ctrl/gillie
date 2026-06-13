@@ -71,9 +71,24 @@ workflows:
           xcode-project use-profiles
       - name: Build IPA
         script: |
+          # Run the archive/IPA build, but on failure dump the REAL xcodebuild
+          # error lines to the console. `xcode-project build-ipa` writes the full
+          # xcodebuild output to /tmp/xcodebuild_logs/*.log; Codemagic's step view
+          # only shows the "Failed to archive" summary, which hides the actual
+          # compiler/signing error. This surfaces it inline so it's diagnosable.
+          set +e
           xcode-project build-ipa \
             --project "$CM_BUILD_DIR/$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME"
+          BUILD_EXIT=$?
+          if [ "$BUILD_EXIT" -ne 0 ]; then
+            echo "==================== xcodebuild errors ===================="
+            grep -nEi "error:|Provisioning profile|aps-environment|code ?sign|requires a provisioning|no profiles|doesn't include|no account|no signing certificate|entitlement" /tmp/xcodebuild_logs/*.log 2>/dev/null | tail -n 120
+            echo "================ last 150 lines of log ==================="
+            tail -n 150 /tmp/xcodebuild_logs/*.log 2>/dev/null
+            echo "=========================================================="
+          fi
+          exit "$BUILD_EXIT"
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
