@@ -68,6 +68,13 @@ catalog:
 
 autoInstallPeers: false
 
+# Workflows run `pnpm run` in a non-interactive (no-TTY) context. pnpm's
+# pre-run deps verification spawns an install that aborts there (it can't prompt
+# to approve ignored build scripts / purge modules), which kills the workflow on
+# every restart. The deps are already installed and functional, so skip the
+# pre-run check and let the dev scripts run directly.
+verifyDepsBeforeRun: false
+
 onlyBuiltDependencies:
   - '@swc/core'
   - esbuild
