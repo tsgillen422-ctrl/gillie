@@ -21,9 +21,11 @@ workflows:
       node: 20
       xcode: latest
     scripts:
-      - name: Install pnpm
+      - name: Enable pnpm
         script: |
-          npm install -g pnpm
+          corepack enable
+          corepack prepare pnpm@latest --activate
+          pnpm --version
       - name: Install dependencies
         script: |
           pnpm install --frozen-lockfile || pnpm install
