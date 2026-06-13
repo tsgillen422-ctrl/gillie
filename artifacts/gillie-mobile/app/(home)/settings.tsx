@@ -30,6 +30,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 
 import { UserAvatar } from "@/components/UserAvatar";
+import ScreenHeader from "@/components/ui/ScreenHeader";
 import SoftCard from "@/components/ui/SoftCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import Chip from "@/components/ui/Chip";
@@ -233,33 +234,24 @@ export default function SettingsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View
-        style={[
-          styles.header,
-          {
-            paddingTop: insets.top + 8,
-            backgroundColor: colors.card,
-            borderBottomColor: colors.border,
-          },
-        ]}
-      >
-        <Pressable onPress={() => router.back()} style={styles.headerBtn} hitSlop={8}>
-          <Ionicons name="arrow-back" size={24} color={colors.foreground} />
-        </Pressable>
-        <Text style={[styles.headerTitle, { color: colors.foreground }]}>Settings</Text>
-        <Pressable
-          onPress={handleSave}
-          disabled={updateMe.isPending}
-          style={styles.headerBtn}
-          hitSlop={8}
-        >
-          {updateMe.isPending ? (
-            <ActivityIndicator size="small" color={colors.primary} />
-          ) : (
-            <Text style={[styles.saveText, { color: colors.primary }]}>Save</Text>
-          )}
-        </Pressable>
-      </View>
+      <ScreenHeader
+        title="Settings"
+        back
+        right={
+          <Pressable
+            onPress={handleSave}
+            disabled={updateMe.isPending}
+            style={styles.headerBtn}
+            hitSlop={8}
+          >
+            {updateMe.isPending ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Text style={[styles.saveText, { color: colors.primary }]}>Save</Text>
+            )}
+          </Pressable>
+        }
+      />
 
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 60 }}
@@ -481,16 +473,7 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: {
-    paddingHorizontal: 8,
-    paddingBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  headerBtn: { minWidth: 56, height: 40, justifyContent: "center", alignItems: "center" },
-  headerTitle: { fontFamily: fonts.displayBold, fontSize: 18 },
+  headerBtn: { minWidth: 44, height: 40, justifyContent: "center", alignItems: "center" },
   saveText: { fontFamily: fonts.sansBold, fontSize: 16 },
 
   avatarBlock: { alignItems: "center", marginBottom: 20 },

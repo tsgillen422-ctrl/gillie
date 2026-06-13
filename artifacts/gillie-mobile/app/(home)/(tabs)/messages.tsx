@@ -20,11 +20,9 @@ export default function MessagesScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenHeader
         title="Messages"
-        gradient
-        subtitle="Your crew, one tap away"
         right={
           <Pressable onPress={() => router.push("/friends")} style={styles.headerIcon}>
-            <Ionicons name="create-outline" size={24} color="#fff" />
+            <Ionicons name="create-outline" size={24} color={colors.primary} />
           </Pressable>
         }
       />

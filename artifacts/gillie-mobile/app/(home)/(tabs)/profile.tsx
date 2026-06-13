@@ -25,7 +25,6 @@ import { fonts } from "@/constants/fonts";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useClerk } from "@clerk/expo";
-import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
 import { Feather, Ionicons } from "@expo/vector-icons";
 
@@ -159,13 +158,8 @@ export default function ProfileScreen() {
           />
         }
       >
-        {/* Gradient hero */}
-        <LinearGradient
-          colors={[colors.primary, colors.secondary]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.hero}
-        />
+        {/* Clean cover */}
+        <View style={[styles.hero, { backgroundColor: colors.muted }]} />
 
         <View style={styles.heroBody}>
           <View style={[styles.avatarRing, { backgroundColor: colors.card }]}>
@@ -243,7 +237,7 @@ export default function ProfileScreen() {
             <StatCard
               value={userCatches.length}
               label="Catches"
-              onPress={() => setTab("catches")}
+              onPress={() => router.push("/catches")}
             />
             <View style={[styles.vDivider, { backgroundColor: colors.border }]} />
             <StatCard

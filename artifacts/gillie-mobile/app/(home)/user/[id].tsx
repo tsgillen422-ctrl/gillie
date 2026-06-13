@@ -27,12 +27,12 @@ import { useColors } from "@/hooks/useColors";
 import { fonts } from "@/constants/fonts";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { UserAvatar } from "@/components/UserAvatar";
+import ScreenHeader from "@/components/ui/ScreenHeader";
 import SoftCard from "@/components/ui/SoftCard";
 import StatCard from "@/components/ui/StatCard";
 import Chip from "@/components/ui/Chip";
@@ -146,6 +146,7 @@ export default function UserScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScreenHeader title={user.displayName} back />
       <ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + 60 }}
         showsVerticalScrollIndicator={false}
@@ -153,17 +154,8 @@ export default function UserScreen() {
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
         }
       >
-        {/* Gradient hero */}
-        <LinearGradient
-          colors={[colors.primary, colors.secondary]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.hero, { paddingTop: insets.top + 8 }]}
-        >
-          <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </Pressable>
-        </LinearGradient>
+        {/* Clean cover */}
+        <View style={[styles.hero, { backgroundColor: colors.muted }]} />
 
         <View style={styles.heroBody}>
           <View style={[styles.avatarRing, { backgroundColor: colors.card }]}>
@@ -438,8 +430,7 @@ export default function UserScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  hero: { height: 132, width: "100%", paddingHorizontal: 8 },
-  backBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  hero: { height: 100, width: "100%" },
   heroBody: { alignItems: "center", paddingHorizontal: 24, marginTop: -50 },
   avatarRing: { padding: 4, borderRadius: 999 },
   name: { fontFamily: fonts.displayBold, fontSize: 24, textAlign: "center", marginTop: 12 },

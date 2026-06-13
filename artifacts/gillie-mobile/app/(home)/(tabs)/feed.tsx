@@ -28,9 +28,10 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import UserAvatar from "@/components/UserAvatar";
 import Chip from "@/components/ui/Chip";
-import ScreenHeader from "@/components/ui/ScreenHeader";
 import SoftCard from "@/components/ui/SoftCard";
 import { fonts } from "@/constants/fonts";
 import { useColors } from "@/hooks/useColors";
@@ -59,6 +60,7 @@ const POST_TYPE_META: Record<string, { label: string; icon: IoniconName; color: 
 export default function FeedScreen() {
   const colors = useColors();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState("all");
   const queryClient = useQueryClient();
 
@@ -387,28 +389,6 @@ export default function FeedScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScreenHeader
-        showBrand
-        gradient
-        subtitle="Find your crew on the water"
-        right={
-          <>
-            <Pressable
-              onPress={() => router.push("/notifications")}
-              style={styles.headerIcon}
-            >
-              <Ionicons name="notifications-outline" size={22} color="#fff" />
-            </Pressable>
-            <Pressable
-              onPress={() => router.push("/create-post")}
-              style={styles.headerIcon}
-            >
-              <Ionicons name="add-circle" size={26} color="#fff" />
-            </Pressable>
-          </>
-        }
-      />
-
       {isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator color={colors.primary} size="large" />
@@ -425,7 +405,11 @@ export default function FeedScreen() {
               tintColor={colors.primary}
             />
           }
-          contentContainerStyle={{ padding: 16, paddingBottom: 110 }}
+          contentContainerStyle={{
+            padding: 16,
+            paddingTop: insets.top + 12,
+            paddingBottom: 110,
+          }}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons

@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable, RefreshControl, Alert } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   useGetNotifications,
   useMarkNotificationRead,
@@ -9,10 +8,10 @@ import {
 } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { fonts } from "@/constants/fonts";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { timeAgo } from "@/lib/format";
+import ScreenHeader from "@/components/ui/ScreenHeader";
 import SoftCard from "@/components/ui/SoftCard";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -20,7 +19,6 @@ type IoniconName = React.ComponentProps<typeof Ionicons>["name"];
 
 export default function NotificationsScreen() {
   const colors = useColors();
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -101,22 +99,7 @@ export default function NotificationsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <LinearGradient
-        colors={[colors.primary, colors.secondary]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ paddingTop: insets.top + 6, paddingBottom: 14 }}
-      >
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={10}>
-            <Ionicons name="chevron-back" size={28} color="#fff" />
-          </Pressable>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Alerts</Text>
-            <Text style={styles.headerSubtitle}>What's happening on the lake</Text>
-          </View>
-        </View>
-      </LinearGradient>
+      <ScreenHeader title="Alerts" subtitle="What's happening on the lake" back />
 
       {isLoading && !notifications ? (
         <View style={styles.center}>
@@ -186,10 +169,6 @@ export default function NotificationsScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 8 },
-  backBtn: { width: 36, height: 40, alignItems: "center", justifyContent: "center", marginRight: 2 },
-  headerTitle: { fontFamily: fonts.displayBold, fontSize: 24, color: "#fff" },
-  headerSubtitle: { fontFamily: fonts.sans, fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 1 },
 
   empty: { alignItems: "center", justifyContent: "center", paddingVertical: 70, gap: 10 },
   emptyTitle: { fontFamily: fonts.displaySemibold, fontSize: 18 },

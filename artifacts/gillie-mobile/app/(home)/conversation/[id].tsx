@@ -11,7 +11,6 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   useGetConversationMessages,
   useGetConversations,
@@ -84,41 +83,45 @@ export default function ConversationScreen() {
       style={{ flex: 1, backgroundColor: colors.background }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <LinearGradient
-        colors={[colors.primary, colors.secondary]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ paddingTop: insets.top + 6, paddingBottom: 12 }}
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top + 6,
+            backgroundColor: colors.card,
+            borderBottomColor: colors.border,
+          },
+        ]}
       >
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={10}>
-            <Ionicons name="chevron-back" size={28} color="#fff" />
-          </Pressable>
-          {isGroup ? (
-            <View style={styles.groupAvatar}>
-              <Ionicons name="people" size={20} color="#fff" />
-            </View>
-          ) : (
-            <UserAvatar
-              name={counterpart?.displayName}
-              username={counterpart?.username}
-              avatarUrl={counterpart?.avatarUrl}
-              size={36}
-              online={counterpart?.isOnline}
-            />
-          )}
-          <View style={styles.headerInfo}>
-            <Text style={styles.headerTitle} numberOfLines={1}>
-              {headerTitle}
-            </Text>
-            {!isGroup && counterpart?.isOnline ? (
-              <Text style={styles.headerStatus}>Active now</Text>
-            ) : !isGroup && counterpart?.username ? (
-              <Text style={styles.headerStatus}>@{counterpart.username}</Text>
-            ) : null}
+        <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={10}>
+          <Ionicons name="chevron-back" size={28} color={colors.foreground} />
+        </Pressable>
+        {isGroup ? (
+          <View style={[styles.groupAvatar, { backgroundColor: colors.muted }]}>
+            <Ionicons name="people" size={20} color={colors.mutedForeground} />
           </View>
+        ) : (
+          <UserAvatar
+            name={counterpart?.displayName}
+            username={counterpart?.username}
+            avatarUrl={counterpart?.avatarUrl}
+            size={36}
+            online={counterpart?.isOnline}
+          />
+        )}
+        <View style={styles.headerInfo}>
+          <Text style={[styles.headerTitle, { color: colors.foreground }]} numberOfLines={1}>
+            {headerTitle}
+          </Text>
+          {!isGroup && counterpart?.isOnline ? (
+            <Text style={[styles.headerStatus, { color: colors.mutedForeground }]}>Active now</Text>
+          ) : !isGroup && counterpart?.username ? (
+            <Text style={[styles.headerStatus, { color: colors.mutedForeground }]}>
+              @{counterpart.username}
+            </Text>
+          ) : null}
         </View>
-      </LinearGradient>
+      </View>
 
       {isLoading && !messages ? (
         <View style={styles.center}>
@@ -221,19 +224,24 @@ export default function ConversationScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 8 },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
   backBtn: { width: 36, height: 40, alignItems: "center", justifyContent: "center", marginRight: 2 },
   groupAvatar: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.25)",
     alignItems: "center",
     justifyContent: "center",
   },
   headerInfo: { flex: 1, marginLeft: 10 },
-  headerTitle: { fontFamily: fonts.displaySemibold, fontSize: 18, color: "#fff" },
-  headerStatus: { fontFamily: fonts.sans, fontSize: 12, color: "rgba(255,255,255,0.85)", marginTop: 1 },
+  headerTitle: { fontFamily: fonts.displaySemibold, fontSize: 17 },
+  headerStatus: { fontFamily: fonts.sans, fontSize: 12, marginTop: 1 },
 
   empty: { alignItems: "center", paddingVertical: 60, gap: 12 },
   emptyText: { fontFamily: fonts.sans, fontSize: 15, textAlign: "center" },

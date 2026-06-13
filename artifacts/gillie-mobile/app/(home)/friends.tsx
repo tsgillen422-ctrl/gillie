@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Pressable, RefreshControl } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   useGetFriends,
   useGetFriendRequests,
@@ -14,9 +13,9 @@ import {
 } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { fonts } from "@/constants/fonts";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import UserAvatar from "@/components/UserAvatar";
+import ScreenHeader from "@/components/ui/ScreenHeader";
 import SoftCard from "@/components/ui/SoftCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,7 +23,6 @@ import { useQueryClient } from "@tanstack/react-query";
 
 export default function FriendsScreen() {
   const colors = useColors();
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -86,22 +84,7 @@ export default function FriendsScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <LinearGradient
-        colors={[colors.primary, colors.secondary]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={{ paddingTop: insets.top + 6, paddingBottom: 14 }}
-      >
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={10}>
-            <Ionicons name="chevron-back" size={28} color="#fff" />
-          </Pressable>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.headerTitle}>Crew</Text>
-            <Text style={styles.headerSubtitle}>Friends, requests & people to meet</Text>
-          </View>
-        </View>
-      </LinearGradient>
+      <ScreenHeader title="Friends" subtitle="Friends, requests & people to meet" back />
 
       {loading ? (
         <View style={styles.center}>
@@ -237,10 +220,6 @@ export default function FriendsScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 8 },
-  backBtn: { width: 36, height: 40, alignItems: "center", justifyContent: "center", marginRight: 2 },
-  headerTitle: { fontFamily: fonts.displayBold, fontSize: 24, color: "#fff" },
-  headerSubtitle: { fontFamily: fonts.sans, fontSize: 13, color: "rgba(255,255,255,0.85)", marginTop: 1 },
 
   section: { marginBottom: 24 },
   card: { marginBottom: 10 },

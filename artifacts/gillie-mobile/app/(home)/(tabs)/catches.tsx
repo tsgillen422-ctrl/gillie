@@ -226,11 +226,11 @@ export default function CatchesScreen() {
     <View style={{ flex: 1, backgroundColor: colors.background }}>
       <ScreenHeader
         title="Catch Log"
-        gradient
         subtitle="Every fish has a story"
+        back
         right={
           <Pressable onPress={() => setModalVisible(true)} style={styles.headerIcon}>
-            <Ionicons name="add-circle" size={28} color="#fff" />
+            <Ionicons name="add-circle" size={28} color={colors.primary} />
           </Pressable>
         }
       />
