@@ -15,6 +15,8 @@ import {
   useGetPins,
   useGetCatches,
   useGetGallery,
+  useGetFollowers,
+  useGetFollowing,
   useFollowUser,
   useUnfollowUser,
   useCreateConversation,
@@ -22,6 +24,8 @@ import {
   getGetPinsQueryKey,
   getGetCatchesQueryKey,
   getGetGalleryQueryKey,
+  getGetFollowersQueryKey,
+  getGetFollowingQueryKey,
 } from "@workspace/api-client-react";
 import { useColors } from "@/hooks/useColors";
 import { fonts } from "@/constants/fonts";
@@ -31,23 +35,26 @@ import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { UserAvatar } from "@/components/UserAvatar";
 import ScreenHeader from "@/components/ui/ScreenHeader";
 import SoftCard from "@/components/ui/SoftCard";
-import StatCard from "@/components/ui/StatCard";
 import Chip from "@/components/ui/Chip";
 import SectionHeader from "@/components/ui/SectionHeader";
 import WaveDivider from "@/components/ui/WaveDivider";
 import RankBadge from "@/components/ui/RankBadge";
-import { resolveAssetUrl, timeAgo } from "@/lib/format";
+import {
+  ProfileHero,
+  StatRow,
+  AchievementGrid,
+  RecentActivity,
+  GalleryPreview,
+  AboutRows,
+  buildRecentActivity,
+  prettify,
+  type IoniconName,
+} from "@/components/ProfileSections";
+import { resolveAssetUrl } from "@/lib/format";
 
 const { width } = Dimensions.get("window");
-
-type IoniconName = keyof typeof Ionicons.glyphMap;
-
-function prettify(value: string) {
-  return value.replace(/[_-]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
 
 export default function UserScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -65,7 +72,7 @@ export default function UserScreen() {
   const unfollowUser = useUnfollowUser();
   const createConversation = useCreateConversation();
 
-  const [tab, setTab] = useState<"posts" | "catches" | "pins" | "gallery">("posts");
+  const [tab, setTab] = useState<"posts" | "pins" | "gallery">("posts");
 
   const { data: posts } = useGetPosts();
   const { data: pins } = useGetPins(
@@ -80,6 +87,12 @@ export default function UserScreen() {
     { profileUserId: userId },
     { query: { enabled: Number.isFinite(userId), queryKey: getGetGalleryQueryKey({ profileUserId: userId }) } },
   );
+  const { data: followers } = useGetFollowers(userId, {
+    query: { enabled: Number.isFinite(userId), queryKey: getGetFollowersQueryKey(userId) },
+  });
+  const { data: following } = useGetFollowing(userId, {
+    query: { enabled: Number.isFinite(userId), queryKey: getGetFollowingQueryKey(userId) },
+  });
 
   if (isLoading || !user) {
     return (
@@ -94,6 +107,9 @@ export default function UserScreen() {
   const userCatches = catches || [];
   const userGallery = gallery || [];
 
+  const followersCount = followers?.length ?? user.followerCount ?? 0;
+  const followingCount = following?.length ?? user.followingCount ?? 0;
+
   const friendStatus = user.friendStatus;
   const isSelf = friendStatus === "self";
   const isFollowing = friendStatus === "accepted" || friendStatus === "pending_out";
@@ -107,6 +123,7 @@ export default function UserScreen() {
         await followUser.mutateAsync({ userId });
       }
       queryClient.invalidateQueries({ queryKey: getGetUserQueryKey(userId) });
+      queryClient.invalidateQueries({ queryKey: getGetFollowersQueryKey(userId) });
     } catch (e) {
       console.error(e);
     }
@@ -122,12 +139,12 @@ export default function UserScreen() {
   };
 
   const aboutRows: { icon: IoniconName; label: string }[] = [];
-  if (user.location) aboutRows.push({ icon: "location-outline", label: user.location });
+  if (user.location) aboutRows.push({ icon: "location-outline", label: `Lives in ${user.location}` });
   if (user.hometown) aboutRows.push({ icon: "home-outline", label: `From ${user.hometown}` });
   if (user.work) aboutRows.push({ icon: "briefcase-outline", label: user.work });
+  if (user.birthday) aboutRows.push({ icon: "gift-outline", label: user.birthday });
   if (user.relationshipStatus)
     aboutRows.push({ icon: "heart-outline", label: prettify(user.relationshipStatus) });
-  if (user.birthday) aboutRows.push({ icon: "gift-outline", label: user.birthday });
   if (user.boatName)
     aboutRows.push({
       icon: "boat-outline",
@@ -136,10 +153,15 @@ export default function UserScreen() {
 
   const interests = user.interests || [];
   const badges = user.badges || [];
+  const recent = buildRecentActivity({
+    posts: userPosts,
+    catches: userCatches,
+    pins: userPins,
+    gallery: userGallery,
+  });
 
   const tabs: { key: typeof tab; label: string }[] = [
     { key: "posts", label: "Posts" },
-    { key: "catches", label: "Catches" },
     { key: "pins", label: "Pins" },
     { key: "gallery", label: "Gallery" },
   ];
@@ -154,30 +176,16 @@ export default function UserScreen() {
           <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} />
         }
       >
-        {/* Clean cover */}
-        <View style={[styles.hero, { backgroundColor: colors.muted }]} />
-
-        <View style={styles.heroBody}>
-          <View style={[styles.avatarRing, { backgroundColor: colors.card }]}>
-            <UserAvatar
-              name={user.displayName}
-              username={user.username}
-              avatarUrl={user.avatarUrl}
-              size={92}
-              online={user.isOnline}
-            />
-          </View>
-          <Text style={[styles.name, { color: colors.foreground }]}>{user.displayName}</Text>
-          <Text style={[styles.username, { color: colors.mutedForeground }]}>@{user.username}</Text>
-          {user.bio ? (
-            <Text style={[styles.bio, { color: colors.foreground }]}>{user.bio}</Text>
-          ) : null}
-
-          {user.rank ? (
-            <View style={styles.rankRow}>
-              <RankBadge tier={user.rank.tier} title={user.rank.title} size={44} />
-            </View>
-          ) : null}
+        {/* Hero cover + overlapping identity card */}
+        <ProfileHero user={user}>
+          <StatRow
+            stats={[
+              { label: "Posts", value: userPosts.length, onPress: () => setTab("posts") },
+              { label: "Followers", value: followersCount },
+              { label: "Following", value: followingCount },
+              { label: "Catches", value: userCatches.length, star: true },
+            ]}
+          />
 
           {!isSelf ? (
             <View style={styles.actionsRow}>
@@ -216,32 +224,28 @@ export default function UserScreen() {
               </Pressable>
             </View>
           ) : null}
-        </View>
+        </ProfileHero>
 
-        {/* Stats */}
-        <View style={styles.section}>
-          <SoftCard padded={false} style={styles.statsCard}>
-            <StatCard value={userPosts.length} label="Posts" onPress={() => setTab("posts")} />
-            <View style={[styles.vDivider, { backgroundColor: colors.border }]} />
-            <StatCard value={userCatches.length} label="Catches" onPress={() => setTab("catches")} />
-            <View style={[styles.vDivider, { backgroundColor: colors.border }]} />
-            <StatCard value={userPins.length} label="Pins" onPress={() => setTab("pins")} />
-            <View style={[styles.vDivider, { backgroundColor: colors.border }]} />
-            <StatCard value={user.followerCount || 0} label="Followers" />
-          </SoftCard>
-        </View>
-
-        {/* About */}
-        {aboutRows.length > 0 ? (
+        {/* About Me */}
+        {aboutRows.length > 0 || user.bio || user.rank ? (
           <View style={styles.section}>
-            <SectionHeader title="About" icon="person-circle-outline" />
             <SoftCard>
-              {aboutRows.map((row, i) => (
-                <View key={row.icon + i} style={[styles.aboutRow, i > 0 && { marginTop: 12 }]}>
-                  <Ionicons name={row.icon} size={18} color={colors.primary} style={{ width: 26 }} />
-                  <Text style={[styles.aboutText, { color: colors.foreground }]}>{row.label}</Text>
+              <SectionHeader title="About Me" icon="person-circle-outline" />
+              {user.bio ? (
+                <Text style={[styles.bio, { color: colors.foreground }]}>{user.bio}</Text>
+              ) : null}
+              {user.rank ? (
+                <View style={styles.rankRow}>
+                  <RankBadge tier={user.rank.tier} title={user.rank.title} size={56} />
                 </View>
-              ))}
+              ) : null}
+              {aboutRows.length > 0 ? (
+                <AboutRows rows={aboutRows} />
+              ) : !user.bio ? (
+                <Text style={[styles.muted, { color: colors.mutedForeground }]}>
+                  No details shared yet.
+                </Text>
+              ) : null}
             </SoftCard>
           </View>
         ) : null}
@@ -249,34 +253,51 @@ export default function UserScreen() {
         {/* Interests */}
         {interests.length > 0 ? (
           <View style={styles.section}>
-            <SectionHeader title="Interests" icon="sparkles-outline" />
-            <View style={styles.chipWrap}>
-              {interests.map((it) => (
-                <Chip key={it} label={prettify(it)} tone="primary" active />
-              ))}
-            </View>
+            <SoftCard>
+              <SectionHeader title="Interests" icon="heart-outline" />
+              <View style={styles.chipWrap}>
+                {interests.map((it) => (
+                  <Chip key={it} label={prettify(it)} tone="primary" active />
+                ))}
+              </View>
+            </SoftCard>
           </View>
         ) : null}
 
-        {/* Badges */}
+        {/* Achievements */}
         {badges.length > 0 ? (
           <View style={styles.section}>
-            <SectionHeader title="Badges" icon="ribbon-outline" />
-            <View style={styles.chipWrap}>
-              {badges.map((b) => (
-                <Chip
-                  key={b.key}
-                  label={b.label}
-                  icon={b.earned ? "ribbon" : "lock-closed-outline"}
-                  tone={b.earned ? "accent" : "muted"}
-                  active={b.earned}
-                />
-              ))}
-            </View>
+            <SoftCard>
+              <SectionHeader title="Achievements" icon="ribbon-outline" />
+              <AchievementGrid badges={badges} />
+            </SoftCard>
           </View>
         ) : null}
 
         <WaveDivider />
+
+        {/* Lake Adventures (gallery preview) */}
+        <View style={styles.section}>
+          <SoftCard>
+            <SectionHeader
+              title="Lake Adventures"
+              icon="camera-outline"
+              actionLabel={userGallery.length > 0 ? "See all" : undefined}
+              onAction={userGallery.length > 0 ? () => setTab("gallery") : undefined}
+            />
+            <GalleryPreview gallery={userGallery} emptyText="No photos shared yet." />
+          </SoftCard>
+        </View>
+
+        <WaveDivider />
+
+        {/* Recent Activity */}
+        <View style={styles.section}>
+          <SoftCard>
+            <SectionHeader title="Recent Activity" icon="time-outline" />
+            <RecentActivity items={recent} />
+          </SoftCard>
+        </View>
 
         {/* Section tabs */}
         <View style={[styles.tabsRow, { borderBottomColor: colors.border }]}>
@@ -336,54 +357,9 @@ export default function UserScreen() {
               ))
             ))}
 
-          {tab === "catches" &&
-            (userCatches.length === 0 ? (
-              <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>No catches yet.</Text>
-            ) : (
-              userCatches.map((c) => (
-                <View key={c.id} style={{ marginBottom: 12 }}>
-                  <SoftCard>
-                    <View style={styles.catchRow}>
-                      {c.imageUrl ? (
-                        <Image
-                          source={{ uri: resolveAssetUrl(c.imageUrl) }}
-                          style={styles.catchImg}
-                          contentFit="cover"
-                        />
-                      ) : (
-                        <View
-                          style={[styles.catchImg, styles.catchImgPlaceholder, { backgroundColor: colors.muted }]}
-                        >
-                          <Ionicons name="fish" size={24} color={colors.mutedForeground} />
-                        </View>
-                      )}
-                      <View style={{ flex: 1 }}>
-                        <Text style={[styles.postTitle, { color: colors.foreground }]}>{c.species}</Text>
-                        {c.weight != null ? (
-                          <Text style={{ color: colors.mutedForeground, fontFamily: fonts.sans }}>
-                            {c.weight} lbs
-                          </Text>
-                        ) : null}
-                        <Text
-                          style={{
-                            color: colors.mutedForeground,
-                            fontFamily: fonts.sans,
-                            fontSize: 12,
-                            marginTop: 4,
-                          }}
-                        >
-                          {timeAgo(c.caughtAt)}
-                        </Text>
-                      </View>
-                    </View>
-                  </SoftCard>
-                </View>
-              ))
-            ))}
-
           {tab === "pins" &&
             (userPins.length === 0 ? (
-              <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>No pins yet.</Text>
+              <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>No pins dropped.</Text>
             ) : (
               userPins.map((p) => (
                 <Pressable
@@ -430,18 +406,11 @@ export default function UserScreen() {
 
 const styles = StyleSheet.create({
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  hero: { height: 100, width: "100%" },
-  heroBody: { alignItems: "center", paddingHorizontal: 24, marginTop: -50 },
-  avatarRing: { padding: 4, borderRadius: 999 },
-  name: { fontFamily: fonts.displayBold, fontSize: 24, textAlign: "center", marginTop: 12 },
-  username: { fontFamily: fonts.sansMedium, fontSize: 15, marginTop: 2 },
-  bio: { fontFamily: fonts.sans, fontSize: 15, textAlign: "center", marginTop: 12, lineHeight: 21 },
-  rankRow: { marginTop: 16 },
-  actionsRow: { flexDirection: "row", gap: 12, marginTop: 18, width: "100%" },
+  actionsRow: { flexDirection: "row", gap: 10, marginTop: 16, width: "100%" },
   followButton: {
     flex: 1,
-    paddingVertical: 13,
-    borderRadius: 12,
+    paddingVertical: 12,
+    borderRadius: 14,
     alignItems: "center",
     flexDirection: "row",
     justifyContent: "center",
@@ -449,20 +418,19 @@ const styles = StyleSheet.create({
   },
   followText: { fontFamily: fonts.sansBold, fontSize: 15 },
   iconButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
   },
-  section: { paddingHorizontal: 16, marginTop: 20 },
-  statsCard: { flexDirection: "row", alignItems: "center", paddingVertical: 14 },
-  vDivider: { width: 1, height: 30 },
-  aboutRow: { flexDirection: "row", alignItems: "center" },
-  aboutText: { fontFamily: fonts.sansMedium, fontSize: 15, flex: 1 },
+  section: { paddingHorizontal: 16, marginTop: 16 },
+  bio: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 22, marginBottom: 14 },
+  rankRow: { marginBottom: 14 },
+  muted: { fontFamily: fonts.sans, fontSize: 14 },
   chipWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  tabsRow: { flexDirection: "row", borderBottomWidth: 1, marginTop: 8, paddingHorizontal: 8 },
+  tabsRow: { flexDirection: "row", borderBottomWidth: 1, marginTop: 20, paddingHorizontal: 8 },
   tab: { flex: 1, paddingVertical: 14, alignItems: "center" },
   tabText: { fontFamily: fonts.sansSemibold, fontSize: 14 },
   tabContent: { paddingHorizontal: 16, paddingTop: 16 },
@@ -470,9 +438,6 @@ const styles = StyleSheet.create({
   postTitle: { fontFamily: fonts.displaySemibold, fontSize: 17, marginBottom: 4 },
   postContent: { fontFamily: fonts.sans, fontSize: 14, lineHeight: 20 },
   postImage: { width: "100%", height: 180, borderRadius: 12, marginTop: 12 },
-  catchRow: { flexDirection: "row", alignItems: "center" },
-  catchImg: { width: 60, height: 60, borderRadius: 10, marginRight: 12 },
-  catchImgPlaceholder: { alignItems: "center", justifyContent: "center" },
   galleryGrid: { flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 },
   galleryImg: { width: (width - 32) / 3 - 8, height: (width - 32) / 3 - 8, borderRadius: 8, margin: 4 },
 });

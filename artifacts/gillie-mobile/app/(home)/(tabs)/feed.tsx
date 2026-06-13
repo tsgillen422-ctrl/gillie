@@ -57,6 +57,49 @@ const POST_TYPE_META: Record<string, { label: string; icon: IoniconName; color: 
   community: { label: "Community", icon: "people", color: "#0d7fa5" },
 };
 
+function weatherEmoji(code?: number | null, isDay?: boolean | null): string {
+  if (code == null) return "🌤️";
+  if (code === 0) return isDay === false ? "🌙" : "☀️";
+  if (code <= 2) return "🌤️";
+  if (code === 3) return "☁️";
+  if (code >= 45 && code <= 48) return "🌫️";
+  if (code >= 51 && code <= 67) return "🌧️";
+  if (code >= 71 && code <= 77) return "❄️";
+  if (code >= 80 && code <= 82) return "🌦️";
+  if (code >= 95) return "⛈️";
+  return "🌤️";
+}
+
+function windDir(deg?: number | null): string {
+  if (deg == null) return "";
+  const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  return dirs[Math.round(deg / 45) % 8];
+}
+
+function formatClockTime(iso?: string | null): string {
+  if (!iso) return "—";
+  const timePart = iso.includes("T") ? iso.split("T")[1] : iso;
+  const [hStr, m] = timePart.split(":");
+  let h = parseInt(hStr, 10);
+  if (Number.isNaN(h)) return "—";
+  const ampm = h >= 12 ? "p" : "a";
+  h = h % 12;
+  if (h === 0) h = 12;
+  return `${h}:${m}${ampm}`;
+}
+
+const PRESSURE_STYLES: Record<string, { bg: string; border: string; text: string; label: string }> = {
+  high: { bg: "rgba(245,158,11,0.10)", border: "rgba(245,158,11,0.30)", text: "#b45309", label: "High" },
+  moderate: { bg: "rgba(14,165,233,0.10)", border: "rgba(14,165,233,0.30)", text: "#0369a1", label: "Moderate" },
+  low: { bg: "rgba(16,185,129,0.10)", border: "rgba(16,185,129,0.30)", text: "#047857", label: "Low" },
+};
+
+const ADVISORY_STYLES: Record<string, { bg: string; border: string; text: string; icon: IoniconName }> = {
+  warning: { bg: "rgba(239,68,68,0.10)", border: "rgba(239,68,68,0.30)", text: "#b91c1c", icon: "warning" },
+  caution: { bg: "rgba(245,158,11,0.10)", border: "rgba(245,158,11,0.30)", text: "#b45309", icon: "information-circle" },
+  good: { bg: "rgba(16,185,129,0.10)", border: "rgba(16,185,129,0.30)", text: "#047857", icon: "checkmark-circle" },
+};
+
 export default function FeedScreen() {
   const colors = useColors();
   const router = useRouter();
@@ -329,42 +372,153 @@ export default function FeedScreen() {
       {conditions ? (
         <Pressable onPress={() => router.push("/conditions")}>
           <LinearGradient
-            colors={[colors.primary, colors.secondary]}
+            colors={["rgba(14,165,233,0.10)", "rgba(6,182,212,0.10)"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.conditions}
           >
-            <View style={{ flex: 1 }}>
-              <Text style={styles.condLabel}>DALE HOLLOW LAKE</Text>
-              <Text style={styles.condTemp}>
-                {Math.round(conditions.temperature)}°
-              </Text>
-              <Text style={styles.condWeather}>{conditions.weatherLabel}</Text>
+            <View style={styles.condTopRow}>
+              <View style={styles.condTitleRow}>
+                <Text style={styles.condEmoji}>
+                  {weatherEmoji(conditions.weatherCode, conditions.isDay)}
+                </Text>
+                <View style={{ flexShrink: 1 }}>
+                  <Text style={[styles.condLake, { color: colors.foreground }]}>
+                    Dale Hollow Lake
+                  </Text>
+                  <Text style={[styles.condWeatherLabel, { color: colors.mutedForeground }]}>
+                    {conditions.weatherLabel}
+                  </Text>
+                </View>
+              </View>
+              <View style={{ alignItems: "flex-end" }}>
+                <Text style={[styles.condTemp, { color: colors.foreground }]}>
+                  {Math.round(conditions.temperature)}°
+                </Text>
+                {conditions.apparentTemperature != null && (
+                  <Text style={[styles.condFeels, { color: colors.mutedForeground }]}>
+                    feels {Math.round(conditions.apparentTemperature)}°
+                  </Text>
+                )}
+              </View>
             </View>
-            <View style={styles.condStats}>
+
+            <View style={styles.condGrid}>
               {conditions.waterTemperature != null && (
-                <View style={styles.condStat}>
-                  <Ionicons name="water" size={15} color="#fff" />
-                  <Text style={styles.condStatText}>
-                    {Math.round(conditions.waterTemperature)}° water
+                <View style={styles.condGridItem}>
+                  <Ionicons name="water" size={14} color="#06b6d4" />
+                  <Text style={[styles.condGridText, { color: colors.mutedForeground }]}>
+                    <Text style={{ color: colors.foreground, fontFamily: fonts.sansBold }}>
+                      {Math.round(conditions.waterTemperature)}°
+                    </Text>{" "}
+                    water
                   </Text>
                 </View>
               )}
               {conditions.waterLevel != null && (
-                <View style={styles.condStat}>
-                  <Ionicons name="trending-up" size={15} color="#fff" />
-                  <Text style={styles.condStatText}>
-                    {Math.round(conditions.waterLevel)} ft
+                <View style={styles.condGridItem}>
+                  <Ionicons name="speedometer" size={14} color="#14b8a6" />
+                  <Text style={[styles.condGridText, { color: colors.mutedForeground }]}>
+                    <Text style={{ color: colors.foreground, fontFamily: fonts.sansBold }}>
+                      {conditions.waterLevel.toFixed(1)}
+                    </Text>{" "}
+                    ft
                   </Text>
                 </View>
               )}
-              <View style={styles.condStat}>
-                <Ionicons name="navigate" size={15} color="#fff" />
-                <Text style={styles.condStatText}>
-                  {Math.round(conditions.windSpeed)} mph
+              <View style={styles.condGridItem}>
+                <Ionicons name="navigate" size={14} color="#0ea5e9" />
+                <Text style={[styles.condGridText, { color: colors.mutedForeground }]}>
+                  <Text style={{ color: colors.foreground, fontFamily: fonts.sansBold }}>
+                    {Math.round(conditions.windSpeed)}
+                  </Text>{" "}
+                  mph {windDir(conditions.windDirection)}
                 </Text>
               </View>
+              {conditions.humidity != null && (
+                <View style={styles.condGridItem}>
+                  <Ionicons name="water-outline" size={14} color="#3b82f6" />
+                  <Text style={[styles.condGridText, { color: colors.mutedForeground }]}>
+                    <Text style={{ color: colors.foreground, fontFamily: fonts.sansBold }}>
+                      {Math.round(conditions.humidity)}%
+                    </Text>{" "}
+                    humidity
+                  </Text>
+                </View>
+              )}
+              {conditions.sunrise && (
+                <View style={styles.condGridItem}>
+                  <Ionicons name="sunny-outline" size={14} color="#f59e0b" />
+                  <Text style={[styles.condGridText, { color: colors.foreground, fontFamily: fonts.sansBold }]}>
+                    {formatClockTime(conditions.sunrise)}
+                  </Text>
+                </View>
+              )}
+              {conditions.sunset && (
+                <View style={styles.condGridItem}>
+                  <Ionicons name="moon-outline" size={14} color="#f97316" />
+                  <Text style={[styles.condGridText, { color: colors.foreground, fontFamily: fonts.sansBold }]}>
+                    {formatClockTime(conditions.sunset)}
+                  </Text>
+                </View>
+              )}
+              {conditions.moonPhase && (
+                <View style={styles.condGridItem}>
+                  <Text style={styles.condMoonEmoji}>{conditions.moonPhase.emoji}</Text>
+                  <Text style={[styles.condGridText, { color: colors.mutedForeground }]}>
+                    <Text style={{ color: colors.foreground, fontFamily: fonts.sansBold }}>
+                      {conditions.moonPhase.illumination}%
+                    </Text>{" "}
+                    moon
+                  </Text>
+                </View>
+              )}
             </View>
+
+            {conditions.fishingPressure
+              ? (() => {
+                  const s =
+                    PRESSURE_STYLES[conditions.fishingPressure.level] ??
+                    PRESSURE_STYLES.moderate;
+                  return (
+                    <View
+                      style={[
+                        styles.condAdvisory,
+                        { backgroundColor: s.bg, borderColor: s.border },
+                      ]}
+                    >
+                      <Ionicons name="fish" size={14} color={s.text} style={{ marginTop: 1 }} />
+                      <Text style={[styles.condAdvisoryText, { color: s.text }]}>
+                        <Text style={{ fontFamily: fonts.sansBold }}>
+                          Fishing pressure: {s.label}.
+                        </Text>{" "}
+                        {conditions.fishingPressure.detail}
+                      </Text>
+                    </View>
+                  );
+                })()
+              : null}
+
+            {conditions.advisories && conditions.advisories.length > 0
+              ? conditions.advisories.map((a: any, i: number) => {
+                  const s = ADVISORY_STYLES[a.level] ?? ADVISORY_STYLES.good;
+                  return (
+                    <View
+                      key={i}
+                      style={[
+                        styles.condAdvisory,
+                        { backgroundColor: s.bg, borderColor: s.border },
+                      ]}
+                    >
+                      <Ionicons name={s.icon} size={14} color={s.text} style={{ marginTop: 1 }} />
+                      <Text style={[styles.condAdvisoryText, { color: s.text }]}>
+                        <Text style={{ fontFamily: fonts.sansBold }}>{a.title}.</Text>{" "}
+                        {a.detail}
+                      </Text>
+                    </View>
+                  );
+                })
+              : null}
           </LinearGradient>
         </Pressable>
       ) : null}
@@ -436,23 +590,49 @@ const styles = StyleSheet.create({
   headerIcon: { padding: 4 },
 
   conditions: {
-    flexDirection: "row",
-    borderRadius: 18,
+    borderRadius: 14,
     padding: 16,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(14,165,233,0.20)",
+  },
+  condTopRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  condTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
+  condEmoji: { fontSize: 24 },
+  condLake: { fontFamily: fonts.sansBold, fontSize: 14 },
+  condWeatherLabel: { fontFamily: fonts.sans, fontSize: 12, marginTop: 1 },
+  condTemp: { fontFamily: fonts.displayBold, fontSize: 24, lineHeight: 26 },
+  condFeels: { fontFamily: fonts.sans, fontSize: 10, marginTop: 2 },
+  condGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    rowGap: 8,
+  },
+  condGridItem: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: 5,
+    width: "33.33%",
+    paddingRight: 4,
   },
-  condLabel: {
-    color: "rgba(255,255,255,0.85)",
-    fontFamily: fonts.sansBold,
-    fontSize: 11,
-    letterSpacing: 1,
+  condGridText: { fontFamily: fonts.sans, fontSize: 12, flexShrink: 1 },
+  condMoonEmoji: { fontSize: 13 },
+  condAdvisory: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginTop: 12,
   },
-  condTemp: { color: "#fff", fontFamily: fonts.displayBold, fontSize: 40, lineHeight: 46 },
-  condWeather: { color: "rgba(255,255,255,0.95)", fontFamily: fonts.sansMedium, fontSize: 14 },
-  condStats: { gap: 8 },
-  condStat: { flexDirection: "row", alignItems: "center", gap: 6 },
-  condStatText: { color: "#fff", fontFamily: fonts.sansSemibold, fontSize: 13 },
+  condAdvisoryText: { fontFamily: fonts.sans, fontSize: 12, flexShrink: 1, lineHeight: 16 },
 
   tabsScroll: { gap: 8, paddingBottom: 16, paddingRight: 8 },
 
