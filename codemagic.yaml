@@ -68,22 +68,42 @@ workflows:
           agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
       - name: Fetch signing files
         script: |
-          # Push Notifications IS enabled on the App ID, but every provisioning
-          # profile that existed BEFORE Push was enabled is now stale/invalid.
-          # A plain fetch re-downloads those stale push-less profiles instead of
-          # regenerating them. So we force a BRAND-NEW profile with a unique name:
-          # --create has nothing to match, so it generates a fresh profile that
-          # includes every capability currently on the App ID (incl. Push).
-          # 1) Wipe any pre-installed provisioning profiles so no stale one can win.
+          # set -e: a real signing failure must STOP here and surface the actual
+          # error, instead of being silently masked by use-profiles (which exits 0
+          # even when no profile was installed).
+          set -e
+          echo "==> Available iOS Distribution certificates known to the API key:"
+          app-store-connect list-certificates --type IOS_DISTRIBUTION --json || true
+          # Force a BRAND-NEW profile (unique name) so a stale push-less profile
+          # can never be reused. --create has nothing to match, so it generates a
+          # fresh profile carrying every capability currently on the App ID (Push).
           rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision 2>/dev/null || true
-          # 2) Create + fetch a uniquely-named fresh App Store profile.
           FRESH_PROFILE_NAME="Gillie App Store CI $(date +%Y%m%d%H%M%S)"
-          echo "Creating fresh provisioning profile: $FRESH_PROFILE_NAME"
+          echo "==> Creating fresh provisioning profile: $FRESH_PROFILE_NAME"
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --profile-name "$FRESH_PROFILE_NAME" \
             --create
-          # 3) Install the freshly created profile into the Xcode project.
+          echo "==> Provisioning profiles now installed:"
+          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/"
+          echo "==> Inspecting each profile for the Push (aps-environment) entitlement:"
+          shopt -s nullglob
+          INSTALLED=0
+          for p in "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision; do
+            INSTALLED=1
+            echo "---- $p ----"
+            security cms -D -i "$p" 2>/dev/null | grep -A1 "<key>Name</key>" || true
+            if security cms -D -i "$p" 2>/dev/null | grep -qi "aps-environment"; then
+              echo "   ✅ aps-environment (Push) IS present in this profile"
+            else
+              echo "   ❌ aps-environment (Push) is MISSING from this profile"
+            fi
+          done
+          if [ "$INSTALLED" = "0" ]; then
+            echo "!! No provisioning profile was installed -- fetch-signing-files did not produce one."
+            exit 1
+          fi
+          # Apply the installed profile's signing settings to the Xcode project.
           xcode-project use-profiles
       - name: Build IPA
         script: |
