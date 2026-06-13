@@ -23,9 +23,14 @@ workflows:
     scripts:
       - name: Install pnpm
         script: |
-          # Pin pnpm via corepack (NOT pnpm 9, NOT a manual global install).
-          # 11.6.0 matches the local toolchain that generated pnpm-lock.yaml and
-          # is required for the workspace's catalog:/overrides features.
+          # Pin pnpm via corepack. 11.6.0 matches the local toolchain that
+          # generated pnpm-lock.yaml and is required for the workspace's
+          # catalog:/overrides features. This project is pnpm-only (the root
+          # preinstall script rejects npm/yarn) -- there is no Yarn config.
+          # Update corepack first: Node 20's bundled corepack can fail to fetch
+          # pnpm with a stale signing-key error ("Cannot find matching keyid").
+          npm install -g corepack@latest
+          export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
           corepack enable
           corepack prepare pnpm@11.6.0 --activate
           pnpm -v
