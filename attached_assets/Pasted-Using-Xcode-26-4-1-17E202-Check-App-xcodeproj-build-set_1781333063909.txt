@@ -1,0 +1,352 @@
+Using Xcode 26.4.1 (17E202)
+Check App.xcodeproj build settings
+Execute "xcodebuild -project /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj -scheme App -showBuildSettings"
+
+Archive App.xcodeproj
+Execute "xcodebuild -project /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj -scheme App -archivePath /Users/builder/clone/build/ios/xcarchive/App_0_9gbqpk.xcarchive archive COMPILER_INDEX_STORE_ENABLE=NO DEVELOPMENT_TEAM=T6769T4X35 'CODE_SIGN_IDENTITY=Apple Distribution' CODE_SIGN_STYLE=Manual"
+
+Using Xcode 26.4.1 (17E202)
+Check App.xcodeproj build settings
+Execute "xcodebuild -project /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj -scheme App -showBuildSettings"
+
+Archive App.xcodeproj
+Execute "xcodebuild -project /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj -scheme App -archivePath /Users/builder/clone/build/ios/xcarchive/App_0_9gbqpk.xcarchive archive COMPILER_INDEX_STORE_ENABLE=NO DEVELOPMENT_TEAM=T6769T4X35 'CODE_SIGN_IDENTITY=Apple Distribution' CODE_SIGN_STYLE=Manual"
+
+Failed to archive /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj
+==================== xcodebuild errors ====================
+111:    CODESIGNING_FOLDER_PATH = /Users/builder/Library/Developer/Xcode/DerivedData/App-fxioetecqbptwbasozqerngcldqm/Build/Products/Debug-iphoneos/App.app
+114:    CODE_SIGN_CONTEXT_CLASS = XCiPhoneOSCodeSignContext
+115:    CODE_SIGN_ENTITLEMENTS = App/App.entitlements
+117:    CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES
+222:    ENTITLEMENTS_ALLOWED = YES
+223:    ENTITLEMENTS_DESTINATION = Signature
+224:    ENTITLEMENTS_REQUIRED = NO
+671:note: Using codesigning identity override: Apple Distribution
+733:/Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj: error: Provisioning profile "Gillie app store profile" doesn't include the Push Notifications capability. (in target 'App' from project 'App')
+734:/Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj: error: Provisioning profile "Gillie app store profile" doesn't include the aps-environment entitlement. (in target 'App' from project 'App')
+================ last 150 lines of log ===================
+    XCODE_PRODUCT_BUILD_VERSION = 17E202
+    XCODE_VERSION_ACTUAL = 2641
+    XCODE_VERSION_MAJOR = 2600
+    XCODE_VERSION_MINOR = 2640
+    XPCSERVICES_FOLDER_PATH = App.app/XPCServices
+    XROS_DEPLOYMENT_TARGET = 26.4
+    YACC = yacc
+    _DISCOVER_COMMAND_LINE_LINKER_INPUTS = YES
+    _DISCOVER_COMMAND_LINE_LINKER_INPUTS_INCLUDE_WL = YES
+    _LD_MULTIARCH = YES
+    _WRAPPER_CONTENTS_DIR_SHALLOW_BUNDLE_NO = /Contents
+    _WRAPPER_PARENT_PATH_SHALLOW_BUNDLE_NO = /..
+    _WRAPPER_RESOURCES_DIR_SHALLOW_BUNDLE_NO = /Resources
+    __DIAGNOSE_DEPRECATED_ARCHS = YES
+    __IS_NOT_MACOS = YES
+    __IS_NOT_MACOS_macosx = NO
+    __IS_NOT_SIMULATOR = YES
+    __IS_NOT_SIMULATOR_simulator = NO
+    __ORIGINAL_SDK_DEFINED_LLVM_TARGET_TRIPLE_SYS = ios
+    arch = undefined_arch
+    variant = normal
+
+
+
+<<< Process completed with status code 0 in 00:08
+
+>>> xcodebuild -project /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj -scheme App -archivePath /Users/builder/clone/build/ios/xcarchive/App_0_9gbqpk.xcarchive archive COMPILER_INDEX_STORE_ENABLE=NO DEVELOPMENT_TEAM=T6769T4X35 'CODE_SIGN_IDENTITY=Apple Distribution' CODE_SIGN_STYLE=Manual
+
+Command line invocation:
+    /Applications/Xcode-26.4.app/Contents/Developer/usr/bin/xcodebuild -project /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj -scheme App -archivePath /Users/builder/clone/build/ios/xcarchive/App_0_9gbqpk.xcarchive archive COMPILER_INDEX_STORE_ENABLE=NO DEVELOPMENT_TEAM=T6769T4X35 "CODE_SIGN_IDENTITY=Apple Distribution" CODE_SIGN_STYLE=Manual
+
+Build settings from command line:
+    CODE_SIGN_IDENTITY = Apple Distribution
+    CODE_SIGN_STYLE = Manual
+    COMPILER_INDEX_STORE_ENABLE = NO
+    DEVELOPMENT_TEAM = T6769T4X35
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  CapacitorHaptics: /Users/builder/clone/node_modules/.pnpm/@capacitor+haptics@8.0.2_@capacitor+core@8.3.4/node_modules/@capacitor/haptics @ local
+  CapacitorPushNotifications: /Users/builder/clone/node_modules/.pnpm/@capacitor+push-notifications@8.1.1_@capacitor+core@8.3.4/node_modules/@capacitor/push-notifications @ local
+  capacitor-swift-pm: https://github.com/ionic-team/capacitor-swift-pm.git @ 8.3.4
+  CapApp-SPM: /Users/builder/clone/artifacts/dhl-app/ios/App/CapApp-SPM @ local
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS, id:dvtdevice-DVTiPhonePlaceholder-iphoneos:placeholder, name:Any iOS Device }
+{ platform:iOS Simulator, id:dvtdevice-DVTiOSDeviceSimulatorPlaceholder-iphonesimulator:placeholder, name:Any iOS Simulator Device }
+{ platform:macOS, arch:arm64, variant:Designed for [iPad,iPhone], id:0000FE00-343A79319AA17942, name:My Mac }
+{ platform:visionOS Simulator, arch:arm64, variant:Designed for [iPad,iPhone], id:BD263D24-0346-4DBC-86C8-3573BE1D8889, OS:26.4.1, name:Apple Vision Pro }
+{ platform:iOS Simulator, arch:arm64, id:51823430-5D05-4B92-ACC0-759B5C3C4745, OS:26.3.1, name:iPad (A16) }
+{ platform:iOS Simulator, arch:arm64, id:F81956D3-1AA5-4041-938B-85D78A8A3A40, OS:26.4.1, name:iPad (A16) }
+{ platform:iOS Simulator, arch:arm64, id:95787899-A205-4119-9AFD-D0C1B2264F5D, OS:26.4.1, name:iPad Air 11-inch (M3) }
+{ platform:iOS Simulator, arch:arm64, id:A4702695-0388-4F7E-A87F-02752E7A4123, OS:26.3.1, name:iPad Air 11-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:0429FC11-7FA1-489B-93D9-48CBCEC0BCF5, OS:26.4.1, name:iPad Air 11-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:4F07F439-858C-40D8-B03C-082D6DA5076A, OS:26.4.1, name:iPad Air 13-inch (M3) }
+{ platform:iOS Simulator, arch:arm64, id:2517B967-97B6-4853-B623-865AC79E6CD3, OS:26.3.1, name:iPad Air 13-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:5DCE095A-C5A7-44E2-9855-557B256354AC, OS:26.4.1, name:iPad Air 13-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:DECB3D65-CD5E-4E9B-968E-AA715E8FCF1B, OS:26.3.1, name:iPad Pro 11-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:05E88953-3FA0-4295-B10F-E02BA3D7BDC2, OS:26.4.1, name:iPad Pro 11-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:5D1271A1-9FD6-4AB6-9336-D4894AF3851B, OS:26.3.1, name:iPad Pro 13-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:7FE105CF-C7BD-4A21-8B21-205A4CDB33E6, OS:26.4.1, name:iPad Pro 13-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:6CA4D283-CFAA-4195-B3B7-7AA17396929A, OS:26.3.1, name:iPad mini (A17 Pro) }
+{ platform:iOS Simulator, arch:arm64, id:2D5DC6D9-37F4-43B4-AC90-9CCDEDF2719F, OS:26.4.1, name:iPad mini (A17 Pro) }
+{ platform:iOS Simulator, arch:arm64, id:541ACB68-260D-4BB9-8F15-469AEC9CC542, OS:26.4.1, name:iPhone 16e }
+{ platform:iOS Simulator, arch:arm64, id:6194E215-D356-4F46-89E4-93D533FB4090, OS:26.3.1, name:iPhone 17 }
+{ platform:iOS Simulator, arch:arm64, id:1114811B-9965-4FCA-A185-B1000429EC83, OS:26.4.1, name:iPhone 17 }
+{ platform:iOS Simulator, arch:arm64, id:1AAD40F4-4D0E-43E1-A1D6-3F8BCDC1966D, OS:26.3.1, name:iPhone 17 Pro }
+{ platform:iOS Simulator, arch:arm64, id:A813414F-88E4-4093-A95F-21DA5E1D6CEF, OS:26.4.1, name:iPhone 17 Pro }
+{ platform:iOS Simulator, arch:arm64, id:E35BE189-F1D8-4B8C-9C7F-6C1A1B0CBCF7, OS:26.3.1, name:iPhone 17 Pro Max }
+{ platform:iOS Simulator, arch:arm64, id:92F133BB-0DAD-4507-B194-12B9D0436AD5, OS:26.4.1, name:iPhone 17 Pro Max }
+{ platform:iOS Simulator, arch:arm64, id:7BA3776C-BF29-461E-B6A7-A3548CF4DA56, OS:26.3.1, name:iPhone 17e }
+{ platform:iOS Simulator, arch:arm64, id:0CDE9B50-D77B-423D-A081-A00E15B2B6C6, OS:26.4.1, name:iPhone 17e }
+{ platform:iOS Simulator, arch:arm64, id:C3644462-31C5-49B0-B169-C621DF13792C, OS:26.3.1, name:iPhone Air }
+{ platform:iOS Simulator, arch:arm64, id:B0701068-FD6E-4C68-AD5F-6BC5FFEE8876, OS:26.4.1, name:iPhone Air }
+note: Using codesigning identity override: Apple Distribution
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (9 targets)
+    Target 'App' in project 'App'
+        ➜ Explicit dependency on target 'CapApp-SPM' in project 'CapApp-SPM'
+    Target 'CapApp-SPM' in project 'CapApp-SPM'
+        ➜ Explicit dependency on target 'CapApp-SPM' in project 'CapApp-SPM'
+        ➜ Explicit dependency on target 'Capacitor' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'Cordova' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'CapacitorHaptics' in project 'CapacitorHaptics'
+        ➜ Explicit dependency on target 'CapacitorPushNotifications' in project 'CapacitorPushNotifications'
+    Target 'CapApp-SPM' in project 'CapApp-SPM'
+        ➜ Explicit dependency on target 'Capacitor' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'Cordova' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'CapacitorHaptics' in project 'CapacitorHaptics'
+        ➜ Explicit dependency on target 'CapacitorPushNotifications' in project 'CapacitorPushNotifications'
+    Target 'CapacitorPushNotifications' in project 'CapacitorPushNotifications'
+        ➜ Explicit dependency on target 'PushNotificationsPlugin' in project 'CapacitorPushNotifications'
+        ➜ Explicit dependency on target 'Capacitor' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'Cordova' in project 'capacitor-swift-pm'
+    Target 'PushNotificationsPlugin' in project 'CapacitorPushNotifications'
+        ➜ Explicit dependency on target 'Capacitor' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'Cordova' in project 'capacitor-swift-pm'
+    Target 'CapacitorHaptics' in project 'CapacitorHaptics'
+        ➜ Explicit dependency on target 'HapticsPlugin' in project 'CapacitorHaptics'
+        ➜ Explicit dependency on target 'Capacitor' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'Cordova' in project 'capacitor-swift-pm'
+    Target 'HapticsPlugin' in project 'CapacitorHaptics'
+        ➜ Explicit dependency on target 'Capacitor' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'Cordova' in project 'capacitor-swift-pm'
+    Target 'Cordova' in project 'capacitor-swift-pm' (no dependencies)
+    Target 'Capacitor' in project 'capacitor-swift-pm' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode-26.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode-26.4.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/builder/clone/artifacts/dhl-app/ios/App/App/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode-26.4.app/Contents/Developer/usr/bin/ibtool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode-26.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode-26.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.4.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode-26.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+ExecuteExternalTool /Applications/Xcode-26.4.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+Build description signature: ca8aea49107e3bc1528c2b91eb9c71d9
+Build description path: /Users/builder/Library/Developer/Xcode/DerivedData/App-fxioetecqbptwbasozqerngcldqm/Build/Intermediates.noindex/ArchiveIntermediates/App/IntermediateBuildFilesPath/XCBuildData/ca8aea49107e3bc1528c2b91eb9c71d9.xcbuilddata
+/Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj: error: Provisioning profile "Gillie app store profile" doesn't include the Push Notifications capability. (in target 'App' from project 'App')
+/Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj: error: Provisioning profile "Gillie app store profile" doesn't include the aps-environment entitlement. (in target 'App' from project 'App')
+** ARCHIVE FAILED **
+
+
+The following build commands failed:
+	Archiving project App with scheme App
+(1 failure)
+
+
+<<< Process completed with status code 65 in 00:04
+
+==========================================================
+
+
+Build failed :|
+Step 9 script `Build IPA` exited with status code 65
+Failed to archive /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj
+==================== xcodebuild errors ====================
+111:    CODESIGNING_FOLDER_PATH = /Users/builder/Library/Developer/Xcode/DerivedData/App-fxioetecqbptwbasozqerngcldqm/Build/Products/Debug-iphoneos/App.app
+114:    CODE_SIGN_CONTEXT_CLASS = XCiPhoneOSCodeSignContext
+115:    CODE_SIGN_ENTITLEMENTS = App/App.entitlements
+117:    CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES
+222:    ENTITLEMENTS_ALLOWED = YES
+223:    ENTITLEMENTS_DESTINATION = Signature
+224:    ENTITLEMENTS_REQUIRED = NO
+671:note: Using codesigning identity override: Apple Distribution
+733:/Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj: error: Provisioning profile "Gillie app store profile" doesn't include the Push Notifications capability. (in target 'App' from project 'App')
+734:/Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj: error: Provisioning profile "Gillie app store profile" doesn't include the aps-environment entitlement. (in target 'App' from project 'App')
+================ last 150 lines of log ===================
+    XCODE_PRODUCT_BUILD_VERSION = 17E202
+    XCODE_VERSION_ACTUAL = 2641
+    XCODE_VERSION_MAJOR = 2600
+    XCODE_VERSION_MINOR = 2640
+    XPCSERVICES_FOLDER_PATH = App.app/XPCServices
+    XROS_DEPLOYMENT_TARGET = 26.4
+    YACC = yacc
+    _DISCOVER_COMMAND_LINE_LINKER_INPUTS = YES
+    _DISCOVER_COMMAND_LINE_LINKER_INPUTS_INCLUDE_WL = YES
+    _LD_MULTIARCH = YES
+    _WRAPPER_CONTENTS_DIR_SHALLOW_BUNDLE_NO = /Contents
+    _WRAPPER_PARENT_PATH_SHALLOW_BUNDLE_NO = /..
+    _WRAPPER_RESOURCES_DIR_SHALLOW_BUNDLE_NO = /Resources
+    __DIAGNOSE_DEPRECATED_ARCHS = YES
+    __IS_NOT_MACOS = YES
+    __IS_NOT_MACOS_macosx = NO
+    __IS_NOT_SIMULATOR = YES
+    __IS_NOT_SIMULATOR_simulator = NO
+    __ORIGINAL_SDK_DEFINED_LLVM_TARGET_TRIPLE_SYS = ios
+    arch = undefined_arch
+    variant = normal
+
+
+
+<<< Process completed with status code 0 in 00:08
+
+>>> xcodebuild -project /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj -scheme App -archivePath /Users/builder/clone/build/ios/xcarchive/App_0_9gbqpk.xcarchive archive COMPILER_INDEX_STORE_ENABLE=NO DEVELOPMENT_TEAM=T6769T4X35 'CODE_SIGN_IDENTITY=Apple Distribution' CODE_SIGN_STYLE=Manual
+
+Command line invocation:
+    /Applications/Xcode-26.4.app/Contents/Developer/usr/bin/xcodebuild -project /Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj -scheme App -archivePath /Users/builder/clone/build/ios/xcarchive/App_0_9gbqpk.xcarchive archive COMPILER_INDEX_STORE_ENABLE=NO DEVELOPMENT_TEAM=T6769T4X35 "CODE_SIGN_IDENTITY=Apple Distribution" CODE_SIGN_STYLE=Manual
+
+Build settings from command line:
+    CODE_SIGN_IDENTITY = Apple Distribution
+    CODE_SIGN_STYLE = Manual
+    COMPILER_INDEX_STORE_ENABLE = NO
+    DEVELOPMENT_TEAM = T6769T4X35
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  CapacitorHaptics: /Users/builder/clone/node_modules/.pnpm/@capacitor+haptics@8.0.2_@capacitor+core@8.3.4/node_modules/@capacitor/haptics @ local
+  CapacitorPushNotifications: /Users/builder/clone/node_modules/.pnpm/@capacitor+push-notifications@8.1.1_@capacitor+core@8.3.4/node_modules/@capacitor/push-notifications @ local
+  capacitor-swift-pm: https://github.com/ionic-team/capacitor-swift-pm.git @ 8.3.4
+  CapApp-SPM: /Users/builder/clone/artifacts/dhl-app/ios/App/CapApp-SPM @ local
+
+--- xcodebuild: WARNING: Using the first of multiple matching destinations:
+{ platform:iOS, id:dvtdevice-DVTiPhonePlaceholder-iphoneos:placeholder, name:Any iOS Device }
+{ platform:iOS Simulator, id:dvtdevice-DVTiOSDeviceSimulatorPlaceholder-iphonesimulator:placeholder, name:Any iOS Simulator Device }
+{ platform:macOS, arch:arm64, variant:Designed for [iPad,iPhone], id:0000FE00-343A79319AA17942, name:My Mac }
+{ platform:visionOS Simulator, arch:arm64, variant:Designed for [iPad,iPhone], id:BD263D24-0346-4DBC-86C8-3573BE1D8889, OS:26.4.1, name:Apple Vision Pro }
+{ platform:iOS Simulator, arch:arm64, id:51823430-5D05-4B92-ACC0-759B5C3C4745, OS:26.3.1, name:iPad (A16) }
+{ platform:iOS Simulator, arch:arm64, id:F81956D3-1AA5-4041-938B-85D78A8A3A40, OS:26.4.1, name:iPad (A16) }
+{ platform:iOS Simulator, arch:arm64, id:95787899-A205-4119-9AFD-D0C1B2264F5D, OS:26.4.1, name:iPad Air 11-inch (M3) }
+{ platform:iOS Simulator, arch:arm64, id:A4702695-0388-4F7E-A87F-02752E7A4123, OS:26.3.1, name:iPad Air 11-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:0429FC11-7FA1-489B-93D9-48CBCEC0BCF5, OS:26.4.1, name:iPad Air 11-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:4F07F439-858C-40D8-B03C-082D6DA5076A, OS:26.4.1, name:iPad Air 13-inch (M3) }
+{ platform:iOS Simulator, arch:arm64, id:2517B967-97B6-4853-B623-865AC79E6CD3, OS:26.3.1, name:iPad Air 13-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:5DCE095A-C5A7-44E2-9855-557B256354AC, OS:26.4.1, name:iPad Air 13-inch (M4) }
+{ platform:iOS Simulator, arch:arm64, id:DECB3D65-CD5E-4E9B-968E-AA715E8FCF1B, OS:26.3.1, name:iPad Pro 11-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:05E88953-3FA0-4295-B10F-E02BA3D7BDC2, OS:26.4.1, name:iPad Pro 11-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:5D1271A1-9FD6-4AB6-9336-D4894AF3851B, OS:26.3.1, name:iPad Pro 13-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:7FE105CF-C7BD-4A21-8B21-205A4CDB33E6, OS:26.4.1, name:iPad Pro 13-inch (M5) }
+{ platform:iOS Simulator, arch:arm64, id:6CA4D283-CFAA-4195-B3B7-7AA17396929A, OS:26.3.1, name:iPad mini (A17 Pro) }
+{ platform:iOS Simulator, arch:arm64, id:2D5DC6D9-37F4-43B4-AC90-9CCDEDF2719F, OS:26.4.1, name:iPad mini (A17 Pro) }
+{ platform:iOS Simulator, arch:arm64, id:541ACB68-260D-4BB9-8F15-469AEC9CC542, OS:26.4.1, name:iPhone 16e }
+{ platform:iOS Simulator, arch:arm64, id:6194E215-D356-4F46-89E4-93D533FB4090, OS:26.3.1, name:iPhone 17 }
+{ platform:iOS Simulator, arch:arm64, id:1114811B-9965-4FCA-A185-B1000429EC83, OS:26.4.1, name:iPhone 17 }
+{ platform:iOS Simulator, arch:arm64, id:1AAD40F4-4D0E-43E1-A1D6-3F8BCDC1966D, OS:26.3.1, name:iPhone 17 Pro }
+{ platform:iOS Simulator, arch:arm64, id:A813414F-88E4-4093-A95F-21DA5E1D6CEF, OS:26.4.1, name:iPhone 17 Pro }
+{ platform:iOS Simulator, arch:arm64, id:E35BE189-F1D8-4B8C-9C7F-6C1A1B0CBCF7, OS:26.3.1, name:iPhone 17 Pro Max }
+{ platform:iOS Simulator, arch:arm64, id:92F133BB-0DAD-4507-B194-12B9D0436AD5, OS:26.4.1, name:iPhone 17 Pro Max }
+{ platform:iOS Simulator, arch:arm64, id:7BA3776C-BF29-461E-B6A7-A3548CF4DA56, OS:26.3.1, name:iPhone 17e }
+{ platform:iOS Simulator, arch:arm64, id:0CDE9B50-D77B-423D-A081-A00E15B2B6C6, OS:26.4.1, name:iPhone 17e }
+{ platform:iOS Simulator, arch:arm64, id:C3644462-31C5-49B0-B169-C621DF13792C, OS:26.3.1, name:iPhone Air }
+{ platform:iOS Simulator, arch:arm64, id:B0701068-FD6E-4C68-AD5F-6BC5FFEE8876, OS:26.4.1, name:iPhone Air }
+note: Using codesigning identity override: Apple Distribution
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (9 targets)
+    Target 'App' in project 'App'
+        ➜ Explicit dependency on target 'CapApp-SPM' in project 'CapApp-SPM'
+    Target 'CapApp-SPM' in project 'CapApp-SPM'
+        ➜ Explicit dependency on target 'CapApp-SPM' in project 'CapApp-SPM'
+        ➜ Explicit dependency on target 'Capacitor' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'Cordova' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'CapacitorHaptics' in project 'CapacitorHaptics'
+        ➜ Explicit dependency on target 'CapacitorPushNotifications' in project 'CapacitorPushNotifications'
+    Target 'CapApp-SPM' in project 'CapApp-SPM'
+        ➜ Explicit dependency on target 'Capacitor' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'Cordova' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'CapacitorHaptics' in project 'CapacitorHaptics'
+        ➜ Explicit dependency on target 'CapacitorPushNotifications' in project 'CapacitorPushNotifications'
+    Target 'CapacitorPushNotifications' in project 'CapacitorPushNotifications'
+        ➜ Explicit dependency on target 'PushNotificationsPlugin' in project 'CapacitorPushNotifications'
+        ➜ Explicit dependency on target 'Capacitor' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'Cordova' in project 'capacitor-swift-pm'
+    Target 'PushNotificationsPlugin' in project 'CapacitorPushNotifications'
+        ➜ Explicit dependency on target 'Capacitor' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'Cordova' in project 'capacitor-swift-pm'
+    Target 'CapacitorHaptics' in project 'CapacitorHaptics'
+        ➜ Explicit dependency on target 'HapticsPlugin' in project 'CapacitorHaptics'
+        ➜ Explicit dependency on target 'Capacitor' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'Cordova' in project 'capacitor-swift-pm'
+    Target 'HapticsPlugin' in project 'CapacitorHaptics'
+        ➜ Explicit dependency on target 'Capacitor' in project 'capacitor-swift-pm'
+        ➜ Explicit dependency on target 'Cordova' in project 'capacitor-swift-pm'
+    Target 'Cordova' in project 'capacitor-swift-pm' (no dependencies)
+    Target 'Capacitor' in project 'capacitor-swift-pm' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode-26.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode-26.4.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/builder/clone/artifacts/dhl-app/ios/App/App/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode-26.4.app/Contents/Developer/usr/bin/ibtool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode-26.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode-26.4.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.4.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode-26.4.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+ExecuteExternalTool /Applications/Xcode-26.4.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+Build description signature: ca8aea49107e3bc1528c2b91eb9c71d9
+Build description path: /Users/builder/Library/Developer/Xcode/DerivedData/App-fxioetecqbptwbasozqerngcldqm/Build/Intermediates.noindex/ArchiveIntermediates/App/IntermediateBuildFilesPath/XCBuildData/ca8aea49107e3bc1528c2b91eb9c71d9.xcbuilddata
+/Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj: error: Provisioning profile "Gillie app store profile" doesn't include the Push Notifications capability. (in target 'App' from project 'App')
+/Users/builder/clone/artifacts/dhl-app/ios/App/App.xcodeproj: error: Provisioning profile "Gillie app store profile" doesn't include the aps-environment entitlement. (in target 'App' from project 'App')
+** ARCHIVE FAILED **
+
+
+The following build commands failed:
+	Archiving project App with scheme App
+(1 failure)
+
+
+<<< Process completed with status code 65 in 00:04
+
+==========================================================
+
+
+Build failed :|
+Step 9 script `Build IPA` exited with status code 65
+
+Publishing
