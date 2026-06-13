@@ -18,7 +18,13 @@ pnpm 11 produces zero diff).
 **Why:** Codemagic CI for the iOS Capacitor build pinned `npm install -g pnpm@9.0.0`,
 which broke frozen installs even though the lockfile was in sync.
 
+Proof pnpm 9.0.0 can't install this repo: `catalog:` deps (10 package.json files use it)
+fail with `ERR_PNPM_SPEC_NOT_SUPPORTED_BY_ANY_RESOLVER  zod@catalog:` — catalogs need
+pnpm 9.5+, workspace overrides need pnpm 10+.
+
 **How to apply:** Any CI / external build (Codemagic, GitHub Actions, etc.) must install
-pnpm **>=10** (use 11.6.0 to match local). Don't "downgrade pnpm to match the lockfile
-version number." Verify lockfile sync with `pnpm install --lockfile-only` + `git diff`,
-never by changing the pnpm major.
+pnpm **>=10** (use 11.6.0 to match local). Codemagic now pins it via corepack:
+`corepack enable && corepack prepare pnpm@11.6.0 --activate`, then
+`pnpm install --no-frozen-lockfile`. Don't "downgrade pnpm to match the lockfile version
+number." Verify lockfile sync with `pnpm install --lockfile-only` + `git diff`, never by
+changing the pnpm major.
