@@ -1,8 +1,9 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, pinsTable, postsTable } from "@workspace/db";
-import { eq, and, or, ilike, desc } from "drizzle-orm";
+import { eq, and, or, ilike, desc, notInArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
+import { getHiddenDemoUserIds } from "../lib/demoData";
 
 const router = Router();
 
@@ -27,10 +28,15 @@ router.get("/", async (req, res) => {
   }
   const term = `%${q}%`;
 
+  // Hide demo users + their posts from anyone not in Demo Mode. Demo pins are
+  // friends-only, so they're already excluded by the visibility filter below.
+  const hidden = await getHiddenDemoUserIds(currentUserId(req));
+
+  const userMatch = or(ilike(usersTable.displayName, term), ilike(usersTable.username, term));
   const users = await db
     .select()
     .from(usersTable)
-    .where(or(ilike(usersTable.displayName, term), ilike(usersTable.username, term)))
+    .where(hidden.length ? and(userMatch, notInArray(usersTable.id, hidden)) : userMatch)
     .limit(10);
 
   const pins = await db
@@ -44,10 +50,11 @@ router.get("/", async (req, res) => {
     )
     .limit(10);
 
+  const postMatch = or(ilike(postsTable.title, term), ilike(postsTable.content, term));
   const posts = await db
     .select()
     .from(postsTable)
-    .where(or(ilike(postsTable.title, term), ilike(postsTable.content, term)))
+    .where(hidden.length ? and(postMatch, notInArray(postsTable.userId, hidden)) : postMatch)
     .orderBy(desc(postsTable.createdAt))
     .limit(10);
 

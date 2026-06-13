@@ -283,6 +283,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     followerSendMessages: u.followerSendMessages,
     showMatureContent: u.showMatureContent,
     isAdmin: u.isAdmin,
+    demoMode: u.demoMode,
     isSuspended: u.isSuspended,
     warningCount: u.warningCount,
     waiverAcceptedAt: u.waiverAcceptedAt ? u.waiverAcceptedAt.toISOString() : null,

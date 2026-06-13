@@ -391,7 +391,10 @@ export async function seedDemoData(): Promise<{ created: number; message: string
         horsepower: p.horsepower ?? null,
         topSpeed: p.topSpeed ?? null,
         mods: p.mods ?? null,
-        visibility: "community",
+        // Friends-only so demo content is gated by the follow graph: only the
+        // reviewer (who auto-follows every demo user) sees it. Regular users
+        // follow no demo accounts, so they never see Demo Mode content.
+        visibility: "friends",
         createdAt: hoursAgo(p.hoursAgo),
       })
       .returning({ id: postsTable.id });
@@ -504,7 +507,8 @@ export async function seedDemoData(): Promise<{ created: number; message: string
       type: p.type,
       title: p.title,
       description: p.description,
-      visibility: "community",
+      // Friends-only (see DEMO_POSTS): visible only to the reviewer via follows.
+      visibility: "friends",
       approved: true,
     });
   }
@@ -586,11 +590,17 @@ export async function refreshDemoPresence(): Promise<void> {
  * demo accounts, so their map and feed are populated on first launch. Best-effort
  * and only does anything while demo data exists. Heals partial follow state.
  */
-export async function autoFollowDemoUsers(newUserId: number): Promise<void> {
-  const targets = await db
-    .select({ id: usersTable.id })
-    .from(usersTable)
-    .where(and(eq(usersTable.isDemo, true), inArray(usersTable.username, AUTO_FOLLOW_USERNAMES)));
+export async function autoFollowDemoUsers(
+  newUserId: number,
+  options: { all?: boolean } = {},
+): Promise<void> {
+  // The reviewer (Demo Mode) follows EVERY demo user so the whole demo world is
+  // visible to them. Regular users never call this, so they follow no demo
+  // accounts and therefore never see Demo Mode content.
+  const where = options.all
+    ? eq(usersTable.isDemo, true)
+    : and(eq(usersTable.isDemo, true), inArray(usersTable.username, AUTO_FOLLOW_USERNAMES));
+  const targets = await db.select({ id: usersTable.id }).from(usersTable).where(where);
   if (!targets.length) return;
 
   const targetIds = targets.map((t) => t.id);
@@ -707,6 +717,37 @@ export async function seedNewUserExtras(newUserId: number): Promise<void> {
       },
     ]);
   }
+}
+
+/**
+ * Demo content lives on follow-gated surfaces (feed, map, pins) so it's already
+ * invisible to non-followers. But a few surfaces are global (catches list, user
+ * search, friend suggestions); they must hide demo accounts/content from anyone
+ * who is NOT in Demo Mode. Returns the demo user ids to exclude — empty for a
+ * Demo Mode viewer (the reviewer), so they see the full demo world.
+ */
+export async function getHiddenDemoUserIds(viewerId: number): Promise<number[]> {
+  const viewer = await db.query.usersTable.findFirst({
+    where: eq(usersTable.id, viewerId),
+  });
+  if (viewer?.demoMode) return [];
+  const demos = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(eq(usersTable.isDemo, true));
+  return demos.map((d) => d.id);
+}
+
+/**
+ * Turn on Demo Mode for the App Store reviewer account: make sure the demo world
+ * exists, then make the reviewer follow every demo user (so all demo boats,
+ * posts, and pins are visible to them) and seed their welcome conversation.
+ * Self-healing and best-effort — safe to call on every reviewer login.
+ */
+export async function enableDemoModeForReviewer(reviewerId: number): Promise<void> {
+  await seedDemoData();
+  await autoFollowDemoUsers(reviewerId, { all: true });
+  await seedNewUserExtras(reviewerId);
 }
 
 let refresherStarted = false;

@@ -15,6 +15,7 @@ import {
 import { eq, or, and, inArray, desc } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { createNotification } from "../lib/notify";
+import { getHiddenDemoUserIds } from "../lib/demoData";
 
 const router = Router();
 
@@ -209,7 +210,15 @@ router.get("/suggestions", async (req, res) => {
     else pendingPeerIds.add(other);
   }
   const blockedIds = new Set(await getBlockedUserIds(me));
-  const exclude = new Set<number>([me, ...myFriendIds, ...pendingPeerIds, ...blockedIds]);
+  // Never suggest demo accounts to anyone not in Demo Mode (empty for reviewer).
+  const hiddenDemoIds = await getHiddenDemoUserIds(me);
+  const exclude = new Set<number>([
+    me,
+    ...myFriendIds,
+    ...pendingPeerIds,
+    ...blockedIds,
+    ...hiddenDemoIds,
+  ]);
 
   const scores = new Map<number, number>();
   const mutualCounts = new Map<number, number>();

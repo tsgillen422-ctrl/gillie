@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, catchesTable } from "@workspace/db";
-import { eq, and, desc, or } from "drizzle-orm";
+import { eq, and, desc, or, notInArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { moderateContent } from "../lib/moderation";
+import { getHiddenDemoUserIds } from "../lib/demoData";
 
 const router = Router();
 
@@ -64,10 +65,16 @@ router.get("/", async (req, res) => {
       )
       .orderBy(desc(catchesTable.caughtAt));
   } else {
+    // Global feed: hide demo authors' catches from anyone not in Demo Mode.
+    const hidden = await getHiddenDemoUserIds(currentUserId(req));
+    const visibility = or(
+      eq(catchesTable.isPrivate, false),
+      eq(catchesTable.userId, currentUserId(req)),
+    );
     rows = await db
       .select()
       .from(catchesTable)
-      .where(or(eq(catchesTable.isPrivate, false), eq(catchesTable.userId, currentUserId(req))))
+      .where(hidden.length ? and(visibility, notInArray(catchesTable.userId, hidden)) : visibility)
       .orderBy(desc(catchesTable.caughtAt));
   }
   res.json(await Promise.all(rows.map(formatCatch)));

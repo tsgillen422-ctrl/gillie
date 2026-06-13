@@ -61,6 +61,7 @@ export interface User {
   followerSendMessages?: boolean;
   showMatureContent?: boolean;
   isAdmin?: boolean;
+  demoMode?: boolean;
   isSuspended?: boolean;
   warningCount?: number;
   /** @nullable */
