@@ -8,6 +8,11 @@ workflows:
       # Name the key exactly "AppStoreConnect" (or change the name here to match).
       app_store_connect: AppStoreConnect
     environment:
+      groups:
+        # Codemagic env-var group that MUST contain CERTIFICATE_PRIVATE_KEY -- a PEM
+        # private key, marked as a SECURE variable. Apple never returns a cert's
+        # private key, so CI must own one to sign. See setup steps in chat.
+        - appstore_signing
       ios_signing:
         distribution_type: app_store
         bundle_identifier: app.dalehollowlake
@@ -72,20 +77,23 @@ workflows:
           # error, instead of being silently masked by use-profiles (which exits 0
           # even when no profile was installed).
           set -e
-          echo "==> Distribution signing certificates known to the API key:"
-          echo "--- type DISTRIBUTION (modern 'Apple Distribution'): ---"
-          app-store-connect certificates list --type DISTRIBUTION || true
-          echo "--- type IOS_DISTRIBUTION (legacy 'iOS Distribution'): ---"
-          app-store-connect certificates list --type IOS_DISTRIBUTION || true
+          # Apple only ever returns the PUBLIC certificate; its private key lives on
+          # whoever created it. We supply our own private key (CERTIFICATE_PRIVATE_KEY,
+          # a Codemagic SECURE var) so fetch-signing-files can pair it with a
+          # distribution cert -- or create one from it via --create -- and load the
+          # signing identity into the build keychain.
+          keychain initialize
           # Wipe any pre-installed provisioning profiles so a stale push-less one
-          # can't be reused, then fetch/create the App Store profile (+ distribution
-          # certificate). A freshly created profile carries every capability
-          # currently enabled on the App ID, including Push (aps-environment).
+          # can't be reused; --create then makes a fresh profile carrying every
+          # capability currently on the App ID, including Push (aps-environment).
           rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision 2>/dev/null || true
           echo "==> Fetching / creating App Store signing files for $BUNDLE_ID"
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
+            --certificate-key @env:CERTIFICATE_PRIVATE_KEY \
             --create
+          # Add the fetched/created distribution cert (+ our private key) to the keychain.
+          keychain add-certificates
           echo "==> Provisioning profiles now installed:"
           ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" || true
           echo "==> Inspecting each profile for the Push (aps-environment) entitlement:"
