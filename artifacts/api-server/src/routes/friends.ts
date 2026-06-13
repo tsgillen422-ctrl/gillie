@@ -114,7 +114,10 @@ async function getDirectionalIds(
 
 router.get("/", async (req, res) => {
   const me = currentUserId(req);
-  const friendIds = await getDirectionalIds(await getFollowingIds(me), me);
+  const hidden = await getHiddenDemoUserIds(me);
+  const friendIds = (await getDirectionalIds(await getFollowingIds(me), me)).filter(
+    (id) => !hidden.includes(id)
+  );
   if (!friendIds.length) return res.json([]);
   const friends = await Promise.all(
     friendIds.map((id) =>
@@ -126,12 +129,14 @@ router.get("/", async (req, res) => {
 
 router.get("/locations", async (req, res) => {
   const me = currentUserId(req);
+  const hidden = await getHiddenDemoUserIds(me);
   // The map shows people I follow. A non-mutual followee can hide their live
   // location from followers they don't follow back via followerSeeLocation.
-  const [followingIds, myFollowerIds] = await Promise.all([
+  const [followingIdsRaw, myFollowerIds] = await Promise.all([
     getDirectionalIds(await getFollowingIds(me), me),
     getFollowerIds(me),
   ]);
+  const followingIds = followingIdsRaw.filter((id) => !hidden.includes(id));
   if (!followingIds.length) return res.json([]);
   const mutualSet = new Set(myFollowerIds);
   const friends = await Promise.all(
@@ -352,9 +357,11 @@ router.get("/blocks", async (req, res) => {
   const rows = await db.query.blocksTable.findMany({
     where: eq(blocksTable.blockerId, currentUserId(req)),
   });
-  if (!rows.length) return res.json([]);
+  const hidden = await getHiddenDemoUserIds(currentUserId(req));
+  const blockedIds = rows.map((r) => r.blockedId).filter((id) => !hidden.includes(id));
+  if (!blockedIds.length) return res.json([]);
   const users = await db.query.usersTable.findMany({
-    where: inArray(usersTable.id, rows.map((r) => r.blockedId)),
+    where: inArray(usersTable.id, blockedIds),
   });
   res.json(await Promise.all(users.map((u) => formatUserWithCounts(u))));
 });
@@ -363,6 +370,8 @@ router.get("/:userId/followers", async (req, res) => {
   const targetId = parseInt(req.params.userId);
   const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
   if (!target) return res.status(404).json({ error: "User not found" });
+  const hidden = await getHiddenDemoUserIds(currentUserId(req));
+  if (hidden.includes(targetId)) return res.status(404).json({ error: "User not found" });
   if (targetId !== currentUserId(req)) {
     const blocked = await db.query.blocksTable.findFirst({
       where: or(
@@ -375,7 +384,9 @@ router.get("/:userId/followers", async (req, res) => {
       return res.status(403).json({ error: "This user has hidden their followers" });
     }
   }
-  const ids = await getDirectionalIds(await getFollowerIds(targetId), currentUserId(req));
+  const ids = (await getDirectionalIds(await getFollowerIds(targetId), currentUserId(req))).filter(
+    (id) => !hidden.includes(id)
+  );
   if (!ids.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, ids) });
   res.json(await Promise.all(users.map(formatUserWithCounts)));
@@ -386,6 +397,8 @@ router.get("/:userId/friends", async (req, res) => {
   if (Number.isNaN(targetId)) return res.status(400).json({ error: "Invalid user id" });
   const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
   if (!target) return res.status(404).json({ error: "User not found" });
+  const hidden = await getHiddenDemoUserIds(currentUserId(req));
+  if (hidden.includes(targetId)) return res.status(404).json({ error: "User not found" });
   if (targetId !== currentUserId(req)) {
     const blocked = await db.query.blocksTable.findFirst({
       where: or(
@@ -404,10 +417,12 @@ router.get("/:userId/friends", async (req, res) => {
     getFollowingIds(targetId),
   ]);
   const followingSet = new Set(tFollowing);
-  const friendIds = await getDirectionalIds(
-    tFollowers.filter((id) => followingSet.has(id)),
-    currentUserId(req)
-  );
+  const friendIds = (
+    await getDirectionalIds(
+      tFollowers.filter((id) => followingSet.has(id)),
+      currentUserId(req)
+    )
+  ).filter((id) => !hidden.includes(id));
   if (!friendIds.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, friendIds) });
   res.json(await Promise.all(users.map(formatUserWithCounts)));
@@ -426,13 +441,20 @@ router.get("/:userId/mutual", async (req, res) => {
     });
     return new Set(rows.map((r) => (r.followerId === uid ? r.followeeId : r.followerId)));
   };
+  const hidden = await getHiddenDemoUserIds(me);
+  if (hidden.includes(targetId)) return res.json({ count: 0, users: [] });
   const [mine, theirs, blockedIds] = await Promise.all([
     acceptedFor(me),
     acceptedFor(targetId),
     getBlockedUserIds(me),
   ]);
   const mutualIds = [...mine].filter(
-    (id) => theirs.has(id) && id !== me && id !== targetId && !blockedIds.includes(id)
+    (id) =>
+      theirs.has(id) &&
+      id !== me &&
+      id !== targetId &&
+      !blockedIds.includes(id) &&
+      !hidden.includes(id)
   );
   if (!mutualIds.length) return res.json({ count: 0, users: [] });
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, mutualIds) });
@@ -444,6 +466,8 @@ router.get("/:userId/following", async (req, res) => {
   const targetId = parseInt(req.params.userId);
   const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
   if (!target) return res.status(404).json({ error: "User not found" });
+  const hidden = await getHiddenDemoUserIds(currentUserId(req));
+  if (hidden.includes(targetId)) return res.status(404).json({ error: "User not found" });
   if (targetId !== currentUserId(req)) {
     const blocked = await db.query.blocksTable.findFirst({
       where: or(
@@ -456,7 +480,9 @@ router.get("/:userId/following", async (req, res) => {
       return res.status(403).json({ error: "This user has hidden who they follow" });
     }
   }
-  const ids = await getDirectionalIds(await getFollowingIds(targetId), currentUserId(req));
+  const ids = (await getDirectionalIds(await getFollowingIds(targetId), currentUserId(req))).filter(
+    (id) => !hidden.includes(id)
+  );
   if (!ids.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, ids) });
   res.json(await Promise.all(users.map(formatUserWithCounts)));
@@ -477,6 +503,10 @@ router.post("/:userId/follow", async (req, res) => {
 
   const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
   if (!target) return res.status(404).json({ error: "User not found" });
+  // Demo accounts are invisible to non-demo users, so they can't be followed by
+  // ID (which would otherwise auto-accept and unlock demo friends-only content).
+  const hiddenDemoIds = await getHiddenDemoUserIds(currentUserId(req));
+  if (hiddenDemoIds.includes(targetId)) return res.status(404).json({ error: "User not found" });
   const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, currentUserId(req)) });
 
   const outgoing = await db.query.friendRequestsTable.findFirst({
@@ -524,9 +554,11 @@ router.get("/mutes", async (req, res) => {
   const rows = await db.query.mutesTable.findMany({
     where: eq(mutesTable.muterId, currentUserId(req)),
   });
-  if (!rows.length) return res.json([]);
+  const hidden = await getHiddenDemoUserIds(currentUserId(req));
+  const mutedIds = rows.map((r) => r.mutedId).filter((id) => !hidden.includes(id));
+  if (!mutedIds.length) return res.json([]);
   const users = await db.query.usersTable.findMany({
-    where: inArray(usersTable.id, rows.map((r) => r.mutedId)),
+    where: inArray(usersTable.id, mutedIds),
   });
   res.json(await Promise.all(users.map((u) => formatUserWithCounts(u))));
 });
@@ -538,6 +570,8 @@ router.post("/:userId/mute", async (req, res) => {
   }
   const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
   if (!target) return res.status(404).json({ error: "User not found" });
+  const hiddenDemoIds = await getHiddenDemoUserIds(currentUserId(req));
+  if (hiddenDemoIds.includes(targetId)) return res.status(404).json({ error: "User not found" });
   const existing = await db.query.mutesTable.findFirst({
     where: and(eq(mutesTable.muterId, currentUserId(req)), eq(mutesTable.mutedId, targetId)),
   });
@@ -562,6 +596,8 @@ router.post("/:userId/block", async (req, res) => {
   }
   const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
   if (!target) return res.status(404).json({ error: "User not found" });
+  const hiddenDemoIds = await getHiddenDemoUserIds(currentUserId(req));
+  if (hiddenDemoIds.includes(targetId)) return res.status(404).json({ error: "User not found" });
   await db
     .delete(friendRequestsTable)
     .where(

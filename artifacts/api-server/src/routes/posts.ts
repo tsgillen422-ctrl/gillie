@@ -5,6 +5,7 @@ import { eq, and, gte, sql, desc, count, inArray, notInArray, or, asc } from "dr
 import { currentUserId } from "../middlewares/auth";
 import { canViewPin, getFriendIds as getPinFriendIds } from "./pins";
 import { moderateContent } from "../lib/moderation";
+import { getHiddenDemoUserIds } from "../lib/demoData";
 
 const router = Router();
 const ALLOWED_REACTIONS = ["thumbsup", "thumbsdown", "heart", "laugh", "sad", "angry"];
@@ -277,8 +278,18 @@ router.post("/:postId/share", async (req, res) => {
 
 router.get("/summary", async (req, res) => {
   const uid = currentUserId(req);
-  const [postCountResult] = await db.select({ value: count() }).from(postsTable);
-  const [eventCountResult] = await db.select({ value: count() }).from(postsTable).where(eq(postsTable.postType, "event"));
+  // Demo authors' content is invisible to anyone not in Demo Mode (hidden is
+  // empty for the reviewer, so they still see the full demo world).
+  const hidden = await getHiddenDemoUserIds(uid);
+  const eventOnly = eq(postsTable.postType, "event");
+  const [postCountResult] = await db
+    .select({ value: count() })
+    .from(postsTable)
+    .where(hidden.length ? notInArray(postsTable.userId, hidden) : undefined);
+  const [eventCountResult] = await db
+    .select({ value: count() })
+    .from(postsTable)
+    .where(hidden.length ? and(eventOnly, notInArray(postsTable.userId, hidden)) : eventOnly);
   // "Pins" must match exactly what the viewer sees via GET /pins (and on the
   // map): filtered by canViewPin (own, approved public/community, or
   // friends-only from a friend). A raw count() of every row over-counts
@@ -308,7 +319,7 @@ router.get("/summary", async (req, res) => {
   const upcomingEvents = await db
     .select()
     .from(postsTable)
-    .where(eq(postsTable.postType, "event"))
+    .where(hidden.length ? and(eventOnly, notInArray(postsTable.userId, hidden)) : eventOnly)
     .orderBy(desc(postsTable.createdAt))
     .limit(3);
 
@@ -338,7 +349,11 @@ router.get("/summary", async (req, res) => {
   const [fishingReportsResult] = await db
     .select({ value: count() })
     .from(catchesTable)
-    .where(eq(catchesTable.isPrivate, false));
+    .where(
+      hidden.length
+        ? and(eq(catchesTable.isPrivate, false), notInArray(catchesTable.userId, hidden))
+        : eq(catchesTable.isPrivate, false)
+    );
 
   res.json({
     totalPosts: postCountResult.value,

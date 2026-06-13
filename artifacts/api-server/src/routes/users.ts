@@ -32,6 +32,7 @@ import { clerkClient } from "@clerk/express";
 import { currentUserId } from "../middlewares/auth";
 import { createNotifications } from "../lib/notify";
 import { logger } from "../lib/logger";
+import { getHiddenDemoUserIds } from "../lib/demoData";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -500,9 +501,12 @@ router.get("/search", async (req, res) => {
   const q = String(req.query.q || "");
   if (!q) return res.json([]);
   const blockedIds = await getBlockedUserIds(uid);
+  // Hide demo users from anyone not in Demo Mode (keeps demo world reviewer-only).
+  const hiddenDemoIds = await getHiddenDemoUserIds(uid);
+  const excludeIds = [...blockedIds, ...hiddenDemoIds];
   const matchClause = or(ilike(usersTable.username, `%${q}%`), ilike(usersTable.displayName, `%${q}%`));
-  const where = blockedIds.length
-    ? and(matchClause, notInArray(usersTable.id, blockedIds))
+  const where = excludeIds.length
+    ? and(matchClause, notInArray(usersTable.id, excludeIds))
     : matchClause;
   const users = await db.select().from(usersTable).where(where).limit(20);
   const withCounts = await Promise.all(
@@ -621,6 +625,11 @@ router.get("/:userId", async (req, res) => {
   const userId = parseInt(req.params.userId);
   const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, userId) });
   if (!user) return res.status(404).json({ error: "User not found" });
+  // Demo profiles are invisible (404) to anyone not in Demo Mode.
+  if (userId !== uid) {
+    const hiddenDemoIds = await getHiddenDemoUserIds(uid);
+    if (hiddenDemoIds.includes(userId)) return res.status(404).json({ error: "User not found" });
+  }
 
   let friendStatus = "none";
   if (userId === uid) {

@@ -4,6 +4,7 @@ import { usersTable, pinsTable, pinLikesTable, pinFavoritesTable, friendRequests
 import { eq, and, or, sql, inArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { moderateContent } from "../lib/moderation";
+import { getHiddenDemoUserIds } from "../lib/demoData";
 
 const router = Router();
 
@@ -109,6 +110,11 @@ router.get("/", async (req, res) => {
 
   let visiblePins;
   if (profileUserId !== undefined) {
+    // A demo user's pins are invisible to anyone not in Demo Mode.
+    if (profileUserId !== uid) {
+      const hidden = await getHiddenDemoUserIds(uid);
+      if (hidden.includes(profileUserId)) return res.json([]);
+    }
     // Pins shown on a user's profile: their friends-only pins are visible to
     // anyone viewing the profile, plus their approved public/community pins.
     // Unapproved public/community pins are only shown to the creator themselves.

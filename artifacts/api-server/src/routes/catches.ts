@@ -55,6 +55,11 @@ router.get("/", async (req, res) => {
     : undefined;
   let rows;
   if (profileUserId !== undefined) {
+    // A demo user's catches are invisible to anyone not in Demo Mode.
+    if (profileUserId !== currentUserId(req)) {
+      const hidden = await getHiddenDemoUserIds(currentUserId(req));
+      if (hidden.includes(profileUserId)) return res.json([]);
+    }
     rows = await db
       .select()
       .from(catchesTable)

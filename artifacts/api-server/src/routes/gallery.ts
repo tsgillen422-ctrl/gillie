@@ -4,6 +4,7 @@ import { usersTable, galleryItemsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { moderateContent } from "../lib/moderation";
+import { getHiddenDemoUserIds } from "../lib/demoData";
 
 const router = Router();
 
@@ -46,6 +47,11 @@ router.get("/", async (req, res) => {
   const profileUserId = req.query.profileUserId
     ? parseInt(req.query.profileUserId as string)
     : currentUserId(req);
+  // A demo user's gallery is invisible to anyone not in Demo Mode.
+  if (profileUserId !== currentUserId(req)) {
+    const hidden = await getHiddenDemoUserIds(currentUserId(req));
+    if (hidden.includes(profileUserId)) return res.json([]);
+  }
   const rows = await db
     .select()
     .from(galleryItemsTable)

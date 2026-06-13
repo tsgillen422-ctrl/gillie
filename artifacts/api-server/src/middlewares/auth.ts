@@ -18,7 +18,9 @@ const ADMIN_CLERK_IDS = (process.env.ADMIN_CLERK_IDS ?? "")
 // ensureReviewerClerkAccount, so the reviewer signs IN without a code), gets
 // admin, and runs in Demo Mode (a fully populated demo world, isolated so that
 // regular users never see it).
-export const REVIEWER_EMAIL = "apple-review@gillie.test";
+// NOTE: must be a real, non-reserved TLD — Clerk rejects RFC 2606 reserved
+// TLDs (.test/.example/.invalid/.localhost) with form_param_format_invalid.
+export const REVIEWER_EMAIL = "apple-review@gillie.app";
 
 function isReviewerEmail(email: string | null | undefined): boolean {
   return !!email && email.trim().toLowerCase() === REVIEWER_EMAIL;

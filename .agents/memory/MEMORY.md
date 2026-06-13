@@ -33,7 +33,7 @@
 - [Mobile matches web chrome](mobile-matches-web-chrome.md) — gillie-mobile must mirror dhl-app's slim clean header; NO teal gradient banner headers (the root "looks nothing like web" cause).
 - [Clerk Expo signals finalize](clerk-expo-signals-finalize.md) — gillie-mobile new signals API: finalize() THROWS unless status==="complete"; gate on (live) status + try/catch, never call it unconditionally.
 - [App Store frame gotchas](appstore-frame-gotchas.md) — translucent bg-gradient classes render LIGHT (kill white captions); status bar is 150px absolute overlay so in-screen headers need ≥150px top padding.
-- [Demo / seed data](demo-seed-data.md) — App-Review demo world: isDemo flag, auto-follow on signup + 2-min presence refresher make boats render; seeding must self-heal partial state.
+- [Demo / seed data](demo-seed-data.md) — reviewer-only Demo Mode (users.demoMode≠isDemo); demo posts/pins use 'friends' visibility + only reviewer auto-follows; gate getHiddenDemoUserIds at EVERY user/:userId surface.
 - [Self-serve account deletion](account-deletion.md) — DELETE /users/me must be registered before /:userId; also delete the Clerk user or re-login resurrects a ghost account.
 - [Mature content gating](mature-content-gating.md) — moderation is item-level; gate EVERY moderated field everywhere it renders (incl. pin title, catch species, conversation-list preview), or it leaks.
 - [One-way follow model](follow-model.md) — accepted row = directional follow; mutual = both rows; follower-privacy (location/posts/messages) must be gated at EVERY surface incl. group DM creation.

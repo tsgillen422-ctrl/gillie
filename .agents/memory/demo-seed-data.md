@@ -9,15 +9,19 @@ Demo accounts are flagged `users.isDemo = true`. All seed logic lives in
 `artifacts/api-server/src/lib/demoData.ts`; admin-gated toggle endpoints are
 `/admin/demo-data` (GET/POST/DELETE).
 
-## Why demo boats actually render on the map
-A boat only shows to a viewer when ALL hold: the viewer FOLLOWS the user,
-`shareLocation=true`, `followerSeeLocation=true`, `isOnWater=true`, and
-`lastSeen` within the 10-min presence window. So demo data alone is not enough —
-two mechanisms make boats visible:
-- **autoFollowDemoUsers** runs in `auth.ts provisionLocalUser` so every NEW user
-  auto-follows (and is followed back by) the `autoFollow` demo accounts.
-- **startDemoPresenceRefresher** (called in `index.ts` on boot) ticks every 2 min
-  to refresh `lastSeen` + jitter coords, keeping demo boats inside the window.
+## Two audiences: legacy demo-on-signup vs reviewer-only Demo Mode
+There are now TWO isolation models in play; do not conflate them.
+- **Reviewer Demo Mode (current App Store model):** a single pre-created Clerk
+  reviewer (email constant in `auth.ts`, on a real TLD — Clerk rejects reserved
+  `.test`) is flagged `users.demoMode = true` (NOT `isDemo`; isDemo must stay
+  false on the reviewer or clearDemoData/countDemoUsers would delete/miscount it).
+  Demo posts/pins seed with `visibility: "friends"` and ONLY the reviewer
+  auto-follows demo users, so regular users see nothing demo. `demoMode` also
+  drives a UI "Demo Mode" badge.
+- A boat only renders when the viewer FOLLOWS the user AND `shareLocation`,
+  `followerSeeLocation`, `isOnWater` all true AND `lastSeen` is within the 10-min
+  window. `startDemoPresenceRefresher` (index.ts, every 2 min) keeps demo boats
+  fresh; only the reviewer's auto-follow makes them visible to that account.
 
 ## Durable rules / gotchas
 - **Seeding must be self-healing, not just "skip if any demo user exists."** A
@@ -26,8 +30,17 @@ two mechanisms make boats visible:
   `0 < existing < len` → clearDemoData() then rebuild.
 - **autoFollow must heal partial follow state** — insert only the missing target
   pairs, never early-return just because one follow row exists.
-- Posts/pins use `visibility: "community"` so they show to everyone (friends-only
-  needs a follow). Community pins must be `approved: true` to render.
+- Demo posts/pins use `visibility: "friends"` (NOT "community") — visibility is
+  the primary isolation lever: only the auto-following reviewer can see them.
+- **Demo isolation must be enforced at EVERY surface, not just follow-gated ones.**
+  `getHiddenDemoUserIds(viewer)` returns `[]` for a demoMode viewer else all
+  isDemo ids; non-follow-gated reads must exclude/404 those ids. The friends
+  router was the worst offender — discovery leaked through follower/following/
+  friends/mutual lists, the self `/` + `/locations` lists, `/blocks` + `/mutes`,
+  AND follow/mute/block-by-id (existence oracle). Also posts `/summary`
+  (counts + upcomingEvents) and users `/search` + `/:userId`. Rule: any endpoint
+  returning a user/profile or accepting a `:userId` is a potential demo leak —
+  gate it.
 - clearDemoData reuses `deleteUserAndData` (exported from routes/users.ts) inside
   a tx — there is no FK cascade, so that helper is the canonical cleanup path.
 - Benign import cycle auth → demoData → users → auth; safe because refs are all
