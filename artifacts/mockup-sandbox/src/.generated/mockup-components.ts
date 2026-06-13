@@ -12,5 +12,8 @@ export const modules: ModuleMap = {
   "./components/mockups/appstore/Frame07.tsx": () => import("../components/mockups/appstore/Frame07.tsx"),
   "./components/mockups/appstore/Frame08.tsx": () => import("../components/mockups/appstore/Frame08.tsx"),
   "./components/mockups/appstore/Frame09.tsx": () => import("../components/mockups/appstore/Frame09.tsx"),
-  "./components/mockups/appstore/Frame10.tsx": () => import("../components/mockups/appstore/Frame10.tsx")
+  "./components/mockups/appstore/Frame10.tsx": () => import("../components/mockups/appstore/Frame10.tsx"),
+  "./components/mockups/appstore/Frame11.tsx": () => import("../components/mockups/appstore/Frame11.tsx"),
+  "./components/mockups/appstore/Frame12.tsx": () => import("../components/mockups/appstore/Frame12.tsx"),
+  "./components/mockups/appstore/Frame13.tsx": () => import("../components/mockups/appstore/Frame13.tsx")
 };

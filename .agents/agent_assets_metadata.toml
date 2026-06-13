@@ -149,3 +149,21 @@ id = "vq8e4HH6BD_1iD5Pf_12B"
 uri = "file://appstore-screenshots/10.jpg"
 type = "image"
 title = "10 — Closing lockup"
+
+[[outputs]]
+id = "umpBOo5ysiQ0-XcjaTkQ1"
+uri = "file://appstore-screenshots/11.jpg"
+type = "image"
+title = "11 — Messages"
+
+[[outputs]]
+id = "Kl86JZuYBtbEMJaD1-0vI"
+uri = "file://appstore-screenshots/12.jpg"
+type = "image"
+title = "12 — Find Your People (Boater Network)"
+
+[[outputs]]
+id = "bEDVL4vP1kHKHcHppeRBt"
+uri = "file://appstore-screenshots/13.jpg"
+type = "image"
+title = "13 — Browse the Day's Catches"
