@@ -15,9 +15,11 @@ const ADMIN_CLERK_IDS = (process.env.ADMIN_CLERK_IDS ?? "")
 
 // The App Store reviewer account. This email bypasses email verification (the
 // Clerk user is pre-created with a verified email + password by
-// ensureReviewerClerkAccount, so the reviewer signs IN without a code), gets
-// admin, and runs in Demo Mode (a fully populated demo world, isolated so that
-// regular users never see it).
+// ensureReviewerClerkAccount, so the reviewer signs IN without a code) and runs
+// in Demo Mode (a fully populated demo world, isolated so regular users never
+// see it). It is a STANDARD non-admin user — Apple reviewers must see the app
+// exactly as a regular user, so Demo Mode grants content visibility only, never
+// admin access.
 // NOTE: must be a real, non-reserved TLD — Clerk rejects RFC 2606 reserved
 // TLDs (.test/.example/.invalid/.localhost) with form_param_format_invalid.
 export const REVIEWER_EMAIL = "apple-review@gillie.app";
@@ -87,8 +89,10 @@ export async function provisionLocalUser(clerkUserId: string) {
       username,
       displayName,
       avatarUrl: cu.imageUrl ?? null,
-      // The App Store reviewer account gets admin + Demo Mode automatically.
-      isAdmin: reviewer,
+      // The App Store reviewer is a STANDARD (non-admin) user — Apple reviewers
+      // must see the app exactly as a regular user. They only get Demo Mode so
+      // the world is populated for testing; Demo Mode grants no admin access.
+      isAdmin: false,
       demoMode: reviewer,
     })
     .onConflictDoNothing({ target: usersTable.clerkId })
@@ -115,6 +119,20 @@ export async function provisionLocalUser(clerkUserId: string) {
   throw new Error("Failed to provision local user");
 }
 
+// Demote the App Store reviewer (Demo Mode) back to a standard user if an older
+// account row was created with admin. Apple reviewers must have no admin access;
+// only writes once (when isAdmin flips off), so it's a no-op afterwards.
+async function ensureReviewerNotAdmin(user: LocalUser): Promise<LocalUser> {
+  if (!user.demoMode || !user.isAdmin) return user;
+  const [updated] = await db
+    .update(usersTable)
+    .set({ isAdmin: false })
+    .where(eq(usersTable.id, user.id))
+    .returning();
+  logger.info({ userId: user.id }, "Demoted App Store reviewer to standard user");
+  return updated ?? user;
+}
+
 export async function requireAuth(
   req: Request,
   res: Response,
@@ -132,6 +150,7 @@ export async function requireAuth(
     });
     if (!user) user = await provisionLocalUser(clerkUserId);
     user = await ensureOwnerAdmin(user);
+    user = await ensureReviewerNotAdmin(user);
     healReviewerDemo(user);
     req.localUserId = user.id;
     next();

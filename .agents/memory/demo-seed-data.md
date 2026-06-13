@@ -18,6 +18,13 @@ There are now TWO isolation models in play; do not conflate them.
   Demo posts/pins seed with `visibility: "friends"` and ONLY the reviewer
   auto-follows demo users, so regular users see nothing demo. `demoMode` also
   drives a UI "Demo Mode" badge.
+  - **The reviewer is a STANDARD non-admin user** (`isAdmin=false`). Apple
+    reviewers must see the app exactly as a regular user — no admin panels,
+    moderation, user mgmt, analytics, config. `demoMode` only controls demo-world
+    visibility and grants NO admin. `ensureReviewerNotAdmin` in `auth.ts` demotes
+    any older reviewer row (demoMode && isAdmin) on login. Do NOT re-grant admin
+    to the reviewer. **Why:** demoMode and isAdmin are orthogonal; the reviewer
+    needs populated content, not elevated access.
 - A boat only renders when the viewer FOLLOWS the user AND `shareLocation`,
   `followerSeeLocation`, `isOnWater` all true AND `lastSeen` is within the 10-min
   window. `startDemoPresenceRefresher` (index.ts, every 2 min) keeps demo boats
