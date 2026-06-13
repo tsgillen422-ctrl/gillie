@@ -17,7 +17,7 @@ workflows:
         XCODE_SCHEME: "App"
         # Numeric App Store Connect "Apple ID" of the app record. Fill this in after you
         # create the app in App Store Connect (App Information -> General -> Apple ID).
-        APP_STORE_APPLE_ID: 0000000000
+        APP_STORE_APPLE_ID: 6779852403
       node: 20
       xcode: latest
     scripts:
