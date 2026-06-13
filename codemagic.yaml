@@ -18,27 +18,27 @@ workflows:
         # Numeric App Store Connect "Apple ID" of the app record. Fill this in after you
         # create the app in App Store Connect (App Information -> General -> Apple ID).
         APP_STORE_APPLE_ID: 6779852403
+        # Keep corepack non-interactive so it never stalls waiting for a prompt.
+        COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
       node: 20
       xcode: latest
     scripts:
       - name: Install pnpm
         script: |
-          # Pin pnpm via corepack. 11.6.0 matches the local toolchain that
-          # generated pnpm-lock.yaml and is required for the workspace's
-          # catalog:/overrides features. This project is pnpm-only (the root
-          # preinstall script rejects npm/yarn) -- there is no Yarn config.
-          # Update corepack first: Node 20's bundled corepack can fail to fetch
-          # pnpm with a stale signing-key error ("Cannot find matching keyid").
-          npm install -g corepack@latest
-          export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+          # pnpm-only project (the root preinstall script rejects npm/yarn; there
+          # is no Yarn config). Bootstrap pnpm deterministically via corepack only
+          # -- no `npm install -g pnpm`, no partial installs. 11.6.0 matches the
+          # local toolchain that generated pnpm-lock.yaml and is required for the
+          # workspace's catalog:/overrides features.
           corepack enable
           corepack prepare pnpm@11.6.0 --activate
+          # Debug output before install:
+          node -v
+          corepack -v
           pnpm -v
       - name: Install dependencies
         script: |
-          # Lockfile is already in sync under pnpm 11; --no-frozen-lockfile keeps
-          # the install resilient without changing dependencies.
-          pnpm install --no-frozen-lockfile
+          pnpm install --reporter=ndjson
       - name: Build web app
         script: |
           pnpm --filter @workspace/dhl-app run build
