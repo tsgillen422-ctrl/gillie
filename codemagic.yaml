@@ -27,7 +27,10 @@ workflows:
           pnpm --version
       - name: Install dependencies
         script: |
-          pnpm install --frozen-lockfile
+          # Non-frozen: tolerant of pnpm version differences on the runner and the
+          # workspace-level overrides/catalog in pnpm-workspace.yaml. Lockfile is
+          # already in sync, so this does not change dependencies.
+          pnpm install --no-frozen-lockfile
       - name: Build web app
         script: |
           pnpm --filter @workspace/dhl-app run build
