@@ -1,0 +1,24 @@
+---
+name: pnpm version must be 10/11 (overrides live in pnpm-workspace.yaml)
+description: Why any CI/tooling for this monorepo must use pnpm >=10, not pnpm 9, or frozen installs fail.
+---
+
+This monorepo keeps `overrides:` (90+ entries nulling out platform-specific optional
+deps), plus `catalog:`, `minimumReleaseAge:`, and `onlyBuiltDependencies:` in
+**`pnpm-workspace.yaml`** — NOT in root `package.json` (`package.json` has no `pnpm`
+block at all). Local toolchain is **pnpm 11.6.0**; lockfile is `lockfileVersion: '9.0'`.
+
+**The trap:** `lockfileVersion: '9.0'` does NOT mean "use pnpm 9." Lockfile format 9.0
+is used by pnpm 9, 10, and 11. Workspace-level `overrides`/`catalog` are pnpm **10+**
+features. If CI runs pnpm 9, it can't read those overrides, so resolved overrides come
+out empty while the lockfile records 90+ → `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` on
+`--frozen-lockfile`. The lockfile itself is fine (`pnpm install --lockfile-only` under
+pnpm 11 produces zero diff).
+
+**Why:** Codemagic CI for the iOS Capacitor build pinned `npm install -g pnpm@9.0.0`,
+which broke frozen installs even though the lockfile was in sync.
+
+**How to apply:** Any CI / external build (Codemagic, GitHub Actions, etc.) must install
+pnpm **>=10** (use 11.6.0 to match local). Don't "downgrade pnpm to match the lockfile
+version number." Verify lockfile sync with `pnpm install --lockfile-only` + `git diff`,
+never by changing the pnpm major.
