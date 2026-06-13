@@ -190,13 +190,57 @@ export async function ensureReviewerClerkAccount(): Promise<void> {
   try {
     const res = await clerkClient.users.getUserList({ emailAddress: [REVIEWER_EMAIL] });
     const list = Array.isArray(res) ? res : (res?.data ?? []);
-    if (list.length > 0) return;
-    await clerkClient.users.createUser({
-      emailAddress: [REVIEWER_EMAIL],
-      password,
-      skipPasswordChecks: true,
-    });
-    logger.info("Created App Store reviewer Clerk account (verified email)");
+    if (list.length === 0) {
+      await clerkClient.users.createUser({
+        emailAddress: [REVIEWER_EMAIL],
+        password,
+        skipPasswordChecks: true,
+      });
+      logger.info("Created App Store reviewer Clerk account (verified email)");
+      return;
+    }
+
+    // The account already exists — self-heal it so the reviewer can ALWAYS sign
+    // in with just email + password and never gets a verification code. A
+    // partially-provisioned account (e.g. created by a prior sign-up attempt)
+    // can have an unverified email or no password; in that state Clerk falls
+    // back to an email_code first factor, mailing a code to the reviewer's
+    // unreachable mailbox. Re-running on every boot keeps the account usable.
+    const user = list[0];
+
+    // 1. Ensure the password matches the current secret.
+    try {
+      await clerkClient.users.updateUser(user.id, {
+        password,
+        skipPasswordChecks: true,
+      });
+    } catch (err) {
+      logger.warn({ err }, "reviewer password sync failed");
+    }
+
+    // 2. Ensure the email address is verified (so password is a usable factor).
+    const emailObj = (user.emailAddresses ?? []).find(
+      (e) => e.emailAddress.trim().toLowerCase() === REVIEWER_EMAIL,
+    );
+    if (emailObj && emailObj.verification?.status !== "verified") {
+      try {
+        await clerkClient.emailAddresses.updateEmailAddress(emailObj.id, {
+          verified: true,
+        });
+      } catch (err) {
+        logger.warn({ err }, "reviewer email verification sync failed");
+      }
+    }
+
+    // 3. Strip any enrolled second factor defensively — the reviewer mailbox /
+    // phone are unreachable, so MFA would lock them out. No-op when none exists.
+    try {
+      await clerkClient.users.disableUserMFA(user.id);
+    } catch {
+      // No MFA enrolled (the common case) — ignore.
+    }
+
+    logger.info("Synced App Store reviewer Clerk account");
   } catch (err) {
     logger.error({ err }, "ensureReviewerClerkAccount failed");
   }
