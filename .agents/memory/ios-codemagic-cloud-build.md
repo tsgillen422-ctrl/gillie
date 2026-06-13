@@ -61,13 +61,20 @@ shared `App.xcscheme` so `xcode-project build-ipa --scheme App` resolves.
 - The AppStoreConnect integration exports `APP_STORE_CONNECT_ISSUER_ID/KEY_IDENTIFIER/
   PRIVATE_KEY` to the script env, so the `app-store-connect` CLI authenticates with no
   explicit creds passed.
-- **Two profile directories (bit me):** `profiles create --save` writes to the MODERN
+- **Two profile directories (bit me):** `profiles create/list --save` writes to the MODERN
   Xcode dir `~/Library/Developer/Xcode/UserData/Provisioning Profiles/`, NOT the legacy
   `~/Library/MobileDevice/Provisioning Profiles/`. A push-verification gate that only
   looked in the legacy dir saw it empty and false-failed ("MISSING aps-environment")
   even though the profile was created fine. **Always handle BOTH dirs:** rm both, mirror
-  the saved profile into both, and inspect/verify across both. The regeneration mechanics
-  (bundle-ids/certs/create) worked first try — only the dir assumption was wrong.
+  the saved profile into both, and inspect/verify across both.
+- **User pivoted AWAY from regeneration:** despite the dir fix, the user wanted the
+  create/delete churn gone entirely. Current approach = "Use existing 'Gillie Distribution'
+  profile": read-only `profiles list --type IOS_APP_STORE --save --json`, select the entry
+  named "Gillie Distribution" by name in python, match its embedded UUID, keep ONLY that
+  profile locally (rm the rest), mirror into both dirs, use-profiles. NO blocking push gate
+  — push status is diagnostic-only. Don't reintroduce a hard aps-environment gate; the user
+  found it false-blocking and frustrating. The profile name must match EXACTLY in the
+  account the API key uses.
 - Keep a read-only diagnostic in the signing step: loop the installed
   `*.mobileprovision`, `security cms -D -i` each, and grep for `aps-environment` to print
   PUSH OK / PUSH MISSING. This tells you whether the profile is the problem without
