@@ -1,0 +1,59 @@
+workflows:
+  ios-capacitor-appstore:
+    name: Gillie iOS (Capacitor) - App Store
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      # Create this in Codemagic: Teams/User settings -> Integrations -> App Store Connect.
+      # Name the key exactly "AppStoreConnect" (or change the name here to match).
+      app_store_connect: AppStoreConnect
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: app.dalehollowlake
+      vars:
+        BUNDLE_ID: "app.dalehollowlake"
+        XCODE_PROJECT: "artifacts/dhl-app/ios/App/App.xcodeproj"
+        XCODE_SCHEME: "App"
+        # Numeric App Store Connect "Apple ID" of the app record. Fill this in after you
+        # create the app in App Store Connect (App Information -> General -> Apple ID).
+        APP_STORE_APPLE_ID: 0000000000
+      node: 20
+      xcode: latest
+    scripts:
+      - name: Install pnpm
+        script: |
+          npm install -g pnpm
+      - name: Install dependencies
+        script: |
+          pnpm install --frozen-lockfile || pnpm install
+      - name: Build web app
+        script: |
+          pnpm --filter @workspace/dhl-app run build
+      - name: Capacitor sync (iOS)
+        script: |
+          pnpm --filter @workspace/dhl-app run cap:sync
+      - name: Set build number
+        ignore_failure: true
+        script: |
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          cd "$CM_BUILD_DIR/artifacts/dhl-app/ios/App"
+          agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
+      - name: Fetch signing files
+        script: |
+          xcode-project use-profiles
+      - name: Build IPA
+        script: |
+          xcode-project build-ipa \
+            --project "$CM_BUILD_DIR/$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Uploads to TestFlight automatically. Flip submit_to_app_store to true once
+        # you're ready to push a build to App Store review.
+        submit_to_testflight: true
+        submit_to_app_store: false
