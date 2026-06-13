@@ -21,10 +21,12 @@ workflows:
       node: 20
       xcode: latest
     scripts:
-      - name: Enable pnpm
+      - name: Ensure pnpm is available
         script: |
-          corepack enable
-          corepack prepare pnpm@latest --activate
+          if ! command -v pnpm >/dev/null 2>&1; then
+            corepack enable || npm install -g pnpm
+            corepack prepare pnpm@latest --activate || true
+          fi
           pnpm --version
       - name: Install dependencies
         script: |
