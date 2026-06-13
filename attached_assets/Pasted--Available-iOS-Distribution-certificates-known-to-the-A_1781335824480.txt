@@ -1,0 +1,25 @@
+==> Available iOS Distribution certificates known to the API key:
+Action `app-store-connect list-certificates` was deprecated in version 0.49.0 and replaced by equivalent action `app-store-connect certificates list`.
+Use `app-store-connect certificates list` instead as `app-store-connect list-certificates` is subject for removal in future releases.
+Did not find any Signing Certificates matching specified filters: certificateType=IOS_DISTRIBUTION.
+[]
+==> Creating fresh provisioning profile: Gillie App Store CI 20260613072949
+usage: app-store-connect [-h] [--log-stream {stderr,stdout}] [--no-color] [--version] [-s] [-v] {app-store-version-localizations,app-store-version-phased-releases,app-store-version-submissions,app-store-versions,apps,beta-app-review-submissions,beta-build-localizations,beta-groups,builds,bundle-ids,certificates,devices,fetch-signing-files,get-latest-app-store-build-number,get-latest-build-number,get-latest-testflight-build-number,profiles,publish,review-submission-items,review-submissions} ...
+app-store-connect: error: unrecognized arguments: --profile-name Gillie App Store CI 20260613072949
+
+
+Build failed :|
+Step 8 script `Fetch signing files` exited with status code 2
+==> Available iOS Distribution certificates known to the API key:
+Action `app-store-connect list-certificates` was deprecated in version 0.49.0 and replaced by equivalent action `app-store-connect certificates list`.
+Use `app-store-connect certificates list` instead as `app-store-connect list-certificates` is subject for removal in future releases.
+Did not find any Signing Certificates matching specified filters: certificateType=IOS_DISTRIBUTION.
+[]
+==> Creating fresh provisioning profile: Gillie App Store CI 20260613072949
+usage: app-store-connect [-h] [--log-stream {stderr,stdout}] [--no-color] [--version] [-s] [-v] {app-store-version-localizations,app-store-version-phased-releases,app-store-version-submissions,app-store-versions,apps,beta-app-review-submissions,beta-build-localizations,beta-groups,builds,bundle-ids,certificates,devices,fetch-signing-files,get-latest-app-store-build-number,get-latest-build-number,get-latest-testflight-build-number,profiles,publish,review-submission-items,review-submissions} ...
+app-store-connect: error: unrecognized arguments: --profile-name Gillie App Store CI 20260613072949
+
+
+Build failed :|
+Step 8 script `Fetch signing files` exited with status code 2
+

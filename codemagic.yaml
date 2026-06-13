@@ -72,20 +72,22 @@ workflows:
           # error, instead of being silently masked by use-profiles (which exits 0
           # even when no profile was installed).
           set -e
-          echo "==> Available iOS Distribution certificates known to the API key:"
-          app-store-connect list-certificates --type IOS_DISTRIBUTION --json || true
-          # Force a BRAND-NEW profile (unique name) so a stale push-less profile
-          # can never be reused. --create has nothing to match, so it generates a
-          # fresh profile carrying every capability currently on the App ID (Push).
+          echo "==> Distribution signing certificates known to the API key:"
+          echo "--- type DISTRIBUTION (modern 'Apple Distribution'): ---"
+          app-store-connect certificates list --type DISTRIBUTION || true
+          echo "--- type IOS_DISTRIBUTION (legacy 'iOS Distribution'): ---"
+          app-store-connect certificates list --type IOS_DISTRIBUTION || true
+          # Wipe any pre-installed provisioning profiles so a stale push-less one
+          # can't be reused, then fetch/create the App Store profile (+ distribution
+          # certificate). A freshly created profile carries every capability
+          # currently enabled on the App ID, including Push (aps-environment).
           rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision 2>/dev/null || true
-          FRESH_PROFILE_NAME="Gillie App Store CI $(date +%Y%m%d%H%M%S)"
-          echo "==> Creating fresh provisioning profile: $FRESH_PROFILE_NAME"
+          echo "==> Fetching / creating App Store signing files for $BUNDLE_ID"
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
-            --profile-name "$FRESH_PROFILE_NAME" \
             --create
           echo "==> Provisioning profiles now installed:"
-          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/"
+          ls -la "$HOME/Library/MobileDevice/Provisioning Profiles/" || true
           echo "==> Inspecting each profile for the Push (aps-environment) entitlement:"
           shopt -s nullglob
           INSTALLED=0
@@ -94,9 +96,9 @@ workflows:
             echo "---- $p ----"
             security cms -D -i "$p" 2>/dev/null | grep -A1 "<key>Name</key>" || true
             if security cms -D -i "$p" 2>/dev/null | grep -qi "aps-environment"; then
-              echo "   ✅ aps-environment (Push) IS present in this profile"
+              echo "   PUSH OK: aps-environment IS present in this profile"
             else
-              echo "   ❌ aps-environment (Push) is MISSING from this profile"
+              echo "   PUSH MISSING: aps-environment is NOT in this profile"
             fi
           done
           if [ "$INSTALLED" = "0" ]; then
