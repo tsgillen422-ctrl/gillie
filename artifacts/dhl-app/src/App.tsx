@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ClerkProvider, SignIn, SignUp, Show } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
@@ -12,6 +12,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { Onboarding } from "@/components/Onboarding";
 import { WaiverGate } from "@/components/WaiverGate";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useGetMe } from "@workspace/api-client-react";
 import { WAIVER_VERSION } from "@/lib/waiver";
 
@@ -113,10 +114,86 @@ const clerkAppearance = {
   },
 };
 
+// App Store reviewer login. Production Clerk forces an email "new device"
+// verification code on password sign-ins (mailed to the reviewer's unreachable
+// mailbox), which can't be disabled on a Replit-managed instance. This form
+// verifies the reviewer password server-side and signs in via a Clerk ticket,
+// which skips that email step. It only ever works for the single reviewer
+// account — regular users sign in above as normal.
+function ReviewerLogin() {
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!password || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/reviewer/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) throw new Error("login failed");
+      const data = (await res.json()) as { token?: string };
+      if (!data.token) throw new Error("no token");
+      window.location.href = `${basePath}/sign-in?__clerk_ticket=${encodeURIComponent(
+        data.token,
+      )}`;
+    } catch {
+      setError("Sign-in failed. Check the password and try again.");
+      setLoading(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="mt-6 text-xs text-muted-foreground underline-offset-4 hover:underline"
+        data-testid="button-reviewer-login-toggle"
+      >
+        App Store reviewer sign-in
+      </button>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="mt-6 flex w-full max-w-sm flex-col gap-3 rounded-lg border border-border bg-card p-4"
+    >
+      <p className="text-sm font-medium text-foreground">App Store reviewer sign-in</p>
+      <Input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="Reviewer password"
+        autoComplete="current-password"
+        data-testid="input-reviewer-password"
+      />
+      {error ? (
+        <p className="text-sm text-destructive" data-testid="text-reviewer-error">
+          {error}
+        </p>
+      ) : null}
+      <Button type="submit" disabled={loading} data-testid="button-reviewer-login">
+        {loading ? "Signing in…" : "Sign in"}
+      </Button>
+    </form>
+  );
+}
+
 function SignInPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4">
       <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+      <ReviewerLogin />
     </div>
   );
 }

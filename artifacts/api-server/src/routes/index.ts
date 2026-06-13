@@ -17,13 +17,16 @@ import reportsRouter from "./reports";
 import pushRouter from "./push";
 import gifsRouter from "./gifs";
 import adminRouter from "./admin";
+import reviewerRouter from "./reviewer";
 import { requireAuth } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
-// Health check stays public (used by deployment probes). Everything below
-// requires an authenticated Clerk session.
+// Health check stays public (used by deployment probes). The reviewer login
+// endpoint is also public (it verifies the reviewer password itself and mints a
+// Clerk sign-in ticket). Everything below requires an authenticated session.
 router.use(healthRouter);
+router.use("/reviewer", reviewerRouter);
 router.use(requireAuth);
 router.use(storageRouter);
 router.use("/users", usersRouter);

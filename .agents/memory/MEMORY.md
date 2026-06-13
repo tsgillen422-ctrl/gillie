@@ -41,4 +41,4 @@
 - [Hidden built-in places](hidden-places.md) — LAKE_PLACES have no id (keyed by name) & are only search-selectable; admin "remove place" hides via hidden_places table; only search needs filtering.
 - [Friend suggestions privacy](friend-suggestions-privacy.md) — /friends/suggestions must NOT return non-friends' currentLat/Lng/lastSeen; use a minimal DTO, not formatUserWithCounts.
 - [Expo native-only web bundle](expo-native-only-web-bundle.md) — react-native-maps crashes the web Metro bundle; fix by component-level .web.tsx split (route-level split fails b/c expo-router globs routes).
-- [Reviewer Clerk self-heal](reviewer-clerk-selfheal.md) — reviewer bootstrap must REPAIR (verify email + sync pw + disable MFA), not create-if-missing, else Clerk emails an email_code to an unreachable mailbox; introspect prod tenant via public /api/__clerk/v1/environment.
+- [Reviewer Clerk sign-in](reviewer-clerk-selfheal.md) — prod blocker is Clerk's non-disableable new-device email challenge (fires after password OK); fix = password-gated sign-in ticket. Introspect prod via public /api/__clerk/v1/environment.
