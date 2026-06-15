@@ -4,7 +4,7 @@ import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { useClerk } from "@clerk/react";
+import { useClerk, useSignIn } from "@clerk/react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -121,6 +121,7 @@ const clerkAppearance = {
 // which skips that email step. It only ever works for the single reviewer
 // account — regular users sign in above as normal.
 function ReviewerLogin() {
+  const { isLoaded, signIn, setActive } = useSignIn();
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -128,7 +129,7 @@ function ReviewerLogin() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!password || loading) return;
+    if (!password || loading || !isLoaded || !signIn) return;
     setLoading(true);
     setError(null);
     try {
@@ -141,9 +142,20 @@ function ReviewerLogin() {
       if (!res.ok) throw new Error("login failed");
       const data = (await res.json()) as { token?: string };
       if (!data.token) throw new Error("no token");
-      window.location.href = `${basePath}/sign-in?__clerk_ticket=${encodeURIComponent(
-        data.token,
-      )}`;
+
+      // Consume the Clerk sign-in token via the ticket strategy directly. This
+      // completes the sign-in without the "new device" email code that the
+      // normal password flow triggers (and which mails an unreachable mailbox).
+      const result = await signIn.create({
+        strategy: "ticket",
+        ticket: data.token,
+      });
+      if (result.status === "complete" && result.createdSessionId) {
+        await setActive({ session: result.createdSessionId });
+        window.location.assign(`${basePath}/`);
+        return;
+      }
+      throw new Error(`unexpected sign-in status: ${result.status}`);
     } catch {
       setError("Sign-in failed. Check the password and try again.");
       setLoading(false);
@@ -152,14 +164,15 @@ function ReviewerLogin() {
 
   if (!open) {
     return (
-      <button
+      <Button
         type="button"
+        variant="outline"
         onClick={() => setOpen(true)}
-        className="mt-6 text-xs text-muted-foreground underline-offset-4 hover:underline"
+        className="mt-6 w-full max-w-sm"
         data-testid="button-reviewer-login-toggle"
       >
         App Store reviewer sign-in
-      </button>
+      </Button>
     );
   }
 

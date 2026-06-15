@@ -32,9 +32,19 @@ new-device email step. Flow:
    verify the typed password server-side with `users.verifyPassword` (so it's
    NOT an open backdoor — only someone with the reviewer password gets in;
    in-memory per-IP throttle on top), then mint a sign-in token.
-2. Frontend "App Store reviewer sign-in" form on the sign-in page redirects to
-   `${basePath}/sign-in?__clerk_ticket=<token>`; the prebuilt `<SignIn>`
-   auto-consumes `__clerk_ticket` and completes the session.
+2. Frontend "App Store reviewer sign-in" form consumes the token PROGRAMMATICALLY:
+   `useSignIn()` → `signIn.create({ strategy: "ticket", ticket })` →
+   `setActive({ session: result.createdSessionId })`.
+
+GOTCHA: the prebuilt `<SignIn>` does NOT auto-consume a sign-in-token via a
+`?__clerk_ticket=` query param (that param is for sign-UP / org invitations). The
+first attempt redirected to `/sign-in?__clerk_ticket=...` and the component just
+showed the normal email/password form, so the reviewer fell back into the
+new-device challenge. You must consume the ticket yourself with `useSignIn`.
+
+Verified against the PROD tenant: a ticket sign-in returns `status: "complete"`
+with `first_factor_verification.strategy: "ticket"` and
+`second_factor_verification: null` — i.e. it genuinely skips the new-device step.
 
 **How to apply:** any time a Clerk sign-in must bypass new-device/email
 verification for a fixed account (reviewer/demo), the ticket strategy is the
