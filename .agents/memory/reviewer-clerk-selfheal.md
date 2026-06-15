@@ -32,15 +32,26 @@ new-device email step. Flow:
    verify the typed password server-side with `users.verifyPassword` (so it's
    NOT an open backdoor — only someone with the reviewer password gets in;
    in-memory per-IP throttle on top), then mint a sign-in token.
-2. Frontend "App Store reviewer sign-in" form consumes the token PROGRAMMATICALLY:
-   `useSignIn()` → `signIn.create({ strategy: "ticket", ticket })` →
-   `setActive({ session: result.createdSessionId })`.
+2. Frontend "App Store reviewer sign-in" form consumes the token PROGRAMMATICALLY
+   off the CLASSIC Clerk resource:
+   `const clerk = useClerk()` → `clerk.client?.signIn.create({ strategy: "ticket", ticket })`
+   → `clerk.setActive({ session: result.createdSessionId })` → navigate.
 
-GOTCHA: the prebuilt `<SignIn>` does NOT auto-consume a sign-in-token via a
-`?__clerk_ticket=` query param (that param is for sign-UP / org invitations). The
-first attempt redirected to `/sign-in?__clerk_ticket=...` and the component just
-showed the normal email/password form, so the reviewer fell back into the
-new-device challenge. You must consume the ticket yourself with `useSignIn`.
+GOTCHA A — DO NOT use `useSignIn()` here. `@clerk/react` v6 ships the SIGNALS API:
+`useSignIn()` returns `{ signIn, errors, fetchStatus }` — there is NO `isLoaded`
+and NO `setActive`. A first fix did `const { isLoaded, signIn, setActive } =
+useSignIn()`; `isLoaded` was `undefined`, so the guard `!isLoaded` made the submit
+handler silently return on EVERY click ("does nothing", no error, no console log).
+Vite build does NOT type-check, so this wrong destructure compiled fine. Use the
+classic resource via `useClerk().client?.signIn` + `clerk.setActive` instead (same
+hybrid pattern gillie-mobile uses: `getClerkInstance().client?.signIn` for classic
+ops alongside the signals API).
+
+GOTCHA B — the prebuilt `<SignIn>` does NOT auto-consume a sign-in-token via a
+`?__clerk_ticket=` query param (that param is for sign-UP / org invitations). An
+even-earlier attempt redirected to `/sign-in?__clerk_ticket=...` and the component
+just showed the normal email/password form, so the reviewer fell back into the
+new-device challenge. You must consume the ticket yourself.
 
 Verified against the PROD tenant: a ticket sign-in returns `status: "complete"`
 with `first_factor_verification.strategy: "ticket"` and

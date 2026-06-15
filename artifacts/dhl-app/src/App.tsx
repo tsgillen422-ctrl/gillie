@@ -4,7 +4,7 @@ import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, Redirect, useLocation, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
-import { useClerk, useSignIn } from "@clerk/react";
+import { useClerk } from "@clerk/react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -121,7 +121,7 @@ const clerkAppearance = {
 // which skips that email step. It only ever works for the single reviewer
 // account — regular users sign in above as normal.
 function ReviewerLogin() {
-  const { isLoaded, signIn, setActive } = useSignIn();
+  const clerk = useClerk();
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -129,7 +129,7 @@ function ReviewerLogin() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!password || loading || !isLoaded || !signIn) return;
+    if (!password || loading) return;
     setLoading(true);
     setError(null);
     try {
@@ -143,15 +143,20 @@ function ReviewerLogin() {
       const data = (await res.json()) as { token?: string };
       if (!data.token) throw new Error("no token");
 
-      // Consume the Clerk sign-in token via the ticket strategy directly. This
-      // completes the sign-in without the "new device" email code that the
-      // normal password flow triggers (and which mails an unreachable mailbox).
-      const result = await signIn.create({
+      // Consume the Clerk sign-in token via the ticket strategy. @clerk/react v6
+      // ships the signals API (useSignIn returns { signIn, errors, fetchStatus }
+      // with no isLoaded/setActive), so we drive the CLASSIC resource directly
+      // off the Clerk instance. The ticket strategy completes the sign-in without
+      // the "new device" email code that the normal password flow triggers (and
+      // which mails the reviewer's unreachable mailbox).
+      const classicSignIn = clerk.client?.signIn;
+      if (!classicSignIn) throw new Error("clerk not ready");
+      const result = await classicSignIn.create({
         strategy: "ticket",
         ticket: data.token,
       });
       if (result.status === "complete" && result.createdSessionId) {
-        await setActive({ session: result.createdSessionId });
+        await clerk.setActive({ session: result.createdSessionId });
         window.location.assign(`${basePath}/`);
         return;
       }
