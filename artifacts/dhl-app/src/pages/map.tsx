@@ -12,13 +12,16 @@ import {
   createPinIndex,
   SAME_BOAT_METERS,
   groupByProximity,
+  haversineMeters,
+  bearingDegrees,
+  compassPoint,
 } from "@/lib/clustering";
 import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey, useGetDockLabels, useCreateDockLabel, useDeleteDockLabel, getGetDockLabelsQueryKey, useGetHiddenPlaces, useHidePlace, getGetHiddenPlacesQueryKey } from "@workspace/api-client-react";
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
 import { ClickableImage } from "@/components/ClickableImage";
 import { MatureGate } from "@/components/MatureGate";
-import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X, ImagePlus, Heart, Star, Search, Trash2, Flame } from "lucide-react";
+import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X, ImagePlus, Heart, Star, Search, Trash2, Flame, Compass, Ruler, Clock } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import {
@@ -659,6 +662,9 @@ export function MapPage() {
   const pinsRef = useRef<any[]>([]);
 
   const [selected, setSelected] = useState<Selected>(null);
+  // Latest live GPS speed (m/s) from the location watch, used for the "boat to
+  // friend" ETA. null until we get a fix with a usable speed reading.
+  const [mySpeedMps, setMySpeedMps] = useState<number | null>(null);
   const [mapError, setMapError] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -929,6 +935,10 @@ export function MapPage() {
     if (!me || !me.shareLocation) return;
     if (!navigator.geolocation) return;
     const report = (pos: GeolocationPosition) => {
+      // Keep the freshest usable speed reading for the "boat to friend" ETA.
+      // coords.speed is m/s (or null/NaN when the device can't determine it).
+      const sp = pos.coords.speed;
+      if (sp != null && Number.isFinite(sp) && sp >= 0) setMySpeedMps(sp);
       // watchPosition can fire rapidly while moving; throttle writes so we keep
       // the position fresh without hammering the backend.
       const now = Date.now();
@@ -1537,6 +1547,96 @@ export function MapPage() {
     };
   }, [heatmapOn, friends, me, styleReady]);
 
+  // --- "Boat to friend" link line ---
+  // When you tap another boater on the map, draw a straight line from your boat
+  // to theirs (the detail card shows distance, bearing and ETA). The line tracks
+  // live positions and clears the moment nothing — or a non-friend — is selected.
+  const LINK_SOURCE = "boat-link";
+  const LINK_GLOW = "boat-link-glow";
+  const LINK_LINE = "boat-link-line";
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    const clearLink = () => {
+      if (map.getLayer(LINK_LINE)) map.removeLayer(LINK_LINE);
+      if (map.getLayer(LINK_GLOW)) map.removeLayer(LINK_GLOW);
+      if (map.getSource(LINK_SOURCE)) map.removeSource(LINK_SOURCE);
+    };
+    const friendSel = selected?.kind === "friend" ? (selected.data as any) : null;
+    const meLat = me?.currentLat;
+    const meLng = me?.currentLng;
+    if (!friendSel || meLat == null || meLng == null) {
+      clearLink();
+      return;
+    }
+    // Prefer the friend's freshest live fix so the line follows them as they move.
+    const fresh = (friends ?? []).find((f: any) => f.userId === friendSel.userId) ?? friendSel;
+    const fLat = fresh.lat;
+    const fLng = fresh.lng;
+    if (fLat == null || fLng == null) {
+      clearLink();
+      return;
+    }
+    const data = {
+      type: "FeatureCollection" as const,
+      features: [
+        {
+          type: "Feature" as const,
+          properties: {},
+          geometry: {
+            type: "LineString" as const,
+            coordinates: [
+              [meLng, meLat],
+              [fLng, fLat],
+            ],
+          },
+        },
+      ],
+    };
+    const ensureLink = () => {
+      // Ensure the source and BOTH layers independently: a basemap style reload
+      // can drop layers, so never early-return just because the source survived.
+      const existing = map.getSource(LINK_SOURCE) as maplibregl.GeoJSONSource | undefined;
+      if (existing) {
+        existing.setData(data as any);
+      } else {
+        map.addSource(LINK_SOURCE, { type: "geojson", data: data as any });
+      }
+      if (!map.getLayer(LINK_GLOW)) {
+        map.addLayer({
+          id: LINK_GLOW,
+          type: "line",
+          source: LINK_SOURCE,
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: { "line-color": "#38bdf8", "line-width": 9, "line-opacity": 0.22, "line-blur": 4 },
+        });
+      }
+      if (!map.getLayer(LINK_LINE)) {
+        map.addLayer({
+          id: LINK_LINE,
+          type: "line",
+          source: LINK_SOURCE,
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: {
+            "line-color": "#0ea5e9",
+            "line-width": 3,
+            "line-opacity": 0.95,
+            "line-dasharray": [1.5, 1.2],
+          },
+        });
+      }
+    };
+    ensureLink();
+    // The basemap style reload drops custom sources/layers — re-add if needed.
+    const onStyleData = () => {
+      if (!map.getLayer(LINK_LINE)) ensureLink();
+    };
+    map.on("styledata", onStyleData);
+    return () => {
+      map.off("styledata", onStyleData);
+    };
+  }, [selected, friends, me, styleReady]);
+
   // --- Animated water shimmer ---
   // Gently drift the lake fill between two blues (and breathe its opacity) so the
   // flat vector water reads as living water instead of a static polygon. Throttled
@@ -2102,6 +2202,7 @@ export function MapPage() {
           >
             <DetailCard
               selected={selected}
+              mySpeedMps={mySpeedMps}
               onClose={() => setSelected(null)}
               onSelect={(sel) => setSelected(sel)}
               onZoom={(lng, lat, zoom) => {
@@ -2370,11 +2471,13 @@ export function MapPage() {
 // --- Slide-up social-style detail card ---
 function DetailCard({
   selected,
+  mySpeedMps,
   onClose,
   onSelect,
   onZoom,
 }: {
   selected: NonNullable<Selected>;
+  mySpeedMps?: number | null;
   onClose: () => void;
   onSelect?: (sel: Selected) => void;
   onZoom?: (lng: number, lat: number, zoom: number) => void;
@@ -2720,6 +2823,34 @@ function DetailCard({
   const lat = isMe ? u.currentLat : u.lat;
   const lng = isMe ? u.currentLng : u.lng;
 
+  // "Boat to friend": straight-line distance, compass bearing, and a rough boat
+  // ETA from your boat to theirs. Uses your live GPS speed when you're actually
+  // moving, otherwise a typical ~20 mph cruising speed. The matching line is
+  // drawn on the map itself (the boat-link layer).
+  let linkMetrics:
+    | { dist: string; bearing: string; eta: string; etaSub: string }
+    | null = null;
+  if (
+    !isMe &&
+    me?.currentLat != null &&
+    me?.currentLng != null &&
+    lat != null &&
+    lng != null
+  ) {
+    const meters = haversineMeters(me.currentLng, me.currentLat, lng, lat);
+    const miles = meters / 1609.344;
+    const deg = Math.round(bearingDegrees(me.currentLat, me.currentLng, lat, lng)) % 360;
+    const moving = mySpeedMps != null && mySpeedMps > 0.7; // ~1.5+ mph = under way
+    const speedMps = moving ? (mySpeedMps as number) : 20 * 0.44704;
+    const mins = meters / speedMps / 60;
+    linkMetrics = {
+      dist: miles >= 0.1 ? `${miles.toFixed(1)} mi` : `${Math.round(meters * 3.28084)} ft`,
+      bearing: `${String(deg).padStart(3, "0")}° ${compassPoint(deg)}`,
+      eta: mins < 1 ? "<1 min" : mins < 60 ? `~${Math.round(mins)} min` : `~${(mins / 60).toFixed(1)} hr`,
+      etaSub: moving ? "at current speed" : "by boat",
+    };
+  }
+
   return (
     <div className="mx-auto w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
       <div className="flex items-center gap-3 p-4">
@@ -2738,6 +2869,25 @@ function DetailCard({
           <X className="w-4 h-4" />
         </Button>
       </div>
+      {linkMetrics && (
+        <div className="grid grid-cols-3 gap-2 px-4 pb-2">
+          <div className="rounded-2xl bg-muted/60 p-2.5 text-center">
+            <Ruler className="w-4 h-4 mx-auto mb-1 text-primary" />
+            <p className="text-sm font-bold leading-none" data-testid="text-link-distance">{linkMetrics.dist}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">away</p>
+          </div>
+          <div className="rounded-2xl bg-muted/60 p-2.5 text-center">
+            <Compass className="w-4 h-4 mx-auto mb-1 text-primary" />
+            <p className="text-sm font-bold leading-none" data-testid="text-link-bearing">{linkMetrics.bearing}</p>
+            <p className="text-[10px] text-muted-foreground mt-1">heading</p>
+          </div>
+          <div className="rounded-2xl bg-muted/60 p-2.5 text-center">
+            <Clock className="w-4 h-4 mx-auto mb-1 text-primary" />
+            <p className="text-sm font-bold leading-none" data-testid="text-link-eta">{linkMetrics.eta}</p>
+            <p className="text-[10px] text-muted-foreground mt-1 truncate">{linkMetrics.etaSub}</p>
+          </div>
+        </div>
+      )}
       <div className="flex gap-2 p-4 pt-0">
         <Button className="flex-1 bg-primary hover:bg-primary/90" asChild>
           <a href={`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`} target="_blank" rel="noreferrer">

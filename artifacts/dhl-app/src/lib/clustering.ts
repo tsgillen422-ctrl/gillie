@@ -70,6 +70,26 @@ export function haversineMeters(aLng: number, aLat: number, bLng: number, bLat: 
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
+// Initial great-circle bearing from point A to point B, in degrees (0-360,
+// where 0 = due north, 90 = east). Used by the "boat to friend" link to tell
+// you which way to point your bow.
+export function bearingDegrees(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const toDeg = (r: number) => (r * 180) / Math.PI;
+  const lat1 = toRad(aLat);
+  const lat2 = toRad(bLat);
+  const dLng = toRad(bLng - aLng);
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+
+// Nearest 8-point compass label (N, NE, E, SE, S, SW, W, NW) for a bearing.
+export function compassPoint(deg: number): string {
+  const points = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+  return points[Math.round(((deg % 360) + 360) % 360 / 45) % 8];
+}
+
 // Single-linkage proximity grouping (union-find): any two items within `meters`
 // of each other end up in the same group, transitively. Returns arrays of the
 // original items, group order/contents stable for a given input.

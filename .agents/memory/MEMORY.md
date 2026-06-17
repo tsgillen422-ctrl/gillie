@@ -42,3 +42,4 @@
 - [Friend suggestions privacy](friend-suggestions-privacy.md) — /friends/suggestions must NOT return non-friends' currentLat/Lng/lastSeen; use a minimal DTO, not formatUserWithCounts.
 - [Expo native-only web bundle](expo-native-only-web-bundle.md) — react-native-maps crashes the web Metro bundle; fix by component-level .web.tsx split (route-level split fails b/c expo-router globs routes).
 - [Reviewer Clerk sign-in](reviewer-clerk-selfheal.md) — prod blocker is Clerk's non-disableable new-device email challenge (fires after password OK); fix = password-gated sign-in ticket. Introspect prod via public /api/__clerk/v1/environment.
+- [Map GeoJSON ensure layers](map-geojson-ensure-layers.md) — overlay ensure() must add source AND each layer independently; styledata reload drops layers, early-return on surviving source makes overlays silently vanish.
