@@ -63,9 +63,11 @@ workflows:
       - name: Set build number
         ignore_failure: true
         script: |
-          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          # Pinned to exactly 3 per request (auto-increment disabled): Apple already
+          # has build 2, and we need CFBundleVersion = 3 for this upload. To ship a
+          # later build, bump this value (Apple rejects duplicate build numbers).
           cd "$CM_BUILD_DIR/artifacts/dhl-app/ios/App"
-          agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
+          agvtool new-version -all 3
       - name: Select App Store profile for the bundle id
         script: |
           set -euo pipefail
