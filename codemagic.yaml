@@ -193,6 +193,30 @@ workflows:
             echo "=========================================================="
           fi
           exit "$BUILD_EXIT"
+      - name: Verify IPA build number is 3 (gate before upload)
+        script: |
+          set -euo pipefail
+          # FINAL GATE before the app_store_connect publishing step runs. Inspect the
+          # actual archived IPA and FAIL the build if CFBundleVersion != 3, so a wrong
+          # build number (e.g. the old 2 Apple already has) can NEVER be uploaded.
+          # This is the source of truth -- it checks the real binary, not the project.
+          shopt -s nullglob
+          ipas=("$CM_BUILD_DIR"/build/ios/ipa/*.ipa)
+          [ "${#ipas[@]}" -ge 1 ] || { echo "!! No .ipa found in build/ios/ipa -- cannot verify build number."; exit 1; }
+          IPA="${ipas[0]}"
+          echo "==> Inspecting IPA: $IPA"
+          WORK="$(mktemp -d)"
+          unzip -q "$IPA" -d "$WORK"
+          app_plists=("$WORK"/Payload/*.app/Info.plist)
+          [ "${#app_plists[@]}" -ge 1 ] || { echo "!! No Payload/*.app/Info.plist inside the IPA."; rm -rf "$WORK"; exit 1; }
+          APP_PLIST="${app_plists[0]}"
+          CFV="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP_PLIST")"
+          CFSV="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PLIST")"
+          rm -rf "$WORK"
+          echo "==> IPA CFBundleVersion=$CFV  CFBundleShortVersionString=$CFSV"
+          [ "$CFV" = "3" ] || { echo "!! IPA CFBundleVersion is '$CFV', expected 3 -- refusing to upload to App Store Connect."; exit 1; }
+          [ "$CFSV" = "1.0" ] || { echo "!! IPA CFBundleShortVersionString is '$CFSV', expected 1.0 -- refusing to upload."; exit 1; }
+          echo "==> OK: IPA build number is 3 (version 1.0), safe to upload."
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
