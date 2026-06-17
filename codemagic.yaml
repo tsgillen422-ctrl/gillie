@@ -60,14 +60,37 @@ workflows:
       - name: Capacitor sync (iOS)
         script: |
           pnpm --filter @workspace/dhl-app run cap:sync
-      - name: Set build number
-        ignore_failure: true
+      - name: Set build number to 3 (pinned)
         script: |
-          # Pinned to exactly 3 per request (auto-increment disabled): Apple already
-          # has build 2, and we need CFBundleVersion = 3 for this upload. To ship a
-          # later build, bump this value (Apple rejects duplicate build numbers).
-          cd "$CM_BUILD_DIR/artifacts/dhl-app/ios/App"
-          agvtool new-version -all 3
+          set -euo pipefail
+          # Pinned to exactly 3 (auto-increment disabled): Apple already has build 2,
+          # so CFBundleVersion MUST be 3 for this upload. To ship a later build, bump
+          # this number (Apple rejects duplicate build numbers).
+          #
+          # NOTE: we do NOT use `agvtool` here. agvtool requires
+          # VERSIONING_SYSTEM = "apple-generic", which this project does not set, so it
+          # silently does nothing -- which is how earlier builds kept shipping the old
+          # number. Instead we write the value directly into the archived Info.plist
+          # (and pin the build settings) with PlistBuddy/sed, then verify and FAIL loud
+          # if it isn't 3, so a bad number can never reach App Store Connect.
+          PROJECT_DIR="$CM_BUILD_DIR/artifacts/dhl-app/ios/App"
+          PLIST="$PROJECT_DIR/App/Info.plist"
+          PBXPROJ="$PROJECT_DIR/App.xcodeproj/project.pbxproj"
+
+          # Force the build settings the Info.plist variables resolve from.
+          sed -i '' 's/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = 3;/g' "$PBXPROJ"
+          sed -i '' 's/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = 1.0;/g' "$PBXPROJ"
+
+          # Belt-and-suspenders: write literal values straight into the Info.plist that
+          # gets archived, removing any dependence on variable substitution.
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 3" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0" "$PLIST"
+
+          CFV=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$PLIST")
+          CFSV=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$PLIST")
+          echo "==> CFBundleVersion=$CFV  CFBundleShortVersionString=$CFSV"
+          [ "$CFV" = "3" ] || { echo "!! CFBundleVersion is '$CFV', expected 3 -- aborting."; exit 1; }
+          [ "$CFSV" = "1.0" ] || { echo "!! CFBundleShortVersionString is '$CFSV', expected 1.0 -- aborting."; exit 1; }
       - name: Select App Store profile for the bundle id
         script: |
           set -euo pipefail
