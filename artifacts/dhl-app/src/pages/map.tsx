@@ -1061,7 +1061,25 @@ export function MapPage() {
           scaleEls.current.add(scale);
         } else {
           const g = c.properties.group;
-          target.set(g.repId, { lng, lat, group: g });
+          if (zoom >= ZOOM_MID) {
+            // Mid tier and in: render the full individual boat marker.
+            target.set(g.repId, { lng, lat, group: g });
+          } else {
+            // Far tier: keep the map to clusters + major places only. A lone
+            // boat shows as a single bubble (mirrors the lone-pin treatment)
+            // rather than the full boat marker, which only appears from the mid
+            // tier in. Tapping eases into the mid tier so it spreads out.
+            const { root, scale } = buildClusterEl(1, "🚤", undefined);
+            root.addEventListener("click", (ev) => {
+              ev.stopPropagation();
+              map.easeTo({ center: [lng, lat], zoom: ZOOM_MID });
+            });
+            const marker = new maplibregl.Marker({ element: root, anchor: "center" })
+              .setLngLat([lng, lat])
+              .addTo(map);
+            boatClusterMarkers.current.push(marker);
+            scaleEls.current.add(scale);
+          }
         }
       });
     }
