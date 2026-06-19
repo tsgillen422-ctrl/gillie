@@ -42,3 +42,18 @@ PlistBuddy, and `exit 1` if it isn't the expected number. This is the only
 source-of-truth check and it stops a wrong build number from ever uploading.
 **Why:** the build number "wrong" bug recurred 4x because every fix verified the
 inputs, not the actual archived IPA.
+
+## Codemagic run number is NOT the CFBundleVersion
+A "Build 5 failed to upload" report usually means the *Codemagic build run* was #5
+— it says nothing about CFBundleVersion, which is whatever the pin step writes.
+The config can be pinned to 3 while the CI run counter shows 5. Always check the
+pinned number in `codemagic.yaml` + `project.pbxproj`, not the Codemagic run #.
+
+## Read the upload error's floor
+App Store Connect upload failure "The provided entity includes an attribute with a
+value that has already been used" + `"previousBundleVersion": "N"` means the pin
+MUST be strictly greater than N (the highest build ASC already has). Bump the pin
+to N+1 (or higher) everywhere: the two `CURRENT_PROJECT_VERSION` in pbxproj AND
+every literal in the codemagic set/verify steps (sed, PlistBuddy Set, the `[ "$CFV"
+= "N" ]` gates, step names, echo text). Info.plist needs no change — it's
+`$(CURRENT_PROJECT_VERSION)`. MARKETING_VERSION stays 1.0.
