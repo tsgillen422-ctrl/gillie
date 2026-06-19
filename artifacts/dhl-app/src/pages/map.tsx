@@ -48,6 +48,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useUpload } from "@workspace/object-storage-web";
 import { boatSvgFor, FLAG_SVG } from "../boats";
 import { hapticTap } from "@/lib/haptics";
+import { createPinLongPress } from "@/lib/pinLongPress";
 
 const LAKE_CENTER: [number, number] = [-85.37, 36.53]; // [lng, lat]
 const BASE_ZOOM = 12;
@@ -816,38 +817,18 @@ export function MapPage() {
     map.on("zoom", () => applyZoomScale(map.getZoom()));
 
     // --- Long-press (touch) / right-click (desktop) to drop a new pin ---
-    let lpTimer: number | null = null;
-    let lpStart: { x: number; y: number } | null = null;
-    const clearLp = () => {
-      if (lpTimer != null) {
-        clearTimeout(lpTimer);
-        lpTimer = null;
-      }
-      lpStart = null;
-    };
-    const startLp = (point: { x: number; y: number }, lngLat: maplibregl.LngLat) => {
-      clearLp();
-      lpStart = { x: point.x, y: point.y };
-      lpTimer = window.setTimeout(() => {
-        lpTimer = null;
-        lpStart = null;
+    // The timing/threshold decision logic lives in a pure, unit-tested helper
+    // (see lib/pinLongPress.ts) so it can be verified without a real map/WebGL.
+    const longPress = createPinLongPress<maplibregl.LngLat>({
+      onLongPress: (lngLat) => {
         void hapticTap();
         setPinDialog({ open: true, lat: lngLat.lat, lng: lngLat.lng });
-      }, 550);
-    };
-    map.on("mousedown", (e) => startLp(e.point, e.lngLat));
-    map.on("touchstart", (e) => {
-      if (e.points.length !== 1) {
-        clearLp();
-        return;
-      }
-      startLp(e.point, e.lngLat);
+      },
     });
-    map.on("mousemove", (e) => {
-      if (lpStart && (Math.abs(e.point.x - lpStart.x) > 8 || Math.abs(e.point.y - lpStart.y) > 8)) {
-        clearLp();
-      }
-    });
+    const clearLp = () => longPress.cancel();
+    map.on("mousedown", (e) => longPress.pointerDown(e.point, e.lngLat));
+    map.on("touchstart", (e) => longPress.touchStart(e.points.length, e.point, e.lngLat));
+    map.on("mousemove", (e) => longPress.move(e.point));
     map.on("touchmove", clearLp);
     map.on("mouseup", clearLp);
     map.on("touchend", clearLp);
