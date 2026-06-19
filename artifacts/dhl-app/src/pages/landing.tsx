@@ -14,7 +14,10 @@ const features = [
 export function LandingPage() {
   return (
     <div className="min-h-[100dvh] bg-background text-foreground">
-      <header className="flex items-center justify-between px-6 py-5 max-w-6xl mx-auto">
+      <header
+        style={{ paddingTop: "max(env(safe-area-inset-top), 1.25rem)" }}
+        className="flex items-center justify-between px-6 pb-5 max-w-6xl mx-auto"
+      >
         <div className="flex items-center gap-2.5">
           <img src={`${basePath}/logo.svg`} alt="Gillie" className="h-9 w-9 rounded-xl" />
           <span className="font-script text-2xl font-bold leading-none">Gillie</span>
