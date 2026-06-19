@@ -39,7 +39,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col h-[100dvh] w-full overflow-hidden bg-background text-foreground">
       {!hideHeader && (
-        <header className="flex items-center justify-between px-4 h-12 border-b border-border bg-card shrink-0 z-50">
+        <header
+          style={{ paddingTop: "env(safe-area-inset-top)" }}
+          className="flex items-center justify-between px-4 min-h-[3rem] border-b border-border bg-card shrink-0 z-50"
+        >
           <div className="flex items-center gap-2 min-w-0">
             <span className="font-script text-2xl font-bold leading-none text-primary">Gillie</span>
             {me?.demoMode && (

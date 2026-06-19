@@ -2027,19 +2027,6 @@ export function MapPage() {
 
       {/* Floating map controls */}
       <div className="pointer-events-auto absolute top-[80px] right-4 z-[450] flex flex-col items-center gap-3">
-        {/* Primary add FAB — sits at the TOP of the stack, well clear of the
-            zoom controls at the bottom so taps never conflict. Larger hit area
-            and touch-action:manipulation for reliable taps in the iOS webview. */}
-        <Button
-          size="icon"
-          aria-label="Add a pin or place"
-          onClick={handleFabClick}
-          style={{ touchAction: "manipulation" }}
-          className="pointer-events-auto h-14 w-14 rounded-full shadow-lg bg-[hsl(40,68%,58%)] text-accent-foreground hover:bg-[hsl(40,68%,52%)] active:scale-95 transition-transform"
-        >
-          <Plus className="h-6 w-6" strokeWidth={2.5} />
-        </Button>
-
         {/* Who's on the lake */}
         <Button
           size="icon"
@@ -2068,6 +2055,19 @@ export function MapPage() {
           aria-pressed={heatmapOn}
         >
           <Flame className="h-5 w-5" />
+        </Button>
+
+        {/* Add-pin FAB: smaller and softer so it doesn't dominate. Keeps the
+            iOS tap-reliability bits (pointer-events + touch-action) but back at
+            its original size and position in the stack. */}
+        <Button
+          size="icon"
+          aria-label="Add a pin or place"
+          onClick={handleFabClick}
+          style={{ touchAction: "manipulation" }}
+          className="pointer-events-auto h-10 w-10 rounded-full shadow-md bg-[hsl(40,68%,58%)] text-accent-foreground hover:bg-[hsl(40,68%,52%)] active:scale-95 transition-transform"
+        >
+          <Plus className="h-5 w-5" />
         </Button>
 
         {/* Combined zoom + locate stack in one clean pill */}
