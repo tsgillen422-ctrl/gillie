@@ -53,6 +53,25 @@ A "Build 5 failed to upload" report usually means the *Codemagic build run* was 
 The config can be pinned to 3 while the CI run counter shows 5. Always check the
 pinned number in `codemagic.yaml` + `project.pbxproj`, not the Codemagic run #.
 
+## The REAL recurring root cause: GitHub main lagged on build-4 code
+Codemagic builds from GitHub `main`, NOT the Replit working copy. The build-number
+fix kept "not working" because GitHub `main` literally still had `codemagic.yaml`
+with `agvtool new-version -all 4` + a verify step expecting 4 — so every cloud build
+shipped 4 no matter what was fixed locally.
+**Why:** local `main` and GitHub `main` had DIVERGED (local ~37 ahead with build 5;
+GitHub ~8 ahead with build-4 CI bump, the water-drop app icon + launch splash, and
+`ITSAppUsesNonExemptEncryption=false` export compliance). A plain push is rejected
+(non-fast-forward); a blind force-push would DROP GitHub's icon/splash/export-
+compliance commits that local doesn't have.
+**How to apply:** the agent CANNOT fix this — `git push`/`fetch`/`rebase`/`reset` are
+all blocked in this env (even inside an assigned Project Task), and the one push that
+did run failed GitHub auth ("password authentication is not supported"). Only the
+user's Replit Git pane / Shell (their GitHub creds) can. Correct reconciliation =
+rebase local onto `subrepl-10yjcilf/main` (replays build-5 commits on top of GitHub's
+icon/splash/export-compliance base) and resolve the generated
+`artifacts/mockup-sandbox/src/.generated/mockup-components.ts` conflict, then push —
+NOT force-push. Verify the GitHub tip's `codemagic.yaml` shows build 5 afterward.
+
 ## Read the upload error's floor
 App Store Connect upload failure "The provided entity includes an attribute with a
 value that has already been used" + `"previousBundleVersion": "N"` means the pin
