@@ -2,6 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   DEFAULT_ZOOM,
+  ZOOM_MID,
+  SECONDARY_PIN_ZOOM,
   BOAT_CLUSTER_RADIUS,
   BOAT_CLUSTER_MAXZOOM,
   PIN_CLUSTER_RADIUS,
@@ -10,6 +12,8 @@ import {
   isClusterHot,
   createBoatIndex,
   createPinIndex,
+  pinTier,
+  dominantClusterType,
   SAME_BOAT_METERS,
   haversineMeters,
   groupByProximity,
@@ -169,4 +173,117 @@ test("grouping is transitive (single-linkage chains raft together)", () => {
   const groups = groupByProximity([a, b, c], (m) => [m.lng, m.lat], SAME_BOAT_METERS);
   assert.equal(groups.length, 1, "the chain a-b-c rafts into one crew");
   assert.equal(groups[0].length, 3);
+});
+
+// --- Low-priority pin grouping --------------------------------------------
+
+// Build `count` low-priority pin features jittered within a few hundred metres
+// of a center point, each carrying a `pin.type` (cycled through `types`) in the
+// supercluster `properties` shape the map page feeds in.
+function densePins(
+  count: number,
+  types: string[] = ["fishing"],
+  centerLng = -83.5,
+  centerLat = 42.5,
+) {
+  return Array.from({ length: count }, (_, i) => {
+    const ring = i / count;
+    return {
+      type: "Feature" as const,
+      properties: { pin: { type: types[i % types.length] } },
+      geometry: {
+        type: "Point" as const,
+        coordinates: [
+          centerLng + Math.cos(ring * Math.PI * 2) * 0.0015,
+          centerLat + Math.sin(ring * Math.PI * 2) * 0.0015,
+        ],
+      },
+    };
+  });
+}
+
+test("pinTier marks marinas/campsites/hazards high (never clustered), the rest low", () => {
+  // High-priority places are always-visible and excluded from the pin index.
+  assert.equal(pinTier("marina"), "high");
+  assert.equal(pinTier("campsite"), "high");
+  assert.equal(pinTier("hazard"), "high");
+  // Everything else is a low-priority, clusterable user pin.
+  assert.equal(pinTier("fishing"), "low");
+  assert.equal(pinTier("swimming"), "low");
+  assert.equal(pinTier("anchorage"), "low");
+  assert.equal(pinTier("anything-unknown"), "low");
+});
+
+test("dense low pins collapse into one cluster zoomed out, then resolve to individual chips when close", () => {
+  const index = createPinIndex();
+  index.load(densePins(12) as any);
+
+  // Far tier (default zoom): a single grouped bubble keeps the map uncluttered.
+  const farClusters = index.getClusters(WORLD, Math.floor(DEFAULT_ZOOM)) as any[];
+  assert.equal(farClusters.length, 1, "expected one pin cluster far out");
+  assert.equal(farClusters[0].properties.cluster, true);
+  assert.equal(farClusters[0].properties.point_count, 12, "the cluster aggregates all 12 pins");
+
+  // Close tier (zoomed all the way in): fully resolved into 12 individual chips.
+  const closeClusters = index.getClusters(WORLD, PIN_CLUSTER_MAXZOOM) as any[];
+  assert.equal(closeClusters.length, 12, "expected 12 individual pin markers when zoomed in");
+  assert.ok(
+    closeClusters.every((c) => !c.properties.cluster),
+    "no aggregated pin clusters should remain when zoomed in",
+  );
+});
+
+test("the pin zoom tiers are ordered far < mid (labels) < secondary (chips)", () => {
+  // Documented tier values that drive when pins reveal in renderPins.
+  assert.equal(ZOOM_MID, 12.5);
+  assert.equal(SECONDARY_PIN_ZOOM, 13.5);
+
+  // The default load sits in the "far" tier, below both reveal thresholds.
+  assert.ok(DEFAULT_ZOOM < ZOOM_MID, "default zoom is in the far tier");
+  assert.ok(ZOOM_MID < SECONDARY_PIN_ZOOM, "place labels reveal before pin chips");
+
+  // renderPins gates: place labels appear at/above ZOOM_MID; low-priority pin
+  // chips are only revealed at/above SECONDARY_PIN_ZOOM.
+  const showPlaceLabels = (zoom: number) => zoom >= ZOOM_MID;
+  const revealChips = (zoom: number) => zoom >= SECONDARY_PIN_ZOOM;
+
+  // Far tier (default): clusters/badges only — no labels, no chips.
+  assert.equal(showPlaceLabels(DEFAULT_ZOOM), false);
+  assert.equal(revealChips(DEFAULT_ZOOM), false);
+
+  // Mid tier (just past ZOOM_MID): place labels on, pin chips still hidden.
+  assert.equal(showPlaceLabels(12.6), true);
+  assert.equal(revealChips(12.6), false);
+  // Exactly at the boundary the mid tier engages but chips do not.
+  assert.equal(showPlaceLabels(ZOOM_MID), true);
+  assert.equal(revealChips(ZOOM_MID), false);
+
+  // Close tier (at/just past SECONDARY_PIN_ZOOM): chips revealed too.
+  assert.equal(revealChips(SECONDARY_PIN_ZOOM), true);
+  assert.equal(revealChips(13.6), true);
+});
+
+test("dominantClusterType returns the most common pin type among a cluster's leaves", () => {
+  // 9 pins in one tight cluster: 5 fishing, 3 swimming, 1 anchorage.
+  const index = createPinIndex();
+  index.load(
+    densePins(9, ["fishing", "fishing", "swimming", "fishing", "swimming", "fishing", "anchorage", "fishing", "swimming"]) as any,
+  );
+
+  const [cluster] = index.getClusters(WORLD, Math.floor(DEFAULT_ZOOM)) as any[];
+  assert.equal(cluster.properties.cluster, true, "the pins formed one cluster");
+  assert.equal(cluster.properties.point_count, 9);
+  assert.equal(
+    dominantClusterType(index, cluster.properties.cluster_id),
+    "fishing",
+    "fishing is the plurality type and should win",
+  );
+});
+
+test("dominantClusterType returns '' for an unknown cluster id instead of throwing", () => {
+  const index = createPinIndex();
+  index.load(densePins(4) as any);
+  // A made-up cluster id supercluster doesn't know about: helper swallows the
+  // error and returns "" so renderPins can fall back gracefully.
+  assert.equal(dominantClusterType(index, 999_999), "");
 });

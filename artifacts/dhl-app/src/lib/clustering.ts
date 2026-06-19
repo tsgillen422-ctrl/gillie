@@ -49,6 +49,40 @@ export function createPinIndex(): Supercluster {
   });
 }
 
+// --- Pin priority tiers ---------------------------------------------------
+// Pin priority tiers control visual weight and clustering behavior.
+// High-priority places (marinas, campsites, hazards) are always visible,
+// large, and never clustered. Low-priority (user-generated) pins are smaller,
+// icon-only, and cluster together when zoomed out so the map stays uncluttered.
+export const HIGH_PRIORITY_PINS = new Set(["marina", "campsite", "hazard"]);
+export const pinTier = (type: string): "high" | "low" =>
+  HIGH_PRIORITY_PINS.has(type) ? "high" : "low";
+
+// Pick the most common pin-type among a cluster's leaves (drives both the
+// representative emoji and the friendly "N <category>s" label). Returns "" when
+// the cluster has no typed leaves or supercluster throws on the id.
+export function dominantClusterType(index: Supercluster, clusterId: number): string {
+  try {
+    const leaves = index.getLeaves(clusterId, Infinity) as any[];
+    const counts: Record<string, number> = {};
+    for (const leaf of leaves) {
+      const t = leaf.properties?.pin?.type;
+      if (t) counts[t] = (counts[t] || 0) + 1;
+    }
+    let best = "";
+    let bestN = -1;
+    for (const [t, n] of Object.entries(counts)) {
+      if (n > bestN) {
+        bestN = n;
+        best = t;
+      }
+    }
+    return best;
+  } catch {
+    return "";
+  }
+}
+
 // --- Same-boat (rafted crew) grouping -------------------------------------
 // Friends whose *live* GPS fixes are within this many meters of each other are
 // treated as sharing one boat (same hull / rafted together) and drawn as a

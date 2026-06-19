@@ -10,6 +10,8 @@ import {
   isClusterHot,
   createBoatIndex,
   createPinIndex,
+  pinTier,
+  dominantClusterType,
   SAME_BOAT_METERS,
   groupByProximity,
   haversineMeters,
@@ -87,14 +89,6 @@ const placeEmoji = (category: string) => {
   }
 };
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
-
-// Pin priority tiers control visual weight and clustering behavior.
-// High-priority places are always visible, large, and never clustered.
-// Low-priority (user-generated) pins are smaller, icon-only, and cluster
-// together when zoomed out so the map stays uncluttered near the marina.
-const HIGH_PRIORITY_PINS = new Set(["marina", "campsite", "hazard"]);
-const pinTier = (type: string): "high" | "low" =>
-  HIGH_PRIORITY_PINS.has(type) ? "high" : "low";
 
 // Friendly plural label for a cluster of a given pin type, e.g. "3 fishing spots".
 const clusterPinLabel = (type: string, count: number) => {
@@ -581,30 +575,6 @@ function buildClusterEl(count: number, emoji: string, label?: string, kind: "pin
   scale.appendChild(row);
   root.appendChild(scale);
   return { root, scale };
-}
-
-// Pick the most common pin-type among a cluster's leaves (drives both the
-// representative emoji and the friendly "N <category>s" label).
-function dominantClusterType(index: Supercluster, clusterId: number): string {
-  try {
-    const leaves = index.getLeaves(clusterId, Infinity) as any[];
-    const counts: Record<string, number> = {};
-    for (const leaf of leaves) {
-      const t = leaf.properties?.pin?.type;
-      if (t) counts[t] = (counts[t] || 0) + 1;
-    }
-    let best = "";
-    let bestN = -1;
-    for (const [t, n] of Object.entries(counts)) {
-      if (n > bestN) {
-        bestN = n;
-        best = t;
-      }
-    }
-    return best;
-  } catch {
-    return "";
-  }
 }
 
 export function MapPage() {
