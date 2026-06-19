@@ -57,5 +57,7 @@
         <string>Gillie needs access to your camera so you can take photos and videos to share in your messages and posts.</string>
         <key>NSMicrophoneUsageDescription</key>
         <string>Gillie needs access to your microphone so the videos you record include sound.</string>
+        <key>ITSAppUsesNonExemptEncryption</key>
+        <false/>
 </dict>
 </plist>
