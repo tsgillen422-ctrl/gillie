@@ -45,3 +45,4 @@
 - [Map GeoJSON ensure layers](map-geojson-ensure-layers.md) — overlay ensure() must add source AND each layer independently; styledata reload drops layers, early-return on surviving source makes overlays silently vanish.
 - [FAB feels dead on iOS](fab-geolocation-hang.md) — "button visible but won't tap" is often onClick silently hanging on getCurrentPosition (no timeout/error cb), NOT z-index/pointer-events; open UI immediately, refine coords later.
 - [iOS build number / CFBundleVersion](ios-build-number-agvtool.md) — agvtool no-ops without VERSIONING_SYSTEM=apple-generic (+ignore_failure hid it); pin via sed pbxproj + PlistBuddy Info.plist + verify-or-fail.
+- [iOS safe-area viewport-fit](ios-safe-area-viewport-fit.md) — env(safe-area-inset-*) is 0 without `viewport-fit=cover` in index.html; all safe-area padding is dead until that meta is set.

@@ -589,9 +589,16 @@ export function ProfilePage() {
 
             {/* Floating nav */}
             <div className="absolute top-4 left-4 z-10">
-              <Button size="icon" variant="secondary" asChild className="rounded-full bg-white/85 text-foreground hover:bg-white shadow-soft backdrop-blur">
-                <Link href={isSelf ? "/" : "/friends"}><ArrowLeft className="w-5 h-5" /></Link>
-              </Button>
+              <Link href={isSelf ? "/" : "/friends"}>
+                <Button
+                  size="icon"
+                  variant="secondary"
+                  aria-label="Back"
+                  className="rounded-full bg-white/85 text-foreground hover:bg-white shadow-soft backdrop-blur"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </Button>
+              </Link>
             </div>
 
             {/* Identity card overlapping the cover */}
