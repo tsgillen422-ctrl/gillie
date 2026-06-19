@@ -1831,18 +1831,29 @@ export function MapPage() {
   })();
 
   const handleFabClick = () => {
-    let lat = LAKE_CENTER[1];
-    let lng = LAKE_CENTER[0];
-    if (me?.currentLat != null && me?.currentLng != null) {
-      lat = me.currentLat;
-      lng = me.currentLng;
-    } else if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        setPinDialog({ open: true, lat: pos.coords.latitude, lng: pos.coords.longitude });
-      });
-      return;
-    }
+    // Open the create menu IMMEDIATELY using the best location we already have.
+    // Never block on geolocation: the old code early-returned and only opened
+    // the dialog inside an error-less, timeout-less getCurrentPosition callback,
+    // so on iOS (where a fresh user has no shared location and the permission
+    // prompt may be denied/slow) the tap appeared to do nothing — the button
+    // felt dead even though onClick fired.
+    const lat = me?.currentLat ?? LAKE_CENTER[1];
+    const lng = me?.currentLng ?? LAKE_CENTER[0];
     setPinDialog({ open: true, lat, lng });
+
+    // If we don't have a known position yet, refine it in the background.
+    if ((me?.currentLat == null || me?.currentLng == null) && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) =>
+          setPinDialog((d) =>
+            d.open
+              ? { open: true, lat: pos.coords.latitude, lng: pos.coords.longitude }
+              : d,
+          ),
+        () => {},
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 },
+      );
+    }
   };
 
   const closePinDialog = () => {
@@ -2015,7 +2026,20 @@ export function MapPage() {
       )}
 
       {/* Floating map controls */}
-      <div className="absolute top-[80px] right-4 z-[400] flex flex-col items-center gap-3">
+      <div className="pointer-events-auto absolute top-[80px] right-4 z-[450] flex flex-col items-center gap-3">
+        {/* Primary add FAB — sits at the TOP of the stack, well clear of the
+            zoom controls at the bottom so taps never conflict. Larger hit area
+            and touch-action:manipulation for reliable taps in the iOS webview. */}
+        <Button
+          size="icon"
+          aria-label="Add a pin or place"
+          onClick={handleFabClick}
+          style={{ touchAction: "manipulation" }}
+          className="pointer-events-auto h-14 w-14 rounded-full shadow-lg bg-[hsl(40,68%,58%)] text-accent-foreground hover:bg-[hsl(40,68%,52%)] active:scale-95 transition-transform"
+        >
+          <Plus className="h-6 w-6" strokeWidth={2.5} />
+        </Button>
+
         {/* Who's on the lake */}
         <Button
           size="icon"
@@ -2044,15 +2068,6 @@ export function MapPage() {
           aria-pressed={heatmapOn}
         >
           <Flame className="h-5 w-5" />
-        </Button>
-
-        {/* Add-pin FAB: smaller and softer so it doesn't dominate */}
-        <Button
-          size="icon"
-          className="h-10 w-10 rounded-full shadow-md bg-[hsl(40,68%,58%)] text-accent-foreground hover:bg-[hsl(40,68%,52%)]"
-          onClick={handleFabClick}
-        >
-          <Plus className="h-5 w-5" />
         </Button>
 
         {/* Combined zoom + locate stack in one clean pill */}
