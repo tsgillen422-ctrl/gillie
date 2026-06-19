@@ -167,3 +167,9 @@ id = "bEDVL4vP1kHKHcHppeRBt"
 uri = "file://appstore-screenshots/13.jpg"
 type = "image"
 title = "13 — Browse the Day's Catches"
+
+[[outputs]]
+id = "iT-UPAvrywS761xOrOt7c"
+uri = "file://artifacts/dhl-app/ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"
+type = "image"
+title = "New Gillie iOS app icon (1024×1024)"
