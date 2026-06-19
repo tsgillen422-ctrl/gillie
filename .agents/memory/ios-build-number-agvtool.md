@@ -21,13 +21,17 @@ old/unchanged number — uploads then failed because Apple already had that buil
 **Why:** agvtool is a no-op without apple-generic versioning; ignore_failure hid it.
 
 ## The reliable fix (how to apply)
-Do NOT rely on agvtool. In the CI step (runs on macOS, after `cap:sync`, before
-Build IPA):
+agvtool is fine ONLY if you first add `VERSIONING_SYSTEM = "apple-generic"` to both
+build configs in pbxproj (now done) — then `agvtool new-version -all <n>` actually
+writes. But never rely on agvtool ALONE. The CI step (runs on macOS, after
+`cap:sync`, before Build IPA) layers defense in depth:
+- (primary) `agvtool new-version -all <n>` + `new-marketing-version <m>`.
 - `sed -i ''` the pbxproj to force `CURRENT_PROJECT_VERSION` / `MARKETING_VERSION`.
 - `PlistBuddy -c "Set :CFBundleVersion <n>"` (and `:CFBundleShortVersionString`)
   to write literals straight into the archived Info.plist.
 - Then `Print` them back and hard-`exit 1` if wrong (no ignore_failure), so a bad
   number can never reach App Store Connect.
+All write paths converge on the same value, so there's no double-source conflict.
 
 To ship a build AFTER a pinned one, bump the pinned number — Apple rejects
 duplicate build numbers. (Auto-increment `$((LATEST+1))` is an option but only

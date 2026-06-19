@@ -60,30 +60,32 @@ workflows:
       - name: Capacitor sync (iOS)
         script: |
           pnpm --filter @workspace/dhl-app run cap:sync
-      - name: Set build number to 5 (pinned)
+      - name: Set build number to 5 (agvtool, hard-forced)
         script: |
           set -euo pipefail
-          # Pinned to exactly 5 (auto-increment disabled): App Store Connect already has
-          # build 4 (the failed upload reported previousBundleVersion: 4), so
-          # CFBundleVersion MUST be 5 for this upload. To ship a later build, bump
-          # this number (Apple rejects duplicate build numbers).
-          #
-          # NOTE: we do NOT use `agvtool` here. agvtool requires
-          # VERSIONING_SYSTEM = "apple-generic", which this project does not set, so it
-          # silently does nothing -- which is how earlier builds kept shipping the old
-          # number. Instead we write the value directly into the archived Info.plist
-          # (and pin the build settings) with PlistBuddy/sed, then verify and FAIL loud
-          # if it isn't 5, so a bad number can never reach App Store Connect.
+          # Hard-force CFBundleVersion to exactly 5. App Store Connect already has build 4
+          # (failed uploads reported previousBundleVersion: 4), so this upload MUST be 5.
+          # Auto-increment / "latest App Store build number" is intentionally NOT used
+          # anywhere -- the value is pinned here and verified against the real IPA before
+          # the App Store Connect publishing step runs.
           PROJECT_DIR="$CM_BUILD_DIR/artifacts/dhl-app/ios/App"
           PLIST="$PROJECT_DIR/App/Info.plist"
           PBXPROJ="$PROJECT_DIR/App.xcodeproj/project.pbxproj"
 
-          # Force the build settings the Info.plist variables resolve from.
+          # Primary: agvtool. This now actually writes the version because the project
+          # sets VERSIONING_SYSTEM = apple-generic (without it, agvtool silently no-ops,
+          # which is how earlier builds kept shipping the old number).
+          cd "$PROJECT_DIR"
+          agvtool new-version -all 5
+          agvtool new-marketing-version 1.0
+          cd "$CM_BUILD_DIR"
+
+          # Belt-and-suspenders: also pin the build settings and write literal values
+          # straight into the archived Info.plist, so the number is correct even if the
+          # apple-generic path ever changes. Then FAIL loud if it isn't 5 -- a wrong
+          # number can never archive.
           sed -i '' 's/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = 5;/g' "$PBXPROJ"
           sed -i '' 's/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = 1.0;/g' "$PBXPROJ"
-
-          # Belt-and-suspenders: write literal values straight into the Info.plist that
-          # gets archived, removing any dependence on variable substitution.
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 5" "$PLIST"
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0" "$PLIST"
 
