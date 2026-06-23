@@ -103,7 +103,14 @@ const clerkAppearance = {
     alertText: "text-[#0f2730]",
     logoBox: "justify-center",
     logoImage: "h-12 w-12 rounded-xl",
+    socialButtons: "flex flex-col",
     socialButtonsBlockButton: "border border-[#c9dbe2] hover:bg-[#f1f7f9]",
+    // Apple's Human Interface Guidelines & App Store Guideline 4.8 require Sign
+    // in with Apple to be at least as prominent as other options. Both buttons
+    // share the same base style (equal size/prominence); ordering forces Apple
+    // to the top of the stack and Google directly beneath it.
+    socialButtonsBlockButton__apple: "order-first",
+    socialButtonsBlockButton__google: "order-2",
     formButtonPrimary: "bg-[#0b7d9b] hover:bg-[#0a6a83] text-white font-semibold",
     formFieldInput: "bg-white border border-[#c9dbe2] text-[#0f2730]",
     footerAction: "text-[#5a7480]",
