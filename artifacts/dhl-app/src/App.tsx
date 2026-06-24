@@ -13,7 +13,6 @@ import { Onboarding } from "@/components/Onboarding";
 import { WaiverGate } from "@/components/WaiverGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { NativeAppleButton } from "@/components/NativeAppleButton";
 import { useGetMe } from "@workspace/api-client-react";
 import { WAIVER_VERSION } from "@/lib/waiver";
 
@@ -104,20 +103,19 @@ const clerkAppearance = {
     alertText: "text-[#0f2730]",
     logoBox: "justify-center",
     logoImage: "h-12 w-12 rounded-xl",
-    socialButtons: "flex flex-col",
     socialButtonsBlockButton: "border border-[#c9dbe2] hover:bg-[#f1f7f9]",
-    // Clerk's web "Sign in with Apple" is permanently hidden everywhere: the
-    // Replit-managed production Apple .p8 is malformed, so the web OAuth token
-    // exchange fails. The native iOS app provides a TRUE native Apple button
-    // (NativeAppleButton) instead; the web simply offers Google + email. Google
-    // stays as Clerk web OAuth on both web and native.
+    // App Store submission: ALL third-party social login is hidden everywhere
+    // (web + native) for this review build — only email login + the App Store
+    // reviewer sign-in remain. Apple/Google will be re-enabled after approval.
     // NOTE: must be "!hidden" (display:none !important), not "hidden": Clerk
     // injects its own styles under the "clerk" CSS layer, and inside the iOS
-    // webview a plain (layered) `hidden` utility loses to Clerk's button display
-    // rule, leaving the broken Apple button visible/tappable. The !important
-    // form wins regardless of layer ordering.
+    // webview a plain (layered) `hidden` utility loses to Clerk's display rule.
+    // The !important form wins regardless of layer ordering. Hiding the whole
+    // socialButtons container + the divider leaves a clean email-only form.
+    socialButtons: "!hidden",
     socialButtonsBlockButton__apple: "!hidden",
-    socialButtonsBlockButton__google: "order-first",
+    socialButtonsBlockButton__google: "!hidden",
+    dividerRow: "!hidden",
     formButtonPrimary: "bg-[#0b7d9b] hover:bg-[#0a6a83] text-white font-semibold",
     formFieldInput: "bg-white border border-[#c9dbe2] text-[#0f2730]",
     footerAction: "text-[#5a7480]",
@@ -221,25 +219,9 @@ function ReviewerLogin() {
   );
 }
 
-// Visible build marker so the installed binary can be confirmed at a glance.
-// Bump the number in lockstep with the iOS build number (CURRENT_PROJECT_VERSION
-// / codemagic.yaml) on every TestFlight build.
-function BuildBadge() {
-  return (
-    <p
-      className="mb-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
-      data-testid="text-build-label"
-    >
-      Native Apple Build 12
-    </p>
-  );
-}
-
 function SignInPage() {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4">
-      <BuildBadge />
-      <NativeAppleButton />
       <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
       <ReviewerLogin />
     </div>
@@ -249,8 +231,6 @@ function SignInPage() {
 function SignUpPage() {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4">
-      <BuildBadge />
-      <NativeAppleButton />
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
     </div>
   );

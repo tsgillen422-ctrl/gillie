@@ -262,13 +262,20 @@
     box-shadow: 0 20px 44px -14px rgba(0, 0, 0, 0.65);
   }
 }
-/* Belt-and-suspenders kill switch for Clerk's web "Sign in with Apple" button.
-   The broken Replit-managed Apple .p8 makes the web OAuth fail, so this button
-   must NEVER render. The appearance prop already sets "!hidden", but Clerk
-   injects its styles under the "clerk" CSS layer; this UNLAYERED !important rule
-   beats any layered rule no matter the ordering. Native iOS uses NativeAppleButton. */
+/* Belt-and-suspenders kill switch for ALL Clerk social login buttons (Apple +
+   Google) and the "or" divider, for the App Store review build. Only email login
+   and the reviewer sign-in remain. The appearance prop already sets "!hidden",
+   but Clerk injects its styles under the "clerk" CSS layer; this UNLAYERED
+   !important rule beats any layered rule no matter the ordering. Apple/Google
+   will be re-enabled after approval. */
+.cl-socialButtons,
+.cl-socialButtonsBlockButton,
 .cl-socialButtonsBlockButton__apple,
+.cl-socialButtonsBlockButton__google,
 button.cl-socialButtonsBlockButton__apple,
-[data-clerk-element="socialButtonsBlockButton__apple"] {
+button.cl-socialButtonsBlockButton__google,
+[data-clerk-element="socialButtonsBlockButton__apple"],
+[data-clerk-element="socialButtonsBlockButton__google"],
+.cl-dividerRow {
   display: none !important;
 }

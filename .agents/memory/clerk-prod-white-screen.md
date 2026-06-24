@@ -23,3 +23,12 @@ there is nothing to edit.
 **Fix:** do NOT hand-edit Clerk secrets. Per clerk-auth skill: bump `@clerk/*` to latest
 allowed (minimumReleaseAge), confirm the dev preview still renders, then **re-publish**. The
 fresh build re-runs the live-key swap and clears the bad publish.
+
+## "Development mode" badge is a dev-keys indicator, not a banner to delete
+Clerk renders a small "Development mode" pill at the bottom of its `<SignIn>/<SignUp>`
+card **only when loaded with development keys** (the Replit dev preview). It is NOT the
+Replit `vite-plugin-dev-banner` and it does NOT appear in the published prod build (prod
+keys) — which is what the iOS Capacitor wrapper loads via `server.url`. **Do not chase it
+with fragile `.cl-badge` CSS** (Clerk warns these structural selectors break on updates);
+just confirm it's absent on the live/published site. The separate Replit "Development mode"
+banner is the vite dev-banner plugin in `vite.config.ts`.
