@@ -18,6 +18,7 @@ export function NativeAppleButton() {
   const clerk = useClerk();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debug, setDebug] = useState<string | null>(null);
 
   if (!isNativePlatform()) return null;
 
@@ -25,23 +26,38 @@ export function NativeAppleButton() {
     if (loading) return;
     setLoading(true);
     setError(null);
+    setDebug(null);
+
+    // Accumulate every diagnostic the user asked to see, so we can render the
+    // full picture on screen even when a later step throws.
+    const d: string[] = [];
+    const yn = (v: unknown) => (v ? "yes" : "no");
     try {
       // STAGE 1: Apple's native authorization popup.
       console.log("[apple-native] stage 1: requesting Apple authorization");
-      const { identityToken, email, fullName } = await signInWithAppleNative();
-      console.log("[apple-native] stage 1 OK: identityToken received", {
+      const { identityToken, email, fullName, authorizationCode } =
+        await signInWithAppleNative();
+      d.push(`Apple popup: success`);
+      d.push(`identityToken present: ${yn(identityToken)} (len ${identityToken.length})`);
+      d.push(`authorizationCode present: ${yn(authorizationCode)}`);
+      d.push(`email present: ${yn(email)}  fullName present: ${yn(fullName)}`);
+      setDebug(d.join("\n"));
+      console.log("[apple-native] stage 1 OK", {
         identityTokenLength: identityToken.length,
+        hasAuthorizationCode: Boolean(authorizationCode),
         hasEmail: Boolean(email),
         hasFullName: Boolean(fullName),
       });
 
       // STAGE 2: hand the Apple identity token to our backend for verification.
       console.log("[apple-native] stage 2: POST /api/auth/apple-native");
+      d.push(`backend endpoint called: POST /api/auth/apple-native`);
+      setDebug(d.join("\n"));
       const res = await fetch("/api/auth/apple-native", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ identityToken, email, fullName }),
+        body: JSON.stringify({ identityToken, email, fullName, authorizationCode }),
       });
 
       // Read the raw body once so we can show the server's exact response even
@@ -53,10 +69,22 @@ export function NativeAppleButton() {
       } catch {
         // leave parsed empty; rawBody is shown below
       }
+      // SECURITY: a successful response body contains the Clerk sign-in ticket
+      // (an auth secret). Never render or log it. Error bodies carry only
+      // {error, stage, detail} (no token), so those are safe to show in full.
+      const safeBody = res.ok
+        ? `OK (sign-in token received: ${yn(parsed.token)})`
+        : rawBody
+          ? rawBody.slice(0, 300)
+          : "(empty)";
+      d.push(`backend status: ${res.status}`);
+      d.push(`backend response: ${safeBody}`);
+      setDebug(d.join("\n"));
       console.log("[apple-native] stage 2 response", {
         status: res.status,
         ok: res.ok,
-        body: rawBody.slice(0, 500),
+        hasToken: Boolean(parsed.token),
+        body: res.ok ? "(redacted: contains sign-in token)" : rawBody.slice(0, 500),
       });
 
       if (!res.ok) {
@@ -104,6 +132,8 @@ export function NativeAppleButton() {
       }
       const message = err instanceof Error ? err.message : String(err);
       console.error("[apple-native] sign-in failed:", message);
+      d.push(`FAILED: ${message}`);
+      setDebug(d.join("\n"));
       setError(message);
       setLoading(false);
     }
@@ -134,6 +164,14 @@ export function NativeAppleButton() {
         >
           {error}
         </p>
+      ) : null}
+      {debug ? (
+        <pre
+          className="max-h-56 select-text overflow-auto whitespace-pre-wrap break-words rounded-lg border border-muted-foreground/30 bg-muted/40 p-2 text-left font-mono text-[11px] leading-snug text-muted-foreground"
+          data-testid="text-apple-native-debug"
+        >
+          {debug}
+        </pre>
       ) : null}
     </div>
   );

@@ -94,14 +94,20 @@ router.post("/apple-native", async (req, res) => {
     typeof req.body?.email === "string" ? req.body.email : "";
   const bodyFullName =
     typeof req.body?.fullName === "string" ? req.body.fullName : "";
+  const bodyAuthorizationCode =
+    typeof req.body?.authorizationCode === "string"
+      ? req.body.authorizationCode
+      : "";
 
   // Stage 0: what did the client actually send? Log presence/sizes only — never
-  // the raw token or PII content.
+  // the raw token or PII content. authorizationCode is informational only (the
+  // identityToken is what we verify); presence helps debug the native handoff.
   logger.info(
     {
       ip,
       hasIdentityToken: Boolean(identityToken),
       identityTokenLength: identityToken.length,
+      hasAuthorizationCode: Boolean(bodyAuthorizationCode),
       hasBodyEmail: Boolean(bodyEmail),
       hasBodyFullName: Boolean(bodyFullName),
     },

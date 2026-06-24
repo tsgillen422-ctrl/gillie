@@ -120,9 +120,16 @@ extension AppleNativeSignInPlugin: ASAuthorizationControllerDelegate {
         let family = credential.fullName?.familyName
         let fullName = [given, family].compactMap { $0 }.joined(separator: " ")
 
+        // Apple also returns a short-lived authorization code (Data). We surface
+        // its presence for debugging the native handoff; the backend verifies the
+        // identityToken, so the code is informational only.
+        let authorizationCode: String? = credential.authorizationCode
+            .flatMap { String(data: $0, encoding: .utf8) }
+
         var result: [String: Any] = ["identityToken": identityToken]
         result["email"] = credential.email ?? NSNull()
         result["fullName"] = fullName.isEmpty ? NSNull() : fullName
+        result["authorizationCode"] = authorizationCode ?? NSNull()
         call.resolve(result)
     }
 

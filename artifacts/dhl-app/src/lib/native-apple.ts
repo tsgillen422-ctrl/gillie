@@ -8,6 +8,7 @@ export type NativeAppleResult = {
   identityToken: string;
   email: string | null;
   fullName: string | null;
+  authorizationCode: string | null;
 };
 
 export class AppleSignInCancelled extends Error {
@@ -22,6 +23,7 @@ interface AppleNativeSignInPlugin {
     identityToken: string;
     email: string | null;
     fullName: string | null;
+    authorizationCode?: string | null;
   }>;
 }
 
@@ -45,6 +47,7 @@ export async function signInWithAppleNative(): Promise<NativeAppleResult> {
     console.log("[apple-native] native authorize() returned", {
       hasIdentityToken: Boolean(result?.identityToken),
       identityTokenLength: result?.identityToken?.length ?? 0,
+      hasAuthorizationCode: Boolean(result?.authorizationCode),
       hasEmail: Boolean(result?.email),
       hasFullName: Boolean(result?.fullName),
     });
@@ -70,5 +73,6 @@ export async function signInWithAppleNative(): Promise<NativeAppleResult> {
     identityToken,
     email: result?.email ?? null,
     fullName: result?.fullName ?? null,
+    authorizationCode: result?.authorizationCode ?? null,
   };
 }

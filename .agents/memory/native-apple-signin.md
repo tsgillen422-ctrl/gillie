@@ -62,8 +62,18 @@ non-technical user can read/copy it. Backend logs are visible via deployment log
 so "nonce verification" is not a real stage; backend verification = signature(JWKS)+iss+aud+exp.
 **Returning `detail` to the client is debug-only** (leaks jose/Clerk error internals); gate or
 sanitize it before a long-term production release.
-**Channel reminder:** these are WEB changes → take effect via Replit REPUBLISH, NOT a Codemagic
-build. The Swift plugin is unchanged, so the installed build-12 binary works as-is; only republish.
+**Token-leak trap (critical):** the SUCCESS response body is `{token: <Clerk sign-in ticket>}` —
+an auth secret. The on-screen/console debug readout must NEVER print the raw success body; show
+only `token received: yes/no`. Raw body is safe to show ONLY for non-OK responses (those carry
+just `{error, stage, detail}`, no token).
+**authorizationCode:** Apple also returns a short-lived `authorizationCode`; the Swift plugin now
+includes it (informational only — backend verifies the identityToken, not the code). It's surfaced
+as `authorizationCode present: yes/no`. Note: that Swift field is NATIVE → only appears after the
+next build; older installed binaries show "no" even on success.
+**Channel reminder:** the debug READOUT + redaction are WEB changes → take effect via Replit
+REPUBLISH (no Codemagic build needed); the installed build-12 binary works as-is. The only NATIVE
+change is the Swift plugin returning `authorizationCode`, which needs the next Codemagic build to
+take effect — until then the readout shows `authorizationCode present: no`.
 
 - The Clerk web "Sign in with Apple" button is hidden EVERYWHERE (web + native) via base
   appearance `socialButtonsBlockButton__apple: "!hidden"` (NOT plain "hidden" — Clerk styles
