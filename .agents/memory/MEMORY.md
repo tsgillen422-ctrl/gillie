@@ -3,7 +3,7 @@
 - [Realtime websockets](realtime-websockets.md) — ws works through the Replit proxy at /api/ws; keep polling as fallback.
 - [User deletion cascade](user-deletion-cascade.md) — no DB cascades; delete user's own data only, never wipe shared conversations/other users' messages.
 - [Web push](web-push.md) — guard subscribe against cross-user endpoint rebind (409); keep push best-effort; gate on full VAPID config.
-- [iOS Capacitor wrapper](ios-capacitor-wrapper.md) — native app is a server.url webview (NOT bundled) b/c Clerk cookie auth + /api are same-origin; webDir=dist/public; SPM not CocoaPods.
+- [iOS Capacitor wrapper](ios-capacitor-wrapper.md) — native app is a server.url webview (NOT bundled) b/c Clerk cookie auth + /api are same-origin; webDir=dist/public; SPM not CocoaPods. Also: OAuth needs server.allowNavigation or login silently fails in-app (pops to Safari, cookie lost).
 - [Capacitor iOS push](capacitor-ios-push.md) — JS plugin isn't enough: need AppDelegate APNs forwarding + per-config aps-environment entitlements (dev vs prod); cap sync won't add them.
 - [Conditions data sources](conditions-data-sources.md) — /api/conditions real feeds (Open-Meteo, USACE CWMS water level) + which metrics are estimates; CWMS catalog quirks.
 - [Auth architecture](auth-architecture.md) — Clerk cookie-based same-origin (no Bearer); api-server has NO tsc gate so type errors won't catch runtime bugs.

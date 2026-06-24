@@ -21,3 +21,19 @@ origin keeps auth and `/api` working exactly as in mobile Safari.
 - Re-sync after web changes: `pnpm --filter @workspace/dhl-app run cap:sync`.
 - Caveat: pure webview wrappers risk Apple Guideline 4.2 rejection.
 - Final build, signing, and App Store submission require a Mac + Xcode + Apple Developer Program ($99/yr) — cannot be done in Replit.
+
+## OAuth (Sign in with Apple / Google) needs server.allowNavigation
+Social sign-in works on the live web but **silently fails in the native
+webview** if `server.allowNavigation` is unset. Reason: the OAuth flow
+redirects the top-level page to an off-origin provider (appleid.apple.com /
+accounts.google.com). Without allowNavigation, Capacitor treats off-origin
+top-level navigations as "external" and opens them in the system browser, so
+the session cookie is set in Safari and never returns to the WKWebView — login
+appears to do nothing in the app.
+**Fix:** list the provider hosts in `server.allowNavigation`
+(`appleid.apple.com`, `*.apple.com`, `accounts.google.com`, `*.google.com`,
+`*.googleusercontent.com`) so the OAuth pages load *inside* the webview and the
+redirect chain (and cookies) stay same-context.
+**How to apply:** this is baked into the native app at build time — editing
+capacitor.config.ts requires `cap:sync` + a NEW Codemagic build (not a Replit
+republish, which only updates the web origin the wrapper loads).
