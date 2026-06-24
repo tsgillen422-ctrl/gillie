@@ -35,9 +35,21 @@ own `sub` plus a forged body email of any victim and mint a ticket for the victi
 on re-authorization, so without the anchor a returning user can't be resolved.
 
 ## Plugin / native config
-- Plugin is `@capacitor-community/apple-sign-in@7.1.0` running on Capacitor 8 core — cap:sync
-  registers it fine (SPM, not CocoaPods). Native-only: gate every call behind `Capacitor.isNativePlatform()`.
+- Do NOT use `@capacitor-community/apple-sign-in` (latest 7.1.0): its iOS Package.swift pins
+  `capacitor-swift-pm >=7 <8`, which conflicts with `@capacitor/push-notifications@8`
+  (`capacitor-swift-pm >=8`). SwiftPM resolution fails at build time (Codemagic). There is no
+  Cap 8 release of that community plugin.
+- Instead: a self-contained Swift Capacitor plugin (`AppleNativeSignInPlugin`, jsName
+  `AppleNativeSignIn`) built directly on `ASAuthorizationAppleIDProvider`, living INSIDE
+  `ios/App/App/AppDelegate.swift`. Putting it in AppDelegate.swift (already in the App target's
+  compile sources) avoids editing project.pbxproj by hand — no Mac/Xcode needed. Capacitor
+  auto-registers any `CAPBridgedPlugin`-conforming `@objc` class; JS reaches it via
+  `registerPlugin("AppleNativeSignIn")`. Cancel = `ASAuthorizationError.canceled` → reject
+  message "cancelled"/code "1001"; JS maps that to a quiet AppleSignInCancelled.
+- Native-only: gate every call behind `Capacitor.isNativePlatform()`.
 - Requires `com.apple.developer.applesignin = [Default]` in BOTH `App.entitlements` and
   `App.release.entitlements`, AND the "Sign in with Apple" capability enabled on the App ID
   in the Apple Developer portal (agent cannot do this — user must) or native signing fails.
-- Hide Clerk's web Apple button in native only via appearance `socialButtonsBlockButton__apple: "hidden"`.
+- The Clerk web "Sign in with Apple" button is hidden EVERYWHERE (web + native) via base
+  appearance `socialButtonsBlockButton__apple: "hidden"` — the web OAuth flow is dead, web
+  offers Google + email only; native provides the real Apple button.

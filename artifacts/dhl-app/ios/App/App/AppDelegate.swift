@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import AuthenticationServices
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -56,4 +57,104 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
     }
 
+}
+
+// MARK: - Native "Sign in with Apple" Capacitor plugin
+//
+// This is a self-contained Capacitor plugin built directly on Apple's
+// AuthenticationServices (ASAuthorizationAppleIDProvider). We deliberately do
+// NOT use @capacitor-community/apple-sign-in: its iOS Package.swift pins
+// capacitor-swift-pm to >=7 <8, which conflicts with @capacitor/push-notifications@8
+// (requires capacitor-swift-pm >=8), breaking SwiftPM resolution at build time.
+//
+// It lives inside AppDelegate.swift (already part of the App target's compile
+// sources) so it is guaranteed to be built into the binary without editing the
+// Xcode project file. Capacitor auto-registers any CAPBridgedPlugin-conforming
+// class, so the JS side reaches it via registerPlugin("AppleNativeSignIn").
+//
+// The webview calls authorize(); on success we return the JWT identity token
+// (verified server-side against Apple's public JWKS) plus the name/email Apple
+// provides on the first authorization only.
+@objc(AppleNativeSignInPlugin)
+public class AppleNativeSignInPlugin: CAPPlugin, CAPBridgedPlugin {
+    public let identifier = "AppleNativeSignInPlugin"
+    public let jsName = "AppleNativeSignIn"
+    public let pluginMethods: [CAPPluginMethod] = [
+        CAPPluginMethod(name: "authorize", returnType: CAPPluginReturnPromise)
+    ]
+
+    private var pendingCall: CAPPluginCall?
+
+    @objc func authorize(_ call: CAPPluginCall) {
+        DispatchQueue.main.async {
+            self.pendingCall = call
+            let provider = ASAuthorizationAppleIDProvider()
+            let request = provider.createRequest()
+            request.requestedScopes = [.fullName, .email]
+            let controller = ASAuthorizationController(authorizationRequests: [request])
+            controller.delegate = self
+            controller.presentationContextProvider = self
+            controller.performRequests()
+        }
+    }
+}
+
+extension AppleNativeSignInPlugin: ASAuthorizationControllerDelegate {
+    public func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithAuthorization authorization: ASAuthorization
+    ) {
+        guard let call = self.pendingCall else { return }
+        self.pendingCall = nil
+
+        guard
+            let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+            let tokenData = credential.identityToken,
+            let identityToken = String(data: tokenData, encoding: .utf8)
+        else {
+            call.reject("Apple did not return an identity token")
+            return
+        }
+
+        let given = credential.fullName?.givenName
+        let family = credential.fullName?.familyName
+        let fullName = [given, family].compactMap { $0 }.joined(separator: " ")
+
+        var result: [String: Any] = ["identityToken": identityToken]
+        result["email"] = credential.email ?? NSNull()
+        result["fullName"] = fullName.isEmpty ? NSNull() : fullName
+        call.resolve(result)
+    }
+
+    public func authorizationController(
+        controller: ASAuthorizationController,
+        didCompleteWithError error: Error
+    ) {
+        guard let call = self.pendingCall else { return }
+        self.pendingCall = nil
+
+        // ASAuthorizationError.canceled (1001) is the user dismissing the sheet —
+        // surfaced with a distinct message the JS layer treats as a quiet cancel.
+        if let authError = error as? ASAuthorizationError, authError.code == .canceled {
+            call.reject("cancelled", "1001")
+            return
+        }
+        call.reject(error.localizedDescription)
+    }
+}
+
+extension AppleNativeSignInPlugin: ASAuthorizationControllerPresentationContextProviding {
+    public func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        if let window = self.bridge?.viewController?.view.window {
+            return window
+        }
+        for scene in UIApplication.shared.connectedScenes {
+            if let windowScene = scene as? UIWindowScene {
+                if let key = windowScene.windows.first(where: { $0.isKeyWindow }) ?? windowScene.windows.first {
+                    return key
+                }
+            }
+        }
+        return ASPresentationAnchor()
+    }
 }

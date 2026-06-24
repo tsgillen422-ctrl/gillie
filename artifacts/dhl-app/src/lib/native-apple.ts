@@ -1,4 +1,4 @@
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 
 export function isNativePlatform(): boolean {
   return Capacitor.isNativePlatform();
@@ -17,24 +17,30 @@ export class AppleSignInCancelled extends Error {
   }
 }
 
+interface AppleNativeSignInPlugin {
+  authorize(): Promise<{
+    identityToken: string;
+    email: string | null;
+    fullName: string | null;
+  }>;
+}
+
+// Custom native plugin implemented in Swift (ios/App/App/AppDelegate.swift,
+// class AppleNativeSignInPlugin) on top of ASAuthorizationAppleIDProvider. We do
+// NOT use @capacitor-community/apple-sign-in because its iOS package pins
+// capacitor-swift-pm >=7 <8, which conflicts with @capacitor/push-notifications@8
+// (needs capacitor-swift-pm >=8) and breaks the SwiftPM build. registerPlugin
+// returns a web proxy that we never invoke — the button is native-only.
+const AppleNativeSignIn =
+  registerPlugin<AppleNativeSignInPlugin>("AppleNativeSignIn");
+
 // Trigger Apple's native ASAuthorizationController popup and return the signed
 // identity token plus the name/email Apple gives us (name + email are only
-// populated on the very first authorization for this app). Dynamically imported
-// so the plugin never ends up in the web bundle.
+// populated on the very first authorization for this app).
 export async function signInWithAppleNative(): Promise<NativeAppleResult> {
-  const { SignInWithApple } = await import(
-    "@capacitor-community/apple-sign-in"
-  );
-
   let result;
   try {
-    // On iOS the native flow ignores clientId/redirectURI (those are only used
-    // for the web/Android fallback), but the plugin's types require them.
-    result = await SignInWithApple.authorize({
-      clientId: "app.dalehollowlake",
-      redirectURI: "https://dale-hollow-nav.replit.app/",
-      scopes: "email name",
-    });
+    result = await AppleNativeSignIn.authorize();
   } catch (err) {
     // ASAuthorizationError.canceled (1001) is the user dismissing the sheet —
     // not a real failure, so surface it as a distinct, quiet error.
@@ -45,18 +51,14 @@ export async function signInWithAppleNative(): Promise<NativeAppleResult> {
     throw err;
   }
 
-  const r = result.response;
-  const identityToken = r?.identityToken ?? "";
+  const identityToken = result?.identityToken ?? "";
   if (!identityToken) {
     throw new Error("Apple did not return an identity token");
   }
 
-  const fullName =
-    [r?.givenName, r?.familyName].filter(Boolean).join(" ").trim() || null;
-
   return {
     identityToken,
-    email: r?.email ?? null,
-    fullName,
+    email: result?.email ?? null,
+    fullName: result?.fullName ?? null,
   };
 }
