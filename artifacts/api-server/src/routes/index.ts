@@ -18,6 +18,7 @@ import pushRouter from "./push";
 import gifsRouter from "./gifs";
 import adminRouter from "./admin";
 import reviewerRouter from "./reviewer";
+import appleNativeRouter from "./appleNative";
 import { requireAuth } from "../middlewares/auth";
 
 const router: IRouter = Router();
@@ -27,6 +28,9 @@ const router: IRouter = Router();
 // Clerk sign-in ticket). Everything below requires an authenticated session.
 router.use(healthRouter);
 router.use("/reviewer", reviewerRouter);
+// Native iOS "Sign in with Apple" — public: it verifies an Apple-signed
+// identity token itself and mints a Clerk sign-in ticket.
+router.use("/auth", appleNativeRouter);
 router.use(requireAuth);
 router.use(storageRouter);
 router.use("/users", usersRouter);

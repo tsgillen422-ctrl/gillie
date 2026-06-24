@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Capacitor } from "@capacitor/core";
 import { ClerkProvider, SignIn, SignUp, Show } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
@@ -13,6 +14,7 @@ import { Onboarding } from "@/components/Onboarding";
 import { WaiverGate } from "@/components/WaiverGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NativeAppleButton } from "@/components/NativeAppleButton";
 import { useGetMe } from "@workspace/api-client-react";
 import { WAIVER_VERSION } from "@/lib/waiver";
 
@@ -121,6 +123,24 @@ const clerkAppearance = {
   },
 };
 
+const isNativeApp = Capacitor.isNativePlatform();
+
+// In the native iOS app the web Apple OAuth button is replaced by a TRUE native
+// "Sign in with Apple" button (NativeAppleButton), so hide Clerk's web Apple
+// button there to avoid the broken web token-exchange flow. The web keeps
+// Clerk's Apple button. Google stays as Clerk web OAuth in both.
+const clerkAppearanceNative = {
+  ...clerkAppearance,
+  elements: {
+    ...clerkAppearance.elements,
+    socialButtonsBlockButton__apple: "hidden",
+  },
+};
+
+const activeClerkAppearance = isNativeApp
+  ? clerkAppearanceNative
+  : clerkAppearance;
+
 // App Store reviewer login. Production Clerk forces an email "new device"
 // verification code on password sign-ins (mailed to the reviewer's unreachable
 // mailbox), which can't be disabled on a Replit-managed instance. This form
@@ -217,6 +237,7 @@ function ReviewerLogin() {
 function SignInPage() {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4">
+      <NativeAppleButton />
       <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
       <ReviewerLogin />
     </div>
@@ -225,90 +246,9 @@ function SignInPage() {
 
 function SignUpPage() {
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
+    <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4">
+      <NativeAppleButton />
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// TEMPORARY DEBUG — Apple OAuth failure reporter. Surfaces the exact Clerk
-// error (code + longMessage) carried on the sign-in / sign-up verification
-// resources after an OAuth callback, both on-screen and in the console.
-// REMOVE this component + its <OAuthDebugReporter/> mount once the Apple
-// sign-in error has been captured.
-// ---------------------------------------------------------------------------
-function OAuthDebugReporter() {
-  const clerk = useClerk();
-  const [msg, setMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    function extract(): string | null {
-      try {
-        const client = (clerk as unknown as { client?: any }).client;
-        const si = client?.signIn;
-        const su = client?.signUp;
-        const candidates: any[] = [];
-        if (si?.firstFactorVerification?.error) candidates.push(si.firstFactorVerification.error);
-        if (si?.secondFactorVerification?.error) candidates.push(si.secondFactorVerification.error);
-        if (Array.isArray(si?.errors)) candidates.push(...si.errors);
-        if (su?.verifications?.externalAccount?.error) candidates.push(su.verifications.externalAccount.error);
-        if (su?.verifications?.emailAddress?.error) candidates.push(su.verifications.emailAddress.error);
-        if (Array.isArray(su?.errors)) candidates.push(...su.errors);
-        const e = candidates.find(Boolean);
-        if (!e) return null;
-        const code = e.code ?? e.error ?? "(no code)";
-        const long = e.longMessage ?? e.long_message ?? e.message ?? "(no message)";
-        return `code=${code} | ${long}`;
-      } catch {
-        return null;
-      }
-    }
-
-    function update() {
-      const found = extract();
-      if (found) {
-        setMsg(found);
-        // eslint-disable-next-line no-console
-        console.error("[APPLE-OAUTH-DEBUG]", found);
-      }
-    }
-
-    update();
-    const url = `${window.location.search}${window.location.hash}`;
-    if (/error|clerk_status/i.test(url)) {
-      // eslint-disable-next-line no-console
-      console.error("[APPLE-OAUTH-DEBUG] callback url:", url);
-    }
-    const unsub = (clerk as unknown as { addListener?: (cb: () => void) => () => void }).addListener?.(
-      () => update(),
-    );
-    return () => {
-      if (typeof unsub === "function") unsub();
-    };
-  }, [clerk]);
-
-  if (!msg) return null;
-  return (
-    <div
-      data-testid="oauth-debug-banner"
-      style={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 99999,
-        background: "#dc2626",
-        color: "#ffffff",
-        padding: "12px 16px",
-        fontSize: 13,
-        lineHeight: 1.4,
-        fontFamily: "monospace",
-        whiteSpace: "pre-wrap",
-        wordBreak: "break-word",
-      }}
-    >
-      <strong>Apple OAuth error</strong> — {msg}
     </div>
   );
 }
@@ -405,7 +345,7 @@ function ClerkProviderWithRoutes() {
     <ClerkProvider
       publishableKey={clerkPubKey}
       proxyUrl={clerkProxyUrl}
-      appearance={clerkAppearance}
+      appearance={activeClerkAppearance}
       signInUrl={`${basePath}/sign-in`}
       signUpUrl={`${basePath}/sign-up`}
       localization={{
@@ -427,7 +367,6 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
-        <OAuthDebugReporter />
         <TooltipProvider>
           <Switch>
             <Route path="/sign-in/*?" component={SignInPage} />

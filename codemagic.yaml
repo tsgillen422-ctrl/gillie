@@ -60,11 +60,11 @@ workflows:
       - name: Capacitor sync (iOS)
         script: |
           pnpm --filter @workspace/dhl-app run cap:sync
-      - name: Set build number to 9 (agvtool, hard-forced)
+      - name: Set build number to 10 (agvtool, hard-forced)
         script: |
           set -euo pipefail
-          # Hard-force CFBundleVersion to exactly 9. App Store Connect already has build 8,
-          # so this upload MUST be 9.
+          # Hard-force CFBundleVersion to exactly 10. App Store Connect already has build 9,
+          # so this upload MUST be 10.
           # Auto-increment / "latest App Store build number" is intentionally NOT used
           # anywhere -- the value is pinned here and verified against the real IPA before
           # the App Store Connect publishing step runs.
@@ -76,23 +76,23 @@ workflows:
           # sets VERSIONING_SYSTEM = apple-generic (without it, agvtool silently no-ops,
           # which is how earlier builds kept shipping the old number).
           cd "$PROJECT_DIR"
-          agvtool new-version -all 9
+          agvtool new-version -all 10
           agvtool new-marketing-version 1.0
           cd "$CM_BUILD_DIR"
 
           # Belt-and-suspenders: also pin the build settings and write literal values
           # straight into the archived Info.plist, so the number is correct even if the
-          # apple-generic path ever changes. Then FAIL loud if it isn't 9 -- a wrong
+          # apple-generic path ever changes. Then FAIL loud if it isn't 10 -- a wrong
           # number can never archive.
-          sed -i '' 's/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = 9;/g' "$PBXPROJ"
+          sed -i '' 's/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = 10;/g' "$PBXPROJ"
           sed -i '' 's/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = 1.0;/g' "$PBXPROJ"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 9" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 10" "$PLIST"
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0" "$PLIST"
 
           CFV=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$PLIST")
           CFSV=$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$PLIST")
           echo "==> CFBundleVersion=$CFV  CFBundleShortVersionString=$CFSV"
-          [ "$CFV" = "9" ] || { echo "!! CFBundleVersion is '$CFV', expected 9 -- aborting."; exit 1; }
+          [ "$CFV" = "10" ] || { echo "!! CFBundleVersion is '$CFV', expected 10 -- aborting."; exit 1; }
           [ "$CFSV" = "1.0" ] || { echo "!! CFBundleShortVersionString is '$CFSV', expected 1.0 -- aborting."; exit 1; }
       - name: Select App Store profile for the bundle id
         script: |
@@ -196,12 +196,12 @@ workflows:
             echo "=========================================================="
           fi
           exit "$BUILD_EXIT"
-      - name: Verify IPA build number is 9 (gate before upload)
+      - name: Verify IPA build number is 10 (gate before upload)
         script: |
           set -euo pipefail
           # FINAL GATE before the app_store_connect publishing step runs. Inspect the
-          # actual archived IPA and FAIL the build if CFBundleVersion != 9, so a wrong
-          # build number (e.g. an old 7/8 Apple already has) can NEVER be uploaded.
+          # actual archived IPA and FAIL the build if CFBundleVersion != 10, so a wrong
+          # build number (e.g. an old 8/9 Apple already has) can NEVER be uploaded.
           # This is the source of truth -- it checks the real binary, not the project.
           shopt -s nullglob
           ipas=("$CM_BUILD_DIR"/build/ios/ipa/*.ipa)
@@ -217,9 +217,9 @@ workflows:
           CFSV="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP_PLIST")"
           rm -rf "$WORK"
           echo "==> IPA CFBundleVersion=$CFV  CFBundleShortVersionString=$CFSV"
-          [ "$CFV" = "9" ] || { echo "!! IPA CFBundleVersion is '$CFV', expected 9 -- refusing to upload to App Store Connect."; exit 1; }
+          [ "$CFV" = "10" ] || { echo "!! IPA CFBundleVersion is '$CFV', expected 10 -- refusing to upload to App Store Connect."; exit 1; }
           [ "$CFSV" = "1.0" ] || { echo "!! IPA CFBundleShortVersionString is '$CFSV', expected 1.0 -- refusing to upload."; exit 1; }
-          echo "==> OK: IPA build number is 9 (version 1.0), safe to upload."
+          echo "==> OK: IPA build number is 10 (version 1.0), safe to upload."
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
