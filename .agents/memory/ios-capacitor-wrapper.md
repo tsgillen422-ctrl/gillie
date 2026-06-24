@@ -14,6 +14,22 @@ Bundling assets locally (`capacitor://localhost`) would make every API/auth call
 cross-origin and break Clerk cookies. Pointing the webview at the production
 origin keeps auth and `/api` working exactly as in mobile Safari.
 
+## CRITICAL: web UI changes need a Replit REPUBLISH, not a Codemagic build
+Because the webview loads the live origin, the entire login/UI (Clerk sign-in,
+the Apple button, any on-screen build label) is served by the **production web
+deployment** — it is NOT baked into the IPA. Two independent release channels:
+- **Native binary** (Swift plugins, entitlements, build number, capacitor.config):
+  ships via a **Codemagic build** from GitHub `main`.
+- **Web UI** (anything in dhl-app/src): ships via a **Replit Publish/redeploy** of
+  the workspace to `dale-hollow-nav.replit.app`.
+**Why:** bumping the Codemagic build number (10→11→12) repeatedly did NOTHING to the
+login screen because the live site was never republished — the wrapper kept loading
+the old bundle with the broken Clerk web Apple button. Verify the live bundle
+actually contains your change: `curl -s https://dale-hollow-nav.replit.app/ | grep -oE '/assets/[^"]+\.js'` then grep the bundle for a unique marker (e.g. a testid).
+**How to apply:** changing a native button or hiding a Clerk element = REPUBLISH the
+web app (and rebuild via Codemagic only if the native plugin/build number also
+changed). A new TestFlight build alone will never show web-only changes.
+
 **How to apply:**
 - Production origin is `https://dale-hollow-nav.replit.app`; bundle id `app.dalehollowlake`; app name "Dale Hollow Lake".
 - `webDir` is `dist/public` (Vite output nests under `public/`), required by `cap sync` even though `server.url` overrides it at runtime.

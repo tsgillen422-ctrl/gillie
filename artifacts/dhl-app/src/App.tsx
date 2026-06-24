@@ -111,7 +111,12 @@ const clerkAppearance = {
     // exchange fails. The native iOS app provides a TRUE native Apple button
     // (NativeAppleButton) instead; the web simply offers Google + email. Google
     // stays as Clerk web OAuth on both web and native.
-    socialButtonsBlockButton__apple: "hidden",
+    // NOTE: must be "!hidden" (display:none !important), not "hidden": Clerk
+    // injects its own styles under the "clerk" CSS layer, and inside the iOS
+    // webview a plain (layered) `hidden` utility loses to Clerk's button display
+    // rule, leaving the broken Apple button visible/tappable. The !important
+    // form wins regardless of layer ordering.
+    socialButtonsBlockButton__apple: "!hidden",
     socialButtonsBlockButton__google: "order-first",
     formButtonPrimary: "bg-[#0b7d9b] hover:bg-[#0a6a83] text-white font-semibold",
     formFieldInput: "bg-white border border-[#c9dbe2] text-[#0f2730]",
@@ -216,9 +221,24 @@ function ReviewerLogin() {
   );
 }
 
+// Visible build marker so the installed binary can be confirmed at a glance.
+// Bump the number in lockstep with the iOS build number (CURRENT_PROJECT_VERSION
+// / codemagic.yaml) on every TestFlight build.
+function BuildBadge() {
+  return (
+    <p
+      className="mb-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+      data-testid="text-build-label"
+    >
+      Native Apple Build 12
+    </p>
+  );
+}
+
 function SignInPage() {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4">
+      <BuildBadge />
       <NativeAppleButton />
       <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
       <ReviewerLogin />
@@ -229,6 +249,7 @@ function SignInPage() {
 function SignUpPage() {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-background px-4">
+      <BuildBadge />
       <NativeAppleButton />
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
     </div>

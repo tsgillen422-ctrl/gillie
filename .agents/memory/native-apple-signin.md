@@ -51,5 +51,8 @@ on re-authorization, so without the anchor a returning user can't be resolved.
   `App.release.entitlements`, AND the "Sign in with Apple" capability enabled on the App ID
   in the Apple Developer portal (agent cannot do this — user must) or native signing fails.
 - The Clerk web "Sign in with Apple" button is hidden EVERYWHERE (web + native) via base
-  appearance `socialButtonsBlockButton__apple: "hidden"` — the web OAuth flow is dead, web
-  offers Google + email only; native provides the real Apple button.
+  appearance `socialButtonsBlockButton__apple: "!hidden"` (NOT plain "hidden" — Clerk styles
+  live under the "clerk" CSS layer and beat a layered `hidden` utility in the iOS webview, so
+  the broken button stayed tappable; the !important form wins). Backed by an unlayered
+  !important kill-switch in index.css on `.cl-socialButtonsBlockButton__apple`. The web OAuth
+  flow is dead — web offers Google + email only; native provides the real Apple button.
