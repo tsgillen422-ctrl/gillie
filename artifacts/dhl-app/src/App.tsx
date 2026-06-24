@@ -231,6 +231,88 @@ function SignUpPage() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// TEMPORARY DEBUG — Apple OAuth failure reporter. Surfaces the exact Clerk
+// error (code + longMessage) carried on the sign-in / sign-up verification
+// resources after an OAuth callback, both on-screen and in the console.
+// REMOVE this component + its <OAuthDebugReporter/> mount once the Apple
+// sign-in error has been captured.
+// ---------------------------------------------------------------------------
+function OAuthDebugReporter() {
+  const clerk = useClerk();
+  const [msg, setMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    function extract(): string | null {
+      try {
+        const client = (clerk as unknown as { client?: any }).client;
+        const si = client?.signIn;
+        const su = client?.signUp;
+        const candidates: any[] = [];
+        if (si?.firstFactorVerification?.error) candidates.push(si.firstFactorVerification.error);
+        if (si?.secondFactorVerification?.error) candidates.push(si.secondFactorVerification.error);
+        if (Array.isArray(si?.errors)) candidates.push(...si.errors);
+        if (su?.verifications?.externalAccount?.error) candidates.push(su.verifications.externalAccount.error);
+        if (su?.verifications?.emailAddress?.error) candidates.push(su.verifications.emailAddress.error);
+        if (Array.isArray(su?.errors)) candidates.push(...su.errors);
+        const e = candidates.find(Boolean);
+        if (!e) return null;
+        const code = e.code ?? e.error ?? "(no code)";
+        const long = e.longMessage ?? e.long_message ?? e.message ?? "(no message)";
+        return `code=${code} | ${long}`;
+      } catch {
+        return null;
+      }
+    }
+
+    function update() {
+      const found = extract();
+      if (found) {
+        setMsg(found);
+        // eslint-disable-next-line no-console
+        console.error("[APPLE-OAUTH-DEBUG]", found);
+      }
+    }
+
+    update();
+    const url = `${window.location.search}${window.location.hash}`;
+    if (/error|clerk_status/i.test(url)) {
+      // eslint-disable-next-line no-console
+      console.error("[APPLE-OAUTH-DEBUG] callback url:", url);
+    }
+    const unsub = (clerk as unknown as { addListener?: (cb: () => void) => () => void }).addListener?.(
+      () => update(),
+    );
+    return () => {
+      if (typeof unsub === "function") unsub();
+    };
+  }, [clerk]);
+
+  if (!msg) return null;
+  return (
+    <div
+      data-testid="oauth-debug-banner"
+      style={{
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 99999,
+        background: "#dc2626",
+        color: "#ffffff",
+        padding: "12px 16px",
+        fontSize: 13,
+        lineHeight: 1.4,
+        fontFamily: "monospace",
+        whiteSpace: "pre-wrap",
+        wordBreak: "break-word",
+      }}
+    >
+      <strong>Apple OAuth error</strong> — {msg}
+    </div>
+  );
+}
+
 // Invalidate cached data when the signed-in user changes.
 function ClerkQueryClientCacheInvalidator() {
   const { addListener } = useClerk();
@@ -345,6 +427,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <OAuthDebugReporter />
         <TooltipProvider>
           <Switch>
             <Route path="/sign-in/*?" component={SignInPage} />
