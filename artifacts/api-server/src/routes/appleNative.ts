@@ -71,34 +71,91 @@ async function findClerkUserByExternalId(externalId: string) {
   }
 }
 
+function errDetail(err: unknown): { name: string; message: string } {
+  if (err instanceof Error) {
+    return { name: err.name || "Error", message: err.message || String(err) };
+  }
+  return { name: "Unknown", message: String(err) };
+}
+
 router.post("/apple-native", async (req, res) => {
   const ip = req.ip ?? "unknown";
   if (rateLimited(ip)) {
-    res.status(429).json({ error: "Too many attempts. Try again later." });
+    logger.warn({ ip }, "apple native: rate limited");
+    res
+      .status(429)
+      .json({ error: "Too many attempts. Try again later.", stage: "rate_limit" });
     return;
   }
 
   const identityToken =
     typeof req.body?.identityToken === "string" ? req.body.identityToken : "";
+  const bodyEmail =
+    typeof req.body?.email === "string" ? req.body.email : "";
   const bodyFullName =
     typeof req.body?.fullName === "string" ? req.body.fullName : "";
 
+  // Stage 0: what did the client actually send? Log presence/sizes only — never
+  // the raw token or PII content.
+  logger.info(
+    {
+      ip,
+      hasIdentityToken: Boolean(identityToken),
+      identityTokenLength: identityToken.length,
+      hasBodyEmail: Boolean(bodyEmail),
+      hasBodyFullName: Boolean(bodyFullName),
+    },
+    "apple native: request received",
+  );
+
   if (!identityToken) {
-    res.status(400).json({ error: "identityToken is required" });
+    logger.warn({ ip }, "apple native: missing identityToken in body");
+    res
+      .status(400)
+      .json({ error: "identityToken is required", stage: "missing_token" });
+    return;
+  }
+
+  // Stage 1: verify the Apple-signed identity token (signature vs Apple JWKS +
+  // issuer + audience + expiry). This is the most common failure point.
+  let payload;
+  try {
+    ({ payload } = await jwtVerify(identityToken, APPLE_JWKS, {
+      issuer: APPLE_ISSUER,
+      audience: APPLE_AUDIENCE,
+    }));
+  } catch (err) {
+    const detail = errDetail(err);
+    logger.warn(
+      { ip, expectedIssuer: APPLE_ISSUER, expectedAudience: APPLE_AUDIENCE, detail },
+      "apple native: token verification FAILED",
+    );
+    res.status(401).json({
+      error: "Apple token verification failed",
+      stage: "verify_token",
+      detail: `${detail.name}: ${detail.message}`,
+      expectedAudience: APPLE_AUDIENCE,
+    });
     return;
   }
 
   try {
-    // Verify the Apple-signed identity token. jwtVerify checks the signature
-    // against Apple's public JWKS plus issuer, audience and expiry.
-    const { payload } = await jwtVerify(identityToken, APPLE_JWKS, {
-      issuer: APPLE_ISSUER,
-      audience: APPLE_AUDIENCE,
-    });
-
     const sub = typeof payload.sub === "string" ? payload.sub : "";
+    logger.info(
+      {
+        ip,
+        sub: sub ? `${sub.slice(0, 6)}…` : "(none)",
+        tokenAud: payload.aud,
+        tokenIss: payload.iss,
+        hasTokenEmail: typeof payload.email === "string",
+        emailVerified: payload.email_verified,
+      },
+      "apple native: token verified",
+    );
     if (!sub) {
-      res.status(401).json({ error: "Invalid Apple token" });
+      res
+        .status(401)
+        .json({ error: "Invalid Apple token (no subject)", stage: "no_subject" });
       return;
     }
 
@@ -121,8 +178,10 @@ router.post("/apple-native", async (req, res) => {
     // signed up via web Apple OAuth or any other method with the same address),
     // otherwise create a new one.
     let user = await findClerkUserByExternalId(externalId);
+    let resolution = user ? "externalId" : "";
     if (!user && tokenEmail) {
       user = await findClerkUserByEmail(tokenEmail);
+      if (user) resolution = "email";
       // Anchor the matched account to this Apple subject so future sign-ins
       // resolve by externalId even once Apple stops sending the email claim.
       if (user && !user.externalId) {
@@ -136,7 +195,14 @@ router.post("/apple-native", async (req, res) => {
 
     if (!user) {
       if (!tokenEmail) {
-        res.status(400).json({ error: "No verified email available from Apple" });
+        logger.warn(
+          { ip },
+          "apple native: no existing user and no verified email to create one",
+        );
+        res.status(400).json({
+          error: "No verified email available from Apple",
+          stage: "no_email_for_create",
+        });
         return;
       }
       const { firstName, lastName } = splitName(bodyFullName);
@@ -147,17 +213,30 @@ router.post("/apple-native", async (req, res) => {
         ...(lastName ? { lastName } : {}),
         skipPasswordRequirement: true,
       });
+      resolution = "created";
     }
+    logger.info(
+      { ip, userId: user.id, resolution },
+      "apple native: user resolved",
+    );
 
     const token = await clerkClient.signInTokens.createSignInToken({
       userId: user.id,
       expiresInSeconds: 600,
     });
+    logger.info({ ip, userId: user.id }, "apple native: sign-in token minted OK");
 
     res.json({ token: token.token });
   } catch (err) {
-    logger.warn({ err }, "apple native sign-in failed");
-    res.status(401).json({ error: "Apple sign-in failed" });
+    // Reaches here only for failures AFTER token verification: Clerk user
+    // lookup/create or sign-in-token minting. Surface the specific Clerk error.
+    const detail = errDetail(err);
+    logger.error({ err, detail }, "apple native: post-verify step FAILED");
+    res.status(401).json({
+      error: "Apple sign-in failed",
+      stage: "clerk_user_or_token",
+      detail: `${detail.name}: ${detail.message}`,
+    });
   }
 });
 

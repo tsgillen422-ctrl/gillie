@@ -26,39 +26,85 @@ export function NativeAppleButton() {
     setLoading(true);
     setError(null);
     try {
+      // STAGE 1: Apple's native authorization popup.
+      console.log("[apple-native] stage 1: requesting Apple authorization");
       const { identityToken, email, fullName } = await signInWithAppleNative();
+      console.log("[apple-native] stage 1 OK: identityToken received", {
+        identityTokenLength: identityToken.length,
+        hasEmail: Boolean(email),
+        hasFullName: Boolean(fullName),
+      });
 
+      // STAGE 2: hand the Apple identity token to our backend for verification.
+      console.log("[apple-native] stage 2: POST /api/auth/apple-native");
       const res = await fetch("/api/auth/apple-native", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ identityToken, email, fullName }),
       });
-      if (!res.ok) throw new Error("apple sign-in failed");
-      const data = (await res.json()) as { token?: string };
-      if (!data.token) throw new Error("no token");
 
-      // Drive the classic Clerk signIn resource directly (the v6 signals API
-      // returned by useSignIn has no setActive). The ticket strategy completes
-      // the sign-in and sets the first-party Clerk session cookie.
+      // Read the raw body once so we can show the server's exact response even
+      // when it isn't valid JSON.
+      const rawBody = await res.text();
+      let parsed: { token?: string; error?: string; stage?: string; detail?: string } = {};
+      try {
+        parsed = rawBody ? JSON.parse(rawBody) : {};
+      } catch {
+        // leave parsed empty; rawBody is shown below
+      }
+      console.log("[apple-native] stage 2 response", {
+        status: res.status,
+        ok: res.ok,
+        body: rawBody.slice(0, 500),
+      });
+
+      if (!res.ok) {
+        const serverStage = parsed.stage ? ` [${parsed.stage}]` : "";
+        const serverDetail = parsed.detail
+          ? `: ${parsed.detail}`
+          : parsed.error
+            ? `: ${parsed.error}`
+            : rawBody
+              ? `: ${rawBody.slice(0, 200)}`
+              : "";
+        throw new Error(
+          `Backend rejected token (HTTP ${res.status})${serverStage}${serverDetail}`,
+        );
+      }
+      if (!parsed.token) {
+        throw new Error(
+          `Backend returned no sign-in token (HTTP ${res.status}, body: ${rawBody.slice(0, 200)})`,
+        );
+      }
+
+      // STAGE 3: consume the Clerk sign-in ticket. Drive the classic Clerk
+      // signIn resource directly (the v6 signals API returned by useSignIn has
+      // no setActive). The ticket strategy completes the sign-in and sets the
+      // first-party Clerk session cookie.
+      console.log("[apple-native] stage 3: consuming Clerk ticket");
       const classicSignIn = clerk.client?.signIn;
-      if (!classicSignIn) throw new Error("clerk not ready");
+      if (!classicSignIn) throw new Error("Clerk client not ready for ticket sign-in");
       const result = await classicSignIn.create({
         strategy: "ticket",
-        ticket: data.token,
+        ticket: parsed.token,
       });
+      console.log("[apple-native] stage 3 result", { status: result.status });
       if (result.status === "complete" && result.createdSessionId) {
         await clerk.setActive({ session: result.createdSessionId });
         window.location.assign(`${basePath}/`);
         return;
       }
-      throw new Error(`unexpected sign-in status: ${result.status}`);
+      throw new Error(`Clerk ticket sign-in returned status: ${result.status}`);
     } catch (err) {
       if (err instanceof AppleSignInCancelled) {
+        console.log("[apple-native] user cancelled the Apple sheet");
         setLoading(false);
         return;
       }
-      setError("Apple sign-in failed. Please try again.");
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[apple-native] sign-in failed:", message);
+      setError(message);
       setLoading(false);
     }
   }
@@ -83,7 +129,7 @@ export function NativeAppleButton() {
       </button>
       {error ? (
         <p
-          className="text-center text-sm text-destructive"
+          className="max-h-40 select-text overflow-auto whitespace-pre-wrap break-words rounded-lg border border-destructive/40 bg-destructive/5 p-2 text-left text-xs text-destructive"
           data-testid="text-apple-native-error"
         >
           {error}

@@ -40,20 +40,30 @@ const AppleNativeSignIn =
 export async function signInWithAppleNative(): Promise<NativeAppleResult> {
   let result;
   try {
+    console.log("[apple-native] calling native AppleNativeSignIn.authorize()…");
     result = await AppleNativeSignIn.authorize();
+    console.log("[apple-native] native authorize() returned", {
+      hasIdentityToken: Boolean(result?.identityToken),
+      identityTokenLength: result?.identityToken?.length ?? 0,
+      hasEmail: Boolean(result?.email),
+      hasFullName: Boolean(result?.fullName),
+    });
   } catch (err) {
     // ASAuthorizationError.canceled (1001) is the user dismissing the sheet —
     // not a real failure, so surface it as a distinct, quiet error.
     const message = err instanceof Error ? err.message : String(err);
+    console.warn("[apple-native] native authorize() threw:", message);
     if (/1001|cancel/i.test(message)) {
       throw new AppleSignInCancelled();
     }
-    throw err;
+    throw new Error(`Apple authorization failed: ${message}`);
   }
 
   const identityToken = result?.identityToken ?? "";
   if (!identityToken) {
-    throw new Error("Apple did not return an identity token");
+    throw new Error(
+      "Apple returned no identity token (native plugin gave an empty token)",
+    );
   }
 
   return {

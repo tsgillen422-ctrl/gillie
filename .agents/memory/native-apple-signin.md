@@ -50,6 +50,21 @@ on re-authorization, so without the anchor a returning user can't be resolved.
 - Requires `com.apple.developer.applesignin = [Default]` in BOTH `App.entitlements` and
   `App.release.entitlements`, AND the "Sign in with Apple" capability enabled on the App ID
   in the Apple Developer portal (agent cannot do this — user must) or native signing fails.
+## Debugging the failure on-device (no console access)
+The native app is a server.url webview, so you can't open devtools on the phone. To debug
+the Apple flow, the endpoint and button surface staged diagnostics: backend returns JSON
+`{error, stage, detail}` (stages: `rate_limit`, `missing_token`, `verify_token`, `no_subject`,
+`no_email_for_create`, `clerk_user_or_token`) and logs each stage server-side (presence/length
+only — NEVER the raw token or email). The button reads the raw response body once, parses JSON
+safely, and renders the exact `HTTP <status> [stage]: detail` in a selectable on-screen box so a
+non-technical user can read/copy it. Backend logs are visible via deployment logs.
+**There is NO nonce in this flow** — Apple's request sends none and the token has no nonce claim,
+so "nonce verification" is not a real stage; backend verification = signature(JWKS)+iss+aud+exp.
+**Returning `detail` to the client is debug-only** (leaks jose/Clerk error internals); gate or
+sanitize it before a long-term production release.
+**Channel reminder:** these are WEB changes → take effect via Replit REPUBLISH, NOT a Codemagic
+build. The Swift plugin is unchanged, so the installed build-12 binary works as-is; only republish.
+
 - The Clerk web "Sign in with Apple" button is hidden EVERYWHERE (web + native) via base
   appearance `socialButtonsBlockButton__apple: "!hidden"` (NOT plain "hidden" — Clerk styles
   live under the "clerk" CSS layer and beat a layered `hidden` utility in the iOS webview, so
