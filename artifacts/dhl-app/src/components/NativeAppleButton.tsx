@@ -9,7 +9,8 @@ import {
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 // Native iOS "Sign in with Apple" button. Only renders inside the Capacitor app
-// (returns null on the web, where Clerk's own Apple button handles web OAuth).
+// (returns null on the web — there is no web Apple login at all anymore, since
+// the broken Clerk web Apple OAuth was removed; web offers Google + email only).
 // It triggers Apple's native popup, sends the resulting identity token to our
 // backend, and consumes the returned Clerk sign-in token via the ticket
 // strategy — the same mechanism the reviewer login uses.

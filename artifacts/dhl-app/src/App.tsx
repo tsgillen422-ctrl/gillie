@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Capacitor } from "@capacitor/core";
 import { ClerkProvider, SignIn, SignUp, Show } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
@@ -107,12 +106,13 @@ const clerkAppearance = {
     logoImage: "h-12 w-12 rounded-xl",
     socialButtons: "flex flex-col",
     socialButtonsBlockButton: "border border-[#c9dbe2] hover:bg-[#f1f7f9]",
-    // Apple's Human Interface Guidelines & App Store Guideline 4.8 require Sign
-    // in with Apple to be at least as prominent as other options. Both buttons
-    // share the same base style (equal size/prominence); ordering forces Apple
-    // to the top of the stack and Google directly beneath it.
-    socialButtonsBlockButton__apple: "order-first",
-    socialButtonsBlockButton__google: "order-2",
+    // Clerk's web "Sign in with Apple" is permanently hidden everywhere: the
+    // Replit-managed production Apple .p8 is malformed, so the web OAuth token
+    // exchange fails. The native iOS app provides a TRUE native Apple button
+    // (NativeAppleButton) instead; the web simply offers Google + email. Google
+    // stays as Clerk web OAuth on both web and native.
+    socialButtonsBlockButton__apple: "hidden",
+    socialButtonsBlockButton__google: "order-first",
     formButtonPrimary: "bg-[#0b7d9b] hover:bg-[#0a6a83] text-white font-semibold",
     formFieldInput: "bg-white border border-[#c9dbe2] text-[#0f2730]",
     footerAction: "text-[#5a7480]",
@@ -122,24 +122,6 @@ const clerkAppearance = {
     main: "gap-5",
   },
 };
-
-const isNativeApp = Capacitor.isNativePlatform();
-
-// In the native iOS app the web Apple OAuth button is replaced by a TRUE native
-// "Sign in with Apple" button (NativeAppleButton), so hide Clerk's web Apple
-// button there to avoid the broken web token-exchange flow. The web keeps
-// Clerk's Apple button. Google stays as Clerk web OAuth in both.
-const clerkAppearanceNative = {
-  ...clerkAppearance,
-  elements: {
-    ...clerkAppearance.elements,
-    socialButtonsBlockButton__apple: "hidden",
-  },
-};
-
-const activeClerkAppearance = isNativeApp
-  ? clerkAppearanceNative
-  : clerkAppearance;
 
 // App Store reviewer login. Production Clerk forces an email "new device"
 // verification code on password sign-ins (mailed to the reviewer's unreachable
@@ -345,7 +327,7 @@ function ClerkProviderWithRoutes() {
     <ClerkProvider
       publishableKey={clerkPubKey}
       proxyUrl={clerkProxyUrl}
-      appearance={activeClerkAppearance}
+      appearance={clerkAppearance}
       signInUrl={`${basePath}/sign-in`}
       signUpUrl={`${basePath}/sign-up`}
       localization={{
