@@ -31,3 +31,13 @@ is `enabled/required` as an attribute (set at sign-up) but is NOT a sign-in firs
 **Implication:** Clerk's `<SignIn>` renders no "Forgot password?" link and one is NOT needed —
 account recovery is inherent (you always get in via the email code, nothing to reset). Don't add
 a forgot-password flow; it would be non-functional and would mean touching the email-login flow.
+
+## To get email+password login + built-in "Forgot password?" → Auth pane toggle (not code)
+Login methods (email+password vs passwordless email_code) are a Replit-managed Clerk **Auth pane**
+setting (Configure tab → pick Production), NOT code — `checkClerkManagementStatus`=managed, no
+dashboard/code access to toggle factors. PROD was set to passwordless (password not a first factor)
+while users still HAVE passwords (required at signup) so enabling password login locks nobody out.
+**Once "Password" is enabled for Production, Clerk's `<SignIn>` auto-renders the email+password form
+AND a built-in "Forgot password?" link** (reset via `reset_password_email_code`, which the instance
+supports) — no custom reset code needed. Our appearance/CSS hides only social buttons + dividerRow,
+NOT the password field or footer/forgot links, so nothing suppresses it.
