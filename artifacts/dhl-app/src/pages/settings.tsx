@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor, VolumeX, Volume2, ShieldCheck, Bookmark, ChevronRight, Heart, ScrollText, MessageSquare, Trash2 } from "lucide-react";
+import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor, VolumeX, Volume2, ShieldCheck, Bookmark, ChevronRight, Heart, ScrollText, MessageSquare, Trash2, LifeBuoy, Mail } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -645,6 +645,41 @@ export function SettingsPage() {
             </CardHeader>
           </Card>
         </Link>
+
+        {/* Help & Support */}
+        <div className="pt-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
+            Help & Support
+          </h2>
+        </div>
+
+        <a
+          href="mailto:gillie.apphelp@yahoo.com"
+          className="block"
+          data-testid="link-support-email"
+        >
+          <Card className="border-border shadow-sm hover-elevate cursor-pointer">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-primary/10 text-primary">
+                    <LifeBuoy className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Help & Support</CardTitle>
+                    <CardDescription>Email us at gillie.apphelp@yahoo.com</CardDescription>
+                  </div>
+                </div>
+                <Mail className="w-5 h-5 text-muted-foreground" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                If you lose access to your account email, contact support.
+              </p>
+            </CardContent>
+          </Card>
+        </a>
 
         {me?.isAdmin && (
           <Link href="/admin">

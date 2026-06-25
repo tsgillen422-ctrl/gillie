@@ -32,12 +32,21 @@ is `enabled/required` as an attribute (set at sign-up) but is NOT a sign-in firs
 account recovery is inherent (you always get in via the email code, nothing to reset). Don't add
 a forgot-password flow; it would be non-functional and would mean touching the email-login flow.
 
-## To get email+password login + built-in "Forgot password?" → Auth pane toggle (not code)
-Login methods (email+password vs passwordless email_code) are a Replit-managed Clerk **Auth pane**
-setting (Configure tab → pick Production), NOT code — `checkClerkManagementStatus`=managed, no
-dashboard/code access to toggle factors. PROD was set to passwordless (password not a first factor)
-while users still HAVE passwords (required at signup) so enabling password login locks nobody out.
-**Once "Password" is enabled for Production, Clerk's `<SignIn>` auto-renders the email+password form
-AND a built-in "Forgot password?" link** (reset via `reset_password_email_code`, which the instance
-supports) — no custom reset code needed. Our appearance/CSS hides only social buttons + dividerRow,
-NOT the password field or footer/forgot links, so nothing suppresses it.
+## To get email+password login → NOT an Auth-pane toggle, NOT code (needs Replit Support)
+**Correction of an earlier wrong note:** there is NO email/password toggle in the Replit Auth pane.
+The Auth pane's Configure tab only toggles **SSO providers** (Google/GitHub/Apple/X) — confirmed by
+a user who saw only SSO providers under Production, and by Replit docs ("Replit Auth does not have a
+separate toggle for email and password sign-in"). The passwordless-email_code-vs-email+password
+choice is a Clerk **instance authentication-strategy** setting that Replit-managed Clerk does not
+expose in the Auth pane, and it is **not changeable from app code** either — Clerk's `<SignIn>`
+renders the password field + built-in "Forgot password?" link purely from the instance config; our
+appearance/CSS only styles things, it can't add a factor. The instance *supports* the strategies
+(`auth_config.first_factors` includes `password` and `reset_password_email_code`) but
+`password.used_for_first_factor=false`, so they don't render.
+**Why:** these are dashboard-level Clerk settings with no public Backend-API toggle, and the dev
+workspace only holds the *test* (dev) secret key anyway — you can't reach the prod instance from here.
+**How to apply:** enabling email+password (and thus the built-in Forgot-password flow) on the prod
+instance requires **Replit Support**. Do NOT build a custom password form/reset and do NOT promise
+an Auth-pane click path. Passwordless email_code is itself complete sign-in + recovery (no password
+to forget), so it's a valid ship state — surface a "lose access to your email → contact support" note
+instead.
