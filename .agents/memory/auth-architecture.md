@@ -22,3 +22,12 @@ Auth is Replit-managed Clerk. The web app (dhl-app) uses **cookie-based, same-or
 ## Build gotcha (bit us once)
 - api-server builds/runs via **esbuild bundle (build.mjs → dist/index.mjs), with NO tsc typecheck gate**. So TypeScript errors do NOT block the server and will NOT catch runtime bugs.
 - **How to apply:** never rely on type errors to surface bugs here. A scripted find/replace (e.g. `SESSION_USER_ID` → `currentUserId(req)`) silently introduced a `ReferenceError: req is not defined` inside a helper with no `req` param, which only a code review / e2e test caught. After bulk edits, review helper signatures and run the e2e/testing skill.
+
+## Sign-in is passwordless (email_code) — no "Forgot password?" applies
+Live prod Clerk config (`GET /api/__clerk/v1/environment`): `email_address.first_factors:
+["email_code"]` and `password.used_for_first_factor: false` / `first_factors: []`. So normal
+users sign in by entering email → one-time email code; **there is no password step**. Password
+is `enabled/required` as an attribute (set at sign-up) but is NOT a sign-in first factor.
+**Implication:** Clerk's `<SignIn>` renders no "Forgot password?" link and one is NOT needed —
+account recovery is inherent (you always get in via the email code, nothing to reset). Don't add
+a forgot-password flow; it would be non-functional and would mean touching the email-login flow.
