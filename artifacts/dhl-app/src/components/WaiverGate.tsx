@@ -1,8 +1,8 @@
 import React from "react";
 import { Capacitor } from "@capacitor/core";
-import { useClerk } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAcceptWaiver, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useLogout } from "@/lib/useLogout";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
@@ -11,7 +11,7 @@ import { WAIVER_VERSION, WaiverBody } from "@/lib/waiver";
 export function WaiverGate() {
   const acceptWaiver = useAcceptWaiver();
   const qc = useQueryClient();
-  const { signOut } = useClerk();
+  const logout = useLogout();
   const { toast } = useToast();
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
@@ -41,7 +41,7 @@ export function WaiverGate() {
         return;
       }
     }
-    signOut({ redirectUrl: basePath || "/" });
+    logout(basePath || "/");
   };
 
   return (

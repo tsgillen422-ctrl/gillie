@@ -22,6 +22,7 @@ import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCr
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
 import { ClickableImage } from "@/components/ClickableImage";
+import { CheckInControl } from "@/components/CheckInControl";
 import { MatureGate } from "@/components/MatureGate";
 import { Navigation, MessageSquare, Plus, Minus, Crosshair, Droplet, X, ImagePlus, Heart, Star, Search, Trash2, Flame, Compass, Ruler, Clock } from "lucide-react";
 import { Link, useSearch } from "wouter";
@@ -883,7 +884,7 @@ export function MapPage() {
   // current.
   const lastLocSentRef = useRef(0);
   useEffect(() => {
-    if (!me || !me.shareLocation) return;
+    if (!me || !me.isSharingLocation) return;
     if (!navigator.geolocation) return;
     const report = (pos: GeolocationPosition) => {
       // Keep the freshest usable speed reading for the "boat to friend" ETA.
@@ -917,14 +918,14 @@ export function MapPage() {
     const watchId = navigator.geolocation.watchPosition(report, onError, opts);
     return () => navigator.geolocation.clearWatch(watchId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me?.shareLocation]);
+  }, [me?.isSharingLocation]);
 
   // Keep the server's on-the-water status in sync as I cross between water and
   // land. Only the client can tell water from land (via the rendered map), and
   // the feed's "Now on the water" count relies on this signal, so we re-report
   // whenever that determination flips. Mirrors the map's own meOnWater logic.
   useEffect(() => {
-    if (!me?.shareLocation || me.currentLat == null || me.currentLng == null) return;
+    if (!me?.isSharingLocation || me.currentLat == null || me.currentLng == null) return;
     updateLocation.mutate({
       data: { lat: me.currentLat, lng: me.currentLng, onWater: !meOnLand },
     });
@@ -1145,7 +1146,7 @@ export function MapPage() {
       .map((f: any) => ({ ...f }));
 
     // include myself so I can share a boat with friends
-    if (me?.shareLocation && me?.currentLat != null && me?.currentLng != null) {
+    if (me?.isSharingLocation && me?.currentLat != null && me?.currentLng != null) {
       list.push({
         userId: me.id,
         displayName: me.displayName,
@@ -1658,7 +1659,7 @@ export function MapPage() {
 
     // When I'm rafted into a crew, the crew marker shows my face — skip the
     // standalone me-marker so I'm not drawn twice.
-    if (!meInCrew && me?.shareLocation && me?.currentLat != null && me?.currentLng != null) {
+    if (!meInCrew && me?.isSharingLocation && me?.currentLat != null && me?.currentLng != null) {
       const color = me.boatColor || "#0284c7";
       const { root, scale } = buildFriendEl({
         color,
@@ -2023,6 +2024,13 @@ export function MapPage() {
           </button>
         )}
       </div>
+      )}
+
+      {/* Manual location check-in (Apple 5.1.2) */}
+      {!pinDialog.open && (
+        <div className="pointer-events-auto absolute bottom-4 left-1/2 -translate-x-1/2 z-[450]">
+          <CheckInControl variant="compact" />
+        </div>
       )}
 
       {/* Floating map controls */}

@@ -28,6 +28,7 @@ export interface FriendLocation {
   lat?: number | null;
   /** @nullable */
   lng?: number | null;
+  isSharingLocation?: boolean;
   /** @nullable */
   isBusiness?: boolean | null;
   isOnline?: boolean;

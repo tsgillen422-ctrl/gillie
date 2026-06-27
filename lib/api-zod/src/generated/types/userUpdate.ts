@@ -32,7 +32,6 @@ export interface UserUpdate {
   boatAccent?: string | null;
   interests?: string[];
   isBusiness?: boolean;
-  shareLocation?: boolean;
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
   showFriends?: boolean;

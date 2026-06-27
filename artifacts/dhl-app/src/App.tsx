@@ -13,7 +13,7 @@ import { Onboarding } from "@/components/Onboarding";
 import { WaiverGate } from "@/components/WaiverGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useGetMe } from "@workspace/api-client-react";
+import { useGetMe, useCheckOutLocation, getGetMeQueryKey } from "@workspace/api-client-react";
 import { WAIVER_VERSION } from "@/lib/waiver";
 
 import { LandingPage } from "@/pages/landing";
@@ -261,6 +261,33 @@ function ClerkQueryClientCacheInvalidator() {
 
 function AuthedApp() {
   const { data: me, isLoading, isError, refetch } = useGetMe();
+  const qc = useQueryClient();
+  const checkOut = useCheckOutLocation();
+
+  // Apple 5.1.2: location sharing must not persist across a cold launch. If the
+  // account is still flagged as sharing when the app first loads, end that
+  // check-in once so the user starts each session "Not sharing".
+  const coldLaunchCheckedRef = useRef(false);
+  useEffect(() => {
+    if (coldLaunchCheckedRef.current) return;
+    if (!me) return;
+    // Nothing to clear — mark done so we don't keep checking.
+    if (!me.isSharingLocation) {
+      coldLaunchCheckedRef.current = true;
+      return;
+    }
+    if (checkOut.isPending) return;
+    // Fail safe: only mark the one-shot guard once checkout actually succeeds.
+    // If it fails, leave the flag unset so a later /me refresh retries rather
+    // than leaving the user silently "sharing" for the whole session.
+    checkOut.mutate(undefined, {
+      onSuccess: () => {
+        coldLaunchCheckedRef.current = true;
+        qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
+      },
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me]);
 
   if (isLoading) {
     return <div className="flex min-h-[100dvh] items-center justify-center bg-background text-muted-foreground">Loading…</div>;

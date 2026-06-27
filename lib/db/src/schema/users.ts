@@ -22,6 +22,11 @@ export const usersTable = pgTable("users", {
   currentLat: real("current_lat"),
   currentLng: real("current_lng"),
   lastSeen: timestamp("last_seen"),
+  // Apple 5.1.2: location is only published while the user has manually checked
+  // in. This timestamp is the single source of truth for "actively sharing" —
+  // sharing is active iff it is non-null AND in the future. Cleared on stop /
+  // expiry / cold launch. shareLocation is kept in sync only for legacy reads.
+  locationSharingExpiresAt: timestamp("location_sharing_expires_at"),
   boatName: text("boat_name"),
   boatColor: text("boat_color").notNull().default("#3b82f6"),
   boatType: text("boat_type").notNull().default("speedboat"),
@@ -29,7 +34,7 @@ export const usersTable = pgTable("users", {
   boatFlag: boolean("boat_flag").notNull().default(false),
   boatAccent: text("boat_accent"),
   interests: text("interests").array(),
-  shareLocation: boolean("share_location").notNull().default(true),
+  shareLocation: boolean("share_location").notNull().default(false),
   requireFollowApproval: boolean("require_follow_approval").notNull().default(false),
   showFollowers: boolean("show_followers").notNull().default(true),
   showFriends: boolean("show_friends").notNull().default(true),

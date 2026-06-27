@@ -85,6 +85,9 @@ export interface User {
   boatAccent?: string | null;
   interests?: string[];
   shareLocation?: boolean;
+  /** @nullable */
+  locationSharingExpiresAt?: string | null;
+  isSharingLocation?: boolean;
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
   showFriends?: boolean;
@@ -152,7 +155,6 @@ export interface UserUpdate {
   boatAccent?: string | null;
   interests?: string[];
   isBusiness?: boolean;
-  shareLocation?: boolean;
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
   showFriends?: boolean;
@@ -166,6 +168,14 @@ export interface LocationUpdate {
   lat: number;
   lng: number;
   onWater?: boolean;
+}
+
+export interface CheckInInput {
+  lat: number;
+  lng: number;
+  onWater?: boolean;
+  /** How long the check-in stays active (clamped 1-8h, default 6h) */
+  durationHours?: number;
 }
 
 export interface FriendLocation {
@@ -190,6 +200,7 @@ export interface FriendLocation {
   lat?: number | null;
   /** @nullable */
   lng?: number | null;
+  isSharingLocation?: boolean;
   /** @nullable */
   isBusiness?: boolean | null;
   isOnline?: boolean;

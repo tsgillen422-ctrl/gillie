@@ -53,6 +53,9 @@ export interface User {
   boatAccent?: string | null;
   interests?: string[];
   shareLocation?: boolean;
+  /** @nullable */
+  locationSharingExpiresAt?: string | null;
+  isSharingLocation?: boolean;
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
   showFriends?: boolean;

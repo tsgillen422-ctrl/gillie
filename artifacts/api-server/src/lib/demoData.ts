@@ -350,6 +350,9 @@ export async function seedDemoData(): Promise<{ created: number; message: string
         isOnline: true,
         isOnWater: true,
         shareLocation: true,
+        // Demo boats are "checked in" with a far-future expiry so the reviewer's
+        // demo world still shows them on the map under the new check-in model.
+        locationSharingExpiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
         followerSeeLocation: true,
         followerSeePosts: true,
         currentLat: u.lat,

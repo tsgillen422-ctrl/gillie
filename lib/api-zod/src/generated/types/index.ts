@@ -11,6 +11,7 @@ export * from './advisoryLevel';
 export * from './badge';
 export * from './catch';
 export * from './catchInput';
+export * from './checkInInput';
 export * from './comment';
 export * from './commentInput';
 export * from './commentMyReaction';

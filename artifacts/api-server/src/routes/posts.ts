@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, postsTable, postLikesTable, postCommentsTable, commentLikesTable, pinsTable, eventRsvpsTable, mutesTable, savedPostsTable, catchesTable, pollOptionsTable, pollVotesTable, friendRequestsTable, blocksTable } from "@workspace/db";
-import { eq, and, gte, sql, desc, count, inArray, notInArray, or, asc } from "drizzle-orm";
+import { eq, and, gte, gt, sql, desc, count, inArray, notInArray, or, asc } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { canViewPin, getFriendIds as getPinFriendIds } from "./pins";
 import { moderateContent } from "../lib/moderation";
@@ -311,7 +311,8 @@ router.get("/summary", async (req, res) => {
     .where(
       and(
         eq(usersTable.isOnWater, true),
-        eq(usersTable.shareLocation, true),
+        // Apple 5.1.2: only count people with an active (non-expired) check-in.
+        gt(usersTable.locationSharingExpiresAt, new Date()),
         gte(usersTable.lastSeen, onlineSince)
       )
     );

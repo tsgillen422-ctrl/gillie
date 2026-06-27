@@ -27,7 +27,7 @@ import {
   nativePushTokensTable,
   waiverAcceptancesTable,
 } from "@workspace/db";
-import { eq, ilike, or, and, count, notInArray, inArray, desc } from "drizzle-orm";
+import { eq, ilike, or, and, count, notInArray, inArray, desc, gt } from "drizzle-orm";
 import { clerkClient } from "@clerk/express";
 import { currentUserId } from "../middlewares/auth";
 import { createNotifications } from "../lib/notify";
@@ -249,7 +249,15 @@ function computeRank(badges: BadgeOut[]) {
   };
 }
 
+// Apple 5.1.2: a user's live location may only be published while they have a
+// non-expired manual check-in. This is the single source of truth used at every
+// surface that exposes coordinates.
+export function isActivelySharing(u: typeof usersTable.$inferSelect): boolean {
+  return !!u.locationSharingExpiresAt && u.locationSharingExpiresAt.getTime() > Date.now();
+}
+
 function formatUser(u: typeof usersTable.$inferSelect) {
+  const sharing = isActivelySharing(u);
   return {
     id: u.id,
     username: u.username,
@@ -265,8 +273,8 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     work: u.work,
     isOnline: u.isOnline,
     isBusiness: u.isBusiness,
-    currentLat: u.shareLocation ? u.currentLat : null,
-    currentLng: u.shareLocation ? u.currentLng : null,
+    currentLat: sharing ? u.currentLat : null,
+    currentLng: sharing ? u.currentLng : null,
     lastSeen: u.lastSeen ? u.lastSeen.toISOString() : null,
     boatName: u.boatName,
     boatColor: u.boatColor,
@@ -276,6 +284,8 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     boatAccent: u.boatAccent,
     interests: u.interests ?? [],
     shareLocation: u.shareLocation,
+    locationSharingExpiresAt: u.locationSharingExpiresAt ? u.locationSharingExpiresAt.toISOString() : null,
+    isSharingLocation: sharing,
     requireFollowApproval: u.requireFollowApproval,
     showFollowers: u.showFollowers,
     showFriends: u.showFriends,
@@ -368,7 +378,7 @@ router.post("/me/sos", async (req, res) => {
 
 router.patch("/me", async (req, res) => {
   const uid = currentUserId(req);
-  const { displayName, bio, location, hometown, birthday, relationshipStatus, gender, work, avatarUrl, coverUrl, boatName, boatColor, boatType, boatNeon, boatFlag, boatAccent, interests, isBusiness, shareLocation } = req.body;
+  const { displayName, bio, location, hometown, birthday, relationshipStatus, gender, work, avatarUrl, coverUrl, boatName, boatColor, boatType, boatNeon, boatFlag, boatAccent, interests, isBusiness } = req.body;
   const updates: Partial<typeof usersTable.$inferInsert> = {};
   if (displayName !== undefined) updates.displayName = displayName;
   if (bio !== undefined) updates.bio = bio;
@@ -417,7 +427,9 @@ router.patch("/me", async (req, res) => {
     updates.interests = Array.from(new Set(interests as string[]));
   }
   if (isBusiness !== undefined) updates.isBusiness = isBusiness;
-  if (shareLocation !== undefined) updates.shareLocation = shareLocation;
+  // Apple 5.1.2: shareLocation is no longer a persistent toggle. Live location
+  // is only published via an explicit, expiring check-in (POST /me/checkin), so
+  // this endpoint intentionally ignores any shareLocation in the body.
   if (req.body.requireFollowApproval !== undefined) {
     if (typeof req.body.requireFollowApproval !== "boolean") {
       return res.status(400).json({ error: "requireFollowApproval must be a boolean" });
@@ -485,14 +497,77 @@ router.post("/me/waiver", async (req, res) => {
   res.json(formatUser(updated));
 });
 
+// Default check-in length and the max a client may request (Apple 5.1.2: an
+// auto-expiring window so a check-in can never become permanent sharing).
+const CHECKIN_DEFAULT_HOURS = 6;
+const CHECKIN_MAX_HOURS = 8;
+
 router.patch("/me/location", async (req, res) => {
   const uid = currentUserId(req);
   const { lat, lng, onWater } = req.body;
+  // Only refresh coordinates while the user is actively checked in. iOS location
+  // permission alone (or a stale client) must never publish a position.
+  const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, uid) });
+  if (!me) return res.status(401).json({ error: "Not logged in" });
+  if (!isActivelySharing(me)) {
+    return res.json(formatUser(me));
+  }
   const [updated] = await db
     .update(usersTable)
     .set({ currentLat: lat, currentLng: lng, isOnline: true, isOnWater: onWater === true, lastSeen: new Date() })
     .where(eq(usersTable.id, uid))
     .returning();
+  res.json(formatUser(updated));
+});
+
+// Apple 5.1.2: explicit manual check-in. Starts publishing the user's location
+// for an expiring window. Requires fresh coordinates so a check-in always
+// corresponds to a real, user-initiated position.
+router.post("/me/checkin", async (req, res) => {
+  const uid = currentUserId(req);
+  const { lat, lng, onWater, durationHours } = req.body;
+  if (typeof lat !== "number" || typeof lng !== "number" || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return res.status(400).json({ error: "lat and lng are required numbers" });
+  }
+  let hours = CHECKIN_DEFAULT_HOURS;
+  if (durationHours !== undefined) {
+    if (typeof durationHours !== "number" || !Number.isFinite(durationHours)) {
+      return res.status(400).json({ error: "durationHours must be a number" });
+    }
+    hours = Math.min(CHECKIN_MAX_HOURS, Math.max(1, durationHours));
+  }
+  const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000);
+  const [updated] = await db
+    .update(usersTable)
+    .set({
+      currentLat: lat,
+      currentLng: lng,
+      isOnline: true,
+      isOnWater: onWater === true,
+      shareLocation: true,
+      locationSharingExpiresAt: expiresAt,
+      lastSeen: new Date(),
+    })
+    .where(eq(usersTable.id, uid))
+    .returning();
+  res.json(formatUser(updated));
+});
+
+// Apple 5.1.2: stop sharing. Clears the check-in so the user immediately drops
+// off the map for everyone. Also used on logout / cold launch.
+router.post("/me/checkout", async (req, res) => {
+  const uid = currentUserId(req);
+  const [updated] = await db
+    .update(usersTable)
+    .set({
+      shareLocation: false,
+      locationSharingExpiresAt: null,
+      isOnline: false,
+      isOnWater: false,
+    })
+    .where(eq(usersTable.id, uid))
+    .returning();
+  if (!updated) return res.status(401).json({ error: "Not logged in" });
   res.json(formatUser(updated));
 });
 

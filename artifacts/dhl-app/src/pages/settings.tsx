@@ -7,6 +7,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useUpload } from "@workspace/object-storage-web";
 import { UserAvatar } from "@/components/UserAvatar";
 import { SosButton } from "@/components/SosButton";
+import { CheckInControl } from "@/components/CheckInControl";
+import { useLogout } from "@/lib/useLogout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -414,22 +416,17 @@ export function SettingsPage() {
         {/* Appearance */}
         <AppearanceCard />
 
-        {/* Main Setting: Location */}
+        {/* Main Setting: Location Check-In (Apple 5.1.2 — manual, expiring) */}
         <Card className="border-border shadow-md border-primary/20 overflow-hidden relative">
-          <div className={`absolute inset-0 opacity-10 pointer-events-none transition-colors duration-500 ${shareLocation ? 'bg-primary' : 'bg-muted'}`} />
-          <CardHeader className="pb-4 relative">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-full ${shareLocation ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                  <Map className="w-5 h-5" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Location Sharing</CardTitle>
-                </div>
-              </div>
-              <Switch checked={shareLocation} onCheckedChange={handleToggleLocation} className="data-[state=checked]:bg-primary" />
-            </div>
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg">Location Sharing</CardTitle>
+            <CardDescription>
+              Share your location with approved friends only when you choose to
+            </CardDescription>
           </CardHeader>
+          <CardContent>
+            <CheckInControl variant="card" />
+          </CardContent>
         </Card>
 
         {/* Follow Approval */}
@@ -1070,13 +1067,13 @@ function DeleteAccountCard() {
 }
 
 function LogoutButton() {
-  const { signOut } = useClerk();
+  const logout = useLogout();
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
   return (
     <Button
       variant="outline"
       className="flex-1 text-destructive hover:text-destructive"
-      onClick={() => signOut({ redirectUrl: basePath || "/" })}
+      onClick={() => logout(basePath || "/")}
     >
       <LogOut className="w-4 h-4 mr-2" /> Log Out
     </Button>

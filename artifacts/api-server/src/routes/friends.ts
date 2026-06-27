@@ -12,7 +12,7 @@ import {
   postCommentsTable,
   postsTable,
 } from "@workspace/db";
-import { eq, or, and, inArray, desc } from "drizzle-orm";
+import { eq, or, and, inArray, desc, gt } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { createNotification } from "../lib/notify";
 import { getHiddenDemoUserIds } from "../lib/demoData";
@@ -53,6 +53,10 @@ async function getFollowCounts(userId: number): Promise<{ followerCount: number;
 }
 
 function formatUser(u: typeof usersTable.$inferSelect) {
+  // Apple 5.1.2: coordinates are only exposed while a manual check-in is active
+  // (non-expired). shareLocation alone is NOT sufficient.
+  const sharing =
+    !!u.locationSharingExpiresAt && u.locationSharingExpiresAt.getTime() > Date.now();
   return {
     id: u.id,
     username: u.username,
@@ -61,8 +65,9 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     bio: u.bio,
     isOnline: u.isOnline,
     isBusiness: u.isBusiness,
-    currentLat: u.shareLocation ? u.currentLat : null,
-    currentLng: u.shareLocation ? u.currentLng : null,
+    currentLat: sharing ? u.currentLat : null,
+    currentLng: sharing ? u.currentLng : null,
+    isSharingLocation: sharing,
     lastSeen: u.lastSeen ? u.lastSeen.toISOString() : null,
     boatName: u.boatName,
     boatColor: u.boatColor,
@@ -147,24 +152,32 @@ router.get("/locations", async (req, res) => {
   const locations = friends
     .filter(Boolean)
     .filter((u) => mutualSet.has(u!.id) || u!.followerSeeLocation)
-    .map((u) => ({
-      userId: u!.id,
-      displayName: u!.displayName,
-      username: u!.username,
-      avatarUrl: u!.avatarUrl,
-      boatName: u!.boatName,
-      boatColor: u!.boatColor,
-      boatType: u!.boatType,
-      boatNeon: u!.boatNeon,
-      boatFlag: u!.boatFlag,
-      boatAccent: u!.boatAccent,
-      lat: u!.shareLocation ? u!.currentLat : null,
-      lng: u!.shareLocation ? u!.currentLng : null,
-      isBusiness: u!.isBusiness,
-      isOnline: u!.isOnline,
-      isOnWater: u!.isOnWater,
-      lastSeen: u!.lastSeen ? u!.lastSeen.toISOString() : null,
-    }));
+    .map((u) => {
+      // Apple 5.1.2: only publish coordinates while the friend is actively
+      // checked in (non-expired manual check-in). shareLocation alone is no
+      // longer sufficient.
+      const sharing =
+        !!u!.locationSharingExpiresAt && u!.locationSharingExpiresAt.getTime() > Date.now();
+      return {
+        userId: u!.id,
+        displayName: u!.displayName,
+        username: u!.username,
+        avatarUrl: u!.avatarUrl,
+        boatName: u!.boatName,
+        boatColor: u!.boatColor,
+        boatType: u!.boatType,
+        boatNeon: u!.boatNeon,
+        boatFlag: u!.boatFlag,
+        boatAccent: u!.boatAccent,
+        lat: sharing ? u!.currentLat : null,
+        lng: sharing ? u!.currentLng : null,
+        isSharingLocation: sharing,
+        isBusiness: u!.isBusiness,
+        isOnline: u!.isOnline,
+        isOnWater: u!.isOnWater,
+        lastSeen: u!.lastSeen ? u!.lastSeen.toISOString() : null,
+      };
+    });
   res.json(locations);
 });
 
@@ -305,9 +318,11 @@ router.get("/suggestions", async (req, res) => {
     }
   }
 
-  // 5. Nearby boaters (sharing location, within ~40km of me).
+  // 5. Nearby boaters (actively checked in, within ~40km of me).
   if (meUser?.currentLat != null && meUser?.currentLng != null) {
-    const located = await db.query.usersTable.findMany({ where: eq(usersTable.shareLocation, true) });
+    const located = await db.query.usersTable.findMany({
+      where: gt(usersTable.locationSharingExpiresAt, new Date()),
+    });
     for (const u of located) {
       if (u.currentLat == null || u.currentLng == null) continue;
       const d = haversineKm(meUser.currentLat, meUser.currentLng, u.currentLat, u.currentLng);

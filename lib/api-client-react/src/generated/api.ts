@@ -22,6 +22,7 @@ import type {
 import type {
   Catch,
   CatchInput,
+  CheckInInput,
   Comment,
   CommentInput,
   Conditions,
@@ -466,6 +467,147 @@ export const useUpdateMyLocation = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getUpdateMyLocationMutationOptions(options));
+    }
+
+export const getCheckInLocationUrl = () => {
+
+
+
+
+  return `/api/users/me/checkin`
+}
+
+/**
+ * @summary Manually check in to start sharing your location for an expiring window
+ */
+export const checkInLocation = async (checkInInput: CheckInInput, options?: RequestInit): Promise<User> => {
+
+  return customFetch<User>(getCheckInLocationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      checkInInput,)
+  }
+);}
+
+
+
+
+export const getCheckInLocationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof checkInLocation>>, TError,{data: BodyType<CheckInInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof checkInLocation>>, TError,{data: BodyType<CheckInInput>}, TContext> => {
+
+const mutationKey = ['checkInLocation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof checkInLocation>>, {data: BodyType<CheckInInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  checkInLocation(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CheckInLocationMutationResult = NonNullable<Awaited<ReturnType<typeof checkInLocation>>>
+    export type CheckInLocationMutationBody = BodyType<CheckInInput>
+    export type CheckInLocationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Manually check in to start sharing your location for an expiring window
+ */
+export const useCheckInLocation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof checkInLocation>>, TError,{data: BodyType<CheckInInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof checkInLocation>>,
+        TError,
+        {data: BodyType<CheckInInput>},
+        TContext
+      > => {
+      return useMutation(getCheckInLocationMutationOptions(options));
+    }
+
+export const getCheckOutLocationUrl = () => {
+
+
+
+
+  return `/api/users/me/checkout`
+}
+
+/**
+ * @summary Stop sharing your location (ends the current check-in)
+ */
+export const checkOutLocation = async ( options?: RequestInit): Promise<User> => {
+
+  return customFetch<User>(getCheckOutLocationUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getCheckOutLocationMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof checkOutLocation>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof checkOutLocation>>, TError,void, TContext> => {
+
+const mutationKey = ['checkOutLocation'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof checkOutLocation>>, void> = () => {
+
+
+          return  checkOutLocation(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CheckOutLocationMutationResult = NonNullable<Awaited<ReturnType<typeof checkOutLocation>>>
+
+    export type CheckOutLocationMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Stop sharing your location (ends the current check-in)
+ */
+export const useCheckOutLocation = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof checkOutLocation>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof checkOutLocation>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getCheckOutLocationMutationOptions(options));
     }
 
 export const getGetAdminsUrl = () => {
