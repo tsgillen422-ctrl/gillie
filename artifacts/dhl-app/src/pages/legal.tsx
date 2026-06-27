@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { useAuth } from "@clerk/react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,10 +14,15 @@ function LegalPageShell({
   title: string;
   children: React.ReactNode;
 }) {
+  // These pages are reachable both from in-app Settings (signed in) and from
+  // the public Support page (signed out). Send the back button somewhere that
+  // exists for the viewer instead of a gated /settings dead-end.
+  const { isSignedIn } = useAuth();
+  const backHref = isSignedIn ? "/settings" : "/support";
   return (
     <div className="flex flex-col h-full bg-muted/20 overflow-y-auto">
       <div className="p-4 border-b border-border bg-card shadow-sm sticky top-0 z-10 flex items-center gap-3">
-        <Link href="/settings">
+        <Link href={backHref}>
           <Button variant="ghost" size="icon" aria-label="Back">
             <ArrowLeft className="w-5 h-5" />
           </Button>
