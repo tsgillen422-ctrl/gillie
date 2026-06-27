@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useGetPostLikes, useCreatePostComment, useDeletePostComment, useReactToComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useShareToProfile, useVotePoll, useUpdatePost, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey, useGetConditions } from "@workspace/api-client-react";
+import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useGetPostLikes, useCreatePostComment, useDeletePostComment, useReactToComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useBlockUser, useShareToProfile, useVotePoll, useUpdatePost, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey, getGetBlockedUsersQueryKey, useGetConditions } from "@workspace/api-client-react";
 import { PostInputPostType, PostInputVisibility } from "@workspace/api-client-react/src/generated/api.schemas";
 import { GifPickerDialog } from "@/components/GifPickerDialog";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Link, useSearch } from "wouter";
-import { Heart, MessageCircle, Share2, Calendar, CalendarPlus, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, MoreHorizontal, Flag, Bookmark, BookmarkCheck, VolumeX, Link2, Repeat2, Anchor, Sailboat, Search, Bell, Sun, Moon, Cloud, CloudSun, CloudMoon, CloudRain, CloudSnow, CloudFog, CloudLightning, Fish, Camera, Waves, Wind, Gauge, AlertTriangle, Info, CheckCircle2, Droplets, Sunrise, Sunset, ChevronRight, Smile, BarChart3, Hash, Globe, Lock, Pencil } from "lucide-react";
+import { Heart, MessageCircle, Share2, Calendar, CalendarPlus, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, MoreHorizontal, Flag, Bookmark, BookmarkCheck, Link2, Repeat2, Anchor, Sailboat, Search, Bell, Sun, Moon, Cloud, CloudSun, CloudMoon, CloudRain, CloudSnow, CloudFog, CloudLightning, Fish, Camera, Waves, Wind, Gauge, AlertTriangle, Info, CheckCircle2, Droplets, Sunrise, Sunset, ChevronRight, Smile, BarChart3, Hash, Globe, Lock, Pencil, EyeOff, Ban } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
@@ -1625,6 +1625,7 @@ export function PostCard({ post, onReact, canDelete, onDelete, onEdit, currentUs
   const savePost = useSavePost();
   const unsavePost = useUnsavePost();
   const muteUser = useMuteUser();
+  const blockUser = useBlockUser();
   const shareToProfile = useShareToProfile();
   const [reportOpen, setReportOpen] = React.useState(false);
   const isOwnPost = currentUserId != null && post.userId === currentUserId;
@@ -1682,9 +1683,23 @@ export function PostCard({ post, onReact, canDelete, onDelete, onEdit, currentUs
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetPostsQueryKey() });
-          toast.success(`Muted ${post.user?.displayName || "user"}. You won't see their posts.`);
+          toast.success(`You won't see ${post.user?.displayName || "this user"}'s posts anymore.`);
         },
-        onError: () => toast.error("Couldn't mute that user."),
+        onError: () => toast.error("Couldn't hide that user's posts."),
+      }
+    );
+  };
+
+  const handleBlock = () => {
+    blockUser.mutate(
+      { userId: post.userId },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetPostsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetBlockedUsersQueryKey() });
+          toast.success(`Blocked ${post.user?.displayName || "user"}.`);
+        },
+        onError: () => toast.error("Couldn't block that user."),
       }
     );
   };
@@ -1863,9 +1878,15 @@ export function PostCard({ post, onReact, canDelete, onDelete, onEdit, currentUs
                     {post.savedByMe ? "Unsave" : "Save"}
                   </DropdownMenuItem>
                   {!isOwnPost && (
-                    <DropdownMenuItem onClick={handleMute} className="text-destructive focus:text-destructive">
-                      <VolumeX className="w-4 h-4" />
-                      Mute User
+                    <DropdownMenuItem onClick={handleMute}>
+                      <EyeOff className="w-4 h-4" />
+                      Hide Posts
+                    </DropdownMenuItem>
+                  )}
+                  {!isOwnPost && (
+                    <DropdownMenuItem onClick={handleBlock} className="text-destructive focus:text-destructive">
+                      <Ban className="w-4 h-4" />
+                      Block User
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>

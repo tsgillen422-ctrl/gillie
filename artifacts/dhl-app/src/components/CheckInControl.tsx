@@ -112,7 +112,7 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-primary" /> Share My Location
+            <MapPin className="h-5 w-5 text-primary" /> Check In
           </DialogTitle>
           <DialogDescription>
             Before you check in, here's what happens:
@@ -121,7 +121,7 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
         <ul className="space-y-3 text-sm text-foreground">
           <li className="flex gap-2.5">
             <Users className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-            <span>Your live location will be visible to approved friends on the map.</span>
+            <span>Your current location will be shared with approved friends on the map.</span>
           </li>
           <li className="flex gap-2.5">
             <Clock className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
@@ -228,7 +228,7 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
           </Button>
         ) : (
           <Button className="w-full" onClick={() => setConfirmOpen(true)}>
-            <MapPin className="h-4 w-4 mr-2" /> Check In / Share My Location
+            <MapPin className="h-4 w-4 mr-2" /> Check In
           </Button>
         )}
 

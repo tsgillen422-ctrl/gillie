@@ -22,7 +22,7 @@ const SLIDES = [
     icon: Users,
     emoji: "🛥️",
     title: "See who's on the lake",
-    body: "Share your location with friends and see them out on the water in real time. Tap the anchor on the map anytime.",
+    body: "Check in to let friends see you on the map, and see who else has checked in. You're only shared when you choose to check in — never automatically.",
   },
   {
     icon: Newspaper,

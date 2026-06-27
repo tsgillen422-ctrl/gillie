@@ -2,11 +2,9 @@ import React from "react";
 import { Link, useLocation } from "wouter";
 import { Home, Users, MessageCircle, MapPin, Bell, Settings, User, Search, Plus } from "lucide-react";
 import { SwipeBack } from "@/components/swipe-back";
-import { useGetMe } from "@workspace/api-client-react";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const { data: me } = useGetMe();
 
   const navItems = [
     { href: "/", icon: Home, label: "Map" },
@@ -45,11 +43,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         >
           <div className="flex items-center gap-2 min-w-0">
             <span className="font-script text-2xl font-bold leading-none text-primary">Gillie</span>
-            {me?.demoMode && (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-                Demo Mode
-              </span>
-            )}
           </div>
           <div className="flex items-center gap-1">
             <Link

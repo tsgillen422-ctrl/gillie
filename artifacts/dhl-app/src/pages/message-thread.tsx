@@ -726,7 +726,7 @@ export function MessageThreadPage() {
           {[
             { key: "fishing", label: "Fishing Report", Icon: Fish },
             { key: "meet", label: "Meet Up", Icon: CalendarHeart },
-            { key: "location", label: "Share Location", Icon: Navigation },
+            { key: "location", label: "Headed Out", Icon: Navigation },
           ].map(({ key, label, Icon }) => (
             <button
               key={key}

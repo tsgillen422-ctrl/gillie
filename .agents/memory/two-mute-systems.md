@@ -20,3 +20,8 @@ routes. Reaching for `useMuteUser` to mute a conversation (or vice versa) is wro
 **How to apply:** notification suppression for conversation mute is enforced in the
 message SEND path — the recipients query in messages.ts filters `muted = false`. If
 you add new message-notification channels, replicate that filter or mute will leak.
+
+**UI labels:** feed mute is surfaced to users as "Hide Posts" (post 3-dot menu) and the
+settings card "Hidden Posts" / "Unhide" — NOT the word "mute". The backend hook/table is
+still `useMuteUser`/`ns`; only the visible copy changed (App Store wording: "mute" was
+ambiguous). The post menu also has a separate "Block User" (`useBlockUser`) action.

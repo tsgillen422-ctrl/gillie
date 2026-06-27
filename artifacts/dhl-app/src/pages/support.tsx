@@ -78,7 +78,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
-    q: "How do I manage location sharing?",
+    q: "How do I check in and share my location?",
     a: (
       <>
         Your location is <strong>never shared automatically</strong>. To appear

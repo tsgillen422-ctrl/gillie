@@ -24,8 +24,9 @@ export function PrivacyPolicyBody() {
             comments, and messages you choose to share.
           </li>
           <li>
-            <strong>Location:</strong> your boat's location on the lake, only when
-            you turn on location sharing. You can stop sharing at any time.
+            <strong>Location:</strong> your boat's location on the lake, only while
+            you are checked in. Check-ins are manual, expire automatically, and you
+            can stop sharing at any time.
           </li>
           <li>
             <strong>Usage data:</strong> basic technical information needed to keep
@@ -47,7 +48,7 @@ export function PrivacyPolicyBody() {
       <section className="space-y-1.5">
         <h3 className="text-base font-bold text-foreground">Your Choices &amp; Controls</h3>
         <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-          <li>Turn location sharing on or off whenever you like (Ghost Mode).</li>
+          <li>Check in to share your location, and stop sharing whenever you like — you're never shared automatically.</li>
           <li>Control who can see your location, followers, and friends list.</li>
           <li>Block or report other users and content.</li>
           <li>Edit your profile and content at any time.</li>

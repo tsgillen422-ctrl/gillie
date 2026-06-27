@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, EyeOff, Moon, Sun, Monitor, VolumeX, Volume2, ShieldCheck, Bookmark, ChevronRight, Heart, ScrollText, MessageSquare, Trash2, LifeBuoy, Mail } from "lucide-react";
+import { Save, LogOut, Map, Ship, Camera, ImagePlus, Loader2, Lock, Globe, Ban, ShieldOff, Users, Eye, EyeOff, Moon, Sun, Monitor, ShieldCheck, Bookmark, ChevronRight, Heart, ScrollText, MessageSquare, Trash2, LifeBuoy, Mail } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -267,7 +267,7 @@ export function SettingsPage() {
     updateMe.mutate({ data: { shareLocation: checked } }, {
       onSuccess: () => {
         toast({ 
-          title: checked ? "Location Sharing On" : "Ghost Mode Activated", 
+          title: checked ? "Location Sharing On" : "Location Sharing Off", 
           description: checked ? "Friends can see you on the lake." : "Your boat is hidden from the map." 
         });
       }
@@ -419,9 +419,9 @@ export function SettingsPage() {
         {/* Main Setting: Location Check-In (Apple 5.1.2 — manual, expiring) */}
         <Card className="border-border shadow-md border-primary/20 overflow-hidden relative">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg">Location Sharing</CardTitle>
+            <CardTitle className="text-lg">Location Check-In</CardTitle>
             <CardDescription>
-              Share your location with approved friends only when you choose to
+              Check in to share your location with approved friends. You're only on the map when you choose to check in.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -498,7 +498,7 @@ export function SettingsPage() {
                     </div>
                     <div>
                       <CardTitle className="text-lg">See My Location</CardTitle>
-                      <CardDescription>Show your boat on the map to followers you don't follow back</CardDescription>
+                      <CardDescription>When you check in, show your boat on the map to followers you don't follow back</CardDescription>
                     </div>
                   </div>
                   <Switch checked={followerSeeLocation} onCheckedChange={handleToggleFollowerSeeLocation} className="data-[state=checked]:bg-primary" />
@@ -1214,11 +1214,11 @@ function MutedUsersCard() {
   const handleUnmute = (userId: number) => {
     unmuteUser.mutate({ userId }, {
       onSuccess: () => {
-        toast({ title: "User unmuted", description: "Their posts will show in your feed again." });
+        toast({ title: "Posts unhidden", description: "Their posts will show in your feed again." });
         queryClient.invalidateQueries({ queryKey: getGetMutedUsersQueryKey() });
       },
       onError: () => {
-        toast({ title: "Error", description: "Couldn't unmute this user.", variant: "destructive" });
+        toast({ title: "Error", description: "Couldn't unhide this user's posts.", variant: "destructive" });
       },
     });
   };
@@ -1228,10 +1228,10 @@ function MutedUsersCard() {
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-full bg-muted text-muted-foreground">
-            <VolumeX className="w-5 h-5" />
+            <EyeOff className="w-5 h-5" />
           </div>
           <div>
-            <CardTitle className="text-lg">Muted Users</CardTitle>
+            <CardTitle className="text-lg">Hidden Posts</CardTitle>
             <CardDescription>People whose posts are hidden from your feed</CardDescription>
           </div>
         </div>
@@ -1240,7 +1240,7 @@ function MutedUsersCard() {
         {isLoading ? (
           <p className="text-sm text-muted-foreground py-2">Loading...</p>
         ) : !muted || muted.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-2">You haven't muted anyone.</p>
+          <p className="text-sm text-muted-foreground py-2">You haven't hidden anyone's posts.</p>
         ) : (
           <div className="space-y-2">
             {muted.map((u) => (
@@ -1258,7 +1258,7 @@ function MutedUsersCard() {
                   onClick={() => handleUnmute(u.id)}
                   disabled={unmuteUser.isPending}
                 >
-                  <Volume2 className="w-4 h-4 mr-2" /> Unmute
+                  <Eye className="w-4 h-4 mr-2" /> Unhide
                 </Button>
               </div>
             ))}

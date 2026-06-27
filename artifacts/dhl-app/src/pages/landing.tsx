@@ -5,7 +5,7 @@ import { MapPin, Anchor, Fish, Users, ShieldAlert, Waves } from "lucide-react";
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const features = [
-  { icon: MapPin, title: "Live Lake Map", text: "See friends, hazards, and hot spots on Dale Hollow in real time." },
+  { icon: MapPin, title: "Live Lake Map", text: "See checked-in friends, hazards, and hot spots on Dale Hollow." },
   { icon: Fish, title: "Log Your Catches", text: "Track and share your best catches with the community." },
   { icon: Users, title: "Boater Network", text: "Follow friends, message, and find people on the water." },
   { icon: ShieldAlert, title: "Stay Safe", text: "Report hazards, share conditions, and send an SOS in a pinch." },
