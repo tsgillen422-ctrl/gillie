@@ -26,6 +26,7 @@ import {
   pushSubscriptionsTable,
   nativePushTokensTable,
   waiverAcceptancesTable,
+  termsAcceptancesTable,
 } from "@workspace/db";
 import { eq, ilike, or, and, count, notInArray, inArray, desc, gt } from "drizzle-orm";
 import { clerkClient } from "@clerk/express";
@@ -157,6 +158,7 @@ export async function deleteUserAndData(tx: Tx, userId: number): Promise<void> {
   await tx.delete(pushSubscriptionsTable).where(eq(pushSubscriptionsTable.userId, userId));
   await tx.delete(nativePushTokensTable).where(eq(nativePushTokensTable.userId, userId));
   await tx.delete(waiverAcceptancesTable).where(eq(waiverAcceptancesTable.userId, userId));
+  await tx.delete(termsAcceptancesTable).where(eq(termsAcceptancesTable.userId, userId));
 
   await tx.delete(usersTable).where(eq(usersTable.id, userId));
 }
@@ -299,6 +301,8 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     warningCount: u.warningCount,
     waiverAcceptedAt: u.waiverAcceptedAt ? u.waiverAcceptedAt.toISOString() : null,
     waiverVersion: u.waiverVersion,
+    termsAcceptedAt: u.termsAcceptedAt ? u.termsAcceptedAt.toISOString() : null,
+    termsVersion: u.termsVersion,
     followerCount: 0,
     followingCount: 0,
     createdAt: u.createdAt.toISOString(),
@@ -491,6 +495,30 @@ router.post("/me/waiver", async (req, res) => {
       .returning();
     if (!row) return null;
     await tx.insert(waiverAcceptancesTable).values({ userId: uid, version, acceptedAt });
+    return row;
+  });
+  if (!updated) return res.status(401).json({ error: "Not logged in" });
+  res.json(formatUser(updated));
+});
+
+// App Store / EULA: record acceptance of the Terms of Service, Privacy Policy,
+// and Community Guidelines. Mirrors the waiver flow — stamps the user row for a
+// quick gate check and appends an immutable history row for the audit trail.
+router.post("/me/terms", async (req, res) => {
+  const uid = currentUserId(req);
+  const { version } = req.body;
+  if (typeof version !== "string" || !version.trim()) {
+    return res.status(400).json({ error: "version must be a non-empty string" });
+  }
+  const acceptedAt = new Date();
+  const updated = await db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(usersTable)
+      .set({ termsAcceptedAt: acceptedAt, termsVersion: version })
+      .where(eq(usersTable.id, uid))
+      .returning();
+    if (!row) return null;
+    await tx.insert(termsAcceptancesTable).values({ userId: uid, version, acceptedAt });
     return row;
   });
   if (!updated) return res.status(401).json({ error: "Not logged in" });

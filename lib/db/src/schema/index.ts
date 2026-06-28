@@ -1,5 +1,6 @@
 export * from "./users";
 export * from "./waiverAcceptances";
+export * from "./termsAcceptances";
 export * from "./friends";
 export * from "./messages";
 export * from "./pins";

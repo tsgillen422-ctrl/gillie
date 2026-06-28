@@ -1844,6 +1844,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
 
+  /users/me/terms:
+    post:
+      operationId: acceptTerms
+      tags: [users]
+      summary: Record acceptance of the Terms of Service, Privacy Policy, and Community Guidelines
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TermsAccept"
+      responses:
+        "200":
+          description: Terms accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
   /reports:
     post:
       operationId: createReport
@@ -2122,6 +2141,10 @@ components:
           type: ["string", "null"]
         waiverVersion:
           type: ["string", "null"]
+        termsAcceptedAt:
+          type: ["string", "null"]
+        termsVersion:
+          type: ["string", "null"]
         friendStatus:
           type: string
           enum: [none, self, accepted, pending_out, pending_in, blocked, blocked_by]
@@ -2139,6 +2162,13 @@ components:
           type: string
 
     WaiverAccept:
+      type: object
+      required: [version]
+      properties:
+        version:
+          type: string
+
+    TermsAccept:
       type: object
       required: [version]
       properties:

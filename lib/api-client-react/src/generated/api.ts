@@ -82,6 +82,7 @@ import type {
   SosInput,
   SosResult,
   SuggestedUser,
+  TermsAccept,
   UploadUrlRequest,
   UploadUrlResponse,
   User,
@@ -6991,6 +6992,77 @@ export const useAcceptWaiver = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getAcceptWaiverMutationOptions(options));
+    }
+
+export const getAcceptTermsUrl = () => {
+
+
+
+
+  return `/api/users/me/terms`
+}
+
+/**
+ * @summary Record acceptance of the Terms of Service, Privacy Policy, and Community Guidelines
+ */
+export const acceptTerms = async (termsAccept: TermsAccept, options?: RequestInit): Promise<User> => {
+
+  return customFetch<User>(getAcceptTermsUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      termsAccept,)
+  }
+);}
+
+
+
+
+export const getAcceptTermsMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptTerms>>, TError,{data: BodyType<TermsAccept>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof acceptTerms>>, TError,{data: BodyType<TermsAccept>}, TContext> => {
+
+const mutationKey = ['acceptTerms'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof acceptTerms>>, {data: BodyType<TermsAccept>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  acceptTerms(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AcceptTermsMutationResult = NonNullable<Awaited<ReturnType<typeof acceptTerms>>>
+    export type AcceptTermsMutationBody = BodyType<TermsAccept>
+    export type AcceptTermsMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Record acceptance of the Terms of Service, Privacy Policy, and Community Guidelines
+ */
+export const useAcceptTerms = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof acceptTerms>>, TError,{data: BodyType<TermsAccept>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof acceptTerms>>,
+        TError,
+        {data: BodyType<TermsAccept>},
+        TContext
+      > => {
+      return useMutation(getAcceptTermsMutationOptions(options));
     }
 
 export const getCreateReportUrl = () => {

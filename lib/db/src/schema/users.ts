@@ -51,6 +51,11 @@ export const usersTable = pgTable("users", {
   warningCount: integer("warning_count").notNull().default(0),
   waiverAcceptedAt: timestamp("waiver_accepted_at"),
   waiverVersion: text("waiver_version"),
+  // App Store / EULA: acceptance of the Terms of Service, Privacy Policy, and
+  // Community Guidelines. termsVersion is compared against the current frontend
+  // TERMS_VERSION; a mismatch (incl. null) re-prompts the user before app access.
+  termsAcceptedAt: timestamp("terms_accepted_at"),
+  termsVersion: text("terms_version"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

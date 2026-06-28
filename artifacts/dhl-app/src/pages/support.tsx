@@ -212,7 +212,7 @@ export function SupportPage() {
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </Link>
             <Link
-              href="/community-guidelines"
+              href="/terms"
               className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm transition hover:border-primary/40"
               data-testid="link-terms-of-service"
             >
@@ -221,6 +221,19 @@ export function SupportPage() {
                   <FileText className="h-5 w-5" />
                 </span>
                 <span className="font-semibold">Terms of Service</span>
+              </span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </Link>
+            <Link
+              href="/community-guidelines"
+              className="flex items-center justify-between rounded-xl border border-border bg-card p-4 shadow-sm transition hover:border-primary/40"
+              data-testid="link-community-guidelines"
+            >
+              <span className="flex items-center gap-3">
+                <span className="rounded-full bg-primary/10 p-2 text-primary">
+                  <ShieldCheck className="h-5 w-5" />
+                </span>
+                <span className="font-semibold">Community Guidelines</span>
               </span>
               <ArrowRight className="h-4 w-4 text-muted-foreground" />
             </Link>

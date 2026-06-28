@@ -1,5 +1,12 @@
 export const PRIVACY_POLICY_UPDATED = "June 11, 2026";
 export const COMMUNITY_GUIDELINES_UPDATED = "June 11, 2026";
+export const TERMS_OF_SERVICE_UPDATED = "June 27, 2026";
+
+// Bump this whenever the Terms of Service, Privacy Policy, or Community
+// Guidelines change in a way that requires renewed consent. Any user whose
+// stored termsVersion differs from this value (including new users with none)
+// is re-prompted by TermsGate before they can use the app.
+export const TERMS_VERSION = "1.0";
 
 export function PrivacyPolicyBody() {
   return (
@@ -147,6 +154,114 @@ export function CommunityGuidelinesBody() {
           reviews reports and may remove content or take action on accounts that
           violate these rules. There is no tolerance for objectionable content or
           abusive users.
+        </p>
+      </section>
+    </div>
+  );
+}
+
+export function TermsOfServiceBody() {
+  return (
+    <div className="space-y-5 text-sm leading-relaxed text-foreground">
+      <p className="text-muted-foreground">Last updated: {TERMS_OF_SERVICE_UPDATED}</p>
+
+      <p className="text-base">
+        These Terms of Service ("Terms") are a legal agreement between you and
+        Gillie ("we", "us") governing your use of the Gillie app and services.
+        By creating an account or using the app, you agree to these Terms, our{" "}
+        <strong>Privacy Policy</strong>, and our{" "}
+        <strong>Community Guidelines</strong>. If you do not agree, do not use
+        the app.
+      </p>
+
+      <section className="space-y-1.5">
+        <h3 className="text-base font-bold text-foreground">Eligibility</h3>
+        <p className="text-muted-foreground">
+          You must be at least 13 years old (or the minimum age required in your
+          location) to use Gillie. By using the app you confirm that you meet
+          this requirement and that the information you provide is accurate.
+        </p>
+      </section>
+
+      <section className="space-y-1.5">
+        <h3 className="text-base font-bold text-foreground">Your Account</h3>
+        <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
+          <li>You are responsible for activity that happens under your account.</li>
+          <li>Keep your login credentials secure and do not share your account.</li>
+          <li>You may delete your account at any time from Settings → Account.</li>
+        </ul>
+      </section>
+
+      <section className="space-y-1.5">
+        <h3 className="text-base font-bold text-foreground">Acceptable Use &amp; Content</h3>
+        <p className="text-muted-foreground">
+          You are responsible for the content you post. You agree to follow our
+          Community Guidelines and not to post content that is objectionable,
+          illegal, abusive, harassing, hateful, or that infringes others'
+          rights.
+        </p>
+        <p className="text-muted-foreground">
+          <strong>Zero tolerance:</strong> there is no tolerance for
+          objectionable content or abusive behavior. You can report content from
+          any post, pin, photo, message, or profile, and you can block other
+          users. We review reports and may remove content and suspend or
+          terminate accounts that violate these Terms or our Community
+          Guidelines.
+        </p>
+      </section>
+
+      <section className="space-y-1.5">
+        <h3 className="text-base font-bold text-foreground">Your Content &amp; License</h3>
+        <p className="text-muted-foreground">
+          You keep ownership of the content you create. By posting, you grant us
+          a limited license to host and display that content within the app so it
+          can be shown to the audience you choose.
+        </p>
+      </section>
+
+      <section className="space-y-1.5">
+        <h3 className="text-base font-bold text-foreground">Location Features</h3>
+        <p className="text-muted-foreground">
+          Gillie only shares your location while you have manually checked in.
+          Check-ins are optional, expire automatically, and can be stopped at any
+          time. You are responsible for deciding when to share your location.
+        </p>
+      </section>
+
+      <section className="space-y-1.5">
+        <h3 className="text-base font-bold text-foreground">Disclaimers &amp; Limitation of Liability</h3>
+        <p className="text-muted-foreground">
+          Gillie is provided "as is" for informational and community purposes
+          only. Information in the app may not be accurate, complete, or current.
+          Outdoor activities carry inherent risks. To the fullest extent
+          permitted by law, Gillie and its operators are not liable for any
+          injury, loss, or damages arising from your use of the app or any
+          activity referenced within it.
+        </p>
+      </section>
+
+      <section className="space-y-1.5">
+        <h3 className="text-base font-bold text-foreground">Termination</h3>
+        <p className="text-muted-foreground">
+          We may suspend or terminate access to accounts that violate these
+          Terms. You may stop using the app and delete your account at any time.
+        </p>
+      </section>
+
+      <section className="space-y-1.5">
+        <h3 className="text-base font-bold text-foreground">Changes to These Terms</h3>
+        <p className="text-muted-foreground">
+          We may update these Terms from time to time. When we make material
+          changes, we will ask you to review and accept the updated Terms before
+          continuing to use the app.
+        </p>
+      </section>
+
+      <section className="space-y-1.5">
+        <h3 className="text-base font-bold text-foreground">Contact</h3>
+        <p className="text-muted-foreground">
+          If you have questions about these Terms, please contact us through the
+          app's support channels.
         </p>
       </section>
     </div>

@@ -32,7 +32,9 @@ import { TieUpsPage } from "@/pages/tie-ups";
 import { BoatsPage } from "@/pages/boats";
 import { SearchPage } from "@/pages/search";
 import { AdminPage } from "@/pages/admin";
-import { PrivacyPolicyPage, CommunityGuidelinesPage } from "@/pages/legal";
+import { PrivacyPolicyPage, CommunityGuidelinesPage, TermsOfServicePage } from "@/pages/legal";
+import { TermsGate } from "@/components/TermsGate";
+import { TERMS_VERSION } from "@/lib/legal";
 import { SupportPage } from "@/pages/support";
 import NotFound from "@/pages/not-found";
 
@@ -308,6 +310,10 @@ function AuthedApp() {
     return <WaiverGate />;
   }
 
+  if (me.termsVersion !== TERMS_VERSION) {
+    return <TermsGate />;
+  }
+
   return (
     <AppLayout>
       <Switch>
@@ -385,6 +391,7 @@ function ClerkProviderWithRoutes() {
             <Route path="/support" component={SupportPage} />
             <Route path="/privacy-policy" component={PrivacyPolicyPage} />
             <Route path="/community-guidelines" component={CommunityGuidelinesPage} />
+            <Route path="/terms" component={TermsOfServicePage} />
             <Route component={GatedRoutes} />
           </Switch>
           <Toaster />

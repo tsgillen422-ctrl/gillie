@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   PrivacyPolicyBody,
   CommunityGuidelinesBody,
+  TermsOfServiceBody,
 } from "@/lib/legal";
 
 function LegalPageShell({
@@ -47,6 +48,14 @@ export function CommunityGuidelinesPage() {
   return (
     <LegalPageShell title="Community Guidelines">
       <CommunityGuidelinesBody />
+    </LegalPageShell>
+  );
+}
+
+export function TermsOfServicePage() {
+  return (
+    <LegalPageShell title="Terms of Service">
+      <TermsOfServiceBody />
     </LegalPageShell>
   );
 }

@@ -103,6 +103,10 @@ export interface User {
   waiverAcceptedAt?: string | null;
   /** @nullable */
   waiverVersion?: string | null;
+  /** @nullable */
+  termsAcceptedAt?: string | null;
+  /** @nullable */
+  termsVersion?: string | null;
   friendStatus?: UserFriendStatus;
   followerCount?: number;
   followingCount?: number;
@@ -112,6 +116,10 @@ export interface User {
 }
 
 export interface WaiverAccept {
+  version: string;
+}
+
+export interface TermsAccept {
   version: string;
 }
 

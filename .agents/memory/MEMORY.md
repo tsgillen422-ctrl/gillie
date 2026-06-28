@@ -48,5 +48,6 @@
 - [iOS build number / CFBundleVersion](ios-build-number-agvtool.md) — agvtool no-ops without VERSIONING_SYSTEM=apple-generic (+ignore_failure hid it); pin via sed pbxproj + PlistBuddy Info.plist + verify-or-fail.
 - [iOS safe-area viewport-fit](ios-safe-area-viewport-fit.md) — env(safe-area-inset-*) is 0 without `viewport-fit=cover` in index.html; all safe-area padding is dead until that meta is set.
 - [Clerk OAuth callback failure](clerk-oauth-callback-failure.md) — "Unable to complete action" after a 303 callback is NOT a return-URL bug; check password-required attribute + account linking; proxy logs only status codes.
+- [Terms/EULA gate](terms-eula-gate.md) — 2nd fail-closed gate after waiver; bump TERMS_VERSION re-prompts all; public legal routes (incl /terms) must precede the gated fallback.
 - [Native iOS Sign in with Apple](native-apple-signin.md) — web Apple OAuth dead (bad .p8); native popup → backend verifies token vs Apple JWKS → Clerk ticket. PUBLIC endpoint: NEVER trust client email; match only by verified token email/`apple:<sub>`.
 - [Public support & legal pages](public-support-legal-pages.md) — /support /privacy-policy /community-guidelines must be in the TOP-LEVEL Switch (before GatedRoutes) to be no-auth; auth-aware back targets or signed-out dead-ends.
