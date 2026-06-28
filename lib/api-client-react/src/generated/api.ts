@@ -78,6 +78,7 @@ import type {
   SearchResults,
   SearchUsersParams,
   SetAdminInput,
+  SetSuspensionInput,
   ShareInput,
   SosInput,
   SosResult,
@@ -835,6 +836,155 @@ export const useSetUserAdmin = <TError = ErrorType<ErrorEnvelope>,
         TContext
       > => {
       return useMutation(getSetUserAdminMutationOptions(options));
+    }
+
+export const getGetSuspendedUsersUrl = () => {
+
+
+
+
+  return `/api/users/suspended`
+}
+
+/**
+ * @summary List all suspended users (admin only)
+ */
+export const getSuspendedUsers = async ( options?: RequestInit): Promise<User[]> => {
+
+  return customFetch<User[]>(getGetSuspendedUsersUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSuspendedUsersQueryKey = () => {
+    return [
+    `/api/users/suspended`
+    ] as const;
+    }
+
+
+export const getGetSuspendedUsersQueryOptions = <TData = Awaited<ReturnType<typeof getSuspendedUsers>>, TError = ErrorType<ErrorEnvelope>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSuspendedUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSuspendedUsersQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSuspendedUsers>>> = ({ signal }) => getSuspendedUsers({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSuspendedUsers>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetSuspendedUsersQueryResult = NonNullable<Awaited<ReturnType<typeof getSuspendedUsers>>>
+export type GetSuspendedUsersQueryError = ErrorType<ErrorEnvelope>
+
+
+/**
+ * @summary List all suspended users (admin only)
+ */
+
+export function useGetSuspendedUsers<TData = Awaited<ReturnType<typeof getSuspendedUsers>>, TError = ErrorType<ErrorEnvelope>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getSuspendedUsers>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetSuspendedUsersQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getSetUserSuspensionUrl = (userId: number,) => {
+
+
+
+
+  return `/api/users/${userId}/suspension`
+}
+
+/**
+ * @summary Suspend or restore a user account (admin only)
+ */
+export const setUserSuspension = async (userId: number,
+    setSuspensionInput: SetSuspensionInput, options?: RequestInit): Promise<User> => {
+
+  return customFetch<User>(getSetUserSuspensionUrl(userId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      setSuspensionInput,)
+  }
+);}
+
+
+
+
+export const getSetUserSuspensionMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setUserSuspension>>, TError,{userId: number;data: BodyType<SetSuspensionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setUserSuspension>>, TError,{userId: number;data: BodyType<SetSuspensionInput>}, TContext> => {
+
+const mutationKey = ['setUserSuspension'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setUserSuspension>>, {userId: number;data: BodyType<SetSuspensionInput>}> = (props) => {
+          const {userId,data} = props ?? {};
+
+          return  setUserSuspension(userId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetUserSuspensionMutationResult = NonNullable<Awaited<ReturnType<typeof setUserSuspension>>>
+    export type SetUserSuspensionMutationBody = BodyType<SetSuspensionInput>
+    export type SetUserSuspensionMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Suspend or restore a user account (admin only)
+ */
+export const useSetUserSuspension = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setUserSuspension>>, TError,{userId: number;data: BodyType<SetSuspensionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setUserSuspension>>,
+        TError,
+        {userId: number;data: BodyType<SetSuspensionInput>},
+        TContext
+      > => {
+      return useMutation(getSetUserSuspensionMutationOptions(options));
     }
 
 export const getGetDemoDataStatusUrl = () => {

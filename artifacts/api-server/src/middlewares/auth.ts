@@ -133,6 +133,13 @@ async function ensureReviewerNotAdmin(user: LocalUser): Promise<LocalUser> {
   return updated ?? user;
 }
 
+// Requests a suspended (banned) user is still allowed to make: fetch their own
+// account (so the client can render the suspension screen) and delete it. Paths
+// are relative to the /api router mount, e.g. "/users/me".
+function isSuspensionExempt(req: Request): boolean {
+  return req.path === "/users/me" && (req.method === "GET" || req.method === "DELETE");
+}
+
 export async function requireAuth(
   req: Request,
   res: Response,
@@ -153,6 +160,15 @@ export async function requireAuth(
     user = await ensureReviewerNotAdmin(user);
     healReviewerDemo(user);
     req.localUserId = user.id;
+
+    // Eject suspended (banned) users. A moderator suspension must actually block
+    // app access — not merely hide the user from lists — so an abusive account
+    // can be removed per App Store UGC requirements. They may still read and
+    // delete their own account so the client can show a suspension screen.
+    if (user.isSuspended && !isSuspensionExempt(req)) {
+      res.status(403).json({ error: "Your account has been suspended.", suspended: true });
+      return;
+    }
     next();
   } catch (err) {
     next(err);

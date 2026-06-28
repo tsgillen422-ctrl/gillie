@@ -31,7 +31,7 @@ import {
 import { eq, ilike, or, and, count, notInArray, inArray, desc, gt } from "drizzle-orm";
 import { clerkClient } from "@clerk/express";
 import { currentUserId } from "../middlewares/auth";
-import { createNotifications } from "../lib/notify";
+import { createNotifications, createNotification } from "../lib/notify";
 import { logger } from "../lib/logger";
 import { getHiddenDemoUserIds } from "../lib/demoData";
 
@@ -628,6 +628,16 @@ router.get("/admins", async (req, res) => {
   res.json(withCounts);
 });
 
+router.get("/suspended", async (req, res) => {
+  const uid = currentUserId(req);
+  if (!(await isAdmin(uid))) return res.status(403).json({ error: "Admin access required" });
+  const suspended = await db.select().from(usersTable).where(eq(usersTable.isSuspended, true));
+  const withCounts = await Promise.all(
+    suspended.map(async (u) => ({ ...formatUser(u), ...(await getFollowCounts(u.id)) }))
+  );
+  res.json(withCounts);
+});
+
 router.get("/waiver-acceptances", async (req, res) => {
   const uid = currentUserId(req);
   if (!(await isAdmin(uid))) return res.status(403).json({ error: "Admin access required" });
@@ -703,6 +713,45 @@ router.patch("/:userId/admin", async (req, res) => {
     .set({ isAdmin: makeAdmin })
     .where(eq(usersTable.id, userId))
     .returning();
+  res.json({ ...formatUser(updated), ...(await getFollowCounts(updated.id)) });
+});
+
+// Suspend (ban) or restore a user account. Suspension is enforced globally in
+// requireAuth, which ejects suspended users from the app. Reversible so a
+// mistaken suspension can be undone.
+router.patch("/:userId/suspension", async (req, res) => {
+  const uid = currentUserId(req);
+  if (!(await isAdmin(uid))) return res.status(403).json({ error: "Admin access required" });
+  const userId = parseInt(req.params.userId);
+  if (Number.isNaN(userId)) return res.status(400).json({ error: "Invalid user id" });
+  const { suspended } = req.body ?? {};
+  if (typeof suspended !== "boolean") {
+    return res.status(400).json({ error: "suspended must be a boolean" });
+  }
+  if (userId === uid) {
+    return res.status(400).json({ error: "You can't change your own suspension status" });
+  }
+  const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, userId) });
+  if (!target) return res.status(404).json({ error: "User not found" });
+  const [updated] = await db
+    .update(usersTable)
+    .set({ isSuspended: suspended })
+    .where(eq(usersTable.id, userId))
+    .returning();
+  if (!suspended && target.isSuspended) {
+    // Best-effort: the authoritative result is the suspension state change, so a
+    // failed notification insert must not fail the restore request.
+    try {
+      await createNotification({
+        userId,
+        type: "warning",
+        message: "Your account has been restored by a moderator.",
+        relatedId: null,
+      });
+    } catch (err) {
+      logger.error({ err, userId }, "Failed to send account-restored notification");
+    }
+  }
   res.json({ ...formatUser(updated), ...(await getFollowCounts(updated.id)) });
 });
 

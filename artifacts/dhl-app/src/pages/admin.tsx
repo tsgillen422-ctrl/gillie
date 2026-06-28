@@ -7,6 +7,9 @@ import {
   useGetAdmins,
   useSearchUsers,
   useSetUserAdmin,
+  useGetSuspendedUsers,
+  useSetUserSuspension,
+  getGetSuspendedUsersQueryKey,
   useGetWaiverAcceptances,
   getGetAdminsQueryKey,
   getSearchUsersQueryKey,
@@ -23,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
-import { ShieldCheck, ShieldAlert, Flag, Trash2, Ban, AlertTriangle, Check, Search, ShieldPlus, ShieldMinus, Crown, FileSignature } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Flag, Trash2, Ban, AlertTriangle, Check, Search, ShieldPlus, ShieldMinus, Crown, FileSignature, RotateCcw } from "lucide-react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -55,6 +58,9 @@ function ReportCard({ report }: { report: any }) {
   const queryClient = useQueryClient();
   const isPending = report.status === "pending";
   const owner = report.targetOwner;
+  const overdue =
+    isPending &&
+    Date.now() - new Date(report.createdAt).getTime() > 24 * 60 * 60 * 1000;
 
   const act = (action: "dismiss" | "remove" | "warn" | "suspend", label: string) => {
     resolveReport.mutate(
@@ -84,7 +90,12 @@ function ReportCard({ report }: { report: any }) {
             </p>
           </div>
         </div>
-        <StatusBadge status={report.status} action={report.action} />
+        <div className="flex shrink-0 items-center gap-1.5">
+          {overdue && (
+            <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Overdue</Badge>
+          )}
+          <StatusBadge status={report.status} action={report.action} />
+        </div>
       </CardHeader>
       <CardContent className="p-4 pt-2 space-y-3">
         {report.targetSummary != null && (
@@ -272,6 +283,73 @@ function MembersManager({ enabled, myId }: { enabled: boolean; myId?: number }) 
   );
 }
 
+function SuspendedManager({ enabled }: { enabled: boolean }) {
+  const queryClient = useQueryClient();
+  const { data: suspended, isLoading } = useGetSuspendedUsers({ query: { enabled } });
+  const setSuspension = useSetUserSuspension();
+
+  const restore = (user: any) => {
+    setSuspension.mutate(
+      { userId: user.id, data: { suspended: false } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetSuspendedUsersQueryKey() });
+          toast.success(`Restored ${user.displayName}'s account.`);
+        },
+        onError: () => toast.error("Couldn't restore that account."),
+      }
+    );
+  };
+
+  return (
+    <Card className="border-border/60">
+      <CardHeader className="p-4 pb-2">
+        <h2 className="font-semibold text-sm">Suspended accounts</h2>
+        <p className="text-xs text-muted-foreground">
+          Suspended users are blocked from using Gillie. Restore to give them access back.
+        </p>
+      </CardHeader>
+      <CardContent className="p-4 pt-2">
+        {isLoading ? (
+          <div className="space-y-2">
+            {[0, 1].map((i) => <Skeleton key={i} className="h-10 w-full rounded" />)}
+          </div>
+        ) : !suspended || suspended.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-2">No suspended accounts.</p>
+        ) : (
+          <div className="divide-y divide-border/60">
+            {suspended.map((u: any) => (
+              <div key={u.id} className="flex items-center justify-between gap-3 py-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <UserAvatar name={u.displayName} username={u.username} avatarUrl={u.avatarUrl} className="w-8 h-8" />
+                  <div className="min-w-0">
+                    <Link href={`/profile/${u.id}`} className="block truncate font-medium text-sm hover:underline">
+                      {u.displayName}
+                    </Link>
+                    <p className="text-xs text-muted-foreground truncate">
+                      @{u.username}
+                      {u.warningCount > 0 ? ` · ⚠ ${u.warningCount} warning${u.warningCount > 1 ? "s" : ""}` : ""}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="shrink-0"
+                  disabled={setSuspension.isPending}
+                  onClick={() => restore(u)}
+                >
+                  <RotateCcw className="w-4 h-4" /> Restore
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function WaiverManager({ enabled }: { enabled: boolean }) {
   const { data: records, isLoading } = useGetWaiverAcceptances({ query: { enabled } });
 
@@ -443,7 +521,10 @@ export function AdminPage() {
       </Tabs>
 
       {view === "members" ? (
-        <MembersManager enabled={!!me?.isAdmin} myId={me?.id} />
+        <div className="space-y-5">
+          <MembersManager enabled={!!me?.isAdmin} myId={me?.id} />
+          <SuspendedManager enabled={!!me?.isAdmin} />
+        </div>
       ) : view === "waivers" ? (
         <WaiverManager enabled={!!me?.isAdmin} />
       ) : view === "demo" ? (

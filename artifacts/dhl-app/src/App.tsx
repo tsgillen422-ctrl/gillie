@@ -34,6 +34,7 @@ import { SearchPage } from "@/pages/search";
 import { AdminPage } from "@/pages/admin";
 import { PrivacyPolicyPage, CommunityGuidelinesPage, TermsOfServicePage } from "@/pages/legal";
 import { TermsGate } from "@/components/TermsGate";
+import { SuspendedGate } from "@/components/SuspendedGate";
 import { TERMS_VERSION } from "@/lib/legal";
 import { SupportPage } from "@/pages/support";
 import NotFound from "@/pages/not-found";
@@ -304,6 +305,12 @@ function AuthedApp() {
         <Button onClick={() => refetch()}>Try again</Button>
       </div>
     );
+  }
+
+  // Suspended (banned) users are ejected: show a terminal suspension screen
+  // instead of the app. The API also blocks their requests server-side.
+  if (me.isSuspended) {
+    return <SuspendedGate />;
   }
 
   if (me.waiverVersion !== WAIVER_VERSION) {

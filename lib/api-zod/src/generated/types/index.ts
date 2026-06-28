@@ -109,6 +109,7 @@ export * from './searchPost';
 export * from './searchResults';
 export * from './searchUsersParams';
 export * from './setAdminInput';
+export * from './setSuspensionInput';
 export * from './shareInput';
 export * from './sosInput';
 export * from './sosResult';

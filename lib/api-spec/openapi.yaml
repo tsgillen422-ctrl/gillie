@@ -211,6 +211,58 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /users/suspended:
+    get:
+      operationId: getSuspendedUsers
+      tags: [users]
+      summary: List all suspended users (admin only)
+      responses:
+        "200":
+          description: List of suspended users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /users/{userId}/suspension:
+    patch:
+      operationId: setUserSuspension
+      tags: [users]
+      summary: Suspend or restore a user account (admin only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetSuspensionInput"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "403":
+          description: Not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /admin/demo-data:
     get:
       operationId: getDemoDataStatus
@@ -3315,6 +3367,13 @@ components:
       required: [isAdmin]
       properties:
         isAdmin:
+          type: boolean
+
+    SetSuspensionInput:
+      type: object
+      required: [suspended]
+      properties:
+        suspended:
           type: boolean
 
     Report:

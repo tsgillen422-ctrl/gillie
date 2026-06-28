@@ -1083,6 +1083,10 @@ export interface SetAdminInput {
   isAdmin: boolean;
 }
 
+export interface SetSuspensionInput {
+  suspended: boolean;
+}
+
 export type ReportTargetType = typeof ReportTargetType[keyof typeof ReportTargetType];
 
 

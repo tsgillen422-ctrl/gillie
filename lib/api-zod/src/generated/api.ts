@@ -560,6 +560,151 @@ export const SetUserAdminResponse = zod.object({
 
 
 /**
+ * @summary List all suspended users (admin only)
+ */
+export const GetSuspendedUsersResponseItem = zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "relationshipStatus": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "interests": zod.array(zod.string()).optional(),
+  "shareLocation": zod.boolean().optional(),
+  "locationSharingExpiresAt": zod.string().nullish(),
+  "isSharingLocation": zod.boolean().optional(),
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
+  "showFriends": zod.boolean().optional(),
+  "followerSeeLocation": zod.boolean().optional(),
+  "followerSeePosts": zod.boolean().optional(),
+  "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "demoMode": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
+  "waiverAcceptedAt": zod.string().nullish(),
+  "waiverVersion": zod.string().nullish(),
+  "termsAcceptedAt": zod.string().nullish(),
+  "termsVersion": zod.string().nullish(),
+  "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
+  "createdAt": zod.string()
+})
+export const GetSuspendedUsersResponse = zod.array(GetSuspendedUsersResponseItem)
+
+
+/**
+ * @summary Suspend or restore a user account (admin only)
+ */
+export const SetUserSuspensionParams = zod.object({
+  "userId": zod.coerce.number()
+})
+
+export const SetUserSuspensionBody = zod.object({
+  "suspended": zod.boolean()
+})
+
+export const SetUserSuspensionResponse = zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "relationshipStatus": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "interests": zod.array(zod.string()).optional(),
+  "shareLocation": zod.boolean().optional(),
+  "locationSharingExpiresAt": zod.string().nullish(),
+  "isSharingLocation": zod.boolean().optional(),
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
+  "showFriends": zod.boolean().optional(),
+  "followerSeeLocation": zod.boolean().optional(),
+  "followerSeePosts": zod.boolean().optional(),
+  "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "demoMode": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
+  "waiverAcceptedAt": zod.string().nullish(),
+  "waiverVersion": zod.string().nullish(),
+  "termsAcceptedAt": zod.string().nullish(),
+  "termsVersion": zod.string().nullish(),
+  "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
+  "createdAt": zod.string()
+})
+
+
+/**
  * @summary Get demo data status (admin only)
  */
 export const GetDemoDataStatusResponse = zod.object({

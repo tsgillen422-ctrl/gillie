@@ -51,3 +51,4 @@
 - [Terms/EULA gate](terms-eula-gate.md) — 2nd fail-closed gate after waiver; bump TERMS_VERSION re-prompts all; public legal routes (incl /terms) must precede the gated fallback.
 - [Native iOS Sign in with Apple](native-apple-signin.md) — web Apple OAuth dead (bad .p8); native popup → backend verifies token vs Apple JWKS → Clerk ticket. PUBLIC endpoint: NEVER trust client email; match only by verified token email/`apple:<sub>`.
 - [Public support & legal pages](public-support-legal-pages.md) — /support /privacy-policy /community-guidelines must be in the TOP-LEVEL Switch (before GatedRoutes) to be no-auth; auth-aware back targets or signed-out dead-ends.
+- [Suspension enforcement](suspension-enforcement.md) — `suspend` was cosmetic; now requireAuth 403s suspended users (except GET/DELETE /users/me) + App.tsx SuspendedGate; reversible via PATCH /users/:id/suspension.
