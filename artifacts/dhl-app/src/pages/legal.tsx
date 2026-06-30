@@ -22,9 +22,17 @@ function LegalPageShell({
   const backHref = isSignedIn ? "/settings" : "/support";
   return (
     <div className="flex flex-col h-full bg-muted/20 overflow-y-auto">
-      <div className="p-4 border-b border-border bg-card shadow-sm sticky top-0 z-10 flex items-center gap-3">
+      <div
+        className="px-4 pb-4 border-b border-border bg-card shadow-sm sticky top-0 z-10 flex items-center gap-3"
+        style={{ paddingTop: "max(env(safe-area-inset-top), 1rem)" }}
+      >
         <Link href={backHref}>
-          <Button variant="ghost" size="icon" aria-label="Back">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Back"
+            className="h-11 w-11 shrink-0"
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
         </Link>

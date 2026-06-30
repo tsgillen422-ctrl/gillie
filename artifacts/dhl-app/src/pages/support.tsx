@@ -96,7 +96,10 @@ export function SupportPage() {
   return (
     <div className="min-h-[100dvh] bg-muted/20 text-foreground">
       <header className="border-b border-border bg-card shadow-sm">
-        <div className="mx-auto flex max-w-2xl items-center gap-3 px-5 py-4">
+        <div
+          className="mx-auto flex max-w-2xl items-center gap-3 px-5 pb-4"
+          style={{ paddingTop: "max(env(safe-area-inset-top), 1rem)" }}
+        >
           <img
             src={`${basePath}/logo.svg`}
             alt="Gillie"
