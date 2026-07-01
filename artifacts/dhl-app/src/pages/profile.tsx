@@ -756,7 +756,7 @@ export function ProfilePage() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Block {user.displayName}?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              They won't be able to follow you, and you'll remove any existing connection. You can unblock them later from Settings.
+                              Blocked users will no longer be able to view your location or interact with you. You can unblock them later from Settings.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>

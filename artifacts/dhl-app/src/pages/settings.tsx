@@ -560,6 +560,13 @@ export function SettingsPage() {
           </CardHeader>
         </Card>
 
+        {/* Privacy & Safety */}
+        <div className="pt-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 px-1">
+            Privacy & Safety
+          </h2>
+        </div>
+
         <BlockedUsersCard />
 
         <MutedUsersCard />
@@ -1168,7 +1175,7 @@ function BlockedUsersCard() {
           </div>
           <div>
             <CardTitle className="text-lg">Blocked Users</CardTitle>
-            <CardDescription>People you've blocked from following you</CardDescription>
+            <CardDescription>Blocked people can't view your location, message you, send friend requests, or interact with you. Unblock to restore access.</CardDescription>
           </div>
         </div>
       </CardHeader>

@@ -613,20 +613,26 @@ router.post("/:userId/block", async (req, res) => {
   if (!target) return res.status(404).json({ error: "User not found" });
   const hiddenDemoIds = await getHiddenDemoUserIds(currentUserId(req));
   if (hiddenDemoIds.includes(targetId)) return res.status(404).json({ error: "User not found" });
-  await db
-    .delete(friendRequestsTable)
-    .where(
-      or(
-        and(eq(friendRequestsTable.followerId, currentUserId(req)), eq(friendRequestsTable.followeeId, targetId)),
-        and(eq(friendRequestsTable.followerId, targetId), eq(friendRequestsTable.followeeId, currentUserId(req)))
-      )
-    );
-  const existing = await db.query.blocksTable.findFirst({
-    where: and(eq(blocksTable.blockerId, currentUserId(req)), eq(blocksTable.blockedId, targetId)),
+  const me = currentUserId(req);
+  // Atomically sever the follow relationship (both directions) and record the
+  // block, so a blocked user immediately loses location/message/interaction
+  // access without either side logging out (Apple 5.1.2).
+  await db.transaction(async (tx) => {
+    await tx
+      .delete(friendRequestsTable)
+      .where(
+        or(
+          and(eq(friendRequestsTable.followerId, me), eq(friendRequestsTable.followeeId, targetId)),
+          and(eq(friendRequestsTable.followerId, targetId), eq(friendRequestsTable.followeeId, me))
+        )
+      );
+    const existing = await tx.query.blocksTable.findFirst({
+      where: and(eq(blocksTable.blockerId, me), eq(blocksTable.blockedId, targetId)),
+    });
+    if (!existing) {
+      await tx.insert(blocksTable).values({ blockerId: me, blockedId: targetId });
+    }
   });
-  if (!existing) {
-    await db.insert(blocksTable).values({ blockerId: currentUserId(req), blockedId: targetId });
-  }
   res.json({ success: true });
 });
 

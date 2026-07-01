@@ -1628,6 +1628,7 @@ export function PostCard({ post, onReact, canDelete, onDelete, onEdit, currentUs
   const blockUser = useBlockUser();
   const shareToProfile = useShareToProfile();
   const [reportOpen, setReportOpen] = React.useState(false);
+  const [blockConfirmOpen, setBlockConfirmOpen] = React.useState(false);
   const isOwnPost = currentUserId != null && post.userId === currentUserId;
 
   const handleShareExternal = async () => {
@@ -1697,6 +1698,7 @@ export function PostCard({ post, onReact, canDelete, onDelete, onEdit, currentUs
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetPostsQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetBlockedUsersQueryKey() });
+          setBlockConfirmOpen(false);
           toast.success(`Blocked ${post.user?.displayName || "user"}.`);
         },
         onError: () => toast.error("Couldn't block that user."),
@@ -1884,13 +1886,29 @@ export function PostCard({ post, onReact, canDelete, onDelete, onEdit, currentUs
                     </DropdownMenuItem>
                   )}
                   {!isOwnPost && (
-                    <DropdownMenuItem onClick={handleBlock} className="text-destructive focus:text-destructive">
+                    <DropdownMenuItem onClick={() => setBlockConfirmOpen(true)} className="text-destructive focus:text-destructive">
                       <Ban className="w-4 h-4" />
                       Block User
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
+              <AlertDialog open={blockConfirmOpen} onOpenChange={setBlockConfirmOpen}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Block {post.user?.displayName || "this user"}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Blocked users will no longer be able to view your location or interact with you. You can unblock them later from Settings.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleBlock} disabled={blockUser.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Block
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
           {post.user?.boatName && <p className="text-xs text-muted-foreground truncate">{post.user.boatName}</p>}

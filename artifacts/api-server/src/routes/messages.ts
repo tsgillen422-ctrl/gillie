@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, conversationsTable, conversationParticipantsTable, messagesTable, messageReactionsTable, friendRequestsTable } from "@workspace/db";
-import { eq, and, ne, desc, gt, inArray } from "drizzle-orm";
+import { usersTable, conversationsTable, conversationParticipantsTable, messagesTable, messageReactionsTable, friendRequestsTable, blocksTable } from "@workspace/db";
+import { eq, and, ne, desc, gt, inArray, or } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { broadcastToConversation } from "../lib/realtime";
 import { createNotifications } from "../lib/notify";
@@ -17,6 +17,30 @@ async function isParticipant(conversationId: number, userId: number) {
     ),
   });
   return Boolean(row);
+}
+
+// True if either user has blocked the other (blocks are enforced in both
+// directions so a blocked user can never message the person who blocked them,
+// and vice versa — Apple App Review Guideline 5.1.2).
+async function isBlockedBetween(a: number, b: number) {
+  const row = await db.query.blocksTable.findFirst({
+    where: or(
+      and(eq(blocksTable.blockerId, a), eq(blocksTable.blockedId, b)),
+      and(eq(blocksTable.blockerId, b), eq(blocksTable.blockedId, a)),
+    ),
+  });
+  return Boolean(row);
+}
+
+// Everyone the given user has a block relationship with, in either direction.
+// Used to hide blocked users' messages inside shared (group) conversations so a
+// blocked user can never interact with the person who blocked them, and vice
+// versa — without breaking the group for unrelated members (Apple 5.1.2).
+async function getBlockedIdsFor(userId: number): Promise<Set<number>> {
+  const rows = await db.query.blocksTable.findMany({
+    where: or(eq(blocksTable.blockerId, userId), eq(blocksTable.blockedId, userId)),
+  });
+  return new Set(rows.map((b) => (b.blockerId === userId ? b.blockedId : b.blockerId)));
 }
 
 const ALLOWED_MESSAGE_REACTIONS = ["heart", "fish", "boat", "fire"] as const;
@@ -74,6 +98,8 @@ router.get("/conversations", async (req, res) => {
     .from(conversationParticipantsTable)
     .where(eq(conversationParticipantsTable.userId, currentUserId(req)));
 
+  const listBlockedIds = await getBlockedIdsFor(currentUserId(req));
+
   const convos = await Promise.all(
     myParticipations.map(async (p) => {
       const conv = await db.query.conversationsTable.findFirst({
@@ -111,7 +137,10 @@ router.get("/conversations", async (req, res) => {
         );
 
       let formattedLastMessage = null;
-      if (lastMessage) {
+      if (
+        lastMessage &&
+        (lastMessage.senderId === currentUserId(req) || !listBlockedIds.has(lastMessage.senderId))
+      ) {
         const sender = await db.query.usersTable.findFirst({ where: eq(usersTable.id, lastMessage.senderId) });
         formattedLastMessage = {
           id: lastMessage.id,
@@ -169,6 +198,9 @@ router.post("/conversations", async (req, res) => {
     db.query.usersTable.findFirst({ where: eq(usersTable.id, participantId) }),
   ]);
   if (!target) return res.status(404).json({ error: "User not found" });
+  if (await isBlockedBetween(me, participantId)) {
+    return res.status(403).json({ error: "You can't message this person" });
+  }
   const mutual = Boolean(iFollow && followsMe);
   if (!mutual && !(iFollow && target.followerSendMessages)) {
     return res.status(403).json({ error: "You can only message people you follow who allow follower messages" });
@@ -311,11 +343,19 @@ router.get("/conversations/:conversationId", async (req, res) => {
     .where(eq(conversationParticipantsTable.conversationId, conversationId));
   const otherParticipants = participants.filter((p) => p.userId !== currentUserId(req));
 
-  const msgs = await db
+  const allMsgs = await db
     .select()
     .from(messagesTable)
     .where(eq(messagesTable.conversationId, conversationId))
     .orderBy(messagesTable.createdAt);
+
+  // Hide messages from users I've blocked (or who've blocked me). My own
+  // messages always remain visible. This keeps blocked users from interacting
+  // with me inside shared group threads without requiring a logout.
+  const threadBlockedIds = await getBlockedIdsFor(currentUserId(req));
+  const msgs = allMsgs.filter(
+    (m) => m.senderId === currentUserId(req) || !threadBlockedIds.has(m.senderId)
+  );
 
   const { counts, mine } = await reactionsForMessages(msgs.map((m) => m.id), currentUserId(req));
 
@@ -385,6 +425,28 @@ router.post("/conversations/:conversationId", async (req, res) => {
   const conversationId = parseInt(req.params.conversationId);
   if (!(await isParticipant(conversationId, currentUserId(req)))) {
     return res.status(403).json({ error: "You are not a participant in this conversation" });
+  }
+  // For 1:1 conversations, block enforcement also applies to threads that
+  // existed before the block was created — a blocked user must not be able to
+  // keep messaging through a pre-existing conversation (Apple 5.1.2).
+  const conv = await db.query.conversationsTable.findFirst({
+    where: eq(conversationsTable.id, conversationId),
+  });
+  if (conv && !conv.isGroup) {
+    const others = await db
+      .select({ userId: conversationParticipantsTable.userId })
+      .from(conversationParticipantsTable)
+      .where(
+        and(
+          eq(conversationParticipantsTable.conversationId, conversationId),
+          ne(conversationParticipantsTable.userId, currentUserId(req)),
+        ),
+      );
+    for (const o of others) {
+      if (await isBlockedBetween(currentUserId(req), o.userId)) {
+        return res.status(403).json({ error: "You can't message this person" });
+      }
+    }
   }
   const { content, mediaUrl, mediaType } = req.body;
   const isMature = await moderateContent({
@@ -516,6 +578,10 @@ router.post("/:messageId/react", async (req, res) => {
   if (!msg) return res.status(404).json({ error: "Message not found" });
   if (!(await isParticipant(msg.conversationId, uid))) {
     return res.status(403).json({ error: "You are not a participant in this conversation" });
+  }
+  // Can't react to a message from someone you've blocked (or who blocked you).
+  if (msg.senderId !== uid && (await isBlockedBetween(uid, msg.senderId))) {
+    return res.status(403).json({ error: "You can't interact with this person" });
   }
 
   const existing = await db.query.messageReactionsTable.findFirst({
