@@ -258,8 +258,22 @@ export function isActivelySharing(u: typeof usersTable.$inferSelect): boolean {
   return !!u.locationSharingExpiresAt && u.locationSharingExpiresAt.getTime() > Date.now();
 }
 
-function formatUser(u: typeof usersTable.$inferSelect) {
-  const sharing = isActivelySharing(u);
+// Apple 5.1.2: coordinates are published to OTHER users only while a check-in is
+// active AND the position is fresh (recently refreshed). This drops a closed/left
+// app off other people's views instead of leaving stale coordinates readable.
+// NOT used for self (/me): isActivelySharing (no freshness) governs self-state so
+// a returning user can resume reporting via PATCH /me/location and reappear.
+const LIVE_LOCATION_FRESH_MS = 10 * 60 * 1000;
+export function isLocationLive(u: typeof usersTable.$inferSelect): boolean {
+  const fresh = !!u.lastSeen && Date.now() - u.lastSeen.getTime() < LIVE_LOCATION_FRESH_MS;
+  return isActivelySharing(u) && fresh;
+}
+
+// When `hideLiveLocation` is set, live coordinates are withheld regardless of the
+// user's own check-in state — used to enforce audience rules when serializing
+// another user's profile for a viewer who isn't authorized to see their location.
+function formatUser(u: typeof usersTable.$inferSelect, opts: { hideLiveLocation?: boolean } = {}) {
+  const sharing = opts.hideLiveLocation ? false : isActivelySharing(u);
   return {
     id: u.id,
     username: u.username,
@@ -811,9 +825,34 @@ router.get("/:userId", async (req, res) => {
     }
   }
 
+  // Apple 5.1.2 + follower privacy: expose another user's live location only when
+  // they are live+fresh, I follow them, and either they follow me back (mutual) or
+  // they let followers see their location. Mirrors GET /friends/locations so a
+  // non-follower can't read a checked-in user's coordinates from their profile.
+  let canSeeLive = friendStatus === "self";
+  if (!canSeeLive && friendStatus !== "blocked" && friendStatus !== "blocked_by" && isLocationLive(user)) {
+    const [iFollow, followsMe] = await Promise.all([
+      db.query.friendRequestsTable.findFirst({
+        where: and(
+          eq(friendRequestsTable.followerId, uid),
+          eq(friendRequestsTable.followeeId, userId),
+          eq(friendRequestsTable.status, "accepted")
+        ),
+      }),
+      db.query.friendRequestsTable.findFirst({
+        where: and(
+          eq(friendRequestsTable.followerId, userId),
+          eq(friendRequestsTable.followeeId, uid),
+          eq(friendRequestsTable.status, "accepted")
+        ),
+      }),
+    ]);
+    canSeeLive = !!iFollow && (!!followsMe || user.followerSeeLocation);
+  }
+
   const counts = await getFollowCounts(user.id);
   const userBadges = await computeBadges(user.id);
-  res.json({ ...formatUser(user), ...counts, badges: userBadges, rank: computeRank(userBadges), friendStatus });
+  res.json({ ...formatUser(user, { hideLiveLocation: !canSeeLive }), ...counts, badges: userBadges, rank: computeRank(userBadges), friendStatus });
 });
 
 export default router;

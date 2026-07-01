@@ -27,7 +27,7 @@ defined inside `AuthedApp` is a login wall for logged-out visitors.
   back → `/settings` when signed in, `/support` when signed out.
 
 # Misc
-- Support email is `gillie.apphelp@yahoo.com` (single source: Settings + Support page).
+- A single support email is shown in both Settings and the Support page (keep them in sync); the address itself lives in the app source, not here.
 - "Terms of Service" link points at the Community Guidelines page — there is no
   separate ToS document in the app.
 - Production Support URL: `https://dale-hollow-nav.replit.app/support`. SPA

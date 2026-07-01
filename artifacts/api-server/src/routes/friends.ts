@@ -30,6 +30,22 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
+// Apple 5.1.2: a user's live position is shown to OTHERS only while their manual
+// check-in is active (non-expired) AND their position was refreshed recently.
+// When someone closes or leaves the app their client stops reporting, so a stale
+// fix drops off other people's maps within this window instead of lingering as a
+// "ghost boat" until the check-in expires (up to 6h). This makes "sharing ends
+// when you close the app" true. Self-state (/me, served by users.ts formatUser)
+// is intentionally NOT freshness-gated, so a returning user resumes reporting and
+// reappears for the remainder of their check-in.
+const LIVE_LOCATION_FRESH_MS = 10 * 60 * 1000;
+function isLocationLive(u: typeof usersTable.$inferSelect): boolean {
+  const active =
+    !!u.locationSharingExpiresAt && u.locationSharingExpiresAt.getTime() > Date.now();
+  const fresh = !!u.lastSeen && Date.now() - u.lastSeen.getTime() < LIVE_LOCATION_FRESH_MS;
+  return active && fresh;
+}
+
 // One-way follow model: an accepted row means followerId follows followeeId in
 // that single direction. "following" = people I follow; "followers" = people who
 // follow me; "mutual" = both rows exist.
@@ -54,9 +70,9 @@ async function getFollowCounts(userId: number): Promise<{ followerCount: number;
 
 function formatUser(u: typeof usersTable.$inferSelect) {
   // Apple 5.1.2: coordinates are only exposed while a manual check-in is active
-  // (non-expired). shareLocation alone is NOT sufficient.
-  const sharing =
-    !!u.locationSharingExpiresAt && u.locationSharingExpiresAt.getTime() > Date.now();
+  // (non-expired) AND the position is fresh (see isLocationLive). shareLocation
+  // alone is NOT sufficient, and a stale fix from a closed app is not published.
+  const sharing = isLocationLive(u);
   return {
     id: u.id,
     username: u.username,
@@ -154,10 +170,9 @@ router.get("/locations", async (req, res) => {
     .filter((u) => mutualSet.has(u!.id) || u!.followerSeeLocation)
     .map((u) => {
       // Apple 5.1.2: only publish coordinates while the friend is actively
-      // checked in (non-expired manual check-in). shareLocation alone is no
-      // longer sufficient.
-      const sharing =
-        !!u!.locationSharingExpiresAt && u!.locationSharingExpiresAt.getTime() > Date.now();
+      // checked in (non-expired manual check-in) AND their position is fresh, so
+      // a closed/left app drops off the map instead of lingering as a ghost boat.
+      const sharing = isLocationLive(u!);
       return {
         userId: u!.id,
         displayName: u!.displayName,
