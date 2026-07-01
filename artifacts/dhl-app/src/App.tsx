@@ -25,6 +25,7 @@ import { MessageSettingsPage } from "@/pages/message-settings";
 import { FriendsPage } from "@/pages/friends";
 import { PinsPage } from "@/pages/pins";
 import { SettingsPage } from "@/pages/settings";
+import { SettingsDetailPage } from "@/pages/settings-detail";
 import { NotificationsPage } from "@/pages/notifications";
 import { ProfilePage } from "@/pages/profile";
 import { CatchesPage } from "@/pages/catches";
@@ -337,6 +338,7 @@ function AuthedApp() {
         <Route path="/boats" component={BoatsPage} />
         <Route path="/search" component={SearchPage} />
         <Route path="/notifications" component={NotificationsPage} />
+        <Route path="/settings/:section" component={SettingsDetailPage} />
         <Route path="/settings" component={SettingsPage} />
         <Route path="/admin" component={AdminPage} />
         <Route path="/profile/:userId" component={ProfilePage} />
