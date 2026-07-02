@@ -1,0 +1,249 @@
+I want to take the profile experience to the next level and make it feel more like a polished social app (similar to Facebook or Instagram), while still making it unique to Gillie. The goal is to make people want to show off their profile and boat.
+
+1. Redesign the profile header
+
+Keep the current cover photo and profile picture, but make the top of the profile feel more premium.
+
+* Cover photo
+* Profile picture
+* Name and username
+* Badges
+* Stats (Posts, Followers, Following, Favorites)
+* Show current status:
+    * 🟢 On the lake at Sunset Marina
+    * 📍 Last checked in…
+    * ⚪ Offline
+
+Instead of just a “Find Me on Map” button, make the status feel alive.
+
+⸻
+
+2. Add a “My Boat” card (largest feature)
+
+Directly below the profile header, add a dedicated boat card.
+
+The card should include:
+
+* Large boat photo (uploaded by the user)
+* Boat name
+* Boat brand
+* Boat model
+* Boat type
+* Year
+* Boat color
+* Home marina (optional)
+
+Example:
+
+🚤 Lake Therapy
+
+Fountain 38 Lightning
+
+Performance Boat
+
+2019
+
+Deep Blue
+
+Sunset Marina
+
+The boat photo should become one of the highlights of every Gillie profile.
+
+⸻
+
+3. Boat photo uploads
+
+Allow users to upload a photo of their actual boat.
+
+Instead of only displaying an icon everywhere, use:
+
+* actual boat photo on profile
+* boat photo in boat details
+* optional boat photo when someone taps their profile
+
+Boat icons should still be used on the map for clarity, but profiles should showcase the real boat.
+
+⸻
+
+4. Support users who DON’T own boats
+
+Gillie shouldn’t feel like it’s only for boat owners.
+
+Add a toggle in Boat/Vessel Details:
+
+☐ Display my boat on my profile
+
+or
+
+☐ I don’t own a boat
+
+When enabled:
+
+Show the My Boat card.
+
+When disabled:
+
+Hide the entire boat section.
+
+The user can still:
+
+* check in
+* post
+* follow friends
+* upload photos
+* earn badges
+* appear on the map
+
+If they purchase a boat later they can simply turn it back on.
+
+⸻
+
+5. Make Gillie for all lake lovers
+
+Even without a boat, users should still personalize themselves.
+
+Instead of forcing Boat Details, allow them to customize:
+
+Favorite Activities
+
+• Boating
+
+• Wakeboarding
+
+• Tubing
+
+• Fishing
+
+• Kayaking
+
+• Paddle Boarding
+
+• Swimming
+
+• Cliff Jumping
+
+• Camping
+
+• Hiking
+
+• Sunset Cruises
+
+• Water Skiing
+
+This makes Gillie welcoming for everyone who enjoys the lake.
+
+⸻
+
+6. Improve the Friends section
+
+Instead of only showing avatars:
+
+Show
+
+Profile photo
+
+Boat icon or boat photo
+
+Boat type
+
+This makes friends feel more connected to boating.
+
+⸻
+
+7. Replace “Lake Adventures”
+
+Turn it into a photo gallery called:
+
+📸 Lake Memories
+
+Users upload:
+
+Boat photos
+
+Sunsets
+
+Tubing
+
+Fishing
+
+Family
+
+Dogs on the boat
+
+Camping
+
+Wake surfing
+
+This becomes a beautiful gallery on every profile.
+
+⸻
+
+8. Improve Recent Activity
+
+Instead of only:
+
+Dropped a pin
+
+Show richer activity like:
+
+📍 Checked into Sunset Marina
+
+🚤 Went boating
+
+📸 Uploaded a new boat photo
+
+⭐ Earned Lake Explorer badge
+
+❤️ Favorited Sunset Cove
+
+🎣 Caught first bass
+
+🏕️ Added new camping photo
+
+This makes profiles feel alive.
+
+⸻
+
+9. Modernize Posts
+
+Instead of simple tabs:
+
+Posts
+
+Pins
+
+Gallery
+
+Use:
+
+📰 Posts
+
+📍 Check-ins
+
+📸 Photos
+
+The Photos tab should display a clean Instagram-style photo grid.
+
+⸻
+
+10. Long-term personalization
+
+Eventually I’d love users to personalize their boats even more by adding:
+
+* Boat brand
+* Boat model
+* Boat nickname
+* Boat year
+* Boat colors
+* Engine brand
+* Horsepower
+* Length
+* Home marina
+* Favorite lake
+* Favorite cove
+* Favorite activity
+* Upload multiple boat photos
+
+The goal is to make every Gillie profile feel unique and make people excited to show off both themselves and their boat.
+
+Overall, I want the profile to feel more premium, more social, and more lake-focused—something people open and immediately think, “Wow, I want my profile to look like that.”

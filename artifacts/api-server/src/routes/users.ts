@@ -38,6 +38,7 @@ import { getHiddenDemoUserIds } from "../lib/demoData";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
+// Keep in sync with INTEREST_DEFS in dhl-app src/lib/interests.ts.
 const VALID_INTERESTS = [
   "fishing",
   "boating",
@@ -48,6 +49,13 @@ const VALID_INTERESTS = [
   "sunsets",
   "wildlife",
   "bonfires",
+  "wakeboarding",
+  "tubing",
+  "kayaking",
+  "paddleboarding",
+  "cliffjumping",
+  "waterskiing",
+  "sunsetcruises",
 ];
 
 // Permanently delete a user and every record that references them.
@@ -273,8 +281,12 @@ export function isLocationLive(u: typeof usersTable.$inferSelect): boolean {
 // When `hideLiveLocation` is set, live coordinates are withheld regardless of the
 // user's own check-in state — used to enforce audience rules when serializing
 // another user's profile for a viewer who isn't authorized to see their location.
-function formatUser(u: typeof usersTable.$inferSelect, opts: { hideLiveLocation?: boolean } = {}) {
+// When `redactHiddenBoat` is set and the user has showBoat=false, the boat
+// showcase details (model/year/photo/marina) are withheld from other viewers.
+// boatName/color/type stay visible because the map's boat markers depend on them.
+function formatUser(u: typeof usersTable.$inferSelect, opts: { hideLiveLocation?: boolean; redactHiddenBoat?: boolean } = {}) {
   const sharing = opts.hideLiveLocation ? false : isActivelySharing(u);
+  const hideBoat = !!opts.redactHiddenBoat && u.showBoat === false;
   return {
     id: u.id,
     username: u.username,
@@ -296,7 +308,12 @@ function formatUser(u: typeof usersTable.$inferSelect, opts: { hideLiveLocation?
     boatName: u.boatName,
     boatColor: u.boatColor,
     boatType: u.boatType,
-    boatBrand: u.boatBrand,
+    boatBrand: hideBoat ? null : u.boatBrand,
+    boatModel: hideBoat ? null : u.boatModel,
+    boatYear: hideBoat ? null : u.boatYear,
+    boatPhotoUrl: hideBoat ? null : u.boatPhotoUrl,
+    homeMarina: hideBoat ? null : u.homeMarina,
+    showBoat: u.showBoat,
     boatNeon: u.boatNeon,
     boatFlag: u.boatFlag,
     boatAccent: u.boatAccent,
@@ -398,7 +415,7 @@ router.post("/me/sos", async (req, res) => {
 
 router.patch("/me", async (req, res) => {
   const uid = currentUserId(req);
-  const { displayName, bio, location, hometown, birthday, relationshipStatus, gender, work, avatarUrl, coverUrl, boatName, boatColor, boatType, boatBrand, boatNeon, boatFlag, boatAccent, interests, isBusiness } = req.body;
+  const { displayName, bio, location, hometown, birthday, relationshipStatus, gender, work, avatarUrl, coverUrl, boatName, boatColor, boatType, boatBrand, boatModel, boatYear, boatPhotoUrl, homeMarina, showBoat, boatNeon, boatFlag, boatAccent, interests, isBusiness } = req.body;
   const updates: Partial<typeof usersTable.$inferInsert> = {};
   if (displayName !== undefined) updates.displayName = displayName;
   if (bio !== undefined) updates.bio = bio;
@@ -427,6 +444,49 @@ router.patch("/me", async (req, res) => {
       return res.status(400).json({ error: `boatBrand must be at most ${BOAT_BRAND_MAX_LENGTH} characters` });
     }
     updates.boatBrand = trimmed || null;
+  }
+  if (boatModel !== undefined) {
+    if (boatModel !== null && typeof boatModel !== "string") {
+      return res.status(400).json({ error: "boatModel must be a string or null" });
+    }
+    const trimmed = typeof boatModel === "string" ? boatModel.trim() : null;
+    if (trimmed && trimmed.length > 60) {
+      return res.status(400).json({ error: "boatModel must be at most 60 characters" });
+    }
+    updates.boatModel = trimmed || null;
+  }
+  if (boatYear !== undefined) {
+    if (boatYear !== null) {
+      const year = Number(boatYear);
+      if (!Number.isInteger(year) || year < 1900 || year > new Date().getFullYear() + 1) {
+        return res.status(400).json({ error: "boatYear must be a valid year" });
+      }
+      updates.boatYear = year;
+    } else {
+      updates.boatYear = null;
+    }
+  }
+  if (boatPhotoUrl !== undefined) {
+    if (boatPhotoUrl !== null && typeof boatPhotoUrl !== "string") {
+      return res.status(400).json({ error: "boatPhotoUrl must be a string or null" });
+    }
+    updates.boatPhotoUrl = boatPhotoUrl || null;
+  }
+  if (homeMarina !== undefined) {
+    if (homeMarina !== null && typeof homeMarina !== "string") {
+      return res.status(400).json({ error: "homeMarina must be a string or null" });
+    }
+    const trimmed = typeof homeMarina === "string" ? homeMarina.trim() : null;
+    if (trimmed && trimmed.length > 80) {
+      return res.status(400).json({ error: "homeMarina must be at most 80 characters" });
+    }
+    updates.homeMarina = trimmed || null;
+  }
+  if (showBoat !== undefined) {
+    if (typeof showBoat !== "boolean") {
+      return res.status(400).json({ error: "showBoat must be a boolean" });
+    }
+    updates.showBoat = showBoat;
   }
   if (boatNeon !== undefined) {
     if (typeof boatNeon !== "boolean") {
@@ -863,7 +923,7 @@ router.get("/:userId", async (req, res) => {
 
   const counts = await getFollowCounts(user.id);
   const userBadges = await computeBadges(user.id);
-  res.json({ ...formatUser(user, { hideLiveLocation: !canSeeLive }), ...counts, badges: userBadges, rank: computeRank(userBadges), friendStatus });
+  res.json({ ...formatUser(user, { hideLiveLocation: !canSeeLive, redactHiddenBoat: friendStatus !== "self" }), ...counts, badges: userBadges, rank: computeRank(userBadges), friendStatus });
 });
 
 export default router;

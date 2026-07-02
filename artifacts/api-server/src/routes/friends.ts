@@ -88,6 +88,8 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     boatName: u.boatName,
     boatColor: u.boatColor,
     boatType: u.boatType,
+    boatPhotoUrl: u.showBoat === false ? null : u.boatPhotoUrl,
+    showBoat: u.showBoat,
     boatNeon: u.boatNeon,
     boatFlag: u.boatFlag,
     boatAccent: u.boatAccent,

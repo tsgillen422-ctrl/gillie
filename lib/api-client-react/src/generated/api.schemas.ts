@@ -80,6 +80,15 @@ export interface User {
   /** @nullable */
   boatBrand?: string | null;
   /** @nullable */
+  boatModel?: string | null;
+  /** @nullable */
+  boatYear?: number | null;
+  /** @nullable */
+  boatPhotoUrl?: string | null;
+  /** @nullable */
+  homeMarina?: string | null;
+  showBoat?: boolean;
+  /** @nullable */
   boatNeon?: boolean | null;
   /** @nullable */
   boatFlag?: boolean | null;
@@ -161,6 +170,15 @@ export interface UserUpdate {
   boatType?: string;
   /** @nullable */
   boatBrand?: string | null;
+  /** @nullable */
+  boatModel?: string | null;
+  /** @nullable */
+  boatYear?: number | null;
+  /** @nullable */
+  boatPhotoUrl?: string | null;
+  /** @nullable */
+  homeMarina?: string | null;
+  showBoat?: boolean;
   boatNeon?: boolean;
   boatFlag?: boolean;
   /** @nullable */

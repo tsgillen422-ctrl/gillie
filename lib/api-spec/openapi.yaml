@@ -2153,6 +2153,16 @@ components:
           type: ["string", "null"]
         boatBrand:
           type: ["string", "null"]
+        boatModel:
+          type: ["string", "null"]
+        boatYear:
+          type: ["integer", "null"]
+        boatPhotoUrl:
+          type: ["string", "null"]
+        homeMarina:
+          type: ["string", "null"]
+        showBoat:
+          type: boolean
         boatNeon:
           type: ["boolean", "null"]
         boatFlag:
@@ -2285,6 +2295,16 @@ components:
           type: string
         boatBrand:
           type: ["string", "null"]
+        boatModel:
+          type: ["string", "null"]
+        boatYear:
+          type: ["integer", "null"]
+        boatPhotoUrl:
+          type: ["string", "null"]
+        homeMarina:
+          type: ["string", "null"]
+        showBoat:
+          type: boolean
         boatNeon:
           type: boolean
         boatFlag:

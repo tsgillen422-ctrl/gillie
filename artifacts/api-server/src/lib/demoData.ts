@@ -200,6 +200,21 @@ const DEMO_USERS: DemoUserSeed[] = [
   },
 ];
 
+// Supplemental boat details (model / year / home marina) so demo profiles show
+// off the richer "My Boat" card. Kept separate from DemoUserSeed to avoid
+// touching every seed entry.
+const DEMO_BOAT_DETAILS: Record<string, { boatModel?: string; boatYear?: number; homeMarina?: string }> = {
+  wakerider_tn: { boatModel: "X24", boatYear: 2022, homeMarina: "Sunset Marina" },
+  baitandbrews: { boatModel: "Z520R", boatYear: 2019, homeMarina: "Horse Creek Dock" },
+  lakelifelauren: { boatModel: "Sanpan 2500", boatYear: 2021, homeMarina: "Willow Grove Resort" },
+  striperking: { boatModel: "Pro-V 2075", boatYear: 2016, homeMarina: "Cedar Hill Resort" },
+  captainjoe: { boatModel: "330 Sundancer", boatYear: 2014, homeMarina: "Star Point Marina" },
+  tubetime: { boatModel: "205 SS", boatYear: 2023, homeMarina: "Sunset Marina" },
+  anglerabe: { boatModel: "Impact 203", boatYear: 2018, homeMarina: "East Port Marina" },
+  sunsetsam: { boatModel: "Party Barge 22", boatYear: 2017, homeMarina: "Willow Grove Resort" },
+  throttlejack: { boatModel: "242X", boatYear: 2020, homeMarina: "Star Point Marina" },
+};
+
 const AUTO_FOLLOW_USERNAMES = DEMO_USERS.filter((u) => u.autoFollow).map((u) => u.username);
 const HOME_BY_USERNAME = new Map(DEMO_USERS.map((u) => [u.username, { lat: u.lat, lng: u.lng }]));
 
@@ -327,7 +342,13 @@ export async function reconcileDemoUsers(): Promise<void> {
     for (const u of DEMO_USERS) {
       await db
         .update(usersTable)
-        .set({ boatType: u.boatType, boatBrand: u.boatBrand ?? null })
+        .set({
+          boatType: u.boatType,
+          boatBrand: u.boatBrand ?? null,
+          boatModel: DEMO_BOAT_DETAILS[u.username]?.boatModel ?? null,
+          boatYear: DEMO_BOAT_DETAILS[u.username]?.boatYear ?? null,
+          homeMarina: DEMO_BOAT_DETAILS[u.username]?.homeMarina ?? null,
+        })
         .where(and(eq(usersTable.username, u.username), eq(usersTable.isDemo, true)));
     }
     logger.info("Reconciled demo user boat catalog fields");
@@ -371,6 +392,9 @@ export async function seedDemoData(): Promise<{ created: number; message: string
         boatColor: u.boatColor,
         boatType: u.boatType,
         boatBrand: u.boatBrand ?? null,
+        boatModel: DEMO_BOAT_DETAILS[u.username]?.boatModel ?? null,
+        boatYear: DEMO_BOAT_DETAILS[u.username]?.boatYear ?? null,
+        homeMarina: DEMO_BOAT_DETAILS[u.username]?.homeMarina ?? null,
         interests: u.interests,
         location: "Dale Hollow Lake",
         isDemo: true,

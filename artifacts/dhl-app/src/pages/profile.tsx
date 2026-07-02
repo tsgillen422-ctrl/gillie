@@ -41,7 +41,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
-import { boatLabelFor } from "@/boats";
+import { boatLabelFor, boatSvgFor } from "@/boats";
 
 function pinEmoji(type: string) {
   switch (type) {
@@ -261,6 +261,106 @@ function RankBadge({ rank }: { rank?: { tier?: number; title?: string; nextTitle
   );
 }
 
+/** Live presence status line: on the water > recently seen > offline. */
+function StatusLine({ user }: { user: any }) {
+  const lastSeenMs = user.lastSeen ? new Date(user.lastSeen).getTime() : null;
+  const fresh = lastSeenMs != null && Date.now() - lastSeenMs < 10 * 60 * 1000;
+  const onWater = !!user.isOnWater && !!user.isSharingLocation && fresh;
+
+  if (onWater) {
+    return (
+      <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 px-3 py-1 text-xs font-semibold" data-testid="status-on-water">
+        <span className="relative flex h-2 w-2">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+        </span>
+        On the water{user.homeMarina ? ` near ${user.homeMarina}` : " now"}
+      </span>
+    );
+  }
+  if (lastSeenMs != null && !isNaN(lastSeenMs)) {
+    return (
+      <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-muted text-muted-foreground border border-border px-3 py-1 text-xs font-medium" data-testid="status-last-seen">
+        <MapPin className="w-3 h-3" />
+        Last seen {formatDistanceToNow(new Date(lastSeenMs), { addSuffix: true })}
+      </span>
+    );
+  }
+  return (
+    <span className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-muted text-muted-foreground border border-border px-3 py-1 text-xs font-medium" data-testid="status-offline">
+      <span className="inline-flex rounded-full h-2 w-2 bg-muted-foreground/40" />
+      Offline
+    </span>
+  );
+}
+
+/** Dedicated boat showcase card — the highlight of every profile. */
+function MyBoatCard({ user, isSelf, onPhotoView }: { user: any; isSelf: boolean; onPhotoView: (v: { src: string; alt: string }) => void }) {
+  if (user.showBoat === false) return null;
+  const photo = resolveAvatarUrl(user.boatPhotoUrl);
+  const hasDetails = user.boatName || photo || user.boatBrand || user.boatModel;
+  if (!hasDetails) return null;
+
+  const brandModel = [user.boatBrand, user.boatModel].filter(Boolean).join(" ");
+  const chips: { icon?: React.ReactNode; label: string }[] = [];
+  chips.push({ icon: <Ship className="w-3.5 h-3.5" />, label: boatLabelFor(user.boatType) });
+  if (user.boatYear) chips.push({ label: String(user.boatYear) });
+  if (user.boatColor) {
+    chips.push({
+      icon: <span className="inline-block w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: user.boatColor }} />,
+      label: "Color",
+    });
+  }
+  if (user.homeMarina) chips.push({ icon: <Anchor className="w-3.5 h-3.5" />, label: user.homeMarina });
+
+  return (
+    <div className={`${CARD} overflow-hidden`} data-testid="card-my-boat">
+      <div className="relative aspect-[16/9] bg-gradient-to-br from-sky-300 via-primary/70 to-secondary">
+        {photo ? (
+          <button
+            type="button"
+            onClick={() => onPhotoView({ src: photo, alt: `${user.boatName || "Boat"} photo` })}
+            className="absolute inset-0 w-full h-full cursor-zoom-in"
+            aria-label="View boat photo"
+          >
+            <img src={photo} alt={user.boatName || "Boat"} className="w-full h-full object-cover" />
+          </button>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span
+              className="scale-[2.2]"
+              style={{ color: user.boatColor || "#0ea5e9", lineHeight: 0, filter: "drop-shadow(0 6px 8px rgba(11,58,91,0.35))" }}
+              dangerouslySetInnerHTML={{ __html: boatSvgFor(user.boatType) }}
+            />
+          </div>
+        )}
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+        <div className="absolute bottom-3 left-4 right-4 pointer-events-none">
+          <p className="text-white text-xl font-extrabold drop-shadow flex items-center gap-2">
+            🚤 {user.boatName || boatLabelFor(user.boatType)}
+          </p>
+          {brandModel && <p className="text-white/90 text-sm font-medium drop-shadow">{brandModel}</p>}
+        </div>
+        {isSelf && (
+          <div className="absolute top-3 right-3">
+            <Button size="sm" variant="secondary" className="rounded-full bg-white/85 backdrop-blur shadow-soft" asChild>
+              <Link href="/settings/vessel" data-testid="link-edit-boat">Edit</Link>
+            </Button>
+          </div>
+        )}
+      </div>
+      <div className="p-4 flex flex-wrap gap-2">
+        {chips.map((c, i) => (
+          <span key={i} className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
+            {c.icon}
+            {c.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function AboutCard({ user }: { user: any }) {
   const items: { icon: React.ReactNode; label: string }[] = [];
   if (user.location) items.push({ icon: <MapPin className="w-4 h-4" />, label: `Lives in ${user.location}` });
@@ -270,12 +370,6 @@ function AboutCard({ user }: { user: any }) {
   if (bday) items.push({ icon: <Cake className="w-4 h-4" />, label: bday });
   if (user.relationshipStatus) items.push({ icon: <Heart className="w-4 h-4" />, label: user.relationshipStatus });
   if (user.gender) items.push({ icon: <User2 className="w-4 h-4" />, label: user.gender });
-  if (user.boatName) {
-    items.push({
-      icon: <Ship className="w-4 h-4" />,
-      label: `${user.boatName} · ${boatLabelFor(user.boatType)}${user.boatBrand ? ` • ${user.boatBrand}` : ""}`,
-    });
-  }
 
   const hasBio = !!user.bio;
 
@@ -533,15 +627,15 @@ export function ProfilePage() {
     }));
     (catches ?? []).forEach((c) => items.push({
       key: `catch-${c.id}`, Icon: Fish, color: "text-cyan-600 dark:text-cyan-400 bg-cyan-500/10",
-      label: `Logged a catch · ${c.species}`, time: new Date(c.caughtAt).getTime(),
+      label: `Caught a ${c.species}`, time: new Date(c.caughtAt).getTime(),
     }));
     (userPins ?? []).forEach((p) => items.push({
       key: `pin-${p.id}`, Icon: MapPin, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
-      label: `Dropped a pin · ${p.title}`, time: new Date(p.createdAt).getTime(),
+      label: p.type === "marina" ? `Checked in at ${p.title}` : `Marked ${p.title} on the map`, time: new Date(p.createdAt).getTime(),
     }));
     (gallery ?? []).forEach((g) => items.push({
       key: `gallery-${g.id}`, Icon: ImageIcon, color: "text-amber-600 dark:text-amber-400 bg-amber-500/10",
-      label: g.caption ? `Shared a photo · ${g.caption}` : "Added a photo to the gallery", time: new Date(g.createdAt).getTime(),
+      label: g.caption ? `Added a lake memory · ${g.caption}` : "Added a new lake memory", time: new Date(g.createdAt).getTime(),
     }));
     return items.filter((i) => !isNaN(i.time)).sort((a, b) => b.time - a.time).slice(0, 5);
   }, [userPosts, catches, userPins, gallery]);
@@ -632,6 +726,7 @@ export function ProfilePage() {
                   {user.isBusiness && <BadgeCheck className="w-5 h-5 text-primary" />}
                 </h2>
                 <p className="text-muted-foreground text-sm">@{user.username}</p>
+                <StatusLine user={user} />
 
                 <BadgeRow badges={user.badges} limit={4} onViewAll={() => setBadgesOpen(true)} />
 
@@ -800,6 +895,9 @@ export function ProfilePage() {
 
           {/* Body */}
           <div className="px-4 pt-5 pb-24 space-y-5">
+            {/* My Boat */}
+            <MyBoatCard user={user} isSelf={isSelf} onPhotoView={setPhotoView} />
+
             {/* About */}
             <AboutCard user={user} />
 
@@ -828,10 +926,20 @@ export function ProfilePage() {
                 </SectionTitle>
                 {profileFriends && profileFriends.length > 0 ? (
                   <div className="grid grid-cols-4 gap-2.5">
-                    {profileFriends.slice(0, 4).map((f) => (
+                    {profileFriends.slice(0, 4).map((f: any) => (
                       <Link key={f.id} href={`/profile/${f.id}`} className="flex flex-col items-center gap-1.5">
                         <UserAvatar name={f.displayName} username={f.username} avatarUrl={f.avatarUrl ?? undefined} className="w-14 h-14" />
                         <span className="block w-full text-[11px] font-medium text-center leading-tight truncate">{f.displayName}</span>
+                        {f.showBoat !== false && (f.boatName || f.boatPhotoUrl) ? (
+                          <span className="flex items-center justify-center gap-1 w-full text-[9.5px] text-muted-foreground leading-tight">
+                            {f.boatPhotoUrl ? (
+                              <img src={resolveAvatarUrl(f.boatPhotoUrl)} alt="" className="w-4 h-4 rounded-full object-cover border border-border shrink-0" />
+                            ) : (
+                              <Ship className="w-3 h-3 shrink-0" style={{ color: f.boatColor || undefined }} />
+                            )}
+                            <span className="truncate">{boatLabelFor(f.boatType)}</span>
+                          </span>
+                        ) : null}
                       </Link>
                     ))}
                   </div>
@@ -864,7 +972,7 @@ export function ProfilePage() {
                   ) : undefined
                 }
               >
-                Lake Adventures
+                Lake Memories
               </SectionTitle>
               {galleryPreview.length > 0 ? (
                 <div className="grid grid-cols-3 gap-1.5">
@@ -895,7 +1003,7 @@ export function ProfilePage() {
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground py-2">
-                  {isSelf ? "Share your first lake adventure below." : "No photos shared yet."}
+                  {isSelf ? "Share your first lake memory below — boat days, sunsets, big catches." : "No lake memories shared yet."}
                 </p>
               )}
             </div>
@@ -928,9 +1036,9 @@ export function ProfilePage() {
             <div ref={tabsRef} className="pt-1">
               <Tabs value={tab} onValueChange={setTab} className="w-full">
                 <TabsList className="w-full mb-4 rounded-2xl">
-                  <TabsTrigger value="posts" className="flex-1 rounded-xl">Posts</TabsTrigger>
-                  <TabsTrigger value="pins" className="flex-1 rounded-xl">Pins</TabsTrigger>
-                  <TabsTrigger value="gallery" className="flex-1 rounded-xl">Gallery</TabsTrigger>
+                  <TabsTrigger value="posts" className="flex-1 rounded-xl">📰 Posts</TabsTrigger>
+                  <TabsTrigger value="pins" className="flex-1 rounded-xl">📍 Check-ins</TabsTrigger>
+                  <TabsTrigger value="gallery" className="flex-1 rounded-xl">📸 Photos</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="posts" className="space-y-4">
@@ -992,7 +1100,7 @@ export function ProfilePage() {
                     })
                   ) : (
                     <div className="text-center py-10 text-muted-foreground">
-                      {isSelf ? "You haven't dropped any pins." : "No pins dropped."}
+                      {isSelf ? "You haven't checked in anywhere yet." : "No check-ins yet."}
                     </div>
                   )}
                 </TabsContent>

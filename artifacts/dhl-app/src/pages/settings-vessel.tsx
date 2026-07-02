@@ -1,11 +1,16 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useGetMe, useUpdateMe } from "@workspace/api-client-react";
+import { useUpload } from "@workspace/object-storage-web";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Save } from "lucide-react";
+import { Save, Camera, Loader2, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { compressImage } from "@/lib/compress";
+import { ImageCropDialog } from "@/components/ImageCropDialog";
+import { getCroppedImageFile, type CropArea } from "@/lib/cropImage";
+import { resolveAvatarUrl } from "@/components/UserAvatar";
 import { boatSvgFor, FLAG_SVG, BOAT_TYPES, BOAT_BRANDS, BOAT_BRAND_MAX_LENGTH } from "../boats";
 import { SettingsShell } from "@/components/settings-ui";
 
@@ -67,9 +72,22 @@ export function VesselDetailsPage() {
   const [boatColor, setBoatColor] = React.useState("");
   const [boatType, setBoatType] = React.useState("speedboat");
   const [boatBrand, setBoatBrand] = React.useState("");
+  const [boatModel, setBoatModel] = React.useState("");
+  const [boatYear, setBoatYear] = React.useState("");
+  const [homeMarina, setHomeMarina] = React.useState("");
+  const [boatPhotoUrl, setBoatPhotoUrl] = React.useState<string | null>(null);
+  const [showBoat, setShowBoat] = React.useState(true);
   const [boatNeon, setBoatNeon] = React.useState(false);
   const [boatFlag, setBoatFlag] = React.useState(false);
   const [boatAccent, setBoatAccent] = React.useState("");
+  const [cropSrc, setCropSrc] = React.useState<string | null>(null);
+  const [cropFileName, setCropFileName] = React.useState("boat.jpg");
+  const [cropping, setCropping] = React.useState(false);
+
+  const photoRef = useRef<HTMLInputElement>(null);
+  const photoUpload = useUpload({
+    onError: () => toast({ title: "Upload failed", description: "Could not upload that photo.", variant: "destructive" }),
+  });
 
   useEffect(() => {
     if (me) {
@@ -77,23 +95,88 @@ export function VesselDetailsPage() {
       setBoatColor(me.boatColor || "#0ea5e9");
       setBoatType(me.boatType || "speedboat");
       setBoatBrand(me.boatBrand || "");
+      setBoatModel((me as any).boatModel || "");
+      setBoatYear((me as any).boatYear ? String((me as any).boatYear) : "");
+      setHomeMarina((me as any).homeMarina || "");
+      setBoatPhotoUrl((me as any).boatPhotoUrl || null);
+      setShowBoat((me as any).showBoat ?? true);
       setBoatNeon(me.boatNeon ?? false);
       setBoatFlag(me.boatFlag ?? false);
       setBoatAccent(me.boatAccent || "");
     }
   }, [me]);
 
+  const cropSrcRef = useRef<string | null>(null);
+  cropSrcRef.current = cropSrc;
+  useEffect(() => () => {
+    if (cropSrcRef.current) URL.revokeObjectURL(cropSrcRef.current);
+  }, []);
+
+  const handlePhotoPick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Unsupported file", description: "Please choose an image.", variant: "destructive" });
+      return;
+    }
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropFileName(file.name);
+    setCropSrc(URL.createObjectURL(file));
+  };
+
+  const closeCrop = () => {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
+  };
+
+  const handleCropConfirm = async (area: CropArea) => {
+    if (!cropSrc) return;
+    setCropping(true);
+    try {
+      const cropped = await getCroppedImageFile(cropSrc, area, cropFileName);
+      const res = await photoUpload.uploadFile(await compressImage(cropped));
+      if (!res?.objectPath) return;
+      setBoatPhotoUrl(res.objectPath);
+      updateMe.mutate({ data: { boatPhotoUrl: res.objectPath } as any }, {
+        onSuccess: () => toast({ title: "Boat photo updated" }),
+      });
+      closeCrop();
+    } catch {
+      toast({ title: "Could not process image", description: "Please try a different photo.", variant: "destructive" });
+    } finally {
+      setCropping(false);
+    }
+  };
+
+  const removePhoto = () => {
+    setBoatPhotoUrl(null);
+    updateMe.mutate({ data: { boatPhotoUrl: null } as any }, {
+      onSuccess: () => toast({ title: "Boat photo removed" }),
+    });
+  };
+
   const handleSave = () => {
+    const yearTrimmed = boatYear.trim();
+    const yearNum = yearTrimmed ? Number(yearTrimmed) : null;
+    if (yearTrimmed && (!Number.isInteger(yearNum) || yearNum! < 1900 || yearNum! > new Date().getFullYear() + 1)) {
+      toast({ title: "Check the year", description: "Please enter a valid boat year (e.g. 2019).", variant: "destructive" });
+      return;
+    }
     updateMe.mutate({
       data: {
         boatName,
         boatColor,
         boatType,
         boatBrand: boatBrand.trim() || null,
+        boatModel: boatModel.trim() || null,
+        boatYear: yearNum,
+        homeMarina: homeMarina.trim() || null,
+        showBoat,
         boatNeon,
         boatFlag,
         boatAccent: boatAccent || null,
-      },
+      } as any,
     }, {
       onSuccess: () => {
         toast({ title: "Settings updated", description: "Your profile has been saved." });
@@ -118,9 +201,61 @@ export function VesselDetailsPage() {
     );
   }
 
+  const resolvedPhoto = resolveAvatarUrl(boatPhotoUrl);
+
   return (
     <SettingsShell title="Vessel Details" action={saveAction}>
-      <div className="rounded-2xl bg-card border border-border p-4 space-y-5">
+      <input ref={photoRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoPick} />
+      <ImageCropDialog
+        open={!!cropSrc}
+        imageSrc={cropSrc}
+        aspect={16 / 9}
+        cropShape="rect"
+        title="Adjust boat photo"
+        busy={cropping}
+        onCancel={closeCrop}
+        onConfirm={handleCropConfirm}
+      />
+
+      {/* Show boat toggle */}
+      <div className="rounded-2xl bg-card border border-border p-4 mb-4">
+        <label className="flex items-center justify-between gap-3 cursor-pointer">
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold">Display my boat on my profile</span>
+            <span className="text-[11px] text-muted-foreground">Turn this off if you don't own a boat — you can still check in, post, and earn badges.</span>
+          </div>
+          <Switch checked={showBoat} onCheckedChange={setShowBoat} className="data-[state=checked]:bg-primary" data-testid="switch-show-boat" />
+        </label>
+      </div>
+
+      <div className={`rounded-2xl bg-card border border-border p-4 space-y-5 ${showBoat ? "" : "opacity-50 pointer-events-none select-none"}`}>
+        {/* Boat photo */}
+        <div className="space-y-2">
+          <Label>Boat Photo</Label>
+          <div className="relative overflow-hidden rounded-xl border border-border bg-muted aspect-video">
+            {resolvedPhoto ? (
+              <img src={resolvedPhoto} alt="Your boat" className="absolute inset-0 h-full w-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-muted-foreground">
+                <Camera className="w-6 h-6" />
+                <span className="text-xs">Show off your real boat</span>
+              </div>
+            )}
+            <div className="absolute bottom-2 right-2 flex gap-2">
+              {boatPhotoUrl && (
+                <Button type="button" size="sm" variant="secondary" onClick={removePhoto} data-testid="button-remove-boat-photo">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              )}
+              <Button type="button" size="sm" variant="secondary" onClick={() => photoRef.current?.click()} disabled={photoUpload.isUploading} data-testid="button-upload-boat-photo">
+                {photoUpload.isUploading ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Camera className="w-4 h-4 mr-1.5" />}
+                {boatPhotoUrl ? "Change photo" : "Add photo"}
+              </Button>
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground">Your boat photo is the highlight of your profile's My Boat card.</p>
+        </div>
+
         {/* Live preview */}
         <div className="rounded-xl border border-border bg-gradient-to-b from-sky-100 to-sky-200 p-4 flex flex-col items-center gap-1">
           <div className="flex items-center justify-center h-14">
@@ -170,6 +305,48 @@ export function VesselDetailsPage() {
             {BOAT_BRANDS.map(b => <option key={b} value={b} />)}
           </datalist>
           <p className="text-[11px] text-muted-foreground">Pick a suggestion or type your own — shown on your profile next to your boat style.</p>
+        </div>
+
+        {/* Model + Year */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="boatModel">Model <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input
+              id="boatModel"
+              value={boatModel}
+              onChange={e => setBoatModel(e.target.value)}
+              maxLength={60}
+              placeholder="e.g. 38 Lightning"
+              className="bg-background"
+              data-testid="input-boat-model"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="boatYear">Year <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input
+              id="boatYear"
+              value={boatYear}
+              onChange={e => setBoatYear(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
+              inputMode="numeric"
+              placeholder="e.g. 2019"
+              className="bg-background"
+              data-testid="input-boat-year"
+            />
+          </div>
+        </div>
+
+        {/* Home marina */}
+        <div className="space-y-2">
+          <Label htmlFor="homeMarina">Home Marina <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Input
+            id="homeMarina"
+            value={homeMarina}
+            onChange={e => setHomeMarina(e.target.value)}
+            maxLength={80}
+            placeholder="e.g. Sunset Marina"
+            className="bg-background"
+            data-testid="input-home-marina"
+          />
         </div>
 
         <div className="space-y-3">

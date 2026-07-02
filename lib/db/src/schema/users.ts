@@ -31,6 +31,13 @@ export const usersTable = pgTable("users", {
   boatColor: text("boat_color").notNull().default("#3b82f6"),
   boatType: text("boat_type").notNull().default("speedboat"),
   boatBrand: text("boat_brand"),
+  boatModel: text("boat_model"),
+  boatYear: integer("boat_year"),
+  boatPhotoUrl: text("boat_photo_url"),
+  homeMarina: text("home_marina"),
+  // Whether the profile shows the "My Boat" card. Lets non-boat-owners hide
+  // the boat section entirely while keeping every other feature.
+  showBoat: boolean("show_boat").notNull().default(true),
   boatNeon: boolean("boat_neon").notNull().default(false),
   boatFlag: boolean("boat_flag").notNull().default(false),
   boatAccent: text("boat_accent"),
