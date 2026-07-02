@@ -7,6 +7,7 @@ import {
   type SuggestedUser,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { boatLabelFor } from "@/boats";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Button } from "@/components/ui/button";
@@ -25,21 +26,12 @@ export function openSuggestedFriends() {
   window.dispatchEvent(new Event(OPEN_EVENT));
 }
 
-const BOAT_LABELS: Record<string, string> = {
-  speedboat: "Speedboat",
-  pontoon: "Pontoon",
-  sailboat: "Sailboat",
-  kayak: "Kayak",
-  jetski: "Jet Ski",
-  yacht: "Yacht",
-};
-
 function SuggestionCard({ user }: { user: SuggestedUser }) {
   const queryClient = useQueryClient();
   const followUser = useFollowUser();
   const [added, setAdded] = React.useState(false);
 
-  const boat = user.boatType ? BOAT_LABELS[user.boatType] ?? null : null;
+  const boat = user.boatType ? boatLabelFor(user.boatType) : null;
   const subtitle =
     user.mutualFriendCount > 0
       ? `${user.mutualFriendCount} mutual friend${user.mutualFriendCount > 1 ? "s" : ""}`

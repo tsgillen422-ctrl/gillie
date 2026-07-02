@@ -1,3 +1,4 @@
+import { boatLabelFor } from "@workspace/boat-config";
 import React, { useState } from "react";
 import {
   View,
@@ -148,7 +149,7 @@ export default function UserScreen() {
   if (user.boatName)
     aboutRows.push({
       icon: "boat-outline",
-      label: user.boatType ? `${user.boatName} · ${prettify(user.boatType)}` : user.boatName,
+      label: user.boatType ? `${user.boatName} · ${boatLabelFor(user.boatType)}` : user.boatName,
     });
 
   const interests = user.interests || [];

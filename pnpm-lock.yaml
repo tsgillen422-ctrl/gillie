@@ -178,6 +178,9 @@ importers:
       '@workspace/api-zod':
         specifier: workspace:*
         version: link:../../lib/api-zod
+      '@workspace/boat-config':
+        specifier: workspace:*
+        version: link:../../lib/boat-config
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
@@ -284,6 +287,9 @@ importers:
       '@uppy/react':
         specifier: ^5.2.0
         version: 5.2.0(@uppy/core@5.2.0)(@uppy/dashboard@5.1.1(@uppy/core@5.2.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@workspace/boat-config':
+        specifier: workspace:*
+        version: link:../../lib/boat-config
       '@workspace/object-storage-web':
         specifier: workspace:*
         version: link:../../lib/object-storage-web
@@ -569,6 +575,10 @@ importers:
         version: 7.3.3(@types/node@25.6.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.8.4)
 
   artifacts/gillie-mobile:
+    dependencies:
+      '@workspace/boat-config':
+        specifier: workspace:*
+        version: link:../../lib/boat-config
     devDependencies:
       '@babel/core':
         specifier: ^7.25.2
@@ -933,6 +943,8 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 3.25.76
+
+  lib/boat-config: {}
 
   lib/db:
     dependencies:

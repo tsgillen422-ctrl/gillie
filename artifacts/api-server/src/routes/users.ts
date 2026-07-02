@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { BOAT_TYPE_VALUES } from "@workspace/boat-config";
 import { db } from "@workspace/db";
 import {
   usersTable,
@@ -411,8 +412,7 @@ router.patch("/me", async (req, res) => {
   if (boatName !== undefined) updates.boatName = boatName;
   if (boatColor !== undefined) updates.boatColor = boatColor;
   if (boatType !== undefined) {
-    const validBoatTypes = ["speedboat", "pontoon", "sailboat", "kayak", "jetski", "yacht"];
-    if (!validBoatTypes.includes(boatType)) {
+    if (!BOAT_TYPE_VALUES.includes(boatType)) {
       return res.status(400).json({ error: "Invalid boatType" });
     }
     updates.boatType = boatType;

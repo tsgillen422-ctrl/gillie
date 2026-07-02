@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { boatSvgFor, FLAG_SVG } from "../boats";
+import { boatSvgFor, FLAG_SVG, BOAT_TYPES } from "../boats";
 import { SettingsShell } from "@/components/settings-ui";
 
 const BOAT_COLORS = [
@@ -30,16 +30,6 @@ const BOAT_COLORS = [
   { value: '#0f172a', label: 'Midnight' },
   { value: '#78716c', label: 'Stone' },
   { value: '#f8fafc', label: 'White' }
-];
-
-const BOAT_TYPES = [
-  { value: 'speedboat', label: 'Speed Boat', desc: 'Sleek & fast' },
-  { value: 'fishing', label: 'Fishing Boat', desc: 'Reel them in' },
-  { value: 'pontoon', label: 'Pontoon', desc: 'Relaxed cruiser' },
-  { value: 'sailboat', label: 'Sailboat', desc: 'Wind powered' },
-  { value: 'kayak', label: 'Kayak', desc: 'Paddle solo' },
-  { value: 'jetski', label: 'Jet Ski', desc: 'Quick & nimble' },
-  { value: 'yacht', label: 'Yacht', desc: 'Luxury cruiser' },
 ];
 
 function BoatPreview({ type, color, neon, flag, accent }: { type: string; color: string; neon?: boolean; flag?: boolean; accent?: string }) {
@@ -144,7 +134,7 @@ export function VesselDetailsPage() {
         {/* Boat type */}
         <div className="space-y-3">
           <Label>Boat Style</Label>
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-2 min-[420px]:grid-cols-3 sm:grid-cols-4 gap-2.5">
             {BOAT_TYPES.map(t => (
               <button
                 key={t.value}

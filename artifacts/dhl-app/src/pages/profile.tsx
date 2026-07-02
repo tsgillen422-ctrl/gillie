@@ -41,14 +41,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 
-const BOAT_TYPE_LABELS: Record<string, string> = {
-  speedboat: "Speed Boat",
-  pontoon: "Pontoon",
-  sailboat: "Sailboat",
-  kayak: "Kayak",
-  jetski: "Jet Ski",
-  yacht: "Yacht",
-};
+import { boatLabelFor } from "@/boats";
 
 function pinEmoji(type: string) {
   switch (type) {
@@ -280,7 +273,7 @@ function AboutCard({ user }: { user: any }) {
   if (user.boatName) {
     items.push({
       icon: <Ship className="w-4 h-4" />,
-      label: `${user.boatName} · ${BOAT_TYPE_LABELS[user.boatType ?? ""] ?? "Speed Boat"}`,
+      label: `${user.boatName} · ${boatLabelFor(user.boatType)}`,
     });
   }
 

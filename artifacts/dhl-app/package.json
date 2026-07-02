@@ -90,6 +90,7 @@
     "@uppy/core": "^5.2.0",
     "@uppy/dashboard": "^5.1.1",
     "@uppy/react": "^5.2.0",
+    "@workspace/boat-config": "workspace:*",
     "@workspace/object-storage-web": "workspace:*",
     "browser-image-compression": "^2.0.2",
     "maplibre-gl": "^5.24.0",
