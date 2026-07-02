@@ -1864,7 +1864,7 @@ export function MapPage() {
           key: `friend-${f.userId}`,
           icon: "🧑",
           title: f.displayName,
-          subtitle: f.boatName ? `🚤 ${f.boatName}` : f.isOnline ? "Online now" : "On the lake",
+          subtitle: f.lakeStatus ? f.lakeStatus : f.boatName ? `🚤 ${f.boatName}` : f.isOnline ? "Online now" : "On the lake",
           onSelect: () => flyToLocation(f.lng, f.lat, { kind: "friend", data: f }),
         });
       }
@@ -2214,7 +2214,7 @@ export function MapPage() {
                         <UserAvatar name={f.displayName} username={f.username} avatarUrl={f.avatarUrl} online={f.isOnline} className="w-11 h-11" />
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold truncate">{f.displayName}</p>
-                          <p className="text-xs text-muted-foreground truncate">{f.boatName ? `🚤 ${f.boatName}` : f.isOnline ? "Online now" : "On the lake"}</p>
+                          <p className="text-xs text-muted-foreground truncate">{f.lakeStatus ? f.lakeStatus : f.boatName ? `🚤 ${f.boatName}` : f.isOnline ? "Online now" : "On the lake"}</p>
                         </div>
                         {f.isOnline && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />}
                       </button>
@@ -2553,7 +2553,7 @@ function DetailCard({
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold truncate">{f.displayName || f.username || "Friend"}</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {f.boatName ? `🚤 ${f.boatName}` : f.isOnline ? "Online now" : "On the lake"}
+                  {f.lakeStatus ? f.lakeStatus : f.boatName ? `🚤 ${f.boatName}` : f.isOnline ? "Online now" : "On the lake"}
                 </p>
               </div>
               {f.isOnline && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />}
@@ -2597,7 +2597,7 @@ function DetailCard({
                   {m.isMe && <span className="text-muted-foreground font-normal"> (You)</span>}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {m.boatName ? `🚤 ${m.boatName}` : m.isOnline ? "Online now" : "On the lake"}
+                  {m.lakeStatus ? m.lakeStatus : m.boatName ? `🚤 ${m.boatName}` : m.isOnline ? "Online now" : "On the lake"}
                 </p>
               </div>
               {m.isOnline && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />}
@@ -2899,7 +2899,7 @@ function DetailCard({
             {isMe ? "You are here" : u.displayName}
           </h3>
           <p className="text-xs text-muted-foreground truncate">
-            {u.boatName ? `🚤 ${u.boatName}` : u.isOnline ? "Online now" : "On the lake"}
+            {u.lakeStatus ? u.lakeStatus : u.boatName ? `🚤 ${u.boatName}` : u.isOnline ? "Online now" : "On the lake"}
           </p>
         </div>
         <Button size="icon" variant="ghost" className="h-8 w-8 -mr-1" onClick={onClose}>

@@ -968,6 +968,158 @@ paths:
         "204":
           description: View recorded
 
+  /stories/{storyId}/react:
+    post:
+      operationId: reactToStory
+      tags: [stories]
+      summary: React to a story (one reaction per user, re-reacting swaps emoji)
+      parameters:
+        - name: storyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryReactionInput"
+      responses:
+        "204":
+          description: Reaction saved
+    delete:
+      operationId: removeStoryReaction
+      tags: [stories]
+      summary: Remove my reaction from a story
+      parameters:
+        - name: storyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Reaction removed
+
+  /stories/{storyId}/vote:
+    post:
+      operationId: voteStoryPoll
+      tags: [stories]
+      summary: Vote in a story poll (one vote per user)
+      parameters:
+        - name: storyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryPollVoteInput"
+      responses:
+        "200":
+          description: Vote recorded; returns updated story
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+
+  /highlights:
+    post:
+      operationId: createHighlight
+      tags: [stories]
+      summary: Create a permanent highlight from my active stories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HighlightInput"
+      responses:
+        "201":
+          description: Highlight created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Highlight"
+
+  /highlights/{highlightId}:
+    get:
+      operationId: getHighlightStories
+      tags: [stories]
+      summary: Get the snapshotted stories inside a highlight
+      parameters:
+        - name: highlightId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Highlight stories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HighlightStory"
+    delete:
+      operationId: deleteHighlight
+      tags: [stories]
+      summary: Delete my highlight
+      parameters:
+        - name: highlightId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Highlight deleted
+
+  /users/{userId}/highlights:
+    get:
+      operationId: getUserHighlights
+      tags: [stories]
+      summary: A user's highlights (privacy-checked)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The user's highlights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Highlight"
+
+  /users/me/lake-status:
+    put:
+      operationId: setLakeStatus
+      tags: [users]
+      summary: Set or clear my lake status ("Out on the Water", ...)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LakeStatusInput"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
   /users/{userId}/stories:
     get:
       operationId: getUserStories
@@ -2350,6 +2502,8 @@ components:
           type: ["number", "null"]
         lastSeen:
           type: ["string", "null"]
+        lakeStatus:
+          type: ["string", "null"]
         boatName:
           type: ["string", "null"]
         boatColor:
@@ -2628,6 +2782,8 @@ components:
           type: ["string", "null"]
         hasActiveStory:
           type: ["boolean", "null"]
+        lakeStatus:
+          type: ["string", "null"]
 
     Story:
       type: object
@@ -2664,6 +2820,49 @@ components:
           type: boolean
         viewCount:
           type: ["integer", "null"]
+        boatName:
+          type: ["string", "null"]
+        filterName:
+          type: ["string", "null"]
+        filterCss:
+          type: ["string", "null"]
+        stickers:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/StorySticker"
+        pollQuestion:
+          type: ["string", "null"]
+        pollOptions:
+          type: ["array", "null"]
+          items:
+            type: string
+        pollVotes:
+          type: ["array", "null"]
+          items:
+            type: integer
+        myPollVote:
+          type: ["integer", "null"]
+        reactionCounts:
+          type: ["object", "null"]
+          additionalProperties:
+            type: integer
+        myReaction:
+          type: ["string", "null"]
+
+    StorySticker:
+      type: object
+      required: [type, x, y]
+      properties:
+        type:
+          type: string
+          enum: [location, weather, boat, emoji]
+        x:
+          type: number
+        y:
+          type: number
+        data:
+          type: object
+          additionalProperties: true
 
     StoryAuthor:
       type: object
@@ -2730,6 +2929,99 @@ components:
         placeName:
           type: ["string", "null"]
         visibility:
+          type: ["string", "null"]
+        boatId:
+          type: ["integer", "null"]
+        filterName:
+          type: ["string", "null"]
+        filterCss:
+          type: ["string", "null"]
+        stickers:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/StorySticker"
+        pollQuestion:
+          type: ["string", "null"]
+        pollOptions:
+          type: ["array", "null"]
+          items:
+            type: string
+
+    StoryReactionInput:
+      type: object
+      required: [emoji]
+      properties:
+        emoji:
+          type: string
+
+    StoryPollVoteInput:
+      type: object
+      required: [optionIndex]
+      properties:
+        optionIndex:
+          type: integer
+
+    Highlight:
+      type: object
+      required: [id, userId, title, createdAt, storyCount]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        title:
+          type: string
+        coverUrl:
+          type: ["string", "null"]
+        storyCount:
+          type: integer
+        createdAt:
+          type: string
+
+    HighlightStory:
+      type: object
+      required: [id, highlightId, mediaType, storyCreatedAt]
+      properties:
+        id:
+          type: integer
+        highlightId:
+          type: integer
+        mediaType:
+          type: string
+        mediaUrl:
+          type: ["string", "null"]
+        text:
+          type: ["string", "null"]
+        bgColor:
+          type: ["string", "null"]
+        caption:
+          type: ["string", "null"]
+        placeName:
+          type: ["string", "null"]
+        filterCss:
+          type: ["string", "null"]
+        stickers:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/StorySticker"
+        storyCreatedAt:
+          type: string
+
+    HighlightInput:
+      type: object
+      required: [title, storyIds]
+      properties:
+        title:
+          type: string
+        storyIds:
+          type: array
+          items:
+            type: integer
+
+    LakeStatusInput:
+      type: object
+      properties:
+        lakeStatus:
           type: ["string", "null"]
 
     FriendRequest:

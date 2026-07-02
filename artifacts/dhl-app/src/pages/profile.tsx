@@ -15,6 +15,7 @@ import { UserAvatar, resolveAvatarUrl } from "@/components/UserAvatar";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { PostCard } from "./feed";
 import { StoryViewer } from "@/components/stories/StoryViewer";
+import { HighlightsRow } from "@/components/stories/HighlightsRow";
 import {
   Dialog,
   DialogContent,
@@ -1437,6 +1438,9 @@ export function ProfilePage() {
                 <p className="text-sm text-muted-foreground py-2">No activity on the lake yet.</p>
               )}
             </div>
+
+            {/* Story highlights */}
+            <HighlightsRow userId={id} meId={me?.id} />
 
             {/* Detailed tabs */}
             <div ref={tabsRef} className="pt-1">

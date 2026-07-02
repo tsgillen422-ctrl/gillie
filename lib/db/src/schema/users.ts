@@ -22,6 +22,10 @@ export const usersTable = pgTable("users", {
   currentLat: real("current_lat"),
   currentLng: real("current_lng"),
   lastSeen: timestamp("last_seen"),
+  // Richer live status ("Out on the Water", "Watching Sunset", ...). Free text
+  // from a preset list; cleared when the user goes off the lake.
+  lakeStatus: text("lake_status"),
+  lakeStatusUpdatedAt: timestamp("lake_status_updated_at"),
   // Apple 5.1.2: location is only published while the user has manually checked
   // in. This timestamp is the single source of truth for "actively sharing" —
   // sharing is active iff it is non-null AND in the future. Cleared on stop /

@@ -42,6 +42,8 @@ export interface User {
   /** @nullable */
   lastSeen?: string | null;
   /** @nullable */
+  lakeStatus?: string | null;
+  /** @nullable */
   boatName?: string | null;
   /** @nullable */
   boatColor?: string | null;

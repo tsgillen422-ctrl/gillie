@@ -37,6 +37,7 @@ export const GetMeResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -177,6 +178,7 @@ export const UpdateMeResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -285,6 +287,7 @@ export const UpdateMyLocationResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -395,6 +398,7 @@ export const CheckInLocationResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -497,6 +501,7 @@ export const CheckOutLocationResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -751,6 +756,7 @@ export const GetAdminsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -879,6 +885,7 @@ export const SetUserAdminResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -981,6 +988,7 @@ export const GetSuspendedUsersResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -1092,6 +1100,7 @@ export const SetUserSuspensionResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -1223,6 +1232,7 @@ export const SearchUsersResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -1330,6 +1340,7 @@ export const GetUserResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -1440,6 +1451,7 @@ export const GetFriendsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -1543,7 +1555,8 @@ export const GetFriendLocationsResponseItem = zod.object({
   "isOnline": zod.boolean().optional(),
   "isOnWater": zod.boolean().nullish(),
   "lastSeen": zod.string().nullish(),
-  "hasActiveStory": zod.boolean().nullish()
+  "hasActiveStory": zod.boolean().nullish(),
+  "lakeStatus": zod.string().nullish()
 })
 export const GetFriendLocationsResponse = zod.array(GetFriendLocationsResponseItem)
 
@@ -1574,6 +1587,7 @@ export const GetFriendRequestsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -1671,6 +1685,7 @@ export const GetFriendRequestsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -1802,6 +1817,7 @@ export const FollowUserResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -1899,6 +1915,7 @@ export const FollowUserResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -2011,6 +2028,7 @@ export const GetBlockedUsersResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -2118,6 +2136,7 @@ export const GetFollowersResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -2225,6 +2244,7 @@ export const GetFollowingResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -2332,6 +2352,7 @@ export const GetUserFriendsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -2441,6 +2462,7 @@ export const GetMutualFriendsResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -2569,6 +2591,7 @@ export const AcceptFriendRequestResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -2666,6 +2689,7 @@ export const AcceptFriendRequestResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -2774,6 +2798,7 @@ export const GetConversationsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -2875,6 +2900,7 @@ export const GetConversationsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -3012,6 +3038,7 @@ export const GetConversationMessagesResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -3221,7 +3248,22 @@ export const GetStoriesResponseItem = zod.object({
   "createdAt": zod.string(),
   "expiresAt": zod.string(),
   "viewedByMe": zod.boolean(),
-  "viewCount": zod.number().nullish()
+  "viewCount": zod.number().nullish(),
+  "boatName": zod.string().nullish(),
+  "filterName": zod.string().nullish(),
+  "filterCss": zod.string().nullish(),
+  "stickers": zod.array(zod.object({
+  "type": zod.enum(['location', 'weather', 'boat', 'emoji']),
+  "x": zod.number(),
+  "y": zod.number(),
+  "data": zod.record(zod.string(), zod.unknown()).optional()
+})).nullish(),
+  "pollQuestion": zod.string().nullish(),
+  "pollOptions": zod.array(zod.string()).nullish(),
+  "pollVotes": zod.array(zod.number()).nullish(),
+  "myPollVote": zod.number().nullish(),
+  "reactionCounts": zod.record(zod.string(), zod.number()).nullish(),
+  "myReaction": zod.string().nullish()
 })),
   "allViewed": zod.boolean()
 })
@@ -3240,7 +3282,18 @@ export const CreateStoryBody = zod.object({
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish(),
   "placeName": zod.string().nullish(),
-  "visibility": zod.string().nullish()
+  "visibility": zod.string().nullish(),
+  "boatId": zod.number().nullish(),
+  "filterName": zod.string().nullish(),
+  "filterCss": zod.string().nullish(),
+  "stickers": zod.array(zod.object({
+  "type": zod.enum(['location', 'weather', 'boat', 'emoji']),
+  "x": zod.number(),
+  "y": zod.number(),
+  "data": zod.record(zod.string(), zod.unknown()).optional()
+})).nullish(),
+  "pollQuestion": zod.string().nullish(),
+  "pollOptions": zod.array(zod.string()).nullish()
 })
 
 
@@ -3287,7 +3340,22 @@ export const GetPlaceStoriesResponseItem = zod.object({
   "createdAt": zod.string(),
   "expiresAt": zod.string(),
   "viewedByMe": zod.boolean(),
-  "viewCount": zod.number().nullish()
+  "viewCount": zod.number().nullish(),
+  "boatName": zod.string().nullish(),
+  "filterName": zod.string().nullish(),
+  "filterCss": zod.string().nullish(),
+  "stickers": zod.array(zod.object({
+  "type": zod.enum(['location', 'weather', 'boat', 'emoji']),
+  "x": zod.number(),
+  "y": zod.number(),
+  "data": zod.record(zod.string(), zod.unknown()).optional()
+})).nullish(),
+  "pollQuestion": zod.string().nullish(),
+  "pollOptions": zod.array(zod.string()).nullish(),
+  "pollVotes": zod.array(zod.number()).nullish(),
+  "myPollVote": zod.number().nullish(),
+  "reactionCounts": zod.record(zod.string(), zod.number()).nullish(),
+  "myReaction": zod.string().nullish()
 })),
   "allViewed": zod.boolean()
 })
@@ -3307,6 +3375,241 @@ export const DeleteStoryParams = zod.object({
  */
 export const ViewStoryParams = zod.object({
   "storyId": zod.coerce.number()
+})
+
+
+/**
+ * @summary React to a story (one reaction per user, re-reacting swaps emoji)
+ */
+export const ReactToStoryParams = zod.object({
+  "storyId": zod.coerce.number()
+})
+
+export const ReactToStoryBody = zod.object({
+  "emoji": zod.string()
+})
+
+
+/**
+ * @summary Remove my reaction from a story
+ */
+export const RemoveStoryReactionParams = zod.object({
+  "storyId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Vote in a story poll (one vote per user)
+ */
+export const VoteStoryPollParams = zod.object({
+  "storyId": zod.coerce.number()
+})
+
+export const VoteStoryPollBody = zod.object({
+  "optionIndex": zod.number()
+})
+
+export const VoteStoryPollResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "mediaType": zod.enum(['photo', 'video', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "text": zod.string().nullish(),
+  "bgColor": zod.string().nullish(),
+  "caption": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "placeName": zod.string().nullish(),
+  "visibility": zod.string(),
+  "createdAt": zod.string(),
+  "expiresAt": zod.string(),
+  "viewedByMe": zod.boolean(),
+  "viewCount": zod.number().nullish(),
+  "boatName": zod.string().nullish(),
+  "filterName": zod.string().nullish(),
+  "filterCss": zod.string().nullish(),
+  "stickers": zod.array(zod.object({
+  "type": zod.enum(['location', 'weather', 'boat', 'emoji']),
+  "x": zod.number(),
+  "y": zod.number(),
+  "data": zod.record(zod.string(), zod.unknown()).optional()
+})).nullish(),
+  "pollQuestion": zod.string().nullish(),
+  "pollOptions": zod.array(zod.string()).nullish(),
+  "pollVotes": zod.array(zod.number()).nullish(),
+  "myPollVote": zod.number().nullish(),
+  "reactionCounts": zod.record(zod.string(), zod.number()).nullish(),
+  "myReaction": zod.string().nullish()
+})
+
+
+/**
+ * @summary Create a permanent highlight from my active stories
+ */
+export const CreateHighlightBody = zod.object({
+  "title": zod.string(),
+  "storyIds": zod.array(zod.number())
+})
+
+
+/**
+ * @summary Get the snapshotted stories inside a highlight
+ */
+export const GetHighlightStoriesParams = zod.object({
+  "highlightId": zod.coerce.number()
+})
+
+export const GetHighlightStoriesResponseItem = zod.object({
+  "id": zod.number(),
+  "highlightId": zod.number(),
+  "mediaType": zod.string(),
+  "mediaUrl": zod.string().nullish(),
+  "text": zod.string().nullish(),
+  "bgColor": zod.string().nullish(),
+  "caption": zod.string().nullish(),
+  "placeName": zod.string().nullish(),
+  "filterCss": zod.string().nullish(),
+  "stickers": zod.array(zod.object({
+  "type": zod.enum(['location', 'weather', 'boat', 'emoji']),
+  "x": zod.number(),
+  "y": zod.number(),
+  "data": zod.record(zod.string(), zod.unknown()).optional()
+})).nullish(),
+  "storyCreatedAt": zod.string()
+})
+export const GetHighlightStoriesResponse = zod.array(GetHighlightStoriesResponseItem)
+
+
+/**
+ * @summary Delete my highlight
+ */
+export const DeleteHighlightParams = zod.object({
+  "highlightId": zod.coerce.number()
+})
+
+
+/**
+ * @summary A user's highlights (privacy-checked)
+ */
+export const GetUserHighlightsParams = zod.object({
+  "userId": zod.coerce.number()
+})
+
+export const GetUserHighlightsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "title": zod.string(),
+  "coverUrl": zod.string().nullish(),
+  "storyCount": zod.number(),
+  "createdAt": zod.string()
+})
+export const GetUserHighlightsResponse = zod.array(GetUserHighlightsResponseItem)
+
+
+/**
+ * @summary Set or clear my lake status ("Out on the Water", ...)
+ */
+export const SetLakeStatusBody = zod.object({
+  "lakeStatus": zod.string().nullish()
+})
+
+export const SetLakeStatusResponse = zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "relationshipStatus": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatBrand": zod.string().nullish(),
+  "boatModel": zod.string().nullish(),
+  "boatYear": zod.number().nullish(),
+  "boatPhotoUrl": zod.string().nullish(),
+  "homeMarina": zod.string().nullish(),
+  "showBoat": zod.boolean().optional(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "fleet": zod.array(zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "name": zod.string(),
+  "boatType": zod.string(),
+  "color": zod.string(),
+  "brand": zod.string().nullish(),
+  "model": zod.string().nullish(),
+  "year": zod.number().nullish(),
+  "photoUrl": zod.string().nullish(),
+  "neon": zod.boolean().optional(),
+  "flag": zod.boolean().optional(),
+  "accent": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "horsepower": zod.number().nullish(),
+  "engineInfo": zod.string().nullish(),
+  "lengthFt": zod.number().nullish(),
+  "favoriteMarina": zod.string().nullish(),
+  "favoriteCove": zod.string().nullish(),
+  "favoriteActivity": zod.string().nullish(),
+  "mods": zod.string().nullish(),
+  "isPrimary": zod.boolean(),
+  "createdAt": zod.string()
+})).optional().describe('The user\'s boats\/watercraft (redacted for other viewers when showBoat=false)'),
+  "interests": zod.array(zod.string()).optional(),
+  "favoriteThings": zod.array(zod.object({
+  "label": zod.string(),
+  "value": zod.string()
+})).optional().describe('Pinned favorites shown on the profile (label + value pairs)'),
+  "shareLocation": zod.boolean().optional(),
+  "locationSharingExpiresAt": zod.string().nullish(),
+  "isSharingLocation": zod.boolean().optional(),
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
+  "showFriends": zod.boolean().optional(),
+  "followerSeeLocation": zod.boolean().optional(),
+  "followerSeePosts": zod.boolean().optional(),
+  "followerSendMessages": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "demoMode": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
+  "waiverAcceptedAt": zod.string().nullish(),
+  "waiverVersion": zod.string().nullish(),
+  "termsAcceptedAt": zod.string().nullish(),
+  "termsVersion": zod.string().nullish(),
+  "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
+  "createdAt": zod.string()
 })
 
 
@@ -3332,7 +3635,22 @@ export const GetUserStoriesResponseItem = zod.object({
   "createdAt": zod.string(),
   "expiresAt": zod.string(),
   "viewedByMe": zod.boolean(),
-  "viewCount": zod.number().nullish()
+  "viewCount": zod.number().nullish(),
+  "boatName": zod.string().nullish(),
+  "filterName": zod.string().nullish(),
+  "filterCss": zod.string().nullish(),
+  "stickers": zod.array(zod.object({
+  "type": zod.enum(['location', 'weather', 'boat', 'emoji']),
+  "x": zod.number(),
+  "y": zod.number(),
+  "data": zod.record(zod.string(), zod.unknown()).optional()
+})).nullish(),
+  "pollQuestion": zod.string().nullish(),
+  "pollOptions": zod.array(zod.string()).nullish(),
+  "pollVotes": zod.array(zod.number()).nullish(),
+  "myPollVote": zod.number().nullish(),
+  "reactionCounts": zod.record(zod.string(), zod.number()).nullish(),
+  "myReaction": zod.string().nullish()
 })
 export const GetUserStoriesResponse = zod.array(GetUserStoriesResponseItem)
 
@@ -3366,6 +3684,7 @@ export const GetPinsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -3512,6 +3831,7 @@ export const GetPinResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -3647,6 +3967,7 @@ export const LikePinResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -3770,6 +4091,7 @@ export const GetFavoritePinsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -3898,6 +4220,7 @@ export const ToggleFavoritePinResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -4021,6 +4344,7 @@ export const GetPendingPinsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -4149,6 +4473,7 @@ export const ApprovePinResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -4328,6 +4653,7 @@ export const GetPostsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -4514,6 +4840,7 @@ export const GetPostResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -4676,6 +5003,7 @@ export const UpdatePostResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -4839,6 +5167,7 @@ export const ReactToPostResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -4994,6 +5323,7 @@ export const VotePollResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -5160,6 +5490,7 @@ export const GetPostLikesResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -5272,6 +5603,7 @@ export const GetPostCommentsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -5428,6 +5760,7 @@ export const ReactToCommentResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -5556,6 +5889,7 @@ export const GetPostsSummaryResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -5698,6 +6032,7 @@ export const GetPostsSummaryResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -5854,6 +6189,7 @@ export const ReactToMessageResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -6089,6 +6425,7 @@ export const GetActiveHazardsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -6217,6 +6554,7 @@ export const ToggleRsvpResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -6367,6 +6705,7 @@ export const GetRsvpsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -6478,6 +6817,7 @@ export const GetCatchesResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -6624,6 +6964,7 @@ export const GetGalleryResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -6758,6 +7099,7 @@ export const SearchResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -6895,6 +7237,7 @@ export const AcceptWaiverResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -7001,6 +7344,7 @@ export const AcceptTermsResponse = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -7183,6 +7527,7 @@ export const GetSavedPostsResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),
@@ -7344,6 +7689,7 @@ export const GetMutedUsersResponseItem = zod.object({
   "currentLat": zod.number().nullish(),
   "currentLng": zod.number().nullish(),
   "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
   "boatName": zod.string().nullish(),
   "boatColor": zod.string().nullish(),
   "boatType": zod.string().nullish(),

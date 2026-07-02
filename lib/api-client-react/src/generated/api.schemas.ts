@@ -115,6 +115,8 @@ export interface User {
   /** @nullable */
   lastSeen?: string | null;
   /** @nullable */
+  lakeStatus?: string | null;
+  /** @nullable */
   boatName?: string | null;
   /** @nullable */
   boatColor?: string | null;
@@ -293,6 +295,8 @@ export interface FriendLocation {
   lastSeen?: string | null;
   /** @nullable */
   hasActiveStory?: boolean | null;
+  /** @nullable */
+  lakeStatus?: string | null;
 }
 
 export type StoryMediaType = typeof StoryMediaType[keyof typeof StoryMediaType];
@@ -303,6 +307,30 @@ export const StoryMediaType = {
   video: 'video',
   text: 'text',
 } as const;
+
+/**
+ * @nullable
+ */
+export type StoryReactionCounts = {[key: string]: number} | null;
+
+export type StoryStickerType = typeof StoryStickerType[keyof typeof StoryStickerType];
+
+
+export const StoryStickerType = {
+  location: 'location',
+  weather: 'weather',
+  boat: 'boat',
+  emoji: 'emoji',
+} as const;
+
+export type StoryStickerData = { [key: string]: unknown };
+
+export interface StorySticker {
+  type: StoryStickerType;
+  x: number;
+  y: number;
+  data?: StoryStickerData;
+}
 
 export interface Story {
   id: number;
@@ -328,6 +356,26 @@ export interface Story {
   viewedByMe: boolean;
   /** @nullable */
   viewCount?: number | null;
+  /** @nullable */
+  boatName?: string | null;
+  /** @nullable */
+  filterName?: string | null;
+  /** @nullable */
+  filterCss?: string | null;
+  /** @nullable */
+  stickers?: StorySticker[] | null;
+  /** @nullable */
+  pollQuestion?: string | null;
+  /** @nullable */
+  pollOptions?: string[] | null;
+  /** @nullable */
+  pollVotes?: number[] | null;
+  /** @nullable */
+  myPollVote?: number | null;
+  /** @nullable */
+  reactionCounts?: StoryReactionCounts;
+  /** @nullable */
+  myReaction?: string | null;
 }
 
 export interface StoryAuthor {
@@ -384,6 +432,67 @@ export interface StoryInput {
   placeName?: string | null;
   /** @nullable */
   visibility?: string | null;
+  /** @nullable */
+  boatId?: number | null;
+  /** @nullable */
+  filterName?: string | null;
+  /** @nullable */
+  filterCss?: string | null;
+  /** @nullable */
+  stickers?: StorySticker[] | null;
+  /** @nullable */
+  pollQuestion?: string | null;
+  /** @nullable */
+  pollOptions?: string[] | null;
+}
+
+export interface StoryReactionInput {
+  emoji: string;
+}
+
+export interface StoryPollVoteInput {
+  optionIndex: number;
+}
+
+export interface Highlight {
+  id: number;
+  userId: number;
+  title: string;
+  /** @nullable */
+  coverUrl?: string | null;
+  storyCount: number;
+  createdAt: string;
+}
+
+export interface HighlightStory {
+  id: number;
+  highlightId: number;
+  mediaType: string;
+  /** @nullable */
+  mediaUrl?: string | null;
+  /** @nullable */
+  text?: string | null;
+  /** @nullable */
+  bgColor?: string | null;
+  /** @nullable */
+  caption?: string | null;
+  /** @nullable */
+  placeName?: string | null;
+  /** @nullable */
+  filterCss?: string | null;
+  /** @nullable */
+  stickers?: StorySticker[] | null;
+  storyCreatedAt: string;
+}
+
+export interface HighlightInput {
+  title: string;
+  storyIds: number[];
+}
+
+export interface LakeStatusInput {
+  /** @nullable */
+  lakeStatus?: string | null;
 }
 
 export type FriendRequestStatus = typeof FriendRequestStatus[keyof typeof FriendRequestStatus];

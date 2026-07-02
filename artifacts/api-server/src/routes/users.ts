@@ -29,6 +29,12 @@ import {
   waiverAcceptancesTable,
   termsAcceptancesTable,
   boatsTable,
+  storiesTable,
+  storyViewsTable,
+  storyReactionsTable,
+  storyPollVotesTable,
+  highlightsTable,
+  highlightStoriesTable,
 } from "@workspace/db";
 import { getFleet, formatBoat, syncActiveBoat } from "./boats";
 import { eq, ilike, or, and, count, notInArray, inArray, desc, gt } from "drizzle-orm";
@@ -38,6 +44,7 @@ import { createNotifications, createNotification } from "../lib/notify";
 import { logger } from "../lib/logger";
 import { getHiddenDemoUserIds } from "../lib/demoData";
 import { getUserActiveStoriesForViewer } from "./stories";
+import { getUserHighlightsForViewer } from "./highlights";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -150,6 +157,32 @@ export async function deleteUserAndData(tx: Tx, userId: number): Promise<void> {
       await tx.delete(messagesTable).where(eq(messagesTable.conversationId, convId));
       await tx.delete(conversationsTable).where(eq(conversationsTable.id, convId));
     }
+  }
+
+  // Stories: views/reactions/votes by the user or on the user's stories, then
+  // the stories themselves, then highlights and their snapshots.
+  const storyIds = (
+    await tx.select({ id: storiesTable.id }).from(storiesTable).where(eq(storiesTable.userId, userId))
+  ).map((r) => r.id);
+  const storyViewConds = [eq(storyViewsTable.userId, userId)];
+  const storyReactConds = [eq(storyReactionsTable.userId, userId)];
+  const storyVoteConds = [eq(storyPollVotesTable.userId, userId)];
+  if (storyIds.length) {
+    storyViewConds.push(inArray(storyViewsTable.storyId, storyIds));
+    storyReactConds.push(inArray(storyReactionsTable.storyId, storyIds));
+    storyVoteConds.push(inArray(storyPollVotesTable.storyId, storyIds));
+  }
+  await tx.delete(storyViewsTable).where(or(...storyViewConds));
+  await tx.delete(storyReactionsTable).where(or(...storyReactConds));
+  await tx.delete(storyPollVotesTable).where(or(...storyVoteConds));
+  await tx.delete(storiesTable).where(eq(storiesTable.userId, userId));
+
+  const highlightIds = (
+    await tx.select({ id: highlightsTable.id }).from(highlightsTable).where(eq(highlightsTable.userId, userId))
+  ).map((r) => r.id);
+  if (highlightIds.length) {
+    await tx.delete(highlightStoriesTable).where(inArray(highlightStoriesTable.highlightId, highlightIds));
+    await tx.delete(highlightsTable).where(eq(highlightsTable.userId, userId));
   }
 
   await tx.delete(notificationsTable).where(eq(notificationsTable.userId, userId));
@@ -309,6 +342,7 @@ function formatUser(u: typeof usersTable.$inferSelect, opts: { hideLiveLocation?
     currentLat: sharing ? u.currentLat : null,
     currentLng: sharing ? u.currentLng : null,
     lastSeen: u.lastSeen ? u.lastSeen.toISOString() : null,
+    lakeStatus: u.lakeStatus,
     boatName: u.boatName,
     boatColor: u.boatColor,
     boatType: u.boatType,
@@ -716,7 +750,27 @@ router.post("/me/checkout", async (req, res) => {
       locationSharingExpiresAt: null,
       isOnline: false,
       isOnWater: false,
+      lakeStatus: null,
+      lakeStatusUpdatedAt: null,
     })
+    .where(eq(usersTable.id, uid))
+    .returning();
+  if (!updated) return res.status(401).json({ error: "Not logged in" });
+  res.json(formatUser(updated));
+});
+
+// Richer live status ("Out on the Water", "At Sunset Marina", ...). Null or an
+// empty string clears it.
+router.put("/me/lake-status", async (req, res) => {
+  const uid = currentUserId(req);
+  const { lakeStatus } = req.body ?? {};
+  if (lakeStatus != null && (typeof lakeStatus !== "string" || lakeStatus.trim().length > 60)) {
+    return res.status(400).json({ error: "Status too long (max 60 characters)" });
+  }
+  const clean = typeof lakeStatus === "string" && lakeStatus.trim() ? lakeStatus.trim() : null;
+  const [updated] = await db
+    .update(usersTable)
+    .set({ lakeStatus: clean, lakeStatusUpdatedAt: clean ? new Date() : null })
     .where(eq(usersTable.id, uid))
     .returning();
   if (!updated) return res.status(401).json({ error: "Not logged in" });
@@ -905,6 +959,17 @@ router.get("/:userId/stories", async (req, res) => {
   const stories = await getUserActiveStoriesForViewer(uid, userId);
   if (stories === null) return res.status(404).json({ error: "User not found" });
   res.json(stories);
+});
+
+router.get("/:userId/highlights", async (req, res) => {
+  const uid = currentUserId(req);
+  const userId = req.params.userId === "me" ? uid : parseInt(req.params.userId);
+  if (isNaN(userId)) return res.status(400).json({ error: "Invalid user id" });
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, userId) });
+  if (!user) return res.status(404).json({ error: "User not found" });
+  const highlights = await getUserHighlightsForViewer(uid, userId);
+  if (highlights === null) return res.status(404).json({ error: "User not found" });
+  res.json(highlights);
 });
 
 router.get("/:userId", async (req, res) => {

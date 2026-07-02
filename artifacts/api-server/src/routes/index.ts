@@ -18,6 +18,7 @@ import reportsRouter from "./reports";
 import pushRouter from "./push";
 import gifsRouter from "./gifs";
 import storiesRouter from "./stories";
+import highlightsRouter from "./highlights";
 import adminRouter from "./admin";
 import reviewerRouter from "./reviewer";
 import appleNativeRouter from "./appleNative";
@@ -55,6 +56,7 @@ router.use("/reports", reportsRouter);
 router.use("/push", pushRouter);
 router.use("/gifs", gifsRouter);
 router.use("/stories", storiesRouter);
+router.use("/highlights", highlightsRouter);
 router.use("/admin", adminRouter);
 
 export default router;

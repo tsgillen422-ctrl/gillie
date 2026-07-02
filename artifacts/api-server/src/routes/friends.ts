@@ -86,6 +86,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     currentLng: sharing ? u.currentLng : null,
     isSharingLocation: sharing,
     lastSeen: u.lastSeen ? u.lastSeen.toISOString() : null,
+    lakeStatus: u.lakeStatus,
     boatName: u.boatName,
     boatColor: u.boatColor,
     boatType: u.boatType,
@@ -196,6 +197,7 @@ router.get("/locations", async (req, res) => {
         isOnline: u!.isOnline,
         isOnWater: u!.isOnWater,
         lastSeen: u!.lastSeen ? u!.lastSeen.toISOString() : null,
+        lakeStatus: u!.lakeStatus,
         hasActiveStory: activeStoryIds.has(u!.id),
       };
     });

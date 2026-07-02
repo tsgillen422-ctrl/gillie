@@ -5,6 +5,7 @@ import {
   useGetMe,
   useCheckInLocation,
   useCheckOutLocation,
+  useSetLakeStatus,
   getGetMeQueryKey,
   getGetFriendLocationsQueryKey,
 } from "@workspace/api-client-react";
@@ -22,6 +23,17 @@ import { MapPin, MapPinOff, Loader2, Clock, Users, ShieldCheck, X, Ship } from "
 // How long a check-in lasts. Mirrors the server default (CHECKIN_DEFAULT_HOURS)
 // so the confirmation copy matches reality.
 const CHECKIN_HOURS = 6;
+
+// Quick live-status options shown during check-in. Friends see this next to
+// your boat on the map. Cleared automatically at check-out.
+const LAKE_STATUSES = [
+  "Out on the Water",
+  "Fishing 🎣",
+  "Cruising 🚤",
+  "At the Sandbar 🏖️",
+  "Docked for Lunch 🍔",
+  "Sunset Ride 🌅",
+];
 
 function remainingLabel(expiresAt: string | null | undefined): string | null {
   if (!expiresAt) return null;
@@ -46,9 +58,11 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
   const qc = useQueryClient();
   const checkIn = useCheckInLocation();
   const checkOut = useCheckOutLocation();
+  const setLakeStatusMutation = useSetLakeStatus();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [locating, setLocating] = useState(false);
   const [selectedBoatId, setSelectedBoatId] = useState<number | null>(null);
+  const [lakeStatus, setLakeStatus] = useState<string | null>(null);
   // Re-render every 30s so the "time left" label stays current.
   const [, setTick] = useState(0);
 
@@ -86,6 +100,13 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
           { data: { lat: pos.coords.latitude, lng: pos.coords.longitude, ...(boatId ? { boatId } : {}) } },
           {
             onSuccess: () => {
+              // Best-effort: publish the chosen live status alongside the check-in.
+              if (lakeStatus) {
+                setLakeStatusMutation.mutate(
+                  { data: { lakeStatus } },
+                  { onSettled: () => invalidate() },
+                );
+              }
               invalidate();
               toast.success("Checked in — approved friends can see you on the map.");
             },
@@ -166,6 +187,26 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
             </div>
           </div>
         )}
+        <div className="space-y-2">
+          <p className="text-sm font-semibold">What are you up to? <span className="font-normal text-muted-foreground">(optional)</span></p>
+          <div className="flex flex-wrap gap-1.5">
+            {LAKE_STATUSES.map((s) => {
+              const active = lakeStatus === s;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setLakeStatus(active ? null : s)}
+                  disabled={locating}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${active ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}
+                  data-testid={`button-lake-status-${s}`}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
+        </div>
         <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={locating}>
             Cancel

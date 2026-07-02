@@ -1,20 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, MapPin, Trash2, Eye } from "lucide-react";
+import { X, MapPin, Trash2, Eye, Ship, Check } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   useViewStory,
   useDeleteStory,
+  useReactToStory,
+  useRemoveStoryReaction,
+  useVoteStoryPoll,
   getGetStoriesQueryKey,
   getGetStoryPlacesQueryKey,
   type StoryGroup,
   type Story,
 } from "@workspace/api-client-react";
 import { UserAvatar } from "@/components/UserAvatar";
+import { StickerLayer } from "./StickerLayer";
 
 const PHOTO_MS = 5000;
 const TEXT_MS = 6000;
+
+// Keep in sync with REACTION_EMOJIS on the server (api-server routes/stories.ts).
+const REACTION_EMOJIS = ["❤️", "🔥", "🚤", "🌊", "😂", "👏", "😍"];
 
 function timeAgo(iso: string): string {
   const mins = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
@@ -47,10 +54,66 @@ export function StoryViewer({
   const queryClient = useQueryClient();
   const viewMutation = useViewStory();
   const deleteMutation = useDeleteStory();
+  const reactMutation = useReactToStory();
+  const unreactMutation = useRemoveStoryReaction();
+  const voteMutation = useVoteStoryPoll();
 
   const group = groups[groupIdx];
   const story: Story | undefined = group?.stories[storyIdx];
   const isOwn = meId != null && group?.user.id === meId;
+
+  // Local overlays so reactions/votes reflect immediately without refetching
+  // the whole stories list mid-view.
+  const [myReactions, setMyReactions] = useState<Record<number, string | null>>({});
+  const [myVotes, setMyVotes] = useState<Record<number, number>>({});
+  const [burstEmoji, setBurstEmoji] = useState<{ emoji: string; key: number } | null>(null);
+
+  const effectiveReaction = story ? (story.id in myReactions ? myReactions[story.id] : story.myReaction ?? null) : null;
+  const effectiveVote = story ? (story.id in myVotes ? myVotes[story.id] : story.myPollVote ?? null) : null;
+
+  const handleReact = (emoji: string) => {
+    if (!story || isOwn) return;
+    if (effectiveReaction === emoji) {
+      setMyReactions((m) => ({ ...m, [story.id]: null }));
+      unreactMutation.mutate({ storyId: story.id }, { onError: () => setMyReactions((m) => ({ ...m, [story.id]: emoji })) });
+    } else {
+      const prev = effectiveReaction;
+      setMyReactions((m) => ({ ...m, [story.id]: emoji }));
+      setBurstEmoji({ emoji, key: Date.now() });
+      reactMutation.mutate(
+        { storyId: story.id, data: { emoji } },
+        { onError: () => setMyReactions((m) => ({ ...m, [story.id]: prev })) },
+      );
+    }
+  };
+
+  const handleVote = (optionIndex: number) => {
+    if (!story || isOwn || story.expiresAt <= new Date().toISOString()) return;
+    const prev = effectiveVote;
+    if (prev === optionIndex) return;
+    setMyVotes((m) => ({ ...m, [story.id]: optionIndex }));
+    voteMutation.mutate(
+      { storyId: story.id, data: { optionIndex } },
+      {
+        onError: () => {
+          setMyVotes((m) => {
+            const next = { ...m };
+            if (prev == null) delete next[story.id];
+            else next[story.id] = prev;
+            return next;
+          });
+          toast.error("Couldn't record your vote.");
+        },
+      },
+    );
+  };
+
+  // Clear the reaction burst animation.
+  useEffect(() => {
+    if (!burstEmoji) return;
+    const id = window.setTimeout(() => setBurstEmoji(null), 900);
+    return () => window.clearTimeout(id);
+  }, [burstEmoji]);
 
   // ---- view tracking ----
   const viewedRef = useRef<Set<number>>(new Set());
@@ -235,7 +298,13 @@ export function StoryViewer({
       >
         {/* media */}
         {story.mediaType === "photo" && (
-          <img src={story.mediaUrl ?? ""} alt="" className="h-full w-full object-contain" draggable={false} />
+          <img
+            src={story.mediaUrl ?? ""}
+            alt=""
+            className="h-full w-full object-contain"
+            style={story.filterCss ? { filter: story.filterCss } : undefined}
+            draggable={false}
+          />
         )}
         {story.mediaType === "video" && (
           <video
@@ -243,6 +312,7 @@ export function StoryViewer({
             key={story.id}
             src={story.mediaUrl ?? ""}
             className="h-full w-full object-contain"
+            style={story.filterCss ? { filter: story.filterCss } : undefined}
             autoPlay
             playsInline
             onEnded={goNext}
@@ -260,6 +330,16 @@ export function StoryViewer({
             <p className="whitespace-pre-wrap break-words text-center text-2xl font-semibold leading-snug text-white drop-shadow-md">
               {story.text}
             </p>
+          </div>
+        )}
+
+        {/* stickers */}
+        {!!story.stickers?.length && <StickerLayer stickers={story.stickers} />}
+
+        {/* reaction burst */}
+        {burstEmoji && (
+          <div key={burstEmoji.key} className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span className="animate-ping text-7xl">{burstEmoji.emoji}</span>
           </div>
         )}
 
@@ -290,10 +370,20 @@ export function StoryViewer({
                 )}
                 <span className="shrink-0 text-xs text-white/70">{timeAgo(story.createdAt)}</span>
               </div>
-              {story.placeName && (
-                <div className="flex items-center gap-0.5 text-xs text-white/80">
-                  <MapPin className="h-3 w-3" />
-                  <span className="truncate">{story.placeName}</span>
+              {(story.placeName || story.boatName) && (
+                <div className="flex items-center gap-2 text-xs text-white/80">
+                  {story.placeName && (
+                    <span className="flex min-w-0 items-center gap-0.5">
+                      <MapPin className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{story.placeName}</span>
+                    </span>
+                  )}
+                  {story.boatName && (
+                    <span className="flex min-w-0 items-center gap-0.5">
+                      <Ship className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{story.boatName}</span>
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -322,18 +412,102 @@ export function StoryViewer({
           </div>
         </div>
 
-        {/* caption + own view count */}
-        {(story.caption || (isOwn && story.viewCount != null)) && (
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-[calc(env(safe-area-inset-bottom,0px)+16px)] pt-10">
-            {story.caption && <p className="text-sm text-white">{story.caption}</p>}
-            {isOwn && story.viewCount != null && (
-              <div className="mt-1.5 flex items-center gap-1 text-xs text-white/80">
-                <Eye className="h-3.5 w-3.5" />
-                <span>{story.viewCount} {story.viewCount === 1 ? "view" : "views"}</span>
+        {/* bottom: poll + caption + reactions / own stats */}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-4 pb-[calc(env(safe-area-inset-bottom,0px)+14px)] pt-12">
+          {/* poll */}
+          {story.pollQuestion && !!story.pollOptions?.length && (
+            <div
+              className="mx-auto mb-3 w-full max-w-sm rounded-2xl bg-black/45 p-3.5 backdrop-blur-sm"
+              onPointerDown={(e) => e.stopPropagation()}
+              data-testid="story-poll"
+            >
+              <p className="mb-2 text-sm font-semibold text-white">{story.pollQuestion}</p>
+              <div className="space-y-1.5">
+                {story.pollOptions.map((opt, i) => {
+                  const votes = story.pollVotes ?? null;
+                  const showResults = isOwn || effectiveVote != null;
+                  const total = votes ? votes.reduce((a, b) => a + b, 0) : 0;
+                  // Overlay my optimistic vote when server counts haven't refreshed yet.
+                  const localBump = effectiveVote === i && story.myPollVote !== i ? 1 : 0;
+                  const localDrop = story.myPollVote === i && effectiveVote !== i && effectiveVote != null ? 1 : 0;
+                  const count = votes ? Math.max(0, (votes[i] ?? 0) + localBump - localDrop) : localBump;
+                  const adjTotal = votes ? Math.max(1, total + (story.myPollVote == null && effectiveVote != null ? 1 : 0)) : Math.max(1, localBump);
+                  const pct = showResults ? Math.round((count / adjTotal) * 100) : 0;
+                  const mine = effectiveVote === i;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => handleVote(i)}
+                      disabled={isOwn}
+                      className={`relative w-full overflow-hidden rounded-xl border px-3 py-2 text-left text-sm font-medium text-white ${mine ? "border-white" : "border-white/30"}`}
+                      data-testid={`button-poll-option-${i}`}
+                    >
+                      {showResults && (
+                        <span className="absolute inset-y-0 left-0 bg-white/25" style={{ width: `${pct}%` }} />
+                      )}
+                      <span className="relative flex items-center justify-between gap-2">
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          {mine && <Check className="h-3.5 w-3.5 shrink-0" />}
+                          <span className="truncate">{opt}</span>
+                        </span>
+                        {showResults && <span className="shrink-0 text-xs text-white/85">{pct}%</span>}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-            )}
-          </div>
-        )}
+              {!isOwn && effectiveVote == null && (
+                <p className="mt-1.5 text-[11px] text-white/60">Tap to vote</p>
+              )}
+            </div>
+          )}
+
+          {story.caption && <p className="text-sm text-white">{story.caption}</p>}
+
+          {/* own story: view count + reaction totals */}
+          {isOwn && (
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/85">
+              {story.viewCount != null && (
+                <span className="flex items-center gap-1">
+                  <Eye className="h-3.5 w-3.5" />
+                  {story.viewCount} {story.viewCount === 1 ? "view" : "views"}
+                </span>
+              )}
+              {Object.entries(story.reactionCounts ?? {})
+                .filter(([, n]) => (n as number) > 0)
+                .map(([emoji, n]) => (
+                  <span key={emoji}>
+                    {emoji} {n as number}
+                  </span>
+                ))}
+            </div>
+          )}
+
+          {/* someone else's story: reaction bar */}
+          {!isOwn && (
+            <div
+              className="mt-2.5 flex items-center justify-center gap-1"
+              onPointerDown={(e) => e.stopPropagation()}
+              data-testid="story-reaction-bar"
+            >
+              {REACTION_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => handleReact(emoji)}
+                  className={`rounded-full px-1.5 py-1 text-2xl transition-transform active:scale-125 ${
+                    effectiveReaction === emoji ? "scale-110 bg-white/25" : "opacity-90"
+                  }`}
+                  aria-label={`React ${emoji}`}
+                  data-testid={`button-react-${emoji}`}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Inline confirm — no Radix portal inside the z-[100] overlay (it would land under it). */}

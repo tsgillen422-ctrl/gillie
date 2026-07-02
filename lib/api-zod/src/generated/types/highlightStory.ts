@@ -5,11 +5,12 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
-import type { StoryInputMediaType } from './storyInputMediaType';
 import type { StorySticker } from './storySticker';
 
-export interface StoryInput {
-  mediaType: StoryInputMediaType;
+export interface HighlightStory {
+  id: number;
+  highlightId: number;
+  mediaType: string;
   /** @nullable */
   mediaUrl?: string | null;
   /** @nullable */
@@ -19,23 +20,10 @@ export interface StoryInput {
   /** @nullable */
   caption?: string | null;
   /** @nullable */
-  lat?: number | null;
-  /** @nullable */
-  lng?: number | null;
-  /** @nullable */
   placeName?: string | null;
-  /** @nullable */
-  visibility?: string | null;
-  /** @nullable */
-  boatId?: number | null;
-  /** @nullable */
-  filterName?: string | null;
   /** @nullable */
   filterCss?: string | null;
   /** @nullable */
   stickers?: StorySticker[] | null;
-  /** @nullable */
-  pollQuestion?: string | null;
-  /** @nullable */
-  pollOptions?: string[] | null;
+  storyCreatedAt: string;
 }

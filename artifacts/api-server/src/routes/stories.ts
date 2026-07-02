@@ -4,10 +4,14 @@ import {
   usersTable,
   storiesTable,
   storyViewsTable,
+  storyReactionsTable,
+  storyPollVotesTable,
   friendRequestsTable,
   blocksTable,
   mutesTable,
   notificationsTable,
+  boatsTable,
+  type StorySticker,
 } from "@workspace/db";
 import { eq, and, gt, gte, sql, desc, asc, inArray, notInArray, or } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
@@ -19,11 +23,47 @@ const router = Router();
 
 const STORY_TTL_MS = 24 * 60 * 60 * 1000;
 const MEDIA_TYPES = ["photo", "video", "text"];
+export const REACTION_EMOJIS = ["❤️", "🔥", "🚤", "🌊", "😂", "👏", "😍"];
+const STICKER_TYPES = ["location", "weather", "boat", "emoji"];
+// CSS filter strings are rendered into style attributes on the client, so only
+// allow the characters real filter functions need.
+const FILTER_CSS_RE = /^[a-z0-9().,%\s-]*$/i;
+
+export function validateStickers(input: unknown): StorySticker[] | { error: string } {
+  if (!Array.isArray(input)) return { error: "stickers must be an array" };
+  if (input.length > 8) return { error: "Too many stickers (max 8)" };
+  if (JSON.stringify(input).length > 4000) return { error: "Stickers payload too large" };
+  const out: StorySticker[] = [];
+  for (const raw of input) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { error: "Invalid sticker" };
+    const { type, x, y, data } = raw as Record<string, unknown>;
+    if (typeof type !== "string" || !STICKER_TYPES.includes(type)) return { error: "Invalid sticker type" };
+    if (typeof x !== "number" || typeof y !== "number" || !isFinite(x) || !isFinite(y) || x < 0 || x > 1 || y < 0 || y > 1) {
+      return { error: "Sticker position must be between 0 and 1" };
+    }
+    const cleanData: Record<string, string | number | null> = {};
+    if (data != null) {
+      if (typeof data !== "object" || Array.isArray(data)) return { error: "Invalid sticker data" };
+      const entries = Object.entries(data as Record<string, unknown>);
+      if (entries.length > 10) return { error: "Sticker data too large" };
+      for (const [k, v] of entries) {
+        if (k.length > 40) return { error: "Sticker data key too long" };
+        if (v === null || typeof v === "number") cleanData[k] = v as number | null;
+        else if (typeof v === "string") {
+          if (v.length > 120) return { error: "Sticker data value too long" };
+          cleanData[k] = v;
+        } else return { error: "Sticker data values must be strings or numbers" };
+      }
+    }
+    out.push({ type: type as StorySticker["type"], x, y, data: cleanData });
+  }
+  return out;
+}
 
 // Authors whose friends-only stories this viewer may see. Mirrors the posts
 // audience model: people the viewer follows where the author follows back
 // (mutual) OR the author lets non-mutual followers see their posts.
-async function getStoryFriendIds(userId: number): Promise<number[]> {
+export async function getStoryFriendIds(userId: number): Promise<number[]> {
   const [iFollow, followMe] = await Promise.all([
     db.query.friendRequestsTable.findMany({
       where: and(eq(friendRequestsTable.followerId, userId), eq(friendRequestsTable.status, "accepted")),
@@ -56,7 +96,7 @@ async function getMutedIds(userId: number): Promise<number[]> {
 
 // Everyone the viewer must never see stories from: blocked (both directions),
 // muted, and hidden demo accounts.
-async function getExcludedAuthorIds(userId: number): Promise<number[]> {
+export async function getExcludedAuthorIds(userId: number): Promise<number[]> {
   const [blocked, muted, hidden] = await Promise.all([
     getBlockedIds(userId),
     getMutedIds(userId),
@@ -94,7 +134,72 @@ async function visibleStoriesWhere(uid: number) {
   return { where: and(...conds), friendIds };
 }
 
-function formatStory(s: typeof storiesTable.$inferSelect, viewedIds: Set<number>, viewCount?: number) {
+type StoryExtras = {
+  boatNames: Map<number, string>;
+  reactionCounts: Map<number, Record<string, number>>;
+  myReactions: Map<number, string>;
+  pollVotes: Map<number, number[]>;
+  myVotes: Map<number, number>;
+};
+
+// Per-story derived data (boat tag names, reaction tallies, poll results) for
+// a batch of stories, from the given viewer's perspective.
+async function getStoryExtras(uid: number, stories: (typeof storiesTable.$inferSelect)[]): Promise<StoryExtras> {
+  const extras: StoryExtras = {
+    boatNames: new Map(),
+    reactionCounts: new Map(),
+    myReactions: new Map(),
+    pollVotes: new Map(),
+    myVotes: new Map(),
+  };
+  if (!stories.length) return extras;
+  const storyIds = stories.map((s) => s.id);
+  const boatIds = [...new Set(stories.map((s) => s.boatId).filter((id): id is number => id != null))];
+  const pollStoryIds = stories.filter((s) => s.pollOptions?.length).map((s) => s.id);
+
+  const [boats, reactions, votes] = await Promise.all([
+    boatIds.length ? db.query.boatsTable.findMany({ where: inArray(boatsTable.id, boatIds) }) : [],
+    db.query.storyReactionsTable.findMany({ where: inArray(storyReactionsTable.storyId, storyIds) }),
+    pollStoryIds.length
+      ? db.query.storyPollVotesTable.findMany({ where: inArray(storyPollVotesTable.storyId, pollStoryIds) })
+      : [],
+  ]);
+
+  const boatNameById = new Map(boats.map((b) => [b.id, b.name]));
+  for (const s of stories) {
+    if (s.boatId != null && boatNameById.has(s.boatId)) extras.boatNames.set(s.id, boatNameById.get(s.boatId)!);
+  }
+  for (const r of reactions) {
+    const counts = extras.reactionCounts.get(r.storyId) ?? {};
+    counts[r.emoji] = (counts[r.emoji] ?? 0) + 1;
+    extras.reactionCounts.set(r.storyId, counts);
+    if (r.userId === uid) extras.myReactions.set(r.storyId, r.emoji);
+  }
+  const storyById = new Map(stories.map((s) => [s.id, s]));
+  for (const v of votes) {
+    const story = storyById.get(v.storyId);
+    const optionCount = story?.pollOptions?.length ?? 0;
+    if (v.optionIndex < 0 || v.optionIndex >= optionCount) continue;
+    const tally = extras.pollVotes.get(v.storyId) ?? new Array(optionCount).fill(0);
+    tally[v.optionIndex] += 1;
+    extras.pollVotes.set(v.storyId, tally);
+    if (v.userId === uid) extras.myVotes.set(v.storyId, v.optionIndex);
+  }
+  return extras;
+}
+
+function formatStory(
+  s: typeof storiesTable.$inferSelect,
+  viewedIds: Set<number>,
+  viewCount?: number,
+  extras?: StoryExtras,
+  uid?: number,
+) {
+  const hasPoll = !!s.pollOptions?.length;
+  const myVote = extras?.myVotes.get(s.id) ?? null;
+  const isOwn = uid != null && s.userId === uid;
+  // Poll tallies are only revealed to the author or after the viewer votes.
+  const showResults = hasPoll && (isOwn || myVote != null);
   return {
     id: s.id,
     userId: s.userId,
@@ -111,6 +216,18 @@ function formatStory(s: typeof storiesTable.$inferSelect, viewedIds: Set<number>
     expiresAt: s.expiresAt.toISOString(),
     viewedByMe: viewedIds.has(s.id),
     viewCount: viewCount ?? null,
+    boatName: extras?.boatNames.get(s.id) ?? null,
+    filterName: s.filterName,
+    filterCss: s.filterCss,
+    stickers: s.stickers ?? null,
+    pollQuestion: hasPoll ? s.pollQuestion : null,
+    pollOptions: hasPoll ? s.pollOptions : null,
+    pollVotes: showResults
+      ? (extras?.pollVotes.get(s.id) ?? new Array(s.pollOptions!.length).fill(0))
+      : null,
+    myPollVote: myVote,
+    reactionCounts: extras?.reactionCounts.get(s.id) ?? null,
+    myReaction: extras?.myReactions.get(s.id) ?? null,
   };
 }
 
@@ -136,7 +253,10 @@ async function getViewedIds(uid: number, storyIds: number[]): Promise<Set<number
 // Group a list of stories by author, own group first, then unviewed groups
 // (newest activity first), then fully-viewed groups.
 async function groupStories(uid: number, stories: (typeof storiesTable.$inferSelect)[]) {
-  const viewedIds = await getViewedIds(uid, stories.map((s) => s.id));
+  const [viewedIds, extras] = await Promise.all([
+    getViewedIds(uid, stories.map((s) => s.id)),
+    getStoryExtras(uid, stories),
+  ]);
   const byUser = new Map<number, (typeof storiesTable.$inferSelect)[]>();
   for (const s of stories) {
     if (!byUser.has(s.userId)) byUser.set(s.userId, []);
@@ -166,7 +286,7 @@ async function groupStories(uid: number, stories: (typeof storiesTable.$inferSel
       const sorted = [...list].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
       return {
         user: formatAuthor(author, true),
-        stories: sorted.map((s) => formatStory(s, viewedIds, userId === uid ? (viewCounts.get(s.id) ?? 0) : undefined)),
+        stories: sorted.map((s) => formatStory(s, viewedIds, userId === uid ? (viewCounts.get(s.id) ?? 0) : undefined, extras, uid)),
         allViewed: sorted.every((s) => viewedIds.has(s.id)),
         _latest: sorted[sorted.length - 1].createdAt.getTime(),
         _own: userId === uid,
@@ -191,7 +311,10 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const uid = currentUserId(req);
-  const { mediaType, mediaUrl, text, bgColor, caption, lat, lng, placeName, visibility } = req.body ?? {};
+  const {
+    mediaType, mediaUrl, text, bgColor, caption, lat, lng, placeName, visibility,
+    boatId, filterName, filterCss, stickers, pollQuestion, pollOptions,
+  } = req.body ?? {};
 
   if (!MEDIA_TYPES.includes(mediaType)) {
     return res.status(400).json({ error: "mediaType must be photo, video, or text" });
@@ -225,6 +348,52 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "visibility must be friends or community" });
   }
 
+  // "Posted from" boat tag — must be one of the author's own boats.
+  if (boatId != null) {
+    if (typeof boatId !== "number" || !Number.isInteger(boatId)) {
+      return res.status(400).json({ error: "Invalid boatId" });
+    }
+    const boat = await db.query.boatsTable.findFirst({ where: eq(boatsTable.id, boatId) });
+    if (!boat || boat.userId !== uid) return res.status(400).json({ error: "That's not one of your boats" });
+  }
+
+  if (filterName != null && (typeof filterName !== "string" || filterName.length > 40)) {
+    return res.status(400).json({ error: "Invalid filter name" });
+  }
+  if (filterCss != null && (typeof filterCss !== "string" || filterCss.length > 250 || !FILTER_CSS_RE.test(filterCss))) {
+    return res.status(400).json({ error: "Invalid filter" });
+  }
+
+  let cleanStickers: StorySticker[] | null = null;
+  if (stickers != null) {
+    const result = validateStickers(stickers);
+    if (!Array.isArray(result)) return res.status(400).json({ error: result.error });
+    cleanStickers = result.length ? result : null;
+  }
+
+  const hasPollQ = pollQuestion != null && String(pollQuestion).trim() !== "";
+  const hasPollOpts = Array.isArray(pollOptions) && pollOptions.length > 0;
+  if (hasPollQ !== hasPollOpts) {
+    return res.status(400).json({ error: "Polls need both a question and options" });
+  }
+  let cleanPollQuestion: string | null = null;
+  let cleanPollOptions: string[] | null = null;
+  if (hasPollQ) {
+    if (typeof pollQuestion !== "string" || pollQuestion.trim().length > 150) {
+      return res.status(400).json({ error: "Poll question too long (max 150 characters)" });
+    }
+    if (!Array.isArray(pollOptions) || pollOptions.length < 2 || pollOptions.length > 4) {
+      return res.status(400).json({ error: "Polls need 2-4 options" });
+    }
+    for (const opt of pollOptions) {
+      if (typeof opt !== "string" || !opt.trim() || opt.length > 80) {
+        return res.status(400).json({ error: "Poll options must be 1-80 characters" });
+      }
+    }
+    cleanPollQuestion = pollQuestion.trim();
+    cleanPollOptions = pollOptions.map((o: string) => o.trim());
+  }
+
   const [story] = await db
     .insert(storiesTable)
     .values({
@@ -238,6 +407,12 @@ router.post("/", async (req, res) => {
       lng: hasLat ? lng : null,
       placeName: placeName?.trim() || null,
       visibility: vis,
+      boatId: boatId ?? null,
+      filterName: filterName?.trim() || null,
+      filterCss: mediaType === "text" ? null : (filterCss?.trim() || null),
+      stickers: cleanStickers,
+      pollQuestion: cleanPollQuestion,
+      pollOptions: cleanPollOptions,
       expiresAt: new Date(Date.now() + STORY_TTL_MS),
     })
     .returning();
@@ -350,10 +525,104 @@ router.delete("/:storyId", async (req, res) => {
   const story = await db.query.storiesTable.findFirst({ where: eq(storiesTable.id, storyId) });
   if (!story) return res.status(404).json({ error: "Story not found" });
   if (story.userId !== uid) return res.status(403).json({ error: "You can only delete your own stories" });
-  // No FK cascades in this schema — remove child view rows first.
+  // No FK cascades in this schema — remove child rows first.
   await db.delete(storyViewsTable).where(eq(storyViewsTable.storyId, storyId));
+  await db.delete(storyReactionsTable).where(eq(storyReactionsTable.storyId, storyId));
+  await db.delete(storyPollVotesTable).where(eq(storyPollVotesTable.storyId, storyId));
   await db.delete(storiesTable).where(eq(storiesTable.id, storyId));
   res.status(204).end();
+});
+
+// Load a story and enforce viewer access; shared by react + vote endpoints.
+type LoadStoryResult =
+  | { ok: true; story: typeof storiesTable.$inferSelect }
+  | { ok: false; status: number; message: string };
+
+async function loadAccessibleStory(uid: number, rawId: string): Promise<LoadStoryResult> {
+  const storyId = parseInt(rawId);
+  if (isNaN(storyId)) return { ok: false, status: 400, message: "Invalid story id" };
+  const story = await db.query.storiesTable.findFirst({ where: eq(storiesTable.id, storyId) });
+  if (!story || story.expiresAt <= new Date()) return { ok: false, status: 404, message: "Story not found" };
+  if (!(await canViewerAccessStory(uid, story))) {
+    return { ok: false, status: 404, message: "Story not found" };
+  }
+  return { ok: true, story };
+}
+
+router.post("/:storyId/react", async (req, res) => {
+  const uid = currentUserId(req);
+  const { emoji } = req.body ?? {};
+  if (typeof emoji !== "string" || !REACTION_EMOJIS.includes(emoji)) {
+    return res.status(400).json({ error: "Invalid reaction" });
+  }
+  const result = await loadAccessibleStory(uid, req.params.storyId);
+  if (!result.ok) return res.status(result.status).json({ error: result.message });
+  const { story } = result;
+
+  const existing = await db.query.storyReactionsTable.findFirst({
+    where: and(eq(storyReactionsTable.storyId, story.id), eq(storyReactionsTable.userId, uid)),
+  });
+  await db
+    .insert(storyReactionsTable)
+    .values({ storyId: story.id, userId: uid, emoji })
+    .onConflictDoUpdate({
+      target: [storyReactionsTable.storyId, storyReactionsTable.userId],
+      set: { emoji, createdAt: new Date() },
+    });
+
+  // Tell the author about the first reaction from this person (not swaps, not
+  // self-reactions).
+  if (!existing && story.userId !== uid) {
+    const reactor = await db.query.usersTable.findFirst({ where: eq(usersTable.id, uid) });
+    if (reactor) {
+      createNotifications([
+        {
+          userId: story.userId,
+          type: "story_reaction",
+          message: `${reactor.displayName} reacted ${emoji} to your story`,
+          relatedId: uid,
+        },
+      ]).catch(() => {});
+    }
+  }
+  res.status(204).end();
+});
+
+router.delete("/:storyId/react", async (req, res) => {
+  const uid = currentUserId(req);
+  const storyId = parseInt(req.params.storyId);
+  if (isNaN(storyId)) return res.status(400).json({ error: "Invalid story id" });
+  await db
+    .delete(storyReactionsTable)
+    .where(and(eq(storyReactionsTable.storyId, storyId), eq(storyReactionsTable.userId, uid)));
+  res.status(204).end();
+});
+
+router.post("/:storyId/vote", async (req, res) => {
+  const uid = currentUserId(req);
+  const { optionIndex } = req.body ?? {};
+  const result = await loadAccessibleStory(uid, req.params.storyId);
+  if (!result.ok) return res.status(result.status).json({ error: result.message });
+  const { story } = result;
+
+  const optionCount = story.pollOptions?.length ?? 0;
+  if (!optionCount) return res.status(400).json({ error: "This story has no poll" });
+  if (typeof optionIndex !== "number" || !Number.isInteger(optionIndex) || optionIndex < 0 || optionIndex >= optionCount) {
+    return res.status(400).json({ error: "Invalid poll option" });
+  }
+  await db
+    .insert(storyPollVotesTable)
+    .values({ storyId: story.id, userId: uid, optionIndex })
+    .onConflictDoUpdate({
+      target: [storyPollVotesTable.storyId, storyPollVotesTable.userId],
+      set: { optionIndex, createdAt: new Date() },
+    });
+
+  const [viewedIds, extras] = await Promise.all([
+    getViewedIds(uid, [story.id]),
+    getStoryExtras(uid, [story]),
+  ]);
+  res.json(formatStory(story, viewedIds, undefined, extras, uid));
 });
 
 router.post("/:storyId/view", async (req, res) => {
@@ -384,7 +653,10 @@ export async function getUserActiveStoriesForViewer(viewerId: number, targetId: 
     if (!friendIds.includes(targetId)) conds.push(eq(storiesTable.visibility, "community"));
   }
   const stories = await db.select().from(storiesTable).where(and(...conds)).orderBy(asc(storiesTable.createdAt));
-  const viewedIds = await getViewedIds(viewerId, stories.map((s) => s.id));
+  const [viewedIds, extras] = await Promise.all([
+    getViewedIds(viewerId, stories.map((s) => s.id)),
+    getStoryExtras(viewerId, stories),
+  ]);
   const viewCounts = new Map<number, number>();
   if (targetId === viewerId && stories.length) {
     const rows = await db
@@ -394,7 +666,7 @@ export async function getUserActiveStoriesForViewer(viewerId: number, targetId: 
       .groupBy(storyViewsTable.storyId);
     for (const r of rows) viewCounts.set(r.storyId, r.value);
   }
-  return stories.map((s) => formatStory(s, viewedIds, targetId === viewerId ? (viewCounts.get(s.id) ?? 0) : undefined));
+  return stories.map((s) => formatStory(s, viewedIds, targetId === viewerId ? (viewCounts.get(s.id) ?? 0) : undefined, extras, viewerId));
 }
 
 // Author ids (among the given ids) that currently have at least one active story.

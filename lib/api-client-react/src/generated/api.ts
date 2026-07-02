@@ -51,6 +51,10 @@ import type {
   HealthStatus,
   HiddenPlace,
   HiddenPlaceInput,
+  Highlight,
+  HighlightInput,
+  HighlightStory,
+  LakeStatusInput,
   LocationUpdate,
   Message,
   MessageInput,
@@ -89,6 +93,8 @@ import type {
   StoryGroup,
   StoryInput,
   StoryPlace,
+  StoryPollVoteInput,
+  StoryReactionInput,
   SuggestedUser,
   TermsAccept,
   UploadUrlRequest,
@@ -3942,6 +3948,586 @@ export const useViewStory = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getViewStoryMutationOptions(options));
+    }
+
+export const getReactToStoryUrl = (storyId: number,) => {
+
+
+
+
+  return `/api/stories/${storyId}/react`
+}
+
+/**
+ * @summary React to a story (one reaction per user, re-reacting swaps emoji)
+ */
+export const reactToStory = async (storyId: number,
+    storyReactionInput: StoryReactionInput, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getReactToStoryUrl(storyId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      storyReactionInput,)
+  }
+);}
+
+
+
+
+export const getReactToStoryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactToStory>>, TError,{storyId: number;data: BodyType<StoryReactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reactToStory>>, TError,{storyId: number;data: BodyType<StoryReactionInput>}, TContext> => {
+
+const mutationKey = ['reactToStory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reactToStory>>, {storyId: number;data: BodyType<StoryReactionInput>}> = (props) => {
+          const {storyId,data} = props ?? {};
+
+          return  reactToStory(storyId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReactToStoryMutationResult = NonNullable<Awaited<ReturnType<typeof reactToStory>>>
+    export type ReactToStoryMutationBody = BodyType<StoryReactionInput>
+    export type ReactToStoryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary React to a story (one reaction per user, re-reacting swaps emoji)
+ */
+export const useReactToStory = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactToStory>>, TError,{storyId: number;data: BodyType<StoryReactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reactToStory>>,
+        TError,
+        {storyId: number;data: BodyType<StoryReactionInput>},
+        TContext
+      > => {
+      return useMutation(getReactToStoryMutationOptions(options));
+    }
+
+export const getRemoveStoryReactionUrl = (storyId: number,) => {
+
+
+
+
+  return `/api/stories/${storyId}/react`
+}
+
+/**
+ * @summary Remove my reaction from a story
+ */
+export const removeStoryReaction = async (storyId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getRemoveStoryReactionUrl(storyId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getRemoveStoryReactionMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeStoryReaction>>, TError,{storyId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof removeStoryReaction>>, TError,{storyId: number}, TContext> => {
+
+const mutationKey = ['removeStoryReaction'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof removeStoryReaction>>, {storyId: number}> = (props) => {
+          const {storyId} = props ?? {};
+
+          return  removeStoryReaction(storyId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RemoveStoryReactionMutationResult = NonNullable<Awaited<ReturnType<typeof removeStoryReaction>>>
+
+    export type RemoveStoryReactionMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Remove my reaction from a story
+ */
+export const useRemoveStoryReaction = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof removeStoryReaction>>, TError,{storyId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof removeStoryReaction>>,
+        TError,
+        {storyId: number},
+        TContext
+      > => {
+      return useMutation(getRemoveStoryReactionMutationOptions(options));
+    }
+
+export const getVoteStoryPollUrl = (storyId: number,) => {
+
+
+
+
+  return `/api/stories/${storyId}/vote`
+}
+
+/**
+ * @summary Vote in a story poll (one vote per user)
+ */
+export const voteStoryPoll = async (storyId: number,
+    storyPollVoteInput: StoryPollVoteInput, options?: RequestInit): Promise<Story> => {
+
+  return customFetch<Story>(getVoteStoryPollUrl(storyId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      storyPollVoteInput,)
+  }
+);}
+
+
+
+
+export const getVoteStoryPollMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof voteStoryPoll>>, TError,{storyId: number;data: BodyType<StoryPollVoteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof voteStoryPoll>>, TError,{storyId: number;data: BodyType<StoryPollVoteInput>}, TContext> => {
+
+const mutationKey = ['voteStoryPoll'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof voteStoryPoll>>, {storyId: number;data: BodyType<StoryPollVoteInput>}> = (props) => {
+          const {storyId,data} = props ?? {};
+
+          return  voteStoryPoll(storyId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type VoteStoryPollMutationResult = NonNullable<Awaited<ReturnType<typeof voteStoryPoll>>>
+    export type VoteStoryPollMutationBody = BodyType<StoryPollVoteInput>
+    export type VoteStoryPollMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Vote in a story poll (one vote per user)
+ */
+export const useVoteStoryPoll = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof voteStoryPoll>>, TError,{storyId: number;data: BodyType<StoryPollVoteInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof voteStoryPoll>>,
+        TError,
+        {storyId: number;data: BodyType<StoryPollVoteInput>},
+        TContext
+      > => {
+      return useMutation(getVoteStoryPollMutationOptions(options));
+    }
+
+export const getCreateHighlightUrl = () => {
+
+
+
+
+  return `/api/highlights`
+}
+
+/**
+ * @summary Create a permanent highlight from my active stories
+ */
+export const createHighlight = async (highlightInput: HighlightInput, options?: RequestInit): Promise<Highlight> => {
+
+  return customFetch<Highlight>(getCreateHighlightUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      highlightInput,)
+  }
+);}
+
+
+
+
+export const getCreateHighlightMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createHighlight>>, TError,{data: BodyType<HighlightInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createHighlight>>, TError,{data: BodyType<HighlightInput>}, TContext> => {
+
+const mutationKey = ['createHighlight'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createHighlight>>, {data: BodyType<HighlightInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createHighlight(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateHighlightMutationResult = NonNullable<Awaited<ReturnType<typeof createHighlight>>>
+    export type CreateHighlightMutationBody = BodyType<HighlightInput>
+    export type CreateHighlightMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a permanent highlight from my active stories
+ */
+export const useCreateHighlight = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createHighlight>>, TError,{data: BodyType<HighlightInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createHighlight>>,
+        TError,
+        {data: BodyType<HighlightInput>},
+        TContext
+      > => {
+      return useMutation(getCreateHighlightMutationOptions(options));
+    }
+
+export const getGetHighlightStoriesUrl = (highlightId: number,) => {
+
+
+
+
+  return `/api/highlights/${highlightId}`
+}
+
+/**
+ * @summary Get the snapshotted stories inside a highlight
+ */
+export const getHighlightStories = async (highlightId: number, options?: RequestInit): Promise<HighlightStory[]> => {
+
+  return customFetch<HighlightStory[]>(getGetHighlightStoriesUrl(highlightId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetHighlightStoriesQueryKey = (highlightId: number,) => {
+    return [
+    `/api/highlights/${highlightId}`
+    ] as const;
+    }
+
+
+export const getGetHighlightStoriesQueryOptions = <TData = Awaited<ReturnType<typeof getHighlightStories>>, TError = ErrorType<unknown>>(highlightId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHighlightStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetHighlightStoriesQueryKey(highlightId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getHighlightStories>>> = ({ signal }) => getHighlightStories(highlightId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(highlightId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getHighlightStories>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetHighlightStoriesQueryResult = NonNullable<Awaited<ReturnType<typeof getHighlightStories>>>
+export type GetHighlightStoriesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the snapshotted stories inside a highlight
+ */
+
+export function useGetHighlightStories<TData = Awaited<ReturnType<typeof getHighlightStories>>, TError = ErrorType<unknown>>(
+ highlightId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getHighlightStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetHighlightStoriesQueryOptions(highlightId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDeleteHighlightUrl = (highlightId: number,) => {
+
+
+
+
+  return `/api/highlights/${highlightId}`
+}
+
+/**
+ * @summary Delete my highlight
+ */
+export const deleteHighlight = async (highlightId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteHighlightUrl(highlightId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteHighlightMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteHighlight>>, TError,{highlightId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteHighlight>>, TError,{highlightId: number}, TContext> => {
+
+const mutationKey = ['deleteHighlight'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteHighlight>>, {highlightId: number}> = (props) => {
+          const {highlightId} = props ?? {};
+
+          return  deleteHighlight(highlightId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteHighlightMutationResult = NonNullable<Awaited<ReturnType<typeof deleteHighlight>>>
+
+    export type DeleteHighlightMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete my highlight
+ */
+export const useDeleteHighlight = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteHighlight>>, TError,{highlightId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteHighlight>>,
+        TError,
+        {highlightId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteHighlightMutationOptions(options));
+    }
+
+export const getGetUserHighlightsUrl = (userId: number,) => {
+
+
+
+
+  return `/api/users/${userId}/highlights`
+}
+
+/**
+ * @summary A user's highlights (privacy-checked)
+ */
+export const getUserHighlights = async (userId: number, options?: RequestInit): Promise<Highlight[]> => {
+
+  return customFetch<Highlight[]>(getGetUserHighlightsUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetUserHighlightsQueryKey = (userId: number,) => {
+    return [
+    `/api/users/${userId}/highlights`
+    ] as const;
+    }
+
+
+export const getGetUserHighlightsQueryOptions = <TData = Awaited<ReturnType<typeof getUserHighlights>>, TError = ErrorType<unknown>>(userId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserHighlights>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetUserHighlightsQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUserHighlights>>> = ({ signal }) => getUserHighlights(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(userId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUserHighlights>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetUserHighlightsQueryResult = NonNullable<Awaited<ReturnType<typeof getUserHighlights>>>
+export type GetUserHighlightsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary A user's highlights (privacy-checked)
+ */
+
+export function useGetUserHighlights<TData = Awaited<ReturnType<typeof getUserHighlights>>, TError = ErrorType<unknown>>(
+ userId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserHighlights>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetUserHighlightsQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getSetLakeStatusUrl = () => {
+
+
+
+
+  return `/api/users/me/lake-status`
+}
+
+/**
+ * @summary Set or clear my lake status ("Out on the Water", ...)
+ */
+export const setLakeStatus = async (lakeStatusInput: LakeStatusInput, options?: RequestInit): Promise<User> => {
+
+  return customFetch<User>(getSetLakeStatusUrl(),
+  {
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      lakeStatusInput,)
+  }
+);}
+
+
+
+
+export const getSetLakeStatusMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setLakeStatus>>, TError,{data: BodyType<LakeStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setLakeStatus>>, TError,{data: BodyType<LakeStatusInput>}, TContext> => {
+
+const mutationKey = ['setLakeStatus'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setLakeStatus>>, {data: BodyType<LakeStatusInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  setLakeStatus(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetLakeStatusMutationResult = NonNullable<Awaited<ReturnType<typeof setLakeStatus>>>
+    export type SetLakeStatusMutationBody = BodyType<LakeStatusInput>
+    export type SetLakeStatusMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Set or clear my lake status ("Out on the Water", ...)
+ */
+export const useSetLakeStatus = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setLakeStatus>>, TError,{data: BodyType<LakeStatusInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setLakeStatus>>,
+        TError,
+        {data: BodyType<LakeStatusInput>},
+        TContext
+      > => {
+      return useMutation(getSetLakeStatusMutationOptions(options));
     }
 
 export const getGetUserStoriesUrl = (userId: number,) => {

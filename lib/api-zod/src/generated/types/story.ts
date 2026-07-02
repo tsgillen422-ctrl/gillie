@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { StoryMediaType } from './storyMediaType';
+import type { StoryReactionCounts } from './storyReactionCounts';
+import type { StorySticker } from './storySticker';
 
 export interface Story {
   id: number;
@@ -31,4 +33,24 @@ export interface Story {
   viewedByMe: boolean;
   /** @nullable */
   viewCount?: number | null;
+  /** @nullable */
+  boatName?: string | null;
+  /** @nullable */
+  filterName?: string | null;
+  /** @nullable */
+  filterCss?: string | null;
+  /** @nullable */
+  stickers?: StorySticker[] | null;
+  /** @nullable */
+  pollQuestion?: string | null;
+  /** @nullable */
+  pollOptions?: string[] | null;
+  /** @nullable */
+  pollVotes?: number[] | null;
+  /** @nullable */
+  myPollVote?: number | null;
+  /** @nullable */
+  reactionCounts?: StoryReactionCounts;
+  /** @nullable */
+  myReaction?: string | null;
 }

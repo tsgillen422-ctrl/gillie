@@ -38,4 +38,6 @@ export interface FriendLocation {
   lastSeen?: string | null;
   /** @nullable */
   hasActiveStory?: boolean | null;
+  /** @nullable */
+  lakeStatus?: string | null;
 }
