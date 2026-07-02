@@ -54,6 +54,8 @@ export const FILTER_CATEGORIES: StoryFilterCategory[] = [
       { name: "emerald", label: "Emerald", css: "hue-rotate(22deg) saturate(1.45) contrast(1.1) brightness(1.02)" },
       { name: "deepblue", label: "Deep Blue", css: "hue-rotate(-20deg) saturate(1.5) contrast(1.16) brightness(0.94)" },
       { name: "summerglow", label: "Summer Glow", css: "brightness(1.12) saturate(1.5) sepia(0.16) contrast(1.05)" },
+      { name: "wakesurf", label: "Wake Surf", css: "saturate(1.65) contrast(1.24) brightness(1.08) hue-rotate(-8deg)" },
+      { name: "campfire", label: "Campfire", css: "sepia(0.45) saturate(1.6) hue-rotate(-18deg) brightness(0.98) contrast(1.14)" },
       { name: "dusk", label: "Dusk", css: "brightness(0.9) contrast(1.18) saturate(1.05) hue-rotate(12deg)" },
     ],
   },

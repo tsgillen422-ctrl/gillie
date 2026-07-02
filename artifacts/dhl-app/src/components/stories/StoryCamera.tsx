@@ -13,6 +13,15 @@ import { FACE_LENSES, getFaceLandmarker, drawLensFrame } from "@/lib/faceFilters
 // cropped to the on-screen aspect so photos fill the screen in the editor.
 
 const TIMERS = [0, 3, 10] as const;
+const MAX_VIDEO_SECONDS = 30;
+
+function pickRecorderMime(): string {
+  if (typeof MediaRecorder === "undefined") return "";
+  for (const mime of ["video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"]) {
+    if (MediaRecorder.isTypeSupported(mime)) return mime;
+  }
+  return "";
+}
 
 export function StoryCamera({
   onCapture,
@@ -38,8 +47,19 @@ export function StoryCamera({
   const [screenFlash, setScreenFlash] = useState(false);
   const [filterIdx, setFilterIdx] = useState(0);
   const [filterFlash, setFilterFlash] = useState(false);
+  const filterIdxRef = useRef(0);
+  filterIdxRef.current = filterIdx;
   const [lensIdx, setLensIdx] = useState(0);
   const [lensStatus, setLensStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [mode, setMode] = useState<"photo" | "video">("photo");
+  const [recording, setRecording] = useState(false);
+  const [recElapsed, setRecElapsed] = useState(0);
+  const recorderRef = useRef<MediaRecorder | null>(null);
+  const recChunksRef = useRef<Blob[]>([]);
+  const recDeliverRef = useRef(false);
+  const recAudioRef = useRef<MediaStream | null>(null);
+  const recTickRef = useRef<number | null>(null);
+  const recAutoStopRef = useRef<number | null>(null);
   const landmarkerRef = useRef<FaceLandmarker | null>(null);
   const lastFacesRef = useRef<ReturnType<FaceLandmarker["detectForVideo"]>["faceLandmarks"] | undefined>(undefined);
   const swipeRef = useRef<{ x: number; y: number; id: number } | null>(null);
@@ -162,7 +182,9 @@ export function StoryCamera({
   // Live AR lens loop: detect landmarks per video frame and draw the lens on
   // the overlay canvas. The overlay lives inside the same transform wrapper as
   // the video, so mirroring and CSS zoom apply to both identically.
-  const activeLens = FACE_LENSES[lensIdx]?.name ?? "none";
+  // Lenses only apply to photos (they're baked at capture); force them off in
+  // video mode so the preview never shows an effect the recording won't have.
+  const activeLens = mode === "video" ? "none" : (FACE_LENSES[lensIdx]?.name ?? "none");
   useEffect(() => {
     const canvas = overlayRef.current;
     if (!canvas) return;
@@ -209,6 +231,97 @@ export function StoryCamera({
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     };
   }, [activeLens, lensStatus, ready]);
+
+  const clearRecTimers = useCallback(() => {
+    if (recTickRef.current) window.clearInterval(recTickRef.current);
+    if (recAutoStopRef.current) window.clearTimeout(recAutoStopRef.current);
+    recTickRef.current = null;
+    recAutoStopRef.current = null;
+  }, []);
+
+  const stopRecording = useCallback((deliver: boolean) => {
+    const rec = recorderRef.current;
+    if (!rec) return;
+    recDeliverRef.current = deliver;
+    clearRecTimers();
+    if (rec.state !== "inactive") {
+      try { rec.stop(); } catch { /* already stopped */ }
+    }
+  }, [clearRecTimers]);
+
+  const recStartingRef = useRef(false);
+  const startRecording = useCallback(async () => {
+    const stream = streamRef.current;
+    if (!stream || recorderRef.current || recStartingRef.current) return;
+    recStartingRef.current = true;
+    const token = streamTokenRef.current;
+    // Ask for the mic just-in-time so photo-only sessions never prompt for it.
+    let audio: MediaStream | null = null;
+    try {
+      audio = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    } catch {
+      audio = null; // mic denied — record silent video rather than failing
+    }
+    recStartingRef.current = false;
+    // The camera may have been closed or flipped while the mic prompt was up —
+    // recording from the stale (stopped) stream would produce an empty file.
+    if (token !== streamTokenRef.current || streamRef.current !== stream || recorderRef.current) {
+      audio?.getTracks().forEach((t) => t.stop());
+      return;
+    }
+    recAudioRef.current = audio;
+    const combined = new MediaStream([
+      ...stream.getVideoTracks(),
+      ...(audio?.getAudioTracks() ?? []),
+    ]);
+    const mime = pickRecorderMime();
+    let rec: MediaRecorder;
+    try {
+      rec = new MediaRecorder(combined, mime ? { mimeType: mime } : undefined);
+    } catch {
+      audio?.getTracks().forEach((t) => t.stop());
+      recAudioRef.current = null;
+      setError("Video recording isn't supported on this device.");
+      return;
+    }
+    recChunksRef.current = [];
+    recDeliverRef.current = false;
+    rec.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) recChunksRef.current.push(e.data);
+    };
+    rec.onstop = () => {
+      recorderRef.current = null;
+      recAudioRef.current?.getTracks().forEach((t) => t.stop());
+      recAudioRef.current = null;
+      setRecording(false);
+      setRecElapsed(0);
+      if (!recDeliverRef.current) return;
+      const type = rec.mimeType || mime || "video/webm";
+      const blob = new Blob(recChunksRef.current, { type });
+      recChunksRef.current = [];
+      if (blob.size === 0) return;
+      const ext = type.includes("mp4") ? "mp4" : "webm";
+      stopStream();
+      // Use the ref so a filter swipe during recording still carries through.
+      onCapture(new File([blob], `story-${Date.now()}.${ext}`, { type }), filterIdxRef.current);
+    };
+    recorderRef.current = rec;
+    rec.start(1000); // gather chunks every second
+    setRecording(true);
+    setRecElapsed(0);
+    recTickRef.current = window.setInterval(() => setRecElapsed((s) => s + 1), 1000);
+    recAutoStopRef.current = window.setTimeout(() => stopRecording(true), MAX_VIDEO_SECONDS * 1000);
+  }, [onCapture, stopRecording, stopStream]);
+
+  // Abort any in-flight recording when the camera unmounts.
+  useEffect(() => {
+    return () => {
+      stopRecording(false);
+      recAudioRef.current?.getTracks().forEach((t) => t.stop());
+      recAudioRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const doCapture = useCallback(() => {
     const video = videoRef.current;
@@ -273,6 +386,11 @@ export function StoryCamera({
 
   const handleShutter = () => {
     if (countdown != null) return;
+    if (mode === "video") {
+      if (recording) stopRecording(true);
+      else startRecording();
+      return;
+    }
     const delay = TIMERS[timerIdx];
     const fire = () => {
       if (flashOn && !torchSupported) {
@@ -374,6 +492,14 @@ export function StoryCamera({
             <p className="text-center text-sm text-white/90">{error}</p>
           </div>
         )}
+        {recording && (
+          <div className="pointer-events-none absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+64px)] flex justify-center">
+            <span className="flex items-center gap-2 rounded-full bg-black/60 px-3 py-1 text-sm font-semibold text-white backdrop-blur-sm">
+              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-red-500" />
+              0:{String(recElapsed).padStart(2, "0")} / 0:{MAX_VIDEO_SECONDS}
+            </span>
+          </div>
+        )}
         {filterFlash && (
           <div className="pointer-events-none absolute inset-x-0 top-1/3 flex justify-center">
             <span className="animate-in fade-in zoom-in-95 rounded-full bg-black/60 px-4 py-1.5 text-sm font-semibold text-white backdrop-blur-sm">
@@ -430,7 +556,8 @@ export function StoryCamera({
               <button
                 type="button"
                 onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))}
-                className="rounded-full bg-black/40 p-2.5 text-white backdrop-blur-sm"
+                disabled={recording}
+                className="rounded-full bg-black/40 p-2.5 text-white backdrop-blur-sm disabled:opacity-40"
                 aria-label="Flip camera"
                 data-testid="button-camera-flip"
               >
@@ -476,8 +603,12 @@ export function StoryCamera({
             ))}
           </div>
 
-          {/* AR lens carousel */}
-          <div ref={lensStripRef} className="flex items-center gap-2 overflow-x-auto px-3 pb-2.5" data-testid="camera-lens-strip">
+          {/* AR lens carousel (photo only — lenses are baked at capture) */}
+          <div
+            ref={lensStripRef}
+            className={`flex items-center gap-2 overflow-x-auto px-3 pb-2.5 ${mode === "video" ? "hidden" : ""}`}
+            data-testid="camera-lens-strip"
+          >
             {FACE_LENSES.map((l, i) => (
               <button
                 key={l.name}
@@ -502,16 +633,40 @@ export function StoryCamera({
             )}
           </div>
 
-          {/* shutter */}
-          <div className="flex items-center justify-center pb-[calc(env(safe-area-inset-bottom,0px)+16px)]">
+          {/* shutter + photo/video toggle */}
+          <div className="flex flex-col items-center gap-2.5 pb-[calc(env(safe-area-inset-bottom,0px)+14px)]">
             <button
               type="button"
               onClick={handleShutter}
               disabled={!ready || countdown != null}
-              className="h-[76px] w-[76px] rounded-full border-4 border-white bg-white/25 transition active:scale-95 disabled:opacity-50"
-              aria-label="Take photo"
+              className={`flex h-[76px] w-[76px] items-center justify-center rounded-full border-4 border-white transition active:scale-95 disabled:opacity-50 ${
+                mode === "video" ? (recording ? "bg-red-500/30" : "bg-white/25") : "bg-white/25"
+              }`}
+              aria-label={mode === "video" ? (recording ? "Stop recording" : "Record video") : "Take photo"}
               data-testid="button-camera-shutter"
-            />
+            >
+              {mode === "video" &&
+                (recording ? (
+                  <span className="h-7 w-7 rounded-md bg-red-500" />
+                ) : (
+                  <span className="h-6 w-6 rounded-full bg-red-500" />
+                ))}
+            </button>
+            <div className="flex items-center gap-1 rounded-full bg-black/40 p-1 backdrop-blur-sm">
+              {(["photo", "video"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => { if (!recording) setMode(m); }}
+                  className={`rounded-full px-4 py-1 text-xs font-semibold uppercase tracking-wide transition ${
+                    mode === m ? "bg-white text-black" : "text-white/80"
+                  }`}
+                  data-testid={`button-camera-mode-${m}`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

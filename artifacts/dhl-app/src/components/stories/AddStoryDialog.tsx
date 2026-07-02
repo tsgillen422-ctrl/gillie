@@ -100,6 +100,9 @@ export function AddStoryDialog({ open, onOpenChange }: { open: boolean; onOpenCh
         onClose={() => setCameraOpen(false)}
         onCapture={async (file, filterIdx) => {
           setCameraOpen(false);
+          if (file.type.startsWith("video/") && file.size > MAX_VIDEO_MB * 1024 * 1024) {
+            return void toast.error(`Videos need to be under ${MAX_VIDEO_MB}MB.`);
+          }
           await uploadMedia(file, filterIdx);
         }}
       />
@@ -135,7 +138,7 @@ export function AddStoryDialog({ open, onOpenChange }: { open: boolean; onOpenCh
               data-testid="button-story-camera"
             >
               <Aperture className="h-6 w-6" />
-              <span className="text-sm font-medium">Take a photo</span>
+              <span className="text-sm font-medium">Camera</span>
             </button>
             <button
               type="button"
