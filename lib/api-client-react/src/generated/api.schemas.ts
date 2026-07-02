@@ -291,6 +291,99 @@ export interface FriendLocation {
   isOnWater?: boolean | null;
   /** @nullable */
   lastSeen?: string | null;
+  /** @nullable */
+  hasActiveStory?: boolean | null;
+}
+
+export type StoryMediaType = typeof StoryMediaType[keyof typeof StoryMediaType];
+
+
+export const StoryMediaType = {
+  photo: 'photo',
+  video: 'video',
+  text: 'text',
+} as const;
+
+export interface Story {
+  id: number;
+  userId: number;
+  mediaType: StoryMediaType;
+  /** @nullable */
+  mediaUrl?: string | null;
+  /** @nullable */
+  text?: string | null;
+  /** @nullable */
+  bgColor?: string | null;
+  /** @nullable */
+  caption?: string | null;
+  /** @nullable */
+  lat?: number | null;
+  /** @nullable */
+  lng?: number | null;
+  /** @nullable */
+  placeName?: string | null;
+  visibility: string;
+  createdAt: string;
+  expiresAt: string;
+  viewedByMe: boolean;
+  /** @nullable */
+  viewCount?: number | null;
+}
+
+export interface StoryAuthor {
+  id: number;
+  displayName: string;
+  username: string;
+  /** @nullable */
+  avatarUrl?: string | null;
+  /** @nullable */
+  isLive?: boolean | null;
+}
+
+export interface StoryGroup {
+  user: StoryAuthor;
+  stories: Story[];
+  allViewed: boolean;
+}
+
+export interface StoryPlace {
+  placeName: string;
+  /** @nullable */
+  lat?: number | null;
+  /** @nullable */
+  lng?: number | null;
+  storyCount: number;
+  /** @nullable */
+  latestAt?: string | null;
+}
+
+export type StoryInputMediaType = typeof StoryInputMediaType[keyof typeof StoryInputMediaType];
+
+
+export const StoryInputMediaType = {
+  photo: 'photo',
+  video: 'video',
+  text: 'text',
+} as const;
+
+export interface StoryInput {
+  mediaType: StoryInputMediaType;
+  /** @nullable */
+  mediaUrl?: string | null;
+  /** @nullable */
+  text?: string | null;
+  /** @nullable */
+  bgColor?: string | null;
+  /** @nullable */
+  caption?: string | null;
+  /** @nullable */
+  lat?: number | null;
+  /** @nullable */
+  lng?: number | null;
+  /** @nullable */
+  placeName?: string | null;
+  /** @nullable */
+  visibility?: string | null;
 }
 
 export type FriendRequestStatus = typeof FriendRequestStatus[keyof typeof FriendRequestStatus];

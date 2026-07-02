@@ -37,6 +37,7 @@ import { currentUserId } from "../middlewares/auth";
 import { createNotifications, createNotification } from "../lib/notify";
 import { logger } from "../lib/logger";
 import { getHiddenDemoUserIds } from "../lib/demoData";
+import { getUserActiveStoriesForViewer } from "./stories";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -893,6 +894,17 @@ router.delete("/:userId", async (req, res) => {
     await deleteUserAndData(tx, userId);
   });
   res.json({ success: true });
+});
+
+router.get("/:userId/stories", async (req, res) => {
+  const uid = currentUserId(req);
+  const userId = req.params.userId === "me" ? uid : parseInt(req.params.userId);
+  if (isNaN(userId)) return res.status(400).json({ error: "Invalid user id" });
+  const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, userId) });
+  if (!user) return res.status(404).json({ error: "User not found" });
+  const stories = await getUserActiveStoriesForViewer(uid, userId);
+  if (stories === null) return res.status(404).json({ error: "User not found" });
+  res.json(stories);
 });
 
 router.get("/:userId", async (req, res) => {

@@ -12,5 +12,6 @@ export * from "./catches";
 export * from "./boats";
 export * from "./gallery";
 export * from "./reports";
+export * from "./stories";
 export * from "./pushSubscriptions";
 export * from "./nativePushTokens";

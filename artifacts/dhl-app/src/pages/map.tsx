@@ -18,7 +18,7 @@ import {
   bearingDegrees,
   compassPoint,
 } from "@/lib/clustering";
-import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey, useGetDockLabels, useCreateDockLabel, useDeleteDockLabel, getGetDockLabelsQueryKey, useGetHiddenPlaces, useHidePlace, getGetHiddenPlacesQueryKey } from "@workspace/api-client-react";
+import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey, useGetDockLabels, useCreateDockLabel, useDeleteDockLabel, getGetDockLabelsQueryKey, useGetHiddenPlaces, useHidePlace, getGetHiddenPlacesQueryKey, useGetStoryPlaces } from "@workspace/api-client-react";
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
 import { ClickableImage } from "@/components/ClickableImage";
@@ -50,46 +50,15 @@ import { useUpload } from "@workspace/object-storage-web";
 import { boatSvgFor, FLAG_SVG } from "../boats";
 import { hapticTap } from "@/lib/haptics";
 import { createPinLongPress } from "@/lib/pinLongPress";
+import { LAKE_PLACES, placeEmoji, type LakePlace as LakePlaceShared } from "@/lib/lakePlaces";
+import { PlaceStoriesViewer } from "@/components/stories/StoriesRow";
 
 const LAKE_CENTER: [number, number] = [-85.37, 36.53]; // [lng, lat]
 const BASE_ZOOM = 12;
 
-// Well-known named places around Dale Hollow Lake (marinas, resorts, recreation
-// areas, towns, and landmarks) so the search bar can fly to them by name even
-// when no user has pinned them. Coordinates are approximate, placed within each
-// area. [lng, lat]
-type LakePlace = { name: string; category: string; lat: number; lng: number; aliases?: string[] };
-const LAKE_PLACES: LakePlace[] = [
-  { name: "Willow Grove", category: "Recreation Area", lat: 36.5985, lng: -85.2098, aliases: ["willow grove resort", "willow grove marina"] },
-  { name: "Dale Hollow Dam", category: "Dam", lat: 36.5396, lng: -85.4558 },
-  { name: "Dale Hollow National Fish Hatchery", category: "Landmark", lat: 36.5417, lng: -85.4561, aliases: ["fish hatchery"] },
-  { name: "Sunset Marina & Resort", category: "Marina", lat: 36.5905, lng: -85.2456, aliases: ["sunset marina"] },
-  { name: "Star Point Resort", category: "Marina", lat: 36.6019, lng: -85.1936, aliases: ["star point marina"] },
-  { name: "East Port Marina & Resort", category: "Marina", lat: 36.5723, lng: -85.2966, aliases: ["eastport", "east port"] },
-  { name: "Cedar Hill Resort", category: "Marina", lat: 36.6107, lng: -85.1648, aliases: ["cedar hill marina"] },
-  { name: "Mitchell Creek Marina", category: "Marina", lat: 36.5631, lng: -85.4123, aliases: ["mitchell creek"] },
-  { name: "Holly Creek Resort & Marina", category: "Marina", lat: 36.5887, lng: -85.3573, aliases: ["holly creek"] },
-  { name: "Horse Creek Resort & Marina", category: "Marina", lat: 36.5668, lng: -85.4441, aliases: ["horse creek"] },
-  { name: "Wisdom Resort & Dock", category: "Marina", lat: 36.6126, lng: -85.2391, aliases: ["wisdom dock", "wisdom resort"] },
-  { name: "Eagle Cove Resort", category: "Marina", lat: 36.6203, lng: -85.1902, aliases: ["eagle cove"] },
-  { name: "Lillydale Recreation Area", category: "Recreation Area", lat: 36.6155, lng: -85.1879, aliases: ["lillydale", "lily dale"] },
-  { name: "Obey River Park", category: "Recreation Area", lat: 36.5523, lng: -85.3856, aliases: ["obey river"] },
-  { name: "Pleasant Grove Recreation Area", category: "Recreation Area", lat: 36.5784, lng: -85.3304, aliases: ["pleasant grove"] },
-  { name: "Dale Hollow Lake State Resort Park", category: "State Park", lat: 36.6628, lng: -85.2003, aliases: ["state park", "state resort park"] },
-  { name: "Byrdstown", category: "Town", lat: 36.5748, lng: -85.1266 },
-  { name: "Celina", category: "Town", lat: 36.5512, lng: -85.5036 },
-];
-
-const placeEmoji = (category: string) => {
-  switch (category.toLowerCase()) {
-    case "marina": return "⚓";
-    case "dam": return "🌊";
-    case "recreation area": return "🏕️";
-    case "state park": return "🌲";
-    case "town": return "🏘️";
-    default: return "📍";
-  }
-};
+// Named lake places (marinas, resorts, recreation areas, towns) shared with
+// story tagging. See src/lib/lakePlaces.ts.
+type LakePlace = LakePlaceShared;
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
 // Friendly plural label for a cluster of a given pin type, e.g. "3 fishing spots".
@@ -297,8 +266,9 @@ function buildFriendEl(opts: {
   boatNeon?: boolean | null;
   boatFlag?: boolean | null;
   boatAccent?: string | null;
+  live?: boolean;
 }): { root: HTMLDivElement; scale: HTMLDivElement } {
-  const { color, name, avatarUrl, online, boatType, boatNeon, boatFlag, boatAccent } = opts;
+  const { color, name, avatarUrl, online, boatType, boatNeon, boatFlag, boatAccent, live } = opts;
   // accent color drives the flag + neon glow; falls back to the boat color
   const accent = boatAccent || color;
   const root = el("div", "snap-marker") as HTMLDivElement;
@@ -364,6 +334,13 @@ function buildFriendEl(opts: {
   }
   if (online) photo.appendChild(el("div", "snap-online"));
   bob.appendChild(photo);
+
+  // LIVE badge: this captain is checked in AND has an active story right now
+  if (live) {
+    const liveBadge = el("div", "snap-live");
+    liveBadge.textContent = "LIVE";
+    bob.appendChild(liveBadge);
+  }
 
   scale.appendChild(ring1);
   scale.appendChild(ring2);
@@ -593,6 +570,8 @@ export function MapPage() {
     () => LAKE_PLACES.filter((p) => !hiddenPlaceKeys.has(p.name)),
     [hiddenPlaceKeys],
   );
+  const { data: storyPlaces } = useGetStoryPlaces();
+  const [storyPlaceViewer, setStoryPlaceViewer] = useState<string | null>(null);
   const createPin = useCreatePin();
   const createDockLabel = useCreateDockLabel();
   const updateLocation = useUpdateMyLocation();
@@ -610,6 +589,8 @@ export function MapPage() {
   // Live individual boat markers, pooled by friend userId so positions can be
   // animated smoothly between polls and only on-screen boats stay instantiated.
   const friendMarkerMap = useRef<Map<number, maplibregl.Marker>>(new Map());
+  // Glowing "stories here" rings, pooled by place name.
+  const storyPlaceMarkerMap = useRef<Map<string, maplibregl.Marker>>(new Map());
   // Latest friend record per userId, so a marker's click handler always opens the
   // freshest profile data even after the underlying data refreshes.
   const friendDataRef = useRef<Map<number, any>>(new Map());
@@ -1108,6 +1089,7 @@ export function MapPage() {
             boatNeon: lead.boatNeon,
             boatFlag: lead.boatFlag,
             boatAccent: lead.boatAccent,
+            live: !!lead.hasActiveStory,
           });
           root = built.root;
           scale = built.scale;
@@ -1183,7 +1165,8 @@ export function MapPage() {
         lng,
         lat,
         isCrew: members.length > 1,
-        sig: sorted.map((m) => m.userId).join("-"),
+        // include LIVE state so a marker rebuilds when a captain starts/stops a story
+        sig: sorted.map((m) => `${m.userId}${m.hasActiveStory ? "L" : ""}`).join("-"),
       };
     });
   }, [friends, me]);
@@ -1194,6 +1177,64 @@ export function MapPage() {
     () => boatGroups.some((g) => g.isCrew && g.members.some((m: any) => m.isMe)),
     [boatGroups],
   );
+
+  // --- "Today on the Lake" story rings ---
+  // Places with active stories get a glowing ring + story count. Tapping one
+  // opens the fullscreen viewer with every story posted there in the last 24h.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    const pool = storyPlaceMarkerMap.current;
+    const wanted = new Set<string>();
+    for (const p of storyPlaces ?? []) {
+      if (p.lat == null || p.lng == null) continue;
+      wanted.add(p.placeName);
+      const countLabel = `${p.storyCount} ${p.storyCount === 1 ? "story" : "stories"}`;
+      let marker = pool.get(p.placeName);
+      if (!marker) {
+        const root = document.createElement("div");
+        root.className = "story-place-marker";
+        const ring = document.createElement("div");
+        ring.className = "story-place-ring";
+        const dot = document.createElement("div");
+        dot.className = "story-place-dot";
+        dot.textContent = "🌊";
+        ring.appendChild(dot);
+        const label = document.createElement("div");
+        label.className = "story-place-label";
+        const nameEl = document.createElement("span");
+        nameEl.className = "story-place-name";
+        nameEl.textContent = p.placeName; // textContent — place names are user data
+        const countEl = document.createElement("span");
+        countEl.className = "story-place-count";
+        countEl.textContent = countLabel;
+        label.appendChild(nameEl);
+        label.appendChild(countEl);
+        root.appendChild(ring);
+        root.appendChild(label);
+        const name = p.placeName;
+        root.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          hapticTap();
+          setStoryPlaceViewer(name);
+        });
+        marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
+          .setLngLat([p.lng, p.lat])
+          .addTo(map);
+        pool.set(p.placeName, marker);
+      } else {
+        marker.setLngLat([p.lng, p.lat]);
+        const countEl = marker.getElement().querySelector(".story-place-count");
+        if (countEl) countEl.textContent = countLabel;
+      }
+    }
+    for (const [name, marker] of pool) {
+      if (!wanted.has(name)) {
+        marker.remove();
+        pool.delete(name);
+      }
+    }
+  }, [storyPlaces, styleReady]);
 
   // Build the boat supercluster index whenever the grouped set changes, then
   // render. A solo "me" group is excluded here — the dedicated me-marker effect
@@ -1939,6 +1980,10 @@ export function MapPage() {
       <style dangerouslySetInnerHTML={{ __html: MAP_CSS }} />
 
       <div ref={mapContainer} className="absolute inset-0 z-0" />
+
+      {storyPlaceViewer && (
+        <PlaceStoriesViewer placeName={storyPlaceViewer} meId={me?.id} onClose={() => setStoryPlaceViewer(null)} />
+      )}
 
       {mapError && (
         <div className="absolute inset-0 z-[1] flex items-center justify-center bg-blue-50 p-6 text-center">
@@ -2972,6 +3017,82 @@ const MAP_CSS = `
     border: 2px solid #fff;
     box-shadow: 0 0 0 1px rgba(0,0,0,0.08);
     animation: snapPulse 1.8s ease-in-out infinite;
+  }
+  /* LIVE badge: captain is checked in AND posting stories right now */
+  .snap-live {
+    position: absolute;
+    left: 50%;
+    bottom: 62px;
+    transform: translateX(-50%);
+    z-index: 5;
+    background: #ef4444;
+    color: #fff;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    padding: 1px 5px;
+    border-radius: 4px;
+    border: 1.5px solid #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.35);
+    animation: snapLivePulse 1.6s ease-in-out infinite;
+  }
+  @keyframes snapLivePulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.55); }
+    50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+  }
+  /* "Today on the Lake" story rings on places with active stories */
+  .story-place-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .story-place-ring {
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    padding: 3px;
+    background: conic-gradient(from 0deg, #2dd4bf, #0ea5e9, #2563eb, #2dd4bf);
+    box-shadow: 0 0 14px rgba(14,165,233,0.65), 0 3px 8px rgba(0,0,0,0.25);
+    animation: storyRingGlow 2.2s ease-in-out infinite;
+  }
+  .story-place-dot {
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px;
+  }
+  @keyframes storyRingGlow {
+    0%, 100% { box-shadow: 0 0 8px rgba(14,165,233,0.5), 0 3px 8px rgba(0,0,0,0.25); transform: scale(1); }
+    50% { box-shadow: 0 0 20px rgba(14,165,233,0.9), 0 3px 8px rgba(0,0,0,0.25); transform: scale(1.05); }
+  }
+  .story-place-label {
+    margin-top: 3px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255,255,255,0.94);
+    border-radius: 8px;
+    padding: 2px 7px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+    max-width: 130px;
+  }
+  .story-place-name {
+    font-size: 10px;
+    font-weight: 700;
+    color: #0f172a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 116px;
+  }
+  .story-place-count {
+    font-size: 9px;
+    font-weight: 600;
+    color: #0284c7;
   }
   @keyframes snapPulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.55); }

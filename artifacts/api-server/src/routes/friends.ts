@@ -16,6 +16,7 @@ import { eq, or, and, inArray, desc, gt } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { createNotification } from "../lib/notify";
 import { getHiddenDemoUserIds } from "../lib/demoData";
+import { getActiveStoryAuthorIds } from "./stories";
 
 const router = Router();
 
@@ -167,9 +168,11 @@ router.get("/locations", async (req, res) => {
       db.query.usersTable.findFirst({ where: eq(usersTable.id, id) })
     )
   );
-  const locations = friends
+  const visibleFriends = friends
     .filter(Boolean)
-    .filter((u) => mutualSet.has(u!.id) || u!.followerSeeLocation)
+    .filter((u) => mutualSet.has(u!.id) || u!.followerSeeLocation);
+  const activeStoryIds = await getActiveStoryAuthorIds(visibleFriends.map((u) => u!.id));
+  const locations = visibleFriends
     .map((u) => {
       // Apple 5.1.2: only publish coordinates while the friend is actively
       // checked in (non-expired manual check-in) AND their position is fresh, so
@@ -193,6 +196,7 @@ router.get("/locations", async (req, res) => {
         isOnline: u!.isOnline,
         isOnWater: u!.isOnWater,
         lastSeen: u!.lastSeen ? u!.lastSeen.toISOString() : null,
+        hasActiveStory: activeStoryIds.has(u!.id),
       };
     });
   res.json(locations);

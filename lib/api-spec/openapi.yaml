@@ -869,6 +869,126 @@ paths:
               schema:
                 $ref: "#/components/schemas/Conditions"
 
+  /stories:
+    get:
+      operationId: getStories
+      tags: [stories]
+      summary: Get active stories grouped by author (privacy-filtered)
+      responses:
+        "200":
+          description: Story groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoryGroup"
+
+    post:
+      operationId: createStory
+      tags: [stories]
+      summary: Post a new story (expires in 24h)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StoryInput"
+      responses:
+        "201":
+          description: Story created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Story"
+
+  /stories/places:
+    get:
+      operationId: getStoryPlaces
+      tags: [stories]
+      summary: Active story counts by tagged place (for map rings + trending)
+      responses:
+        "200":
+          description: Places with active stories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoryPlace"
+
+  /stories/place/{placeName}:
+    get:
+      operationId: getPlaceStories
+      tags: [stories]
+      summary: Active stories tagged at a place, grouped by author
+      parameters:
+        - name: placeName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Story groups at this place
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StoryGroup"
+
+  /stories/{storyId}:
+    delete:
+      operationId: deleteStory
+      tags: [stories]
+      summary: Delete your own story
+      parameters:
+        - name: storyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Story deleted
+
+  /stories/{storyId}/view:
+    post:
+      operationId: viewStory
+      tags: [stories]
+      summary: Mark a story as viewed
+      parameters:
+        - name: storyId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: View recorded
+
+  /users/{userId}/stories:
+    get:
+      operationId: getUserStories
+      tags: [stories]
+      summary: A user's active stories (privacy-checked)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The user's active stories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Story"
+
   /pins:
     get:
       operationId: getPins
@@ -2505,6 +2625,111 @@ components:
         isOnWater:
           type: ["boolean", "null"]
         lastSeen:
+          type: ["string", "null"]
+        hasActiveStory:
+          type: ["boolean", "null"]
+
+    Story:
+      type: object
+      required: [id, userId, mediaType, visibility, createdAt, expiresAt, viewedByMe]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        mediaType:
+          type: string
+          enum: [photo, video, text]
+        mediaUrl:
+          type: ["string", "null"]
+        text:
+          type: ["string", "null"]
+        bgColor:
+          type: ["string", "null"]
+        caption:
+          type: ["string", "null"]
+        lat:
+          type: ["number", "null"]
+        lng:
+          type: ["number", "null"]
+        placeName:
+          type: ["string", "null"]
+        visibility:
+          type: string
+        createdAt:
+          type: string
+        expiresAt:
+          type: string
+        viewedByMe:
+          type: boolean
+        viewCount:
+          type: ["integer", "null"]
+
+    StoryAuthor:
+      type: object
+      required: [id, displayName, username]
+      properties:
+        id:
+          type: integer
+        displayName:
+          type: string
+        username:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        isLive:
+          type: ["boolean", "null"]
+
+    StoryGroup:
+      type: object
+      required: [user, stories, allViewed]
+      properties:
+        user:
+          $ref: "#/components/schemas/StoryAuthor"
+        stories:
+          type: array
+          items:
+            $ref: "#/components/schemas/Story"
+        allViewed:
+          type: boolean
+
+    StoryPlace:
+      type: object
+      required: [placeName, storyCount]
+      properties:
+        placeName:
+          type: string
+        lat:
+          type: ["number", "null"]
+        lng:
+          type: ["number", "null"]
+        storyCount:
+          type: integer
+        latestAt:
+          type: ["string", "null"]
+
+    StoryInput:
+      type: object
+      required: [mediaType]
+      properties:
+        mediaType:
+          type: string
+          enum: [photo, video, text]
+        mediaUrl:
+          type: ["string", "null"]
+        text:
+          type: ["string", "null"]
+        bgColor:
+          type: ["string", "null"]
+        caption:
+          type: ["string", "null"]
+        lat:
+          type: ["number", "null"]
+        lng:
+          type: ["number", "null"]
+        placeName:
+          type: ["string", "null"]
+        visibility:
           type: ["string", "null"]
 
     FriendRequest:

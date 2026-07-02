@@ -85,6 +85,10 @@ import type {
   ShareInput,
   SosInput,
   SosResult,
+  Story,
+  StoryGroup,
+  StoryInput,
+  StoryPlace,
   SuggestedUser,
   TermsAccept,
   UploadUrlRequest,
@@ -3486,6 +3490,525 @@ export function useGetConditions<TData = Awaited<ReturnType<typeof getConditions
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetConditionsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetStoriesUrl = () => {
+
+
+
+
+  return `/api/stories`
+}
+
+/**
+ * @summary Get active stories grouped by author (privacy-filtered)
+ */
+export const getStories = async ( options?: RequestInit): Promise<StoryGroup[]> => {
+
+  return customFetch<StoryGroup[]>(getGetStoriesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStoriesQueryKey = () => {
+    return [
+    `/api/stories`
+    ] as const;
+    }
+
+
+export const getGetStoriesQueryOptions = <TData = Awaited<ReturnType<typeof getStories>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStoriesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStories>>> = ({ signal }) => getStories({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStories>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStoriesQueryResult = NonNullable<Awaited<ReturnType<typeof getStories>>>
+export type GetStoriesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get active stories grouped by author (privacy-filtered)
+ */
+
+export function useGetStories<TData = Awaited<ReturnType<typeof getStories>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStoriesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateStoryUrl = () => {
+
+
+
+
+  return `/api/stories`
+}
+
+/**
+ * @summary Post a new story (expires in 24h)
+ */
+export const createStory = async (storyInput: StoryInput, options?: RequestInit): Promise<Story> => {
+
+  return customFetch<Story>(getCreateStoryUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      storyInput,)
+  }
+);}
+
+
+
+
+export const getCreateStoryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createStory>>, TError,{data: BodyType<StoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createStory>>, TError,{data: BodyType<StoryInput>}, TContext> => {
+
+const mutationKey = ['createStory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createStory>>, {data: BodyType<StoryInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createStory(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateStoryMutationResult = NonNullable<Awaited<ReturnType<typeof createStory>>>
+    export type CreateStoryMutationBody = BodyType<StoryInput>
+    export type CreateStoryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Post a new story (expires in 24h)
+ */
+export const useCreateStory = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createStory>>, TError,{data: BodyType<StoryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createStory>>,
+        TError,
+        {data: BodyType<StoryInput>},
+        TContext
+      > => {
+      return useMutation(getCreateStoryMutationOptions(options));
+    }
+
+export const getGetStoryPlacesUrl = () => {
+
+
+
+
+  return `/api/stories/places`
+}
+
+/**
+ * @summary Active story counts by tagged place (for map rings + trending)
+ */
+export const getStoryPlaces = async ( options?: RequestInit): Promise<StoryPlace[]> => {
+
+  return customFetch<StoryPlace[]>(getGetStoryPlacesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStoryPlacesQueryKey = () => {
+    return [
+    `/api/stories/places`
+    ] as const;
+    }
+
+
+export const getGetStoryPlacesQueryOptions = <TData = Awaited<ReturnType<typeof getStoryPlaces>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStoryPlaces>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStoryPlacesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStoryPlaces>>> = ({ signal }) => getStoryPlaces({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStoryPlaces>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetStoryPlacesQueryResult = NonNullable<Awaited<ReturnType<typeof getStoryPlaces>>>
+export type GetStoryPlacesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Active story counts by tagged place (for map rings + trending)
+ */
+
+export function useGetStoryPlaces<TData = Awaited<ReturnType<typeof getStoryPlaces>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStoryPlaces>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetStoryPlacesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetPlaceStoriesUrl = (placeName: string,) => {
+
+
+
+
+  return `/api/stories/place/${placeName}`
+}
+
+/**
+ * @summary Active stories tagged at a place, grouped by author
+ */
+export const getPlaceStories = async (placeName: string, options?: RequestInit): Promise<StoryGroup[]> => {
+
+  return customFetch<StoryGroup[]>(getGetPlaceStoriesUrl(placeName),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPlaceStoriesQueryKey = (placeName: string,) => {
+    return [
+    `/api/stories/place/${placeName}`
+    ] as const;
+    }
+
+
+export const getGetPlaceStoriesQueryOptions = <TData = Awaited<ReturnType<typeof getPlaceStories>>, TError = ErrorType<unknown>>(placeName: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPlaceStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPlaceStoriesQueryKey(placeName);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPlaceStories>>> = ({ signal }) => getPlaceStories(placeName, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(placeName), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPlaceStories>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPlaceStoriesQueryResult = NonNullable<Awaited<ReturnType<typeof getPlaceStories>>>
+export type GetPlaceStoriesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Active stories tagged at a place, grouped by author
+ */
+
+export function useGetPlaceStories<TData = Awaited<ReturnType<typeof getPlaceStories>>, TError = ErrorType<unknown>>(
+ placeName: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPlaceStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPlaceStoriesQueryOptions(placeName,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getDeleteStoryUrl = (storyId: number,) => {
+
+
+
+
+  return `/api/stories/${storyId}`
+}
+
+/**
+ * @summary Delete your own story
+ */
+export const deleteStory = async (storyId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteStoryUrl(storyId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteStoryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteStory>>, TError,{storyId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteStory>>, TError,{storyId: number}, TContext> => {
+
+const mutationKey = ['deleteStory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteStory>>, {storyId: number}> = (props) => {
+          const {storyId} = props ?? {};
+
+          return  deleteStory(storyId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteStoryMutationResult = NonNullable<Awaited<ReturnType<typeof deleteStory>>>
+
+    export type DeleteStoryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete your own story
+ */
+export const useDeleteStory = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteStory>>, TError,{storyId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteStory>>,
+        TError,
+        {storyId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteStoryMutationOptions(options));
+    }
+
+export const getViewStoryUrl = (storyId: number,) => {
+
+
+
+
+  return `/api/stories/${storyId}/view`
+}
+
+/**
+ * @summary Mark a story as viewed
+ */
+export const viewStory = async (storyId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getViewStoryUrl(storyId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getViewStoryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof viewStory>>, TError,{storyId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof viewStory>>, TError,{storyId: number}, TContext> => {
+
+const mutationKey = ['viewStory'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof viewStory>>, {storyId: number}> = (props) => {
+          const {storyId} = props ?? {};
+
+          return  viewStory(storyId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ViewStoryMutationResult = NonNullable<Awaited<ReturnType<typeof viewStory>>>
+
+    export type ViewStoryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Mark a story as viewed
+ */
+export const useViewStory = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof viewStory>>, TError,{storyId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof viewStory>>,
+        TError,
+        {storyId: number},
+        TContext
+      > => {
+      return useMutation(getViewStoryMutationOptions(options));
+    }
+
+export const getGetUserStoriesUrl = (userId: number,) => {
+
+
+
+
+  return `/api/users/${userId}/stories`
+}
+
+/**
+ * @summary A user's active stories (privacy-checked)
+ */
+export const getUserStories = async (userId: number, options?: RequestInit): Promise<Story[]> => {
+
+  return customFetch<Story[]>(getGetUserStoriesUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetUserStoriesQueryKey = (userId: number,) => {
+    return [
+    `/api/users/${userId}/stories`
+    ] as const;
+    }
+
+
+export const getGetUserStoriesQueryOptions = <TData = Awaited<ReturnType<typeof getUserStories>>, TError = ErrorType<unknown>>(userId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetUserStoriesQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getUserStories>>> = ({ signal }) => getUserStories(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(userId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getUserStories>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetUserStoriesQueryResult = NonNullable<Awaited<ReturnType<typeof getUserStories>>>
+export type GetUserStoriesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary A user's active stories (privacy-checked)
+ */
+
+export function useGetUserStories<TData = Awaited<ReturnType<typeof getUserStories>>, TError = ErrorType<unknown>>(
+ userId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getUserStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetUserStoriesQueryOptions(userId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

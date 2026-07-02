@@ -1542,7 +1542,8 @@ export const GetFriendLocationsResponseItem = zod.object({
   "isBusiness": zod.boolean().nullish(),
   "isOnline": zod.boolean().optional(),
   "isOnWater": zod.boolean().nullish(),
-  "lastSeen": zod.string().nullish()
+  "lastSeen": zod.string().nullish(),
+  "hasActiveStory": zod.boolean().nullish()
 })
 export const GetFriendLocationsResponse = zod.array(GetFriendLocationsResponseItem)
 
@@ -3192,6 +3193,148 @@ export const GetConditionsResponse = zod.object({
 })).optional(),
   "updatedAt": zod.string()
 })
+
+
+/**
+ * @summary Get active stories grouped by author (privacy-filtered)
+ */
+export const GetStoriesResponseItem = zod.object({
+  "user": zod.object({
+  "id": zod.number(),
+  "displayName": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "isLive": zod.boolean().nullish()
+}),
+  "stories": zod.array(zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "mediaType": zod.enum(['photo', 'video', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "text": zod.string().nullish(),
+  "bgColor": zod.string().nullish(),
+  "caption": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "placeName": zod.string().nullish(),
+  "visibility": zod.string(),
+  "createdAt": zod.string(),
+  "expiresAt": zod.string(),
+  "viewedByMe": zod.boolean(),
+  "viewCount": zod.number().nullish()
+})),
+  "allViewed": zod.boolean()
+})
+export const GetStoriesResponse = zod.array(GetStoriesResponseItem)
+
+
+/**
+ * @summary Post a new story (expires in 24h)
+ */
+export const CreateStoryBody = zod.object({
+  "mediaType": zod.enum(['photo', 'video', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "text": zod.string().nullish(),
+  "bgColor": zod.string().nullish(),
+  "caption": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "placeName": zod.string().nullish(),
+  "visibility": zod.string().nullish()
+})
+
+
+/**
+ * @summary Active story counts by tagged place (for map rings + trending)
+ */
+export const GetStoryPlacesResponseItem = zod.object({
+  "placeName": zod.string(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "storyCount": zod.number(),
+  "latestAt": zod.string().nullish()
+})
+export const GetStoryPlacesResponse = zod.array(GetStoryPlacesResponseItem)
+
+
+/**
+ * @summary Active stories tagged at a place, grouped by author
+ */
+export const GetPlaceStoriesParams = zod.object({
+  "placeName": zod.coerce.string()
+})
+
+export const GetPlaceStoriesResponseItem = zod.object({
+  "user": zod.object({
+  "id": zod.number(),
+  "displayName": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "isLive": zod.boolean().nullish()
+}),
+  "stories": zod.array(zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "mediaType": zod.enum(['photo', 'video', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "text": zod.string().nullish(),
+  "bgColor": zod.string().nullish(),
+  "caption": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "placeName": zod.string().nullish(),
+  "visibility": zod.string(),
+  "createdAt": zod.string(),
+  "expiresAt": zod.string(),
+  "viewedByMe": zod.boolean(),
+  "viewCount": zod.number().nullish()
+})),
+  "allViewed": zod.boolean()
+})
+export const GetPlaceStoriesResponse = zod.array(GetPlaceStoriesResponseItem)
+
+
+/**
+ * @summary Delete your own story
+ */
+export const DeleteStoryParams = zod.object({
+  "storyId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Mark a story as viewed
+ */
+export const ViewStoryParams = zod.object({
+  "storyId": zod.coerce.number()
+})
+
+
+/**
+ * @summary A user's active stories (privacy-checked)
+ */
+export const GetUserStoriesParams = zod.object({
+  "userId": zod.coerce.number()
+})
+
+export const GetUserStoriesResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "mediaType": zod.enum(['photo', 'video', 'text']),
+  "mediaUrl": zod.string().nullish(),
+  "text": zod.string().nullish(),
+  "bgColor": zod.string().nullish(),
+  "caption": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "placeName": zod.string().nullish(),
+  "visibility": zod.string(),
+  "createdAt": zod.string(),
+  "expiresAt": zod.string(),
+  "viewedByMe": zod.boolean(),
+  "viewCount": zod.number().nullish()
+})
+export const GetUserStoriesResponse = zod.array(GetUserStoriesResponseItem)
 
 
 /**

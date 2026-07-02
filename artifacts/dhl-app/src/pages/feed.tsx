@@ -6,6 +6,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { HazardBanner } from "@/components/HazardBanner";
 import { TrendingSection } from "@/components/TrendingSection";
 import { SuggestedFriendsDrawer, SuggestedFriendsButton } from "@/components/SuggestedFriends";
+import { StoriesRow } from "@/components/stories/StoriesRow";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -781,6 +782,8 @@ export function FeedPage() {
               </div>
             </div>
           )}
+
+          <StoriesRow />
 
           <SuggestedFriendsButton />
 

@@ -36,4 +36,6 @@ export interface FriendLocation {
   isOnWater?: boolean | null;
   /** @nullable */
   lastSeen?: string | null;
+  /** @nullable */
+  hasActiveStory?: boolean | null;
 }

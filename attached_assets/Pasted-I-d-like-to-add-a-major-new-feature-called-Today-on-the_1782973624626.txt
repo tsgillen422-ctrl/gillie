@@ -1,0 +1,207 @@
+I’d like to add a major new feature called “Today on the Lake.” I don’t want it to be a copy of Snapchat, but I want it to feel just as fun and addictive while being centered around boating and lake life.
+
+Goal
+
+When users open Gillie, they should immediately see what’s happening around the lake right now.
+
+People should feel like they don’t want to miss anything that’s happening today.
+
+⸻
+
+Main Feed
+
+Add a new section near the top of the Feed called:
+
+🌊 Today on the Lake
+
+This should display a horizontal row of story circles similar to Snapchat or Instagram Stories.
+
+The first circle is:
+
+➕ Add Story
+
+Then show everyone’s active stories.
+
+Stories disappear automatically after 24 hours.
+
+Users can upload unlimited stories.
+
+Supported story types:
+
+* Photos
+* Videos
+* Text updates
+* Location-tagged stories
+
+⸻
+
+Story Viewer
+
+When someone taps a story:
+
+* Full-screen experience
+* Tap left/right to navigate
+* Hold to pause
+* Swipe down to close
+* Auto advance
+* Progress bar across the top
+
+Very smooth and modern.
+
+⸻
+
+Location-Based Stories
+
+Every story should automatically be associated with a location if the user wants.
+
+Examples:
+
+📍 Sunset Marina
+
+📍 Willow Grove
+
+📍 Sulphur Creek
+
+📍 The Cliffs
+
+📍 Party Cove
+
+When someone taps these places on the map they can see every story posted there during the last 24 hours.
+
+This makes the map feel alive.
+
+⸻
+
+Map Integration
+
+On the map, active locations should display a glowing story ring.
+
+Example:
+
+Sunset Marina
+
+🔵 24 Stories
+
+The Cliffs
+
+🔵 8 Stories
+
+Party Cove
+
+🔵 15 Stories
+
+Tap location
+
+↓
+
+Watch stories from that location.
+
+⸻
+
+Feed Integration
+
+Under Today on the Lake add:
+
+🔥 Trending Today
+
+Most active locations.
+
+Examples:
+
+🔥 Sunset Marina
+
+24 Stories
+
+🔥 Party Cove
+
+18 Stories
+
+🔥 Willow Grove
+
+11 Stories
+
+Users can tap to watch everything happening there.
+
+⸻
+
+User Profiles
+
+Every profile gets a Stories tab.
+
+People can watch that user’s stories from the past 24 hours.
+
+⸻
+
+Privacy
+
+Respect existing privacy settings.
+
+Friends only
+
+Followers
+
+Public
+
+Blocked users
+
+All current permissions should apply to stories.
+
+⸻
+
+Notifications
+
+Optional notifications:
+
+“Your friend Mike just posted from Sunset Marina.”
+
+“15 new stories at Party Cove.”
+
+“Sunset Marina is trending right now.”
+
+⸻
+
+Future Ideas
+
+This system should be built so it can support:
+
+* Reactions
+* Replies
+* Polls
+* Music
+* Stickers
+* GIFs
+* Mentions
+* Event stories
+* Business stories
+
+without needing to redesign it later.
+
+⸻
+
+Design Goal
+
+The experience should feel polished and exciting.
+
+Think:
+
+* Snapchat Stories
+* Instagram Stories
+
+combined with
+
+* Live lake locations
+* Boating
+* Marinas
+* Sandbars
+* Friends
+* Events
+
+The objective is to make Gillie the first app people open before they head to the lake because they want to see what’s happening right now.
+
+⸻
+
+I have one addition I’d strongly recommend that isn’t in the mockup:
+
+“Who’s Live”
+
+If someone is actively checked in and posting stories, put a small LIVE badge on their boat icon and profile. Imagine opening the map and seeing five boats with LIVE badges—you instantly know there’s activity there. That ties your live map and stories together in a way that feels unique to Gillie, rather than like a generic social media feature.

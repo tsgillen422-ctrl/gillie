@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams, Link, useLocation } from "wouter";
-import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useReactToPost, useDeletePost, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useDeleteUser, useGetFriends, useGetFollowers, useGetFollowing, useGetUserFriends, useGetCatches, useGetFavoritePins, useUpdateMe, getGetMeQueryKey, getGetUserQueryKey, getGetGalleryQueryKey, getGetPostsQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey, getGetUserFriendsQueryKey } from "@workspace/api-client-react";
+import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useReactToPost, useDeletePost, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useDeleteUser, useGetFriends, useGetFollowers, useGetFollowing, useGetUserFriends, useGetCatches, useGetFavoritePins, useUpdateMe, useGetUserStories, getGetMeQueryKey, getGetUserQueryKey, getGetGalleryQueryKey, getGetPostsQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey, getGetUserFriendsQueryKey, getGetUserStoriesQueryKey, type StoryGroup } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MatureGate } from "@/components/MatureGate";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar, resolveAvatarUrl } from "@/components/UserAvatar";
 import { ImageLightbox } from "@/components/ImageLightbox";
 import { PostCard } from "./feed";
+import { StoryViewer } from "@/components/stories/StoryViewer";
 import {
   Dialog,
   DialogContent,
@@ -765,6 +766,9 @@ export function ProfilePage() {
     { query: { enabled: !!id } }
   );
   const { data: favoritePins } = useGetFavoritePins({ query: { enabled: isSelf } });
+  const { data: userStories } = useGetUserStories(id, {
+    query: { queryKey: getGetUserStoriesQueryKey(id), enabled: !!id },
+  });
   const followersQuery = useGetFollowers(id, { query: { enabled: !!id && canViewFollows } });
   const followingQuery = useGetFollowing(id, { query: { enabled: !!id && canViewFollows } });
   const profileFriendsQuery = useGetUserFriends(id, { query: { enabled: !!id && canViewFriends } });
@@ -774,6 +778,22 @@ export function ProfilePage() {
   const reactPost = useReactToPost();
   const deletePost = useDeletePost();
   const [openPostId, setOpenPostId] = React.useState<number | null>(null);
+  const [storyViewerIndex, setStoryViewerIndex] = React.useState<number | null>(null);
+  // Wrap the flat active-story list into a single viewer group for this profile.
+  const profileStoryGroup: StoryGroup | null = React.useMemo(() => {
+    if (!user || !userStories?.length) return null;
+    return {
+      user: {
+        id: (user as any).id,
+        displayName: (user as any).displayName ?? "",
+        username: (user as any).username ?? "",
+        avatarUrl: (user as any).avatarUrl ?? null,
+        isLive: null,
+      },
+      stories: userStories,
+      allViewed: false,
+    };
+  }, [user, userStories]);
   const openPost = openPostId != null ? posts?.find((p) => p.id === openPostId) ?? null : null;
   const refreshPosts = () => queryClient.invalidateQueries({ queryKey: getGetPostsQueryKey() });
   const handleDeletePost = (postId: number) => {
@@ -1425,10 +1445,57 @@ export function ProfilePage() {
                   <TabsTrigger value="posts" className="flex-1 rounded-xl">📰 Posts</TabsTrigger>
                   <TabsTrigger value="pins" className="flex-1 rounded-xl">📍 Check-ins</TabsTrigger>
                   <TabsTrigger value="gallery" className="flex-1 rounded-xl">📸 Photos</TabsTrigger>
+                  {profileStoryGroup && (
+                    <TabsTrigger value="stories" className="flex-1 rounded-xl" data-testid="tab-stories">🌊 Stories</TabsTrigger>
+                  )}
                   {(user as any).showBoat !== false && ((user as any).fleet?.length ?? 0) > 0 && (
                     <TabsTrigger value="boats" className="flex-1 rounded-xl">🚤 Boats</TabsTrigger>
                   )}
                 </TabsList>
+
+                <TabsContent value="stories" className="space-y-4">
+                  {profileStoryGroup ? (
+                    <div className="grid grid-cols-3 gap-2">
+                      {profileStoryGroup.stories.map((s, i) => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setStoryViewerIndex(i)}
+                          className="relative aspect-[9/16] overflow-hidden rounded-2xl border border-card-border bg-card shadow-soft"
+                          data-testid={`button-profile-story-${s.id}`}
+                        >
+                          {s.mediaType === "photo" && s.mediaUrl ? (
+                            <img src={s.mediaUrl} alt="Story" className="absolute inset-0 h-full w-full object-cover" />
+                          ) : s.mediaType === "video" && s.mediaUrl ? (
+                            <>
+                              <video src={s.mediaUrl} muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" />
+                              <span className="absolute inset-0 flex items-center justify-center">
+                                <Play className="h-7 w-7 text-white drop-shadow" fill="currentColor" />
+                              </span>
+                            </>
+                          ) : (
+                            <span
+                              className="absolute inset-0 flex items-center justify-center p-2 text-center text-[11px] font-bold leading-snug text-white"
+                              style={{ background: s.bgColor || "#0ea5e9" }}
+                            >
+                              <span className="line-clamp-5">{s.text}</span>
+                            </span>
+                          )}
+                          <span className="absolute bottom-1 left-1 rounded-full bg-black/55 px-1.5 py-0.5 text-[9px] font-semibold text-white">
+                            {formatDistanceToNow(new Date(s.createdAt), { addSuffix: true })}
+                          </span>
+                          {s.placeName && (
+                            <span className="absolute top-1 left-1 max-w-[90%] truncate rounded-full bg-black/55 px-1.5 py-0.5 text-[9px] font-semibold text-white">
+                              📍 {s.placeName}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 text-muted-foreground">No active stories right now.</div>
+                  )}
+                </TabsContent>
 
                 <TabsContent value="boats" className="space-y-3">
                   {((user as any).fleet ?? []).map((b: any) => {
@@ -1724,6 +1791,16 @@ export function ProfilePage() {
       />
 
       <ImageLightbox src={photoView?.src ?? null} alt={photoView?.alt ?? ""} open={!!photoView} onClose={() => setPhotoView(null)} />
+
+      {storyViewerIndex != null && profileStoryGroup && (
+        <StoryViewer
+          groups={[profileStoryGroup]}
+          initialGroupIndex={0}
+          initialStoryIndex={Math.min(storyViewerIndex, profileStoryGroup.stories.length - 1)}
+          meId={me?.id}
+          onClose={() => setStoryViewerIndex(null)}
+        />
+      )}
     </div>
   );
 }
