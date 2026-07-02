@@ -1,0 +1,552 @@
+Gillie – “Today on the Lake” Vision
+
+I want to make Gillie the most fun and engaging lake app available. I don’t want to copy Snapchat, Instagram, or Facebook, but I do want to take the best ideas from each and make them unique to boating and lake life.
+
+🌊 Today on the Lake
+
+I want to add a new feature called Today on the Lake.
+
+This should be Gillie’s version of Stories.
+
+When users open Gillie they immediately see what’s happening around the lake right now.
+
+People should be able to post:
+
+* Photos
+* Videos
+* Text updates
+
+Stories automatically disappear after 24 hours.
+
+Users should be able to post unlimited stories throughout the day.
+
+⸻
+
+Story Viewer
+
+The viewer should feel smooth like Snapchat.
+
+* Full screen
+* Progress bars
+* Tap left/right to skip
+* Hold to pause
+* Swipe down to close
+* Auto advance
+
+⸻
+
+Map Integration
+
+Every story can optionally be attached to a location.
+
+Examples:
+
+📍 Sunset Marina
+
+📍 Willow Grove
+
+📍 Sulphur Creek
+
+📍 The Cliffs
+
+📍 Party Cove
+
+On the map these locations should display glowing story rings.
+
+Example:
+
+Sunset Marina
+
+🔵 24 Stories
+
+The Cliffs
+
+🔵 8 Stories
+
+Party Cove
+
+🔵 15 Stories
+
+Users tap the location to watch everyone’s stories from there.
+
+This makes the map feel alive.
+
+⸻
+
+Feed Integration
+
+Near the top of the feed show:
+
+🌊 Today on the Lake
+
+(horizontal stories)
+
+Below that:
+
+🔥 Trending Today
+
+Show the locations with the most stories today.
+
+⸻
+
+User Profiles
+
+Each profile gets a Stories section.
+
+Stories disappear after 24 hours.
+
+Users can also save stories to permanent Highlights.
+
+Examples:
+
+Summer 2026
+
+Fourth of July
+
+Wakeboarding
+
+Fishing
+
+Family
+
+Boat Builds
+
+Sunsets
+
+⸻
+
+Camera Experience
+
+I want the camera to feel premium.
+
+Support:
+
+📷 Photos
+
+🎥 Videos
+
+Camera roll upload
+
+Front/back camera
+
+Flash
+
+Zoom
+
+Grid
+
+Timer
+
+⸻
+
+Photo Editing
+
+Before posting users can edit:
+
+Brightness
+
+Contrast
+
+Saturation
+
+Warmth
+
+Highlights
+
+Shadows
+
+Sharpness
+
+Crop
+
+Rotate
+
+Straighten
+
+⸻
+
+Gillie Filters
+
+Instead of only generic filters, create lake-themed filters.
+
+Examples:
+
+🌅 Golden Hour
+
+🌊 Crystal Water
+
+☀️ Summer Day
+
+🩵 Lake Blue
+
+🌲 Emerald Shore
+
+🎣 Fisherman’s Morning
+
+🔥 Bonfire Night
+
+🌙 Moonlight Cruise
+
+⚓ Vintage Marina
+
+🏖 Sandbar Glow
+
+⸻
+
+Video Editing
+
+Support:
+
+Trim
+
+Split clips
+
+Merge clips
+
+Slow motion
+
+Speed up
+
+Reverse
+
+Mute audio
+
+Adjust volume
+
+Transitions
+
+Color grading
+
+Boomerang (future)
+
+⸻
+
+Music
+
+I want users to be able to add music to stories.
+
+Support:
+
+Search songs
+
+Favorite songs
+
+Trending songs
+
+Country
+
+Rock
+
+Rap
+
+Pop
+
+Summer
+
+Lake Life
+
+Fishing
+
+Wakeboarding
+
+Sunset
+
+Fourth of July
+
+Allow users to control:
+
+Music volume
+
+Original audio volume
+
+Fade in
+
+Fade out
+
+Most importantly:
+
+Users should be able to choose:
+
+🎵 Music Only
+
+🌊 Original Lake Sounds
+
+⚖️ Mix Both
+
+Sometimes hearing the boat engine, waves and people laughing makes the video better.
+
+⸻
+
+Text
+
+Support:
+
+Multiple fonts
+
+Colors
+
+Resize
+
+Rotate
+
+Shadow
+
+Outline
+
+Gradient
+
+Animated text (future)
+
+⸻
+
+Stickers
+
+Create Gillie-specific stickers.
+
+Examples:
+
+🚤 Boat Day
+
+🌅 Sunset
+
+🏖 Sandbar
+
+🍔 Marina
+
+🍺 Lake Time
+
+🎣 Big Catch
+
+⚓ Anchored
+
+🌊 Wake
+
+🇺🇸 Fourth of July
+
+🛟 Float Day
+
+⸻
+
+Location Stickers
+
+Automatically generate:
+
+📍 Sunset Marina
+
+📍 Dale Hollow
+
+📍 Willow Grove
+
+etc.
+
+⸻
+
+Weather Stickers
+
+Automatically display:
+
+☀️ Air temperature
+
+🌊 Water temperature
+
+💨 Wind
+
+📏 Lake level
+
+⸻
+
+Boat Stickers
+
+If a user has boats saved:
+
+🚤 Lake Therapy
+
+2023 Fountain 38 LX
+
+Tap to add it to the story.
+
+⸻
+
+Polls
+
+Support story polls.
+
+Examples:
+
+Who’s going out today?
+
+Pontoon or wake boat?
+
+Favorite marina?
+
+⸻
+
+Story Reactions
+
+Allow:
+
+❤️
+
+🔥
+
+🚤
+
+🌊
+
+😂
+
+👏
+
+😍
+
+⸻
+
+Save Drafts
+
+Allow unfinished stories to be saved.
+
+⸻
+
+Download Stories
+
+Allow saving stories to camera roll.
+
+⸻
+
+Boat Integration
+
+Tie stories into boats.
+
+Users should be able to choose which boat they’re using before posting.
+
+Example:
+
+Posted from:
+
+🚤 Lake Therapy
+
+or
+
+🛥 Sunset Cruiser
+
+That boat is displayed on the story.
+
+⸻
+
+Live Status
+
+Instead of only a green online dot.
+
+Show:
+
+🚤 Out on the Water
+
+🌅 Watching Sunset
+
+🍔 At Sunset Marina
+
+🏡 Off the Lake
+
+📍 Checked in 30 minutes ago
+
+⸻
+
+Notifications
+
+Examples:
+
+Mike posted from Sunset Marina.
+
+15 new stories at Party Cove.
+
+The Cliffs are trending.
+
+⸻
+
+Future Support
+
+Build the architecture so we can easily add:
+
+Music licensing
+
+AR filters
+
+GIFs
+
+Mentions
+
+Polls
+
+Business stories
+
+Events
+
+Live streaming
+
+without redesigning everything.
+
+⸻
+
+AR Filters (Future Roadmap)
+
+I also want Gillie to eventually support fun camera filters similar to Snapchat, but themed around lake life.
+
+Examples:
+
+Captain hat
+
+Pirate hat
+
+Gillie hat
+
+Reflective sunglasses
+
+Fish jumping beside you
+
+Splash effects
+
+Fireworks
+
+Confetti
+
+Rain
+
+Snow
+
+Sparkles
+
+Campfire
+
+Sunset glow
+
+Eagle flying overhead
+
+Boat wake
+
+Floating buoys
+
+American flag
+
+Funny face filters
+
+Big eyes
+
+Mustaches
+
+Beards
+
+These should feel like Gillie, not generic Snapchat copies.
+
+⸻
+
+Overall Goal
+
+Gillie should become the first app people open before going to the lake.
+
+I want users to think:
+
+“I wonder what’s happening at the lake today.”
+
+instead of opening Facebook, Instagram, or Snapchat.
+
+The app should feel alive, exciting, and built specifically for lake communities. Every feature should reinforce that identity and make people want to share their boating adventures directly in Gillie.
