@@ -114,10 +114,12 @@ export function StoryCamera({
     stopStream();
     const token = streamTokenRef.current;
     try {
-      // 1080x1920 selects the standard wide camera's native portrait mode on
-      // iPhones (higher "ideal" values can force a cropped/zoomed-in mode).
+      // IMPORTANT: camera modes are landscape-order (1920x1080, 1280x720…).
+      // Requesting portrait-order dimensions (1080x1920) makes iOS fall back
+      // to a small center-cropped mode — the "zoomed in at 1x" bug. Ask in
+      // landscape order and WebKit auto-rotates the frames for portrait.
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode, width: { ideal: 1080 }, height: { ideal: 1920 } },
+        video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false,
       });
       if (token !== streamTokenRef.current) {
