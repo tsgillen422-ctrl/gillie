@@ -10,3 +10,7 @@ description: Layering, coordinate, and compositing decisions for the Snapchat-st
 - **Drawings are flattened at post time; filters stay metadata.** Photo drawing strokes (normalized to stage) are composited onto the natural-size image by mapping the object-contain rect, re-uploaded as JPEG. filterCss is stored, never baked, so it must always pass the server allowlist regex.
 - **Pinch-rotate:** normalize the atan2 delta to the shortest arc (±π wrap) or rotation jumps ~360° when fingers cross the seam.
 - Music was intentionally excluded (no licensed catalog); crop deferred.
+- **AR face lenses (MediaPipe) are baked; color filters stay CSS.** FaceLandmarker wasm+model are self-hosted under `public/mediapipe` (loaded via BASE_URL — CDN-free for the Capacitor app); lens drawings on the overlay canvas ARE composited into the captured JPEG, unlike filterCss.
+  **How to apply:** video + overlay canvas must share ONE transform wrapper (selfie mirror + CSS-zoom fallback) so live view and capture math stay aligned; capture crops the sensor frame to the stage aspect then the center 1/cssZoom region, and draws the overlay's matching center region under the same mirrored ctx.
+- **Camera resolution:** request getUserMedia ideal 1080x1920 — higher ideals can select a cropped/zoomed sensor mode on iPhone; 1080p keeps the wide 1x look.
+- **Beauty "filters" are CSS approximations** (slight blur + brightness/contrast), not AR skin smoothing; all filter css must keep to the server FILTER_CSS_RE charset `[a-z0-9().,%\s-]` (no hex colors, no url()).
