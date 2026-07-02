@@ -102,18 +102,15 @@ export function StoriesRow() {
 
 function StoryCircle({ group, onClick }: { group: StoryGroup; onClick: () => void }) {
   const ring = group.allViewed
-    ? "bg-border"
+    ? "bg-border opacity-70"
     : "bg-gradient-to-tr from-teal-400 via-sky-500 to-blue-600";
+  // Stories arrive sorted oldest -> newest, so the last one is the latest post.
+  const latest = group.stories[group.stories.length - 1];
   return (
     <button type="button" onClick={onClick} className="flex w-16 shrink-0 flex-col items-center gap-1" data-testid={`button-story-${group.user.id}`}>
       <div className={`relative rounded-full p-[2.5px] ${ring}`}>
         <div className="rounded-full bg-card p-[2px]">
-          <UserAvatar
-            name={group.user.displayName}
-            username={group.user.username}
-            avatarUrl={group.user.avatarUrl}
-            className="h-[52px] w-[52px]"
-          />
+          <StoryThumb story={latest} user={group.user} />
         </div>
         {group.user.isLive && (
           <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded border border-card bg-red-500 px-1 py-px text-[8px] font-bold uppercase tracking-wide text-white">
@@ -121,9 +118,60 @@ function StoryCircle({ group, onClick }: { group: StoryGroup; onClick: () => voi
           </span>
         )}
       </div>
-      <span className="w-full truncate text-center text-[11px] text-muted-foreground">{group.user.displayName.split(" ")[0]}</span>
+      <span className={`w-full truncate text-center text-[11px] ${group.allViewed ? "text-muted-foreground" : "font-medium text-foreground"}`}>
+        {group.user.displayName.split(" ")[0]}
+      </span>
     </button>
   );
+}
+
+// Circle preview of the user's latest story: photo/video frame (with its
+// filter), or the text story's background. Falls back to the avatar.
+function StoryThumb({ story, user }: { story: StoryGroup["stories"][number]; user: StoryGroup["user"] }) {
+  const [failed, setFailed] = useState(false);
+  // A transient load error shouldn't stick once a newer story arrives.
+  useEffect(() => setFailed(false), [story?.id]);
+  const size = "h-[52px] w-[52px] rounded-full object-cover";
+  if (!failed && story?.mediaType === "photo" && story.mediaUrl) {
+    return (
+      <img
+        src={story.mediaUrl}
+        alt=""
+        className={size}
+        style={story.filterCss ? { filter: story.filterCss } : undefined}
+        draggable={false}
+        loading="lazy"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  if (!failed && story?.mediaType === "video" && story.mediaUrl) {
+    return (
+      <video
+        // #t=0.1 nudges iOS Safari to actually render the first frame.
+        src={`${story.mediaUrl}#t=0.1`}
+        className={size}
+        style={story.filterCss ? { filter: story.filterCss } : undefined}
+        muted
+        playsInline
+        preload="metadata"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  if (!failed && story?.mediaType === "text") {
+    return (
+      <div
+        className={`${size} flex items-center justify-center overflow-hidden px-1`}
+        style={{ background: story.bgColor || "linear-gradient(160deg, #0d9488, #0369a1)" }}
+      >
+        <span className="line-clamp-3 break-words text-center text-[7px] font-semibold leading-tight text-white">
+          {story.text}
+        </span>
+      </div>
+    );
+  }
+  return <UserAvatar name={user.displayName} username={user.username} avatarUrl={user.avatarUrl} className="h-[52px] w-[52px]" />;
 }
 
 // Opens the viewer for every active story at a named place (used by Trending
