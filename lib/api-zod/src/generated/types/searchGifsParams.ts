@@ -5,7 +5,9 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { SearchGifsKind } from './searchGifsKind';
 
 export type SearchGifsParams = {
 q?: string;
+kind?: SearchGifsKind;
 };

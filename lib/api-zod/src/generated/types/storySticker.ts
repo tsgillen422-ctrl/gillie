@@ -12,5 +12,9 @@ export interface StorySticker {
   type: StoryStickerType;
   x: number;
   y: number;
+  /** @nullable */
+  scale?: number | null;
+  /** @nullable */
+  rotation?: number | null;
   data?: StoryStickerData;
 }

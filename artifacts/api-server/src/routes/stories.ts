@@ -24,22 +24,34 @@ const router = Router();
 const STORY_TTL_MS = 24 * 60 * 60 * 1000;
 const MEDIA_TYPES = ["photo", "video", "text"];
 export const REACTION_EMOJIS = ["❤️", "🔥", "🚤", "🌊", "😂", "👏", "😍"];
-const STICKER_TYPES = ["location", "weather", "boat", "emoji"];
+const STICKER_TYPES = ["location", "weather", "boat", "emoji", "giphy", "text"];
+// Only allow giphy CDN media so sticker URLs can't point anywhere else.
+const GIPHY_URL_RE = /^https:\/\/(media\d*|i)\.giphy\.com\//;
 // CSS filter strings are rendered into style attributes on the client, so only
 // allow the characters real filter functions need.
 const FILTER_CSS_RE = /^[a-z0-9().,%\s-]*$/i;
 
 export function validateStickers(input: unknown): StorySticker[] | { error: string } {
   if (!Array.isArray(input)) return { error: "stickers must be an array" };
-  if (input.length > 8) return { error: "Too many stickers (max 8)" };
-  if (JSON.stringify(input).length > 4000) return { error: "Stickers payload too large" };
+  if (input.length > 12) return { error: "Too many stickers (max 12)" };
+  if (JSON.stringify(input).length > 8000) return { error: "Stickers payload too large" };
   const out: StorySticker[] = [];
   for (const raw of input) {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { error: "Invalid sticker" };
-    const { type, x, y, data } = raw as Record<string, unknown>;
+    const { type, x, y, scale, rotation, data } = raw as Record<string, unknown>;
     if (typeof type !== "string" || !STICKER_TYPES.includes(type)) return { error: "Invalid sticker type" };
     if (typeof x !== "number" || typeof y !== "number" || !isFinite(x) || !isFinite(y) || x < 0 || x > 1 || y < 0 || y > 1) {
       return { error: "Sticker position must be between 0 and 1" };
+    }
+    let cleanScale: number | null = null;
+    if (scale != null) {
+      if (typeof scale !== "number" || !isFinite(scale) || scale < 0.2 || scale > 5) return { error: "Invalid sticker scale" };
+      cleanScale = scale;
+    }
+    let cleanRotation: number | null = null;
+    if (rotation != null) {
+      if (typeof rotation !== "number" || !isFinite(rotation) || rotation < -360 || rotation > 360) return { error: "Invalid sticker rotation" };
+      cleanRotation = rotation;
     }
     const cleanData: Record<string, string | number | null> = {};
     if (data != null) {
@@ -50,12 +62,27 @@ export function validateStickers(input: unknown): StorySticker[] | { error: stri
         if (k.length > 40) return { error: "Sticker data key too long" };
         if (v === null || typeof v === "number") cleanData[k] = v as number | null;
         else if (typeof v === "string") {
-          if (v.length > 120) return { error: "Sticker data value too long" };
+          if (v.length > 300) return { error: "Sticker data value too long" };
           cleanData[k] = v;
         } else return { error: "Sticker data values must be strings or numbers" };
       }
     }
-    out.push({ type: type as StorySticker["type"], x, y, data: cleanData });
+    if (type === "giphy") {
+      const url = cleanData.url;
+      if (typeof url !== "string" || !GIPHY_URL_RE.test(url)) return { error: "Invalid sticker image" };
+    }
+    if (type === "text") {
+      const textVal = cleanData.text;
+      if (typeof textVal !== "string" || !textVal.trim() || textVal.length > 200) return { error: "Invalid text sticker" };
+    }
+    out.push({
+      type: type as StorySticker["type"],
+      x,
+      y,
+      ...(cleanScale != null ? { scale: cleanScale } : {}),
+      ...(cleanRotation != null ? { rotation: cleanRotation } : {}),
+      data: cleanData,
+    });
   }
   return out;
 }

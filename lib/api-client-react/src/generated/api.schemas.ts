@@ -321,6 +321,8 @@ export const StoryStickerType = {
   weather: 'weather',
   boat: 'boat',
   emoji: 'emoji',
+  giphy: 'giphy',
+  text: 'text',
 } as const;
 
 export type StoryStickerData = { [key: string]: unknown };
@@ -329,6 +331,10 @@ export interface StorySticker {
   type: StoryStickerType;
   x: number;
   y: number;
+  /** @nullable */
+  scale?: number | null;
+  /** @nullable */
+  rotation?: number | null;
   data?: StoryStickerData;
 }
 
@@ -1566,7 +1572,16 @@ export const GetPostsAudience = {
 
 export type SearchGifsParams = {
 q?: string;
+kind?: SearchGifsKind;
 };
+
+export type SearchGifsKind = typeof SearchGifsKind[keyof typeof SearchGifsKind];
+
+
+export const SearchGifsKind = {
+  gifs: 'gifs',
+  stickers: 'stickers',
+} as const;
 
 export type GetCatchesParams = {
 /**

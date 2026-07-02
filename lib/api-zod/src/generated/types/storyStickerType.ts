@@ -14,4 +14,6 @@ export const StoryStickerType = {
   weather: 'weather',
   boat: 'boat',
   emoji: 'emoji',
+  giphy: 'giphy',
+  text: 'text',
 } as const;

@@ -3253,9 +3253,11 @@ export const GetStoriesResponseItem = zod.object({
   "filterName": zod.string().nullish(),
   "filterCss": zod.string().nullish(),
   "stickers": zod.array(zod.object({
-  "type": zod.enum(['location', 'weather', 'boat', 'emoji']),
+  "type": zod.enum(['location', 'weather', 'boat', 'emoji', 'giphy', 'text']),
   "x": zod.number(),
   "y": zod.number(),
+  "scale": zod.number().nullish(),
+  "rotation": zod.number().nullish(),
   "data": zod.record(zod.string(), zod.unknown()).optional()
 })).nullish(),
   "pollQuestion": zod.string().nullish(),
@@ -3287,9 +3289,11 @@ export const CreateStoryBody = zod.object({
   "filterName": zod.string().nullish(),
   "filterCss": zod.string().nullish(),
   "stickers": zod.array(zod.object({
-  "type": zod.enum(['location', 'weather', 'boat', 'emoji']),
+  "type": zod.enum(['location', 'weather', 'boat', 'emoji', 'giphy', 'text']),
   "x": zod.number(),
   "y": zod.number(),
+  "scale": zod.number().nullish(),
+  "rotation": zod.number().nullish(),
   "data": zod.record(zod.string(), zod.unknown()).optional()
 })).nullish(),
   "pollQuestion": zod.string().nullish(),
@@ -3345,9 +3349,11 @@ export const GetPlaceStoriesResponseItem = zod.object({
   "filterName": zod.string().nullish(),
   "filterCss": zod.string().nullish(),
   "stickers": zod.array(zod.object({
-  "type": zod.enum(['location', 'weather', 'boat', 'emoji']),
+  "type": zod.enum(['location', 'weather', 'boat', 'emoji', 'giphy', 'text']),
   "x": zod.number(),
   "y": zod.number(),
+  "scale": zod.number().nullish(),
+  "rotation": zod.number().nullish(),
   "data": zod.record(zod.string(), zod.unknown()).optional()
 })).nullish(),
   "pollQuestion": zod.string().nullish(),
@@ -3429,9 +3435,11 @@ export const VoteStoryPollResponse = zod.object({
   "filterName": zod.string().nullish(),
   "filterCss": zod.string().nullish(),
   "stickers": zod.array(zod.object({
-  "type": zod.enum(['location', 'weather', 'boat', 'emoji']),
+  "type": zod.enum(['location', 'weather', 'boat', 'emoji', 'giphy', 'text']),
   "x": zod.number(),
   "y": zod.number(),
+  "scale": zod.number().nullish(),
+  "rotation": zod.number().nullish(),
   "data": zod.record(zod.string(), zod.unknown()).optional()
 })).nullish(),
   "pollQuestion": zod.string().nullish(),
@@ -3470,9 +3478,11 @@ export const GetHighlightStoriesResponseItem = zod.object({
   "placeName": zod.string().nullish(),
   "filterCss": zod.string().nullish(),
   "stickers": zod.array(zod.object({
-  "type": zod.enum(['location', 'weather', 'boat', 'emoji']),
+  "type": zod.enum(['location', 'weather', 'boat', 'emoji', 'giphy', 'text']),
   "x": zod.number(),
   "y": zod.number(),
+  "scale": zod.number().nullish(),
+  "rotation": zod.number().nullish(),
   "data": zod.record(zod.string(), zod.unknown()).optional()
 })).nullish(),
   "storyCreatedAt": zod.string()
@@ -3640,9 +3650,11 @@ export const GetUserStoriesResponseItem = zod.object({
   "filterName": zod.string().nullish(),
   "filterCss": zod.string().nullish(),
   "stickers": zod.array(zod.object({
-  "type": zod.enum(['location', 'weather', 'boat', 'emoji']),
+  "type": zod.enum(['location', 'weather', 'boat', 'emoji', 'giphy', 'text']),
   "x": zod.number(),
   "y": zod.number(),
+  "scale": zod.number().nullish(),
+  "rotation": zod.number().nullish(),
   "data": zod.record(zod.string(), zod.unknown()).optional()
 })).nullish(),
   "pollQuestion": zod.string().nullish(),
@@ -5451,7 +5463,8 @@ export const VotePollResponse = zod.object({
  * @summary Search GIFs to attach to a post
  */
 export const SearchGifsQueryParams = zod.object({
-  "q": zod.coerce.string().optional()
+  "q": zod.coerce.string().optional(),
+  "kind": zod.enum(['gifs', 'stickers']).optional()
 })
 
 export const SearchGifsResponseItem = zod.object({

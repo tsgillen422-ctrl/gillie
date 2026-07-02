@@ -1,0 +1,151 @@
+The “Today on the Lake” creator needs to be redesigned from scratch to match a modern social media editor like Snapchat or Instagram Stories. The current layout overflows the screen, is cramped, and important controls are cut off. Everything must fit within the safe area on all supported iPhone sizes without any horizontal scrolling or clipped controls.
+
+UI changes required
+
+1. Full-screen editor
+
+* Remove the browser/Replit header completely in the app.
+* Make the editor full screen using the iPhone safe areas.
+* Keep only a small header with:
+    * X (Cancel)
+    * “Today on the Lake”
+    * Post button
+
+2. Bottom toolbar (like Snapchat)
+
+Instead of everything being visible at once:
+
+Filters | Stickers | Text | Draw | Music | Effects | Crop
+
+Tapping one opens a bottom sheet.
+
+3. Filters
+
+The current filters are too basic.
+
+Add categories like Snapchat:
+
+Natural
+
+* Original
+* Bright
+* Vibrant
+* Warm
+* Cool
+* Golden Hour
+
+Vintage
+
+* Film
+* Retro
+* VHS
+* Disposable Camera
+
+Lake
+
+* Crystal Water
+* Sunset
+* Morning Fog
+* Emerald Water
+* Deep Blue
+* Summer Glow
+
+Fun
+
+* Cartoon
+* Comic
+* Sketch
+* HDR
+* Dream
+* Neon
+
+Allow swiping through filters with a live preview.
+
+4. Stickers
+
+Expand far beyond the current emojis.
+
+Categories:
+
+* Weather (animated)
+* Lake
+* Boats
+* Fishing
+* Campfire
+* Fireworks
+* Summer
+* Holiday
+* Reactions
+* Funny
+* Custom Gillie stickers
+
+All stickers should be:
+
+* draggable
+* resizable with pinch
+* rotatable
+* removable by dragging to trash
+
+5. Text
+
+Text should support:
+
+* multiple fonts
+* outlines
+* shadows
+* gradients
+* curved text
+* background bubbles
+* animations (fade, bounce, zoom)
+
+6. Drawing
+
+Add:
+
+* pen
+* marker
+* neon pen
+* highlighter
+* eraser
+* color picker
+* adjustable brush size
+
+7. Music
+
+Add music like Snapchat/Instagram:
+
+* searchable songs
+* trending songs
+* lake playlists
+* choose a clip
+* volume controls
+
+8. Layout fixes
+
+Nothing should be cut off.
+Everything must stay inside the safe area.
+The bottom toolbar should never overlap the caption or controls.
+
+9. Gestures
+
+Users should be able to:
+
+* pinch to zoom
+* rotate stickers
+* drag objects
+* undo/redo edits
+
+10. Polish
+
+Add smooth animations throughout.
+The interface should feel premium and fluid, not like a web form.
+
+⸻
+
+One more thing I noticed
+
+Your screenshot is still showing the Replit browser address bar at the top. That cannot appear in the App Store screenshots or Apple will reject them again.
+
+The screenshots you upload to App Store Connect need to come from the actual iOS app (or look exactly like they do), with only the normal iPhone status bar at the top—no browser or Replit interface.
+
+I also think this editor is one of the biggest opportunities to make Gillie stand out. Instead of just copying Snapchat, you could make it the best editor for lake life, with boat-themed stickers, animated weather overlays, live lake conditions, and water-specific filters that fit your app’s identity.

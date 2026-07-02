@@ -110,6 +110,7 @@ export * from './reportStatus';
 export * from './reportTargetType';
 export * from './reportTargetUser';
 export * from './rsvpUser';
+export * from './searchGifsKind';
 export * from './searchGifsParams';
 export * from './searchParams';
 export * from './searchPin';

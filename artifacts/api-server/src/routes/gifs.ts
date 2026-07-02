@@ -8,6 +8,9 @@ router.get("/search", async (req, res) => {
     return res.status(503).json({ error: "GIF search is not configured yet." });
   }
   const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+  // kind=stickers hits GIPHY's transparent-background sticker catalog (used by
+  // the story editor); default stays classic GIFs for chat/posts.
+  const endpoint = req.query.kind === "stickers" ? "stickers" : "gifs";
   try {
     const params = new URLSearchParams({
       api_key: apiKey,
@@ -16,8 +19,8 @@ router.get("/search", async (req, res) => {
       bundle: "messaging_non_clips",
     });
     const url = q
-      ? `https://api.giphy.com/v1/gifs/search?${params.toString()}&q=${encodeURIComponent(q)}`
-      : `https://api.giphy.com/v1/gifs/trending?${params.toString()}`;
+      ? `https://api.giphy.com/v1/${endpoint}/search?${params.toString()}&q=${encodeURIComponent(q)}`
+      : `https://api.giphy.com/v1/${endpoint}/trending?${params.toString()}`;
     const response = await fetch(url);
     if (!response.ok) {
       return res.status(502).json({ error: "Couldn't reach the GIF service." });

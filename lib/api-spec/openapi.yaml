@@ -1607,6 +1607,12 @@ paths:
           required: false
           schema:
             type: string
+        - name: kind
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [gifs, stickers]
       responses:
         "200":
           description: List of GIF results
@@ -2855,11 +2861,15 @@ components:
       properties:
         type:
           type: string
-          enum: [location, weather, boat, emoji]
+          enum: [location, weather, boat, emoji, giphy, text]
         x:
           type: number
         y:
           type: number
+        scale:
+          type: ["number", "null"]
+        rotation:
+          type: ["number", "null"]
         data:
           type: object
           additionalProperties: true
