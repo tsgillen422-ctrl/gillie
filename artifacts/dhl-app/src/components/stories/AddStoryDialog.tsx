@@ -205,7 +205,12 @@ export function AddStoryDialog({ open, onOpenChange }: { open: boolean; onOpenCh
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+      <DialogContent
+        className="max-h-[90vh] overflow-y-auto sm:max-w-md"
+        onPointerDownOutside={(e) => { if (cameraOpen) e.preventDefault(); }}
+        onInteractOutside={(e) => { if (cameraOpen) e.preventDefault(); }}
+        onEscapeKeyDown={(e) => { if (cameraOpen) { e.preventDefault(); setCameraOpen(false); } }}
+      >
         <DialogHeader>
           <DialogTitle>Add to Today on the Lake</DialogTitle>
         </DialogHeader>

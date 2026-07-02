@@ -52,6 +52,7 @@
 - [Block enforcement surfaces](block-enforcement.md) — blocks are symmetric; gate EVERY new X-reaches-Y surface. Group threads use read-time message filtering, NOT hard-blocked sends; 1:1 send + reactions hard-403.
 - [My Fleet / active boat](fleet-active-boat.md) — boats table is truth; users.boat* = denormalized active boat (may be non-primary via check-in); showBoat redaction spans /users/:id fleet AND gallery boatId.
 - [Today on the Lake stories](stories-feature.md) — stories follow posts audience model; gate view endpoint AND notifications per recipient; LIVE state must be in marker sig.
+- [Radix dialog portal overlays](radix-dialog-portal-overlays.md) — body-portaled overlays over an open Dialog get dismissed as outside taps; guard onInteractOutside while open + pointer-events-auto on portal root.
 - [dhl-app typecheck TS6306](dhl-app-typecheck-refs.md) — dhl-app tsc always fails on a pre-existing non-composite lib reference; strip references to typecheck; manual vite build needs PORT+BASE_PATH.
 - [Native iOS Sign in with Apple](native-apple-signin.md) — web Apple OAuth dead (bad .p8); native popup → backend verifies token vs Apple JWKS → Clerk ticket. PUBLIC endpoint: NEVER trust client email; match only by verified token email/`apple:<sub>`.
 - [showBoat privacy](show-boat-privacy.md) — redact boat showcase fields server-side for non-self when showBoat=false; boatName/color/type stay public (map markers need them).

@@ -181,7 +181,7 @@ export function StoryCamera({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[110] flex flex-col bg-black" data-testid="story-camera">
+    <div className="pointer-events-auto fixed inset-0 z-[110] flex flex-col bg-black" data-testid="story-camera">
       <div className="relative flex-1 overflow-hidden">
         <video
           ref={videoRef}
