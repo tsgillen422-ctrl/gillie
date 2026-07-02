@@ -13,7 +13,7 @@ import {
 import { SvgXml } from "react-native-svg";
 // Boat types + artwork come from the shared @workspace/boat-config package —
 // the same source of truth used by the web app and the API server.
-import { BOAT_TYPES, boatSvgFor, FLAG_SVG } from "@workspace/boat-config";
+import { BOAT_TYPES, BOAT_BRANDS, BOAT_BRAND_MAX_LENGTH, boatSvgFor, FLAG_SVG } from "@workspace/boat-config";
 import {
   useGetMe,
   useUpdateMe,
@@ -123,6 +123,7 @@ export default function SettingsScreen() {
   const [work, setWork] = useState("");
   const [boatName, setBoatName] = useState("");
   const [boatType, setBoatType] = useState("speedboat");
+  const [boatBrand, setBoatBrand] = useState("");
   const [boatColor, setBoatColor] = useState(DEFAULT_BOAT_COLOR);
   const [boatNeon, setBoatNeon] = useState(false);
   const [boatFlag, setBoatFlag] = useState(false);
@@ -152,6 +153,7 @@ export default function SettingsScreen() {
       setWork(me.work || "");
       setBoatName(me.boatName || "");
       setBoatType(me.boatType || "speedboat");
+      setBoatBrand(me.boatBrand || "");
       setBoatColor(me.boatColor || DEFAULT_BOAT_COLOR);
       setBoatNeon(me.boatNeon ?? false);
       setBoatFlag(me.boatFlag ?? false);
@@ -220,6 +222,14 @@ export default function SettingsScreen() {
     setInterests(interests.filter((i) => i !== val));
   };
 
+  // Brand chips: filter as the user types, otherwise show the full catalog.
+  const brandSuggestions = React.useMemo(() => {
+    const q = boatBrand.trim().toLowerCase();
+    if (!q) return BOAT_BRANDS;
+    const matches = BOAT_BRANDS.filter((b) => b.toLowerCase().includes(q));
+    return matches.length > 0 ? matches : BOAT_BRANDS;
+  }, [boatBrand]);
+
   const handleSave = async () => {
     try {
       await updateMe.mutateAsync({
@@ -231,6 +241,7 @@ export default function SettingsScreen() {
           work,
           boatName,
           boatType,
+          boatBrand: boatBrand.trim() || null,
           boatColor,
           boatNeon,
           boatFlag,
@@ -529,6 +540,51 @@ export default function SettingsScreen() {
                 );
               })}
             </View>
+
+            {/* Boat brand (optional) */}
+            <Text style={[styles.label, { color: colors.mutedForeground, marginTop: 18 }]}>
+              Brand / Manufacturer (optional)
+            </Text>
+            <TextInput
+              style={[
+                styles.input,
+                { color: colors.foreground, backgroundColor: colors.muted, borderColor: colors.border },
+              ]}
+              value={boatBrand}
+              onChangeText={setBoatBrand}
+              maxLength={BOAT_BRAND_MAX_LENGTH}
+              placeholder="e.g. MasterCraft, Ranger, Fountain"
+              placeholderTextColor={colors.mutedForeground}
+              autoCorrect={false}
+            />
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ marginTop: 8 }}
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={{ flexDirection: "row", gap: 6 }}>
+                {brandSuggestions.map((b) => {
+                  const active = boatBrand.trim() === b;
+                  return (
+                    <Pressable
+                      key={b}
+                      onPress={() => setBoatBrand(active ? "" : b)}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 999,
+                        borderWidth: 1,
+                        borderColor: active ? colors.primary : colors.border,
+                        backgroundColor: active ? colors.primary + "1A" : colors.card,
+                      }}
+                    >
+                      <Text style={{ fontSize: 13, color: active ? colors.primary : colors.foreground }}>{b}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </ScrollView>
 
             {/* Boat color */}
             <Text style={[styles.label, { color: colors.mutedForeground, marginTop: 18 }]}>Boat Color</Text>

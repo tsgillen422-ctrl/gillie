@@ -78,6 +78,8 @@ export interface User {
   /** @nullable */
   boatType?: string | null;
   /** @nullable */
+  boatBrand?: string | null;
+  /** @nullable */
   boatNeon?: boolean | null;
   /** @nullable */
   boatFlag?: boolean | null;
@@ -157,6 +159,8 @@ export interface UserUpdate {
   boatName?: string;
   boatColor?: string;
   boatType?: string;
+  /** @nullable */
+  boatBrand?: string | null;
   boatNeon?: boolean;
   boatFlag?: boolean;
   /** @nullable */

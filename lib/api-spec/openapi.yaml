@@ -2151,6 +2151,8 @@ components:
           type: ["string", "null"]
         boatType:
           type: ["string", "null"]
+        boatBrand:
+          type: ["string", "null"]
         boatNeon:
           type: ["boolean", "null"]
         boatFlag:
@@ -2281,6 +2283,8 @@ components:
           type: string
         boatType:
           type: string
+        boatBrand:
+          type: ["string", "null"]
         boatNeon:
           type: boolean
         boatFlag:

@@ -7,6 +7,8 @@ export {
   BOAT_SVGS,
   boatSvgFor,
   boatLabelFor,
+  BOAT_BRANDS,
+  BOAT_BRAND_MAX_LENGTH,
   FLAG_SVG,
   SPEEDBOAT_SVG,
   type BoatTypeDef,

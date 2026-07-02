@@ -356,3 +356,80 @@ export function boatLabelFor(type?: string | null): string {
   const t = type && BOAT_TYPES.find((b) => b.value === type);
   return t ? t.label : BOAT_TYPES[0].label;
 }
+
+// ---------------------------------------------------------------------------
+// Boat brands / manufacturers.
+// Purely optional, purely cosmetic: users can pick one of these suggestions or
+// type any brand name freely — the stored value is plain text, so this list is
+// only used to power pickers/autocomplete. Add new brands here; no other app
+// code needs to change. Keep alphabetical.
+// ---------------------------------------------------------------------------
+export const BOAT_BRANDS: string[] = [
+  "Alumacraft",
+  "Avalon",
+  "Axis",
+  "Bass Cat",
+  "Bayliner",
+  "Bennington",
+  "Bentley Pontoons",
+  "Berkshire",
+  "Boston Whaler",
+  "Carver",
+  "Centurion",
+  "Chaparral",
+  "Cobalt",
+  "Correct Craft",
+  "Crest",
+  "Crestliner",
+  "Crownline",
+  "Donzi",
+  "Formula",
+  "Fountain",
+  "Four Winns",
+  "Gibson",
+  "Glastron",
+  "Grady-White",
+  "Harris",
+  "Heyday",
+  "Hobie",
+  "Key West",
+  "Landau",
+  "Larson",
+  "Lowe",
+  "Lund",
+  "Malibu",
+  "Manitou",
+  "MasterCraft",
+  "Monterey",
+  "Moomba",
+  "Nautique",
+  "Nitro",
+  "Old Town",
+  "Phoenix",
+  "Premier",
+  "Princecraft",
+  "Ranger",
+  "Regal",
+  "Rinker",
+  "Sea-Doo",
+  "Sea Hunt",
+  "Sea Ray",
+  "Skeeter",
+  "Smoker Craft",
+  "South Bay",
+  "Starcraft",
+  "Stingray",
+  "Sun Tracker",
+  "Supra",
+  "Sylvan",
+  "Tahoe",
+  "Tige",
+  "Tracker",
+  "Triton",
+  "Vexus",
+  "Xpress",
+  "Yamaha",
+];
+
+/** Max stored length for a boat brand (free-text allowed). */
+export const BOAT_BRAND_MAX_LENGTH = 40;

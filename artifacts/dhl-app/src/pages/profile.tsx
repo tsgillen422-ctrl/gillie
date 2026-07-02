@@ -273,7 +273,7 @@ function AboutCard({ user }: { user: any }) {
   if (user.boatName) {
     items.push({
       icon: <Ship className="w-4 h-4" />,
-      label: `${user.boatName} · ${boatLabelFor(user.boatType)}`,
+      label: `${user.boatName} · ${boatLabelFor(user.boatType)}${user.boatBrand ? ` • ${user.boatBrand}` : ""}`,
     });
   }
 

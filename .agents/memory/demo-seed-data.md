@@ -52,3 +52,10 @@ There are now TWO isolation models in play; do not conflate them.
   a tx — there is no FK cascade, so that helper is the canonical cleanup path.
 - Benign import cycle auth → demoData → users → auth; safe because refs are all
   inside function bodies. Server boots clean.
+
+## Seed drift & reconciliation
+`seedDemoData()` short-circuits when the demo world is complete, so edits to
+DEMO_USERS never reach already-seeded users on their own. `reconcileDemoUsers()`
+(run at server startup + on repeat seed calls) syncs catalog-driven fields
+(boatType/boatBrand) onto existing demo users. When adding new seed fields,
+extend the reconcile `.set()` too, or prod demo users silently keep stale data.

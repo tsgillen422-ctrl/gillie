@@ -149,7 +149,9 @@ export default function UserScreen() {
   if (user.boatName)
     aboutRows.push({
       icon: "boat-outline",
-      label: user.boatType ? `${user.boatName} · ${boatLabelFor(user.boatType)}` : user.boatName,
+      label: user.boatType
+        ? `${user.boatName} · ${boatLabelFor(user.boatType)}${user.boatBrand ? ` • ${user.boatBrand}` : ""}`
+        : user.boatName,
     });
 
   const interests = user.interests || [];

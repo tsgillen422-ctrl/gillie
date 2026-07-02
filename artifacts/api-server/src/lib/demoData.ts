@@ -17,7 +17,7 @@ import {
   messageReactionsTable,
   notificationsTable,
 } from "@workspace/db";
-import { and, count, eq, inArray } from "drizzle-orm";
+import { and, count, eq, inArray, isNull } from "drizzle-orm";
 import { deleteUserAndData } from "../routes/users";
 import { logger } from "./logger";
 
@@ -42,6 +42,7 @@ type DemoUserSeed = {
   boatName: string;
   boatColor: string;
   boatType: string;
+  boatBrand?: string;
   interests: string[];
   lat: number;
   lng: number;
@@ -58,6 +59,7 @@ const DEMO_USERS: DemoUserSeed[] = [
     boatName: "Wake Machine",
     boatColor: "#2563eb",
     boatType: "wake",
+    boatBrand: "MasterCraft",
     interests: ["boating", "swimming", "bonfires"],
     lat: 36.53784,
     lng: -85.43484,
@@ -70,6 +72,7 @@ const DEMO_USERS: DemoUserSeed[] = [
     boatName: "Reel Therapy",
     boatColor: "#16a34a",
     boatType: "fishing",
+    boatBrand: "Ranger",
     interests: ["fishing", "boating", "sunsets"],
     lat: 36.59436,
     lng: -85.3666,
@@ -314,6 +317,26 @@ export async function countDemoUsers(): Promise<number> {
 }
 
 /**
+ * Sync catalog-driven fields (boat type/brand) on already-seeded demo users so
+ * seed updates propagate without wiping the demo world. Safe no-op when no
+ * demo users exist. Runs at server startup and on repeat seed calls.
+ */
+export async function reconcileDemoUsers(): Promise<void> {
+  try {
+    if ((await countDemoUsers()) === 0) return;
+    for (const u of DEMO_USERS) {
+      await db
+        .update(usersTable)
+        .set({ boatType: u.boatType, boatBrand: u.boatBrand ?? null })
+        .where(and(eq(usersTable.username, u.username), eq(usersTable.isDemo, true)));
+    }
+    logger.info("Reconciled demo user boat catalog fields");
+  } catch (err) {
+    logger.error({ err }, "reconcileDemoUsers failed");
+  }
+}
+
+/**
  * Create the full demo world. Idempotent and self-healing: if the complete set
  * of demo users already exists it does nothing; if a *partial* set exists (a
  * prior seed failed midway) it resets and rebuilds so the reviewer always gets a
@@ -322,6 +345,9 @@ export async function countDemoUsers(): Promise<number> {
 export async function seedDemoData(): Promise<{ created: number; message: string }> {
   const existing = await countDemoUsers();
   if (existing >= DEMO_USERS.length) {
+    // Demo world already exists — still sync seed catalog fields so
+    // catalog changes (boat types, brands) reach previously seeded users.
+    await reconcileDemoUsers();
     return { created: 0, message: `Demo data already present (${existing} demo users).` };
   }
   if (existing > 0) {
@@ -344,6 +370,7 @@ export async function seedDemoData(): Promise<{ created: number; message: string
         boatName: u.boatName,
         boatColor: u.boatColor,
         boatType: u.boatType,
+        boatBrand: u.boatBrand ?? null,
         interests: u.interests,
         location: "Dale Hollow Lake",
         isDemo: true,

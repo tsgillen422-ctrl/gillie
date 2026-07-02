@@ -30,6 +30,7 @@ export const usersTable = pgTable("users", {
   boatName: text("boat_name"),
   boatColor: text("boat_color").notNull().default("#3b82f6"),
   boatType: text("boat_type").notNull().default("speedboat"),
+  boatBrand: text("boat_brand"),
   boatNeon: boolean("boat_neon").notNull().default(false),
   boatFlag: boolean("boat_flag").notNull().default(false),
   boatAccent: text("boat_accent"),

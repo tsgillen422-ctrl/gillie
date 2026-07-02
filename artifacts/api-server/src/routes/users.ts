@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { BOAT_TYPE_VALUES } from "@workspace/boat-config";
+import { BOAT_TYPE_VALUES, BOAT_BRAND_MAX_LENGTH } from "@workspace/boat-config";
 import { db } from "@workspace/db";
 import {
   usersTable,
@@ -296,6 +296,7 @@ function formatUser(u: typeof usersTable.$inferSelect, opts: { hideLiveLocation?
     boatName: u.boatName,
     boatColor: u.boatColor,
     boatType: u.boatType,
+    boatBrand: u.boatBrand,
     boatNeon: u.boatNeon,
     boatFlag: u.boatFlag,
     boatAccent: u.boatAccent,
@@ -397,7 +398,7 @@ router.post("/me/sos", async (req, res) => {
 
 router.patch("/me", async (req, res) => {
   const uid = currentUserId(req);
-  const { displayName, bio, location, hometown, birthday, relationshipStatus, gender, work, avatarUrl, coverUrl, boatName, boatColor, boatType, boatNeon, boatFlag, boatAccent, interests, isBusiness } = req.body;
+  const { displayName, bio, location, hometown, birthday, relationshipStatus, gender, work, avatarUrl, coverUrl, boatName, boatColor, boatType, boatBrand, boatNeon, boatFlag, boatAccent, interests, isBusiness } = req.body;
   const updates: Partial<typeof usersTable.$inferInsert> = {};
   if (displayName !== undefined) updates.displayName = displayName;
   if (bio !== undefined) updates.bio = bio;
@@ -416,6 +417,16 @@ router.patch("/me", async (req, res) => {
       return res.status(400).json({ error: "Invalid boatType" });
     }
     updates.boatType = boatType;
+  }
+  if (boatBrand !== undefined) {
+    if (boatBrand !== null && typeof boatBrand !== "string") {
+      return res.status(400).json({ error: "boatBrand must be a string or null" });
+    }
+    const trimmed = typeof boatBrand === "string" ? boatBrand.trim() : null;
+    if (trimmed && trimmed.length > BOAT_BRAND_MAX_LENGTH) {
+      return res.status(400).json({ error: `boatBrand must be at most ${BOAT_BRAND_MAX_LENGTH} characters` });
+    }
+    updates.boatBrand = trimmed || null;
   }
   if (boatNeon !== undefined) {
     if (typeof boatNeon !== "boolean") {

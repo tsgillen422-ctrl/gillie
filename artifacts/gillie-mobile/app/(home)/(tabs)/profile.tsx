@@ -146,7 +146,7 @@ export default function ProfileScreen() {
     aboutRows.push({
       icon: "boat-outline",
       label: user.boatType
-        ? `${user.boatName} · ${boatLabelFor(user.boatType)}`
+        ? `${user.boatName} · ${boatLabelFor(user.boatType)}${user.boatBrand ? ` • ${user.boatBrand}` : ""}`
         : user.boatName,
     });
 

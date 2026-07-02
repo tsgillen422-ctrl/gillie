@@ -26,6 +26,8 @@ export interface UserUpdate {
   boatName?: string;
   boatColor?: string;
   boatType?: string;
+  /** @nullable */
+  boatBrand?: string | null;
   boatNeon?: boolean;
   boatFlag?: boolean;
   /** @nullable */

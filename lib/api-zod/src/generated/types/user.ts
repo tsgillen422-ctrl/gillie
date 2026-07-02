@@ -46,6 +46,8 @@ export interface User {
   /** @nullable */
   boatType?: string | null;
   /** @nullable */
+  boatBrand?: string | null;
+  /** @nullable */
   boatNeon?: boolean | null;
   /** @nullable */
   boatFlag?: boolean | null;

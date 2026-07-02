@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { boatSvgFor, FLAG_SVG, BOAT_TYPES } from "../boats";
+import { boatSvgFor, FLAG_SVG, BOAT_TYPES, BOAT_BRANDS, BOAT_BRAND_MAX_LENGTH } from "../boats";
 import { SettingsShell } from "@/components/settings-ui";
 
 const BOAT_COLORS = [
@@ -66,6 +66,7 @@ export function VesselDetailsPage() {
   const [boatName, setBoatName] = React.useState("");
   const [boatColor, setBoatColor] = React.useState("");
   const [boatType, setBoatType] = React.useState("speedboat");
+  const [boatBrand, setBoatBrand] = React.useState("");
   const [boatNeon, setBoatNeon] = React.useState(false);
   const [boatFlag, setBoatFlag] = React.useState(false);
   const [boatAccent, setBoatAccent] = React.useState("");
@@ -75,6 +76,7 @@ export function VesselDetailsPage() {
       setBoatName(me.boatName || "");
       setBoatColor(me.boatColor || "#0ea5e9");
       setBoatType(me.boatType || "speedboat");
+      setBoatBrand(me.boatBrand || "");
       setBoatNeon(me.boatNeon ?? false);
       setBoatFlag(me.boatFlag ?? false);
       setBoatAccent(me.boatAccent || "");
@@ -87,6 +89,7 @@ export function VesselDetailsPage() {
         boatName,
         boatColor,
         boatType,
+        boatBrand: boatBrand.trim() || null,
         boatNeon,
         boatFlag,
         boatAccent: boatAccent || null,
@@ -148,6 +151,25 @@ export function VesselDetailsPage() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Boat brand (optional) */}
+        <div className="space-y-2">
+          <Label htmlFor="boatBrand">Brand / Manufacturer <span className="text-muted-foreground font-normal">(optional)</span></Label>
+          <Input
+            id="boatBrand"
+            list="boat-brand-suggestions"
+            value={boatBrand}
+            onChange={e => setBoatBrand(e.target.value)}
+            maxLength={BOAT_BRAND_MAX_LENGTH}
+            placeholder="e.g. MasterCraft, Ranger, Fountain"
+            className="bg-background"
+            data-testid="input-boat-brand"
+          />
+          <datalist id="boat-brand-suggestions">
+            {BOAT_BRANDS.map(b => <option key={b} value={b} />)}
+          </datalist>
+          <p className="text-[11px] text-muted-foreground">Pick a suggestion or type your own — shown on your profile next to your boat style.</p>
         </div>
 
         <div className="space-y-3">
