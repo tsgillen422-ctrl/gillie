@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, galleryItemsTable } from "@workspace/db";
+import { usersTable, galleryItemsTable, boatsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { moderateContent } from "../lib/moderation";
@@ -29,7 +29,10 @@ function formatUser(u: typeof usersTable.$inferSelect) {
   };
 }
 
-async function formatItem(g: typeof galleryItemsTable.$inferSelect) {
+async function formatItem(
+  g: typeof galleryItemsTable.$inferSelect,
+  opts: { redactBoatId?: boolean } = {}
+) {
   const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, g.userId) });
   return {
     id: g.id,
@@ -38,6 +41,8 @@ async function formatItem(g: typeof galleryItemsTable.$inferSelect) {
     mediaUrl: g.mediaUrl,
     mediaType: g.mediaType,
     caption: g.caption,
+    // Boat tags are part of the fleet, which the owner can hide (showBoat).
+    boatId: opts.redactBoatId ? null : g.boatId,
     isMature: g.isMature,
     createdAt: g.createdAt.toISOString(),
   };
@@ -47,23 +52,40 @@ router.get("/", async (req, res) => {
   const profileUserId = req.query.profileUserId
     ? parseInt(req.query.profileUserId as string)
     : currentUserId(req);
+  let redactBoatId = false;
   // A demo user's gallery is invisible to anyone not in Demo Mode.
   if (profileUserId !== currentUserId(req)) {
     const hidden = await getHiddenDemoUserIds(currentUserId(req));
     if (hidden.includes(profileUserId)) return res.json([]);
+    // Mirror the fleet redaction on /users/:userId — when the owner hides
+    // their fleet, other viewers must not see boat tags either.
+    const owner = await db.query.usersTable.findFirst({ where: eq(usersTable.id, profileUserId) });
+    redactBoatId = owner?.showBoat === false;
   }
   const rows = await db
     .select()
     .from(galleryItemsTable)
     .where(eq(galleryItemsTable.userId, profileUserId))
     .orderBy(desc(galleryItemsTable.createdAt));
-  res.json(await Promise.all(rows.map(formatItem)));
+  res.json(await Promise.all(rows.map((r) => formatItem(r, { redactBoatId }))));
 });
 
 router.post("/", async (req, res) => {
-  const { mediaUrl, mediaType, caption } = req.body;
+  const { mediaUrl, mediaType, caption, boatId } = req.body;
   if (!mediaUrl || !String(mediaUrl).trim()) {
     return res.status(400).json({ error: "mediaUrl is required" });
+  }
+  // A memory may be tagged to one of the uploader's own boats.
+  let taggedBoatId: number | null = null;
+  if (boatId !== undefined && boatId !== null) {
+    if (typeof boatId !== "number" || !Number.isInteger(boatId)) {
+      return res.status(400).json({ error: "boatId must be an integer" });
+    }
+    const boat = await db.query.boatsTable.findFirst({ where: eq(boatsTable.id, boatId) });
+    if (!boat || boat.userId !== currentUserId(req)) {
+      return res.status(404).json({ error: "Boat not found in your fleet" });
+    }
+    taggedBoatId = boatId;
   }
   const type = mediaType === "video" ? "video" : "image";
   const trimmedMedia = String(mediaUrl).trim();
@@ -78,6 +100,7 @@ router.post("/", async (req, res) => {
       mediaUrl: trimmedMedia,
       mediaType: type,
       caption: caption ?? null,
+      boatId: taggedBoatId,
       isMature,
     })
     .returning();

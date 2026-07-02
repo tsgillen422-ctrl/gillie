@@ -17,7 +17,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { MapPin, MapPinOff, Loader2, Clock, Users, ShieldCheck, X } from "lucide-react";
+import { MapPin, MapPinOff, Loader2, Clock, Users, ShieldCheck, X, Ship } from "lucide-react";
 
 // How long a check-in lasts. Mirrors the server default (CHECKIN_DEFAULT_HOURS)
 // so the confirmation copy matches reality.
@@ -48,9 +48,17 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
   const checkOut = useCheckOutLocation();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [selectedBoatId, setSelectedBoatId] = useState<number | null>(null);
   // Re-render every 30s so the "time left" label stays current.
   const [, setTick] = useState(0);
 
+  const fleet: any[] = (me as any)?.fleet ?? [];
+  // A previously selected boat may have been deleted in Settings — only honor
+  // the selection while it still exists in the fleet, otherwise fall back to
+  // the primary boat.
+  const validSelectedId = fleet.some((b) => b.id === selectedBoatId) ? selectedBoatId : null;
+  const defaultBoatId = fleet.length > 0 ? (fleet.find((b) => b.isPrimary) ?? fleet[0]).id : null;
+  const effectiveBoatId = validSelectedId ?? defaultBoatId;
   const isSharing = !!me?.isSharingLocation;
   const remaining = remainingLabel(me?.locationSharingExpiresAt);
 
@@ -71,10 +79,11 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
       return;
     }
     setLocating(true);
+    const boatId = effectiveBoatId ?? undefined;
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         checkIn.mutate(
-          { data: { lat: pos.coords.latitude, lng: pos.coords.longitude } },
+          { data: { lat: pos.coords.latitude, lng: pos.coords.longitude, ...(boatId ? { boatId } : {}) } },
           {
             onSuccess: () => {
               invalidate();
@@ -132,6 +141,31 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
             <span>Sharing is optional. You can stop at any time, and you'll need to check in again each time you want to share.</span>
           </li>
         </ul>
+        {fleet.length > 1 && (
+          <div className="space-y-2">
+            <p className="text-sm font-semibold flex items-center gap-1.5">
+              <Ship className="h-4 w-4 text-primary" /> Which boat are you taking out?
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {fleet.map((b) => {
+                const active = effectiveBoatId === b.id;
+                return (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => setSelectedBoatId(b.id)}
+                    disabled={locating}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${active ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:border-primary/40"}`}
+                    data-testid={`button-checkin-boat-${b.id}`}
+                  >
+                    <span className="inline-block w-2.5 h-2.5 rounded-full border border-black/10" style={{ backgroundColor: b.color || "#0ea5e9" }} />
+                    {b.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={locating}>
             Cancel

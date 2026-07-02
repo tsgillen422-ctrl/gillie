@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Badge } from './badge';
+import type { Boat } from './boat';
 import type { Rank } from './rank';
 import type { UserFriendStatus } from './userFriendStatus';
 
@@ -62,6 +63,8 @@ export interface User {
   boatFlag?: boolean | null;
   /** @nullable */
   boatAccent?: string | null;
+  /** The user's boats/watercraft (redacted for other viewers when showBoat=false) */
+  fleet?: Boat[];
   interests?: string[];
   shareLocation?: boolean;
   /** @nullable */

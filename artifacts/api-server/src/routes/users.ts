@@ -28,7 +28,9 @@ import {
   nativePushTokensTable,
   waiverAcceptancesTable,
   termsAcceptancesTable,
+  boatsTable,
 } from "@workspace/db";
+import { getFleet, formatBoat, syncActiveBoat } from "./boats";
 import { eq, ilike, or, and, count, notInArray, inArray, desc, gt } from "drizzle-orm";
 import { clerkClient } from "@clerk/express";
 import { currentUserId } from "../middlewares/auth";
@@ -130,6 +132,7 @@ export async function deleteUserAndData(tx: Tx, userId: number): Promise<void> {
 
   await tx.delete(catchesTable).where(eq(catchesTable.userId, userId));
   await tx.delete(galleryItemsTable).where(eq(galleryItemsTable.userId, userId));
+  await tx.delete(boatsTable).where(eq(boatsTable.userId, userId));
 
   // Remove the user's own messages and their participation, but preserve
   // conversations (and other users' messages) that still have participants.
@@ -379,7 +382,8 @@ router.get("/me", async (req, res) => {
   });
   if (!user) return res.status(401).json({ error: "Not logged in" });
   const meBadges = await computeBadges(user.id);
-  res.json({ ...formatUser(user), ...(await getFollowCounts(user.id)), badges: meBadges, rank: computeRank(meBadges) });
+  const fleet = (await getFleet(user.id)).map(formatBoat);
+  res.json({ ...formatUser(user), fleet, ...(await getFollowCounts(user.id)), badges: meBadges, rank: computeRank(meBadges) });
 });
 
 router.post("/me/sos", async (req, res) => {
@@ -638,7 +642,7 @@ router.patch("/me/location", async (req, res) => {
 // corresponds to a real, user-initiated position.
 router.post("/me/checkin", async (req, res) => {
   const uid = currentUserId(req);
-  const { lat, lng, onWater, durationHours } = req.body;
+  const { lat, lng, onWater, durationHours, boatId } = req.body;
   if (typeof lat !== "number" || typeof lng !== "number" || !Number.isFinite(lat) || !Number.isFinite(lng)) {
     return res.status(400).json({ error: "lat and lng are required numbers" });
   }
@@ -648,6 +652,16 @@ router.post("/me/checkin", async (req, res) => {
       return res.status(400).json({ error: "durationHours must be a number" });
     }
     hours = Math.min(CHECKIN_MAX_HOURS, Math.max(1, durationHours));
+  }
+  // "Which boat are you taking today?" — copy the chosen boat's look onto the
+  // denormalized users.boat* columns so it is what appears on the map.
+  if (boatId !== undefined && boatId !== null) {
+    if (typeof boatId !== "number" || !Number.isInteger(boatId)) {
+      return res.status(400).json({ error: "boatId must be an integer" });
+    }
+    const boat = await db.query.boatsTable.findFirst({ where: eq(boatsTable.id, boatId) });
+    if (!boat || boat.userId !== uid) return res.status(404).json({ error: "Boat not found in your fleet" });
+    await syncActiveBoat(uid, boat);
   }
   const expiresAt = new Date(Date.now() + hours * 60 * 60 * 1000);
   const [updated] = await db
@@ -923,7 +937,11 @@ router.get("/:userId", async (req, res) => {
 
   const counts = await getFollowCounts(user.id);
   const userBadges = await computeBadges(user.id);
-  res.json({ ...formatUser(user, { hideLiveLocation: !canSeeLive, redactHiddenBoat: friendStatus !== "self" }), ...counts, badges: userBadges, rank: computeRank(userBadges), friendStatus });
+  // Fleet follows the same privacy rule as the boat card: hidden from other
+  // viewers when showBoat=false.
+  const hideFleet = friendStatus !== "self" && user.showBoat === false;
+  const fleet = hideFleet ? [] : (await getFleet(user.id)).map(formatBoat);
+  res.json({ ...formatUser(user, { hideLiveLocation: !canSeeLive, redactHiddenBoat: friendStatus !== "self" }), fleet, ...counts, badges: userBadges, rank: computeRank(userBadges), friendStatus });
 });
 
 export default router;

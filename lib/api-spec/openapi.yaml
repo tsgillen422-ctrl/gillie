@@ -138,6 +138,91 @@ paths:
               schema:
                 $ref: "#/components/schemas/User"
 
+  /users/me/boats:
+    get:
+      operationId: getMyBoats
+      tags: [boats]
+      summary: List the authenticated user's fleet
+      responses:
+        "200":
+          description: The user's boats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Boat"
+    post:
+      operationId: createBoat
+      tags: [boats]
+      summary: Add a boat/watercraft to the fleet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BoatInput"
+      responses:
+        "201":
+          description: Boat created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Boat"
+
+  /boats/{boatId}:
+    parameters:
+      - name: boatId
+        in: path
+        required: true
+        schema:
+          type: integer
+    patch:
+      operationId: updateBoat
+      tags: [boats]
+      summary: Update a boat in the fleet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BoatUpdate"
+      responses:
+        "200":
+          description: Boat updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Boat"
+    delete:
+      operationId: deleteBoat
+      tags: [boats]
+      summary: Remove a boat from the fleet
+      responses:
+        "204":
+          description: Boat deleted
+
+  /boats/{boatId}/primary:
+    post:
+      operationId: setPrimaryBoat
+      tags: [boats]
+      summary: Mark a boat as the Primary Boat (shown on profile and used on the map by default)
+      parameters:
+        - name: boatId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated fleet
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Boat"
+
   /users/admins:
     get:
       operationId: getAdmins
@@ -2169,6 +2254,11 @@ components:
           type: ["boolean", "null"]
         boatAccent:
           type: ["string", "null"]
+        fleet:
+          type: array
+          description: The user's boats/watercraft (redacted for other viewers when showBoat=false)
+          items:
+            $ref: "#/components/schemas/Boat"
         interests:
           type: array
           items:
@@ -2356,6 +2446,9 @@ components:
         durationHours:
           type: number
           description: How long the check-in stays active (clamped 1-8h, default 6h)
+        boatId:
+          type: ["integer", "null"]
+          description: Which boat from the user's fleet is out today; its look is used on the map
 
     FriendLocation:
       type: object
@@ -3194,6 +3287,8 @@ components:
           enum: [image, video]
         caption:
           type: ["string", "null"]
+        boatId:
+          type: ["integer", "null"]
         isMature:
           type: boolean
         createdAt:
@@ -3210,6 +3305,99 @@ components:
           enum: [image, video]
         caption:
           type: string
+        boatId:
+          type: ["integer", "null"]
+          description: Optional boat from the uploader's fleet this memory belongs to
+
+    Boat:
+      type: object
+      required: [id, userId, name, boatType, color, isPrimary, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        name:
+          type: string
+        boatType:
+          type: string
+        color:
+          type: string
+        brand:
+          type: ["string", "null"]
+        model:
+          type: ["string", "null"]
+        year:
+          type: ["integer", "null"]
+        photoUrl:
+          type: ["string", "null"]
+        neon:
+          type: boolean
+        flag:
+          type: boolean
+        accent:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        isPrimary:
+          type: boolean
+        createdAt:
+          type: string
+
+    BoatInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        boatType:
+          type: string
+        color:
+          type: string
+        brand:
+          type: ["string", "null"]
+        model:
+          type: ["string", "null"]
+        year:
+          type: ["integer", "null"]
+        photoUrl:
+          type: ["string", "null"]
+        neon:
+          type: boolean
+        flag:
+          type: boolean
+        accent:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        isPrimary:
+          type: boolean
+
+    BoatUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        boatType:
+          type: string
+        color:
+          type: string
+        brand:
+          type: ["string", "null"]
+        model:
+          type: ["string", "null"]
+        year:
+          type: ["integer", "null"]
+        photoUrl:
+          type: ["string", "null"]
+        neon:
+          type: boolean
+        flag:
+          type: boolean
+        accent:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
 
     RsvpUser:
       type: object

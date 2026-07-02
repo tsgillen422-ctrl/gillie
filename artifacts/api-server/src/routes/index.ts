@@ -11,6 +11,7 @@ import notificationsRouter from "./notifications";
 import storageRouter from "./storage";
 import conditionsRouter from "./conditions";
 import catchesRouter from "./catches";
+import boatsRouter, { fleetRouter } from "./boats";
 import searchRouter from "./search";
 import galleryRouter from "./gallery";
 import reportsRouter from "./reports";
@@ -33,6 +34,9 @@ router.use("/reviewer", reviewerRouter);
 router.use("/auth", appleNativeRouter);
 router.use(requireAuth);
 router.use(storageRouter);
+// Must be registered before /users so /users/me/boats never falls through to
+// the /users/:userId matcher.
+router.use("/users/me/boats", fleetRouter);
 router.use("/users", usersRouter);
 router.use("/friends", friendsRouter);
 router.use("/messages", messagesRouter);
@@ -43,6 +47,7 @@ router.use("/posts", postsRouter);
 router.use("/notifications", notificationsRouter);
 router.use("/conditions", conditionsRouter);
 router.use("/catches", catchesRouter);
+router.use("/boats", boatsRouter);
 router.use("/search", searchRouter);
 router.use("/gallery", galleryRouter);
 router.use("/reports", reportsRouter);

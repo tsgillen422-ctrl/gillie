@@ -16,6 +16,7 @@ import {
   messagesTable,
   messageReactionsTable,
   notificationsTable,
+  boatsTable,
 } from "@workspace/db";
 import { and, count, eq, inArray, isNull } from "drizzle-orm";
 import { deleteUserAndData } from "../routes/users";
@@ -215,6 +216,29 @@ const DEMO_BOAT_DETAILS: Record<string, { boatModel?: string; boatYear?: number;
   throttlejack: { boatModel: "242X", boatYear: 2020, homeMarina: "Star Point Marina" },
 };
 
+// Extra (non-primary) fleet boats so some demo profiles show off My Fleet with
+// multiple watercraft. The primary boat comes from the user's boat* columns via
+// the startup fleet backfill; these are added on top, keyed by name for
+// idempotency.
+const DEMO_EXTRA_BOATS: Record<
+  string,
+  { name: string; boatType: string; color: string; brand?: string; model?: string; year?: number; notes?: string }[]
+> = {
+  captainjoe: [
+    { name: "Lil' Dinghy", boatType: "jonboat", color: "#64748b", brand: "Tracker", model: "Topper 1436", year: 2010, notes: "The trusty backup for quiet coves." },
+    { name: "Salt Shaker", boatType: "jetski", color: "#f59e0b", brand: "Sea-Doo", model: "GTI SE", year: 2021 },
+  ],
+  wakerider_tn: [
+    { name: "Glass Cutter", boatType: "paddleboard", color: "#0ea5e9", notes: "Dawn patrol board for flat mornings." },
+  ],
+  lakelifelauren: [
+    { name: "Drift Away", boatType: "kayak", color: "#10b981", brand: "Old Town", model: "Loon 126", year: 2019 },
+  ],
+  striperking: [
+    { name: "Night Shift", boatType: "centerconsole", color: "#1e293b", brand: "Boston Whaler", model: "Montauk 170", year: 2013, notes: "For chasing stripers after dark." },
+  ],
+};
+
 const AUTO_FOLLOW_USERNAMES = DEMO_USERS.filter((u) => u.autoFollow).map((u) => u.username);
 const HOME_BY_USERNAME = new Map(DEMO_USERS.map((u) => [u.username, { lat: u.lat, lng: u.lng }]));
 
@@ -351,9 +375,54 @@ export async function reconcileDemoUsers(): Promise<void> {
         })
         .where(and(eq(usersTable.username, u.username), eq(usersTable.isDemo, true)));
     }
+    await ensureDemoFleets();
     logger.info("Reconciled demo user boat catalog fields");
   } catch (err) {
     logger.error({ err }, "reconcileDemoUsers failed");
+  }
+}
+
+/**
+ * Make sure each demo user's fleet exists: the primary boat mirrors their
+ * users.boat* columns, and DEMO_EXTRA_BOATS adds secondary watercraft so the
+ * reviewer sees multi-boat "My Fleet" profiles. Idempotent (keyed by boat name).
+ */
+async function ensureDemoFleets(): Promise<void> {
+  const demoUsers = await db.select().from(usersTable).where(eq(usersTable.isDemo, true));
+  for (const du of demoUsers) {
+    const existing = await db.select().from(boatsTable).where(eq(boatsTable.userId, du.id));
+    const names = new Set(existing.map((b) => b.name));
+    if (du.boatName && !names.has(du.boatName)) {
+      await db.insert(boatsTable).values({
+        userId: du.id,
+        name: du.boatName,
+        boatType: du.boatType ?? "speedboat",
+        color: du.boatColor ?? "#3b82f6",
+        brand: du.boatBrand,
+        model: du.boatModel,
+        year: du.boatYear,
+        photoUrl: du.boatPhotoUrl,
+        neon: du.boatNeon ?? false,
+        flag: du.boatFlag ?? false,
+        accent: du.boatAccent,
+        isPrimary: !existing.some((b) => b.isPrimary),
+      });
+      names.add(du.boatName);
+    }
+    for (const extra of DEMO_EXTRA_BOATS[du.username] ?? []) {
+      if (names.has(extra.name)) continue;
+      await db.insert(boatsTable).values({
+        userId: du.id,
+        name: extra.name,
+        boatType: extra.boatType,
+        color: extra.color,
+        brand: extra.brand ?? null,
+        model: extra.model ?? null,
+        year: extra.year ?? null,
+        notes: extra.notes ?? null,
+        isPrimary: false,
+      });
+    }
   }
 }
 

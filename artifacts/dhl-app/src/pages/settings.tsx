@@ -84,7 +84,7 @@ export function SettingsPage() {
         {/* Account */}
         <SettingsGroup title="Account">
           <SettingsLinkRow href="/settings/profile" icon={User} label="Captain Profile" />
-          <SettingsLinkRow href="/settings/vessel" icon={Ship} label="Vessel Details" />
+          <SettingsLinkRow href="/settings/vessel" icon={Ship} label="My Fleet" />
           <SettingsLinkRow href="/settings/delete-account" icon={Trash2} label="Delete Account" danger />
         </SettingsGroup>
 

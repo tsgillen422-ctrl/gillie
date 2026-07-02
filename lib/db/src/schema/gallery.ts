@@ -9,6 +9,8 @@ export const galleryItemsTable = pgTable("gallery_items", {
   mediaUrl: text("media_url").notNull(),
   mediaType: text("media_type").notNull().default("image"),
   caption: text("caption"),
+  // Optional link to a boat in the owner's fleet ("memories" on the boat profile).
+  boatId: integer("boat_id"),
   isMature: boolean("is_mature").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

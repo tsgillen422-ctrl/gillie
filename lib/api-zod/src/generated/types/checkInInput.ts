@@ -12,4 +12,9 @@ export interface CheckInInput {
   onWater?: boolean;
   /** How long the check-in stays active (clamped 1-8h, default 6h) */
   durationHours?: number;
+  /**
+     * Which boat from the user's fleet is out today; its look is used on the map
+     * @nullable
+     */
+  boatId?: number | null;
 }

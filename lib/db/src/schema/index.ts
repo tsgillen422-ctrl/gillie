@@ -9,6 +9,7 @@ export * from "./hiddenPlaces";
 export * from "./posts";
 export * from "./notifications";
 export * from "./catches";
+export * from "./boats";
 export * from "./gallery";
 export * from "./reports";
 export * from "./pushSubscriptions";

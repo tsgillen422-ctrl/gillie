@@ -295,7 +295,7 @@ function StatusLine({ user }: { user: any }) {
 }
 
 /** Dedicated boat showcase card — the highlight of every profile. */
-function MyBoatCard({ user, isSelf, onPhotoView }: { user: any; isSelf: boolean; onPhotoView: (v: { src: string; alt: string }) => void }) {
+function MyBoatCard({ user, isSelf, onPhotoView, onOpenDetail }: { user: any; isSelf: boolean; onPhotoView: (v: { src: string; alt: string }) => void; onOpenDetail?: () => void }) {
   if (user.showBoat === false) return null;
   const photo = resolveAvatarUrl(user.boatPhotoUrl);
   const hasDetails = user.boatName || photo || user.boatBrand || user.boatModel;
@@ -349,15 +349,182 @@ function MyBoatCard({ user, isSelf, onPhotoView }: { user: any; isSelf: boolean;
           </div>
         )}
       </div>
-      <div className="p-4 flex flex-wrap gap-2">
+      <div className="p-4 flex flex-wrap items-center gap-2">
         {chips.map((c, i) => (
           <span key={i} className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
             {c.icon}
             {c.label}
           </span>
         ))}
+        {onOpenDetail && (
+          <button
+            type="button"
+            onClick={onOpenDetail}
+            className="ml-auto inline-flex items-center gap-0.5 text-xs font-semibold text-primary hover:opacity-70"
+            data-testid="button-boat-details"
+          >
+            Details <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
     </div>
+  );
+}
+
+/** Fleet strip — every boat in the captain's fleet, tap one to open its profile. */
+function FleetSection({ fleet, onOpenBoat }: { fleet: any[]; onOpenBoat: (b: any) => void }) {
+  return (
+    <div className={`${CARD} p-4`} data-testid="card-my-fleet">
+      <SectionTitle icon={Ship}>My Fleet · {fleet.length}</SectionTitle>
+      <div className="flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1">
+        {fleet.map((b) => {
+          const photo = resolveAvatarUrl(b.photoUrl);
+          return (
+            <button
+              key={b.id}
+              type="button"
+              onClick={() => onOpenBoat(b)}
+              className="shrink-0 w-[130px] rounded-2xl border border-border bg-background overflow-hidden text-left hover:border-primary/40 transition-colors"
+              data-testid={`button-fleet-boat-${b.id}`}
+            >
+              <div className="relative h-[74px] bg-gradient-to-br from-sky-200 via-primary/30 to-secondary/40">
+                {photo ? (
+                  <img src={photo} alt={b.name} className="absolute inset-0 w-full h-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span
+                      className="scale-110"
+                      style={{ color: b.color || "#0ea5e9", lineHeight: 0, filter: "drop-shadow(0 3px 4px rgba(11,58,91,0.3))" }}
+                      dangerouslySetInnerHTML={{ __html: boatSvgFor(b.boatType) }}
+                    />
+                  </div>
+                )}
+                {b.isPrimary && (
+                  <span className="absolute top-1.5 left-1.5 inline-flex items-center gap-0.5 rounded-full bg-white/90 text-primary text-[9px] font-bold px-1.5 py-0.5 shadow-sm">
+                    <Star className="w-2.5 h-2.5 fill-current" /> Primary
+                  </span>
+                )}
+              </div>
+              <div className="p-2">
+                <p className="text-xs font-bold truncate">{b.name}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{boatLabelFor(b.boatType)}</p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Full boat profile dialog — photo, specs, story, and tagged memories. */
+function BoatDetailDialog({
+  boat,
+  homeMarina,
+  gallery,
+  onOpenChange,
+  onViewMedia,
+}: {
+  boat: any | null;
+  homeMarina?: string | null;
+  gallery?: any[];
+  onOpenChange: (open: boolean) => void;
+  onViewMedia: (item: any) => void;
+}) {
+  const photo = boat ? resolveAvatarUrl(boat.photoUrl) : null;
+  const memories = boat ? (gallery ?? []).filter((g: any) => g.boatId === boat.id) : [];
+  const brandModel = boat ? [boat.year, boat.brand, boat.model].filter(Boolean).join(" ") : "";
+  return (
+    <Dialog open={!!boat} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto p-0 gap-0">
+        {boat && (
+          <>
+            <div className="relative aspect-[16/9] bg-gradient-to-br from-sky-300 via-primary/70 to-secondary rounded-t-lg overflow-hidden">
+              {photo ? (
+                <img src={photo} alt={boat.name} className="absolute inset-0 w-full h-full object-cover" />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span
+                    className="scale-[2]"
+                    style={{ color: boat.color || "#0ea5e9", lineHeight: 0, filter: "drop-shadow(0 6px 8px rgba(11,58,91,0.35))" }}
+                    dangerouslySetInnerHTML={{ __html: boatSvgFor(boat.boatType) }}
+                  />
+                </div>
+              )}
+              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
+              <div className="absolute bottom-3 left-4 right-4 pointer-events-none">
+                <p className="text-white text-lg font-extrabold drop-shadow flex items-center gap-2">
+                  {boat.name}
+                  {boat.isPrimary && (
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-white/90 text-primary text-[10px] font-bold px-1.5 py-0.5">
+                      <Star className="w-2.5 h-2.5 fill-current" /> Primary
+                    </span>
+                  )}
+                </p>
+                {brandModel && <p className="text-white/90 text-xs font-medium drop-shadow">{brandModel}</p>}
+              </div>
+            </div>
+            <div className="p-4 space-y-4">
+              <DialogHeader className="sr-only">
+                <DialogTitle>{boat.name}</DialogTitle>
+                <DialogDescription>Boat details</DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
+                  <Ship className="w-3.5 h-3.5" /> {boatLabelFor(boat.boatType)}
+                </span>
+                {boat.color && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
+                    <span className="inline-block w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: boat.color }} />
+                    Color
+                  </span>
+                )}
+                {homeMarina && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
+                    <Anchor className="w-3.5 h-3.5" /> {homeMarina}
+                  </span>
+                )}
+              </div>
+              {boat.notes && (
+                <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{boat.notes}</p>
+              )}
+              <div>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Memories</p>
+                {memories.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {memories.map((item: any) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="relative aspect-square rounded-xl overflow-hidden bg-muted cursor-zoom-in"
+                        onClick={() => onViewMedia(item)}
+                      >
+                        <MatureGate isMature={item.isMature} rounded="rounded-xl" className="w-full h-full">
+                          {item.mediaType === "video" ? (
+                            <>
+                              <video src={item.mediaUrl} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="bg-black/40 rounded-full p-1.5">
+                                  <Play className="w-4 h-4 text-white fill-white" />
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <img src={item.mediaUrl} alt={item.caption ?? "Memory"} className="w-full h-full object-cover" />
+                          )}
+                        </MatureGate>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No memories tagged to this boat yet.</p>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -461,6 +628,8 @@ export function ProfilePage() {
   const [caption, setCaption] = React.useState("");
   const [mediaUrl, setMediaUrl] = React.useState<string | null>(null);
   const [mediaType, setMediaType] = React.useState<"image" | "video">("image");
+  const [boatTagId, setBoatTagId] = React.useState<number | null>(null);
+  const [openBoat, setOpenBoat] = React.useState<any | null>(null);
 
   const [tab, setTab] = React.useState("posts");
   const tabsRef = React.useRef<HTMLDivElement>(null);
@@ -476,6 +645,7 @@ export function ProfilePage() {
     setCaption("");
     setMediaUrl(null);
     setMediaType("image");
+    setBoatTagId(null);
     if (mediaInputRef.current) mediaInputRef.current.value = "";
   };
 
@@ -513,6 +683,7 @@ export function ProfilePage() {
           mediaUrl: `/api/storage${mediaUrl}`,
           mediaType,
           caption: caption.trim() || undefined,
+          boatId: boatTagId ?? undefined,
         },
       },
       {
@@ -895,8 +1066,20 @@ export function ProfilePage() {
 
           {/* Body */}
           <div className="px-4 pt-5 pb-24 space-y-5">
-            {/* My Boat */}
-            <MyBoatCard user={user} isSelf={isSelf} onPhotoView={setPhotoView} />
+            {/* My Boat / My Fleet */}
+            <MyBoatCard
+              user={user}
+              isSelf={isSelf}
+              onPhotoView={setPhotoView}
+              onOpenDetail={
+                (user as any).fleet?.length
+                  ? () => setOpenBoat((user as any).fleet.find((b: any) => b.isPrimary) ?? (user as any).fleet[0])
+                  : undefined
+              }
+            />
+            {(user as any).showBoat !== false && ((user as any).fleet?.length ?? 0) > 1 && (
+              <FleetSection fleet={(user as any).fleet} onOpenBoat={setOpenBoat} />
+            )}
 
             {/* About */}
             <AboutCard user={user} />
@@ -1239,6 +1422,26 @@ export function ProfilePage() {
               <Label>Caption</Label>
               <Input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption (optional)" />
             </div>
+            {isSelf && ((me as any)?.fleet?.length ?? 0) > 0 && (
+              <div className="space-y-1.5">
+                <Label>Tag a boat <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {(me as any).fleet.map((b: any) => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setBoatTagId(boatTagId === b.id ? null : b.id)}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${boatTagId === b.id ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}
+                      data-testid={`button-tag-boat-${b.id}`}
+                    >
+                      <Ship className="w-3.5 h-3.5" style={{ color: b.color || undefined }} />
+                      {b.name}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground">Tagged photos show up in that boat's memories.</p>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
@@ -1249,6 +1452,14 @@ export function ProfilePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BoatDetailDialog
+        boat={openBoat}
+        homeMarina={(user as any)?.homeMarina}
+        gallery={gallery as any[] | undefined}
+        onOpenChange={(open) => { if (!open) setOpenBoat(null); }}
+        onViewMedia={(item) => { setOpenBoat(null); setViewerItem(item); }}
+      />
 
       <ReportDialog open={reportOpen} onOpenChange={setReportOpen} targetType="user" targetId={id} />
 

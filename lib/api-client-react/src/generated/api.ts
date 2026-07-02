@@ -20,6 +20,9 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  Boat,
+  BoatInput,
+  BoatUpdate,
   Catch,
   CatchInput,
   CheckInInput,
@@ -610,6 +613,366 @@ export const useCheckOutLocation = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCheckOutLocationMutationOptions(options));
+    }
+
+export const getGetMyBoatsUrl = () => {
+
+
+
+
+  return `/api/users/me/boats`
+}
+
+/**
+ * @summary List the authenticated user's fleet
+ */
+export const getMyBoats = async ( options?: RequestInit): Promise<Boat[]> => {
+
+  return customFetch<Boat[]>(getGetMyBoatsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetMyBoatsQueryKey = () => {
+    return [
+    `/api/users/me/boats`
+    ] as const;
+    }
+
+
+export const getGetMyBoatsQueryOptions = <TData = Awaited<ReturnType<typeof getMyBoats>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyBoats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetMyBoatsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getMyBoats>>> = ({ signal }) => getMyBoats({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getMyBoats>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetMyBoatsQueryResult = NonNullable<Awaited<ReturnType<typeof getMyBoats>>>
+export type GetMyBoatsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List the authenticated user's fleet
+ */
+
+export function useGetMyBoats<TData = Awaited<ReturnType<typeof getMyBoats>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getMyBoats>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetMyBoatsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateBoatUrl = () => {
+
+
+
+
+  return `/api/users/me/boats`
+}
+
+/**
+ * @summary Add a boat/watercraft to the fleet
+ */
+export const createBoat = async (boatInput: BoatInput, options?: RequestInit): Promise<Boat> => {
+
+  return customFetch<Boat>(getCreateBoatUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      boatInput,)
+  }
+);}
+
+
+
+
+export const getCreateBoatMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBoat>>, TError,{data: BodyType<BoatInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createBoat>>, TError,{data: BodyType<BoatInput>}, TContext> => {
+
+const mutationKey = ['createBoat'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createBoat>>, {data: BodyType<BoatInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createBoat(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateBoatMutationResult = NonNullable<Awaited<ReturnType<typeof createBoat>>>
+    export type CreateBoatMutationBody = BodyType<BoatInput>
+    export type CreateBoatMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a boat/watercraft to the fleet
+ */
+export const useCreateBoat = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createBoat>>, TError,{data: BodyType<BoatInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createBoat>>,
+        TError,
+        {data: BodyType<BoatInput>},
+        TContext
+      > => {
+      return useMutation(getCreateBoatMutationOptions(options));
+    }
+
+export const getUpdateBoatUrl = (boatId: number,) => {
+
+
+
+
+  return `/api/boats/${boatId}`
+}
+
+/**
+ * @summary Update a boat in the fleet
+ */
+export const updateBoat = async (boatId: number,
+    boatUpdate: BoatUpdate, options?: RequestInit): Promise<Boat> => {
+
+  return customFetch<Boat>(getUpdateBoatUrl(boatId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      boatUpdate,)
+  }
+);}
+
+
+
+
+export const getUpdateBoatMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBoat>>, TError,{boatId: number;data: BodyType<BoatUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateBoat>>, TError,{boatId: number;data: BodyType<BoatUpdate>}, TContext> => {
+
+const mutationKey = ['updateBoat'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateBoat>>, {boatId: number;data: BodyType<BoatUpdate>}> = (props) => {
+          const {boatId,data} = props ?? {};
+
+          return  updateBoat(boatId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateBoatMutationResult = NonNullable<Awaited<ReturnType<typeof updateBoat>>>
+    export type UpdateBoatMutationBody = BodyType<BoatUpdate>
+    export type UpdateBoatMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a boat in the fleet
+ */
+export const useUpdateBoat = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateBoat>>, TError,{boatId: number;data: BodyType<BoatUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateBoat>>,
+        TError,
+        {boatId: number;data: BodyType<BoatUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateBoatMutationOptions(options));
+    }
+
+export const getDeleteBoatUrl = (boatId: number,) => {
+
+
+
+
+  return `/api/boats/${boatId}`
+}
+
+/**
+ * @summary Remove a boat from the fleet
+ */
+export const deleteBoat = async (boatId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteBoatUrl(boatId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteBoatMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteBoat>>, TError,{boatId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteBoat>>, TError,{boatId: number}, TContext> => {
+
+const mutationKey = ['deleteBoat'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteBoat>>, {boatId: number}> = (props) => {
+          const {boatId} = props ?? {};
+
+          return  deleteBoat(boatId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteBoatMutationResult = NonNullable<Awaited<ReturnType<typeof deleteBoat>>>
+
+    export type DeleteBoatMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Remove a boat from the fleet
+ */
+export const useDeleteBoat = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteBoat>>, TError,{boatId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteBoat>>,
+        TError,
+        {boatId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteBoatMutationOptions(options));
+    }
+
+export const getSetPrimaryBoatUrl = (boatId: number,) => {
+
+
+
+
+  return `/api/boats/${boatId}/primary`
+}
+
+/**
+ * @summary Mark a boat as the Primary Boat (shown on profile and used on the map by default)
+ */
+export const setPrimaryBoat = async (boatId: number, options?: RequestInit): Promise<Boat[]> => {
+
+  return customFetch<Boat[]>(getSetPrimaryBoatUrl(boatId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getSetPrimaryBoatMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setPrimaryBoat>>, TError,{boatId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof setPrimaryBoat>>, TError,{boatId: number}, TContext> => {
+
+const mutationKey = ['setPrimaryBoat'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof setPrimaryBoat>>, {boatId: number}> = (props) => {
+          const {boatId} = props ?? {};
+
+          return  setPrimaryBoat(boatId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SetPrimaryBoatMutationResult = NonNullable<Awaited<ReturnType<typeof setPrimaryBoat>>>
+
+    export type SetPrimaryBoatMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Mark a boat as the Primary Boat (shown on profile and used on the map by default)
+ */
+export const useSetPrimaryBoat = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof setPrimaryBoat>>, TError,{boatId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof setPrimaryBoat>>,
+        TError,
+        {boatId: number},
+        TContext
+      > => {
+      return useMutation(getSetPrimaryBoatMutationOptions(options));
     }
 
 export const getGetAdminsUrl = () => {

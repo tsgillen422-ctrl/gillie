@@ -41,6 +41,30 @@ export const UserFriendStatus = {
   blocked_by: 'blocked_by',
 } as const;
 
+export interface Boat {
+  id: number;
+  userId: number;
+  name: string;
+  boatType: string;
+  color: string;
+  /** @nullable */
+  brand?: string | null;
+  /** @nullable */
+  model?: string | null;
+  /** @nullable */
+  year?: number | null;
+  /** @nullable */
+  photoUrl?: string | null;
+  neon?: boolean;
+  flag?: boolean;
+  /** @nullable */
+  accent?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  isPrimary: boolean;
+  createdAt: string;
+}
+
 export interface User {
   id: number;
   username: string;
@@ -94,6 +118,8 @@ export interface User {
   boatFlag?: boolean | null;
   /** @nullable */
   boatAccent?: string | null;
+  /** The user's boats/watercraft (redacted for other viewers when showBoat=false) */
+  fleet?: Boat[];
   interests?: string[];
   shareLocation?: boolean;
   /** @nullable */
@@ -206,6 +232,11 @@ export interface CheckInInput {
   onWater?: boolean;
   /** How long the check-in stays active (clamped 1-8h, default 6h) */
   durationHours?: number;
+  /**
+     * Which boat from the user's fleet is out today; its look is used on the map
+     * @nullable
+     */
+  boatId?: number | null;
 }
 
 export interface FriendLocation {
@@ -952,6 +983,8 @@ export interface GalleryItem {
   mediaType: GalleryItemMediaType;
   /** @nullable */
   caption?: string | null;
+  /** @nullable */
+  boatId?: number | null;
   isMature?: boolean;
   createdAt: string;
 }
@@ -968,6 +1001,52 @@ export interface GalleryItemInput {
   mediaUrl: string;
   mediaType?: GalleryItemInputMediaType;
   caption?: string;
+  /**
+     * Optional boat from the uploader's fleet this memory belongs to
+     * @nullable
+     */
+  boatId?: number | null;
+}
+
+export interface BoatInput {
+  name: string;
+  boatType?: string;
+  color?: string;
+  /** @nullable */
+  brand?: string | null;
+  /** @nullable */
+  model?: string | null;
+  /** @nullable */
+  year?: number | null;
+  /** @nullable */
+  photoUrl?: string | null;
+  neon?: boolean;
+  flag?: boolean;
+  /** @nullable */
+  accent?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  isPrimary?: boolean;
+}
+
+export interface BoatUpdate {
+  name?: string;
+  boatType?: string;
+  color?: string;
+  /** @nullable */
+  brand?: string | null;
+  /** @nullable */
+  model?: string | null;
+  /** @nullable */
+  year?: number | null;
+  /** @nullable */
+  photoUrl?: string | null;
+  neon?: boolean;
+  flag?: boolean;
+  /** @nullable */
+  accent?: string | null;
+  /** @nullable */
+  notes?: string | null;
 }
 
 export interface RsvpUser {

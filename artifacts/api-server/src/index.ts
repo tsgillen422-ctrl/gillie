@@ -3,6 +3,7 @@ import app from "./app";
 import { logger } from "./lib/logger";
 import { initRealtime } from "./lib/realtime";
 import { backfillReciprocalFollows } from "./lib/backfillReciprocalFollows";
+import { backfillFleets } from "./lib/backfillFleets";
 import { startDemoPresenceRefresher, reconcileDemoUsers } from "./lib/demoData";
 import { ensureReviewerClerkAccount } from "./middlewares/auth";
 
@@ -32,6 +33,9 @@ server.listen(port, (err?: Error) => {
   logger.info({ port }, "Server listening");
   void backfillReciprocalFollows();
   void ensureReviewerClerkAccount();
-  void reconcileDemoUsers();
+  // Fleet backfill must finish before demo reconciliation: reconcile adds
+  // extra demo boats, and a fleet row appearing first would make the backfill
+  // skip migrating that user's legacy primary boat.
+  void backfillFleets().then(() => reconcileDemoUsers());
   startDemoPresenceRefresher();
 });

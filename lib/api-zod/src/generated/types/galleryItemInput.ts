@@ -11,4 +11,9 @@ export interface GalleryItemInput {
   mediaUrl: string;
   mediaType?: GalleryItemInputMediaType;
   caption?: string;
+  /**
+     * Optional boat from the uploader's fleet this memory belongs to
+     * @nullable
+     */
+  boatId?: number | null;
 }
