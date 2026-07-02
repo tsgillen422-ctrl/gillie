@@ -18,7 +18,12 @@ const MAX_VIDEO_MB = 60;
 export function AddStoryDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const [pendingKind, setPendingKind] = useState<StoryKind>("photo");
   const [cameraOpen, setCameraOpen] = useState(false);
-  const [editor, setEditor] = useState<{ kind: StoryKind; mediaPreview: string | null; mediaUrl: string | null } | null>(null);
+  const [editor, setEditor] = useState<{
+    kind: StoryKind;
+    mediaPreview: string | null;
+    mediaUrl: string | null;
+    initialFilterIdx?: number;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { uploadFile, isUploading } = useUpload();
@@ -29,7 +34,7 @@ export function AddStoryDialog({ open, onOpenChange }: { open: boolean; onOpenCh
     onOpenChange(false);
   };
 
-  const uploadMedia = async (file: File) => {
+  const uploadMedia = async (file: File, initialFilterIdx?: number) => {
     const isImage = file.type.startsWith("image/");
     try {
       const toUpload = isImage ? await compressImage(file) : file;
@@ -39,6 +44,7 @@ export function AddStoryDialog({ open, onOpenChange }: { open: boolean; onOpenCh
           kind: isImage ? "photo" : "video",
           mediaUrl: `/api/storage${res.objectPath}`,
           mediaPreview: URL.createObjectURL(file),
+          initialFilterIdx,
         });
       } else {
         toast.error("Upload failed. Try again.");
@@ -81,6 +87,7 @@ export function AddStoryDialog({ open, onOpenChange }: { open: boolean; onOpenCh
         kind={editor.kind}
         mediaPreview={editor.mediaPreview}
         mediaUrl={editor.mediaUrl}
+        initialFilterIdx={editor.initialFilterIdx}
         onCancel={() => setEditor(null)}
         onPosted={closeAll}
       />
@@ -91,9 +98,9 @@ export function AddStoryDialog({ open, onOpenChange }: { open: boolean; onOpenCh
     return (
       <StoryCamera
         onClose={() => setCameraOpen(false)}
-        onCapture={async (file) => {
+        onCapture={async (file, filterIdx) => {
           setCameraOpen(false);
-          await uploadMedia(file);
+          await uploadMedia(file, filterIdx);
         }}
       />
     );

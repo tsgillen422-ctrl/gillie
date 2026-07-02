@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Zap, ZapOff, Timer, Grid3x3, SwitchCamera, Loader2 } from "lucide-react";
+import { STORY_FILTERS } from "@/lib/storyFilters";
 
-// In-app photo camera for stories: flash (torch on supported devices, screen
-// flash otherwise), pinch-free zoom slider, 3s/10s timer, and rule-of-thirds
-// grid. Captures a JPEG File and hands it back to the composer.
+// In-app photo camera for stories: live filters (swipe the preview or tap a
+// chip, Snapchat-style — the chosen filter carries into the editor), flash
+// (torch on supported devices, screen flash otherwise), zoom slider, 3s/10s
+// timer, and rule-of-thirds grid. Captures a JPEG File and hands it back.
 
 const TIMERS = [0, 3, 10] as const;
 
@@ -12,7 +14,7 @@ export function StoryCamera({
   onCapture,
   onClose,
 }: {
-  onCapture: (file: File) => void;
+  onCapture: (file: File, filterIdx: number) => void;
   onClose: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -28,6 +30,23 @@ export function StoryCamera({
   const [countdown, setCountdown] = useState<number | null>(null);
   const [grid, setGrid] = useState(false);
   const [screenFlash, setScreenFlash] = useState(false);
+  const [filterIdx, setFilterIdx] = useState(0);
+  const [filterFlash, setFilterFlash] = useState(false);
+  const swipeRef = useRef<{ x: number; y: number; id: number } | null>(null);
+  const flashTimerRef = useRef<number | null>(null);
+  const filterStripRef = useRef<HTMLDivElement>(null);
+
+  const changeFilter = useCallback((next: number) => {
+    setFilterIdx(next);
+    setFilterFlash(true);
+    if (flashTimerRef.current) window.clearTimeout(flashTimerRef.current);
+    flashTimerRef.current = window.setTimeout(() => setFilterFlash(false), 900);
+    // Keep the selected chip in view.
+    filterStripRef.current
+      ?.querySelector<HTMLElement>(`[data-filter-idx="${next}"]`)
+      ?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, []);
+  useEffect(() => () => { if (flashTimerRef.current) window.clearTimeout(flashTimerRef.current); }, []);
 
   // Each stream request gets a token; a late getUserMedia resolution whose
   // token no longer matches (unmount or camera flip) is stopped immediately
@@ -140,12 +159,12 @@ export function StoryCamera({
       (blob) => {
         if (!blob) return;
         stopStream();
-        onCapture(new File([blob], `story-${Date.now()}.jpg`, { type: "image/jpeg" }));
+        onCapture(new File([blob], `story-${Date.now()}.jpg`, { type: "image/jpeg" }), filterIdx);
       },
       "image/jpeg",
       0.9,
     );
-  }, [cssZoom, facing, onCapture, stopStream]);
+  }, [cssZoom, facing, filterIdx, onCapture, stopStream]);
 
   const handleShutter = () => {
     if (countdown != null) return;
@@ -180,9 +199,31 @@ export function StoryCamera({
     timerIdsRef.current.push(id);
   };
 
+  const liveFilter = STORY_FILTERS[filterIdx] ?? STORY_FILTERS[0];
+
+  const onPreviewPointerDown = (e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest("button,input")) return;
+    swipeRef.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+  };
+  const onPreviewPointerUp = (e: React.PointerEvent) => {
+    const start = swipeRef.current;
+    swipeRef.current = null;
+    if (!start || start.id !== e.pointerId) return;
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      const dir = dx < 0 ? 1 : -1;
+      changeFilter((filterIdx + dir + STORY_FILTERS.length) % STORY_FILTERS.length);
+    }
+  };
+
   return createPortal(
     <div className="pointer-events-auto fixed inset-0 z-[110] flex flex-col bg-black" data-testid="story-camera">
-      <div className="relative flex-1 overflow-hidden">
+      <div
+        className="relative flex-1 overflow-hidden"
+        onPointerDown={onPreviewPointerDown}
+        onPointerUp={onPreviewPointerUp}
+      >
         <video
           ref={videoRef}
           playsInline
@@ -192,8 +233,16 @@ export function StoryCamera({
           style={{
             transform: `${facing === "user" ? "scaleX(-1) " : ""}scale(${cssZoom})`,
             transformOrigin: "center",
+            filter: liveFilter.css || undefined,
           }}
         />
+        {filterFlash && (
+          <div className="pointer-events-none absolute inset-x-0 top-1/3 flex justify-center">
+            <span className="animate-in fade-in zoom-in-95 rounded-full bg-black/60 px-4 py-1.5 text-sm font-semibold text-white backdrop-blur-sm">
+              {liveFilter.label}
+            </span>
+          </div>
+        )}
         {grid && (
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute left-1/3 top-0 h-full w-px bg-white/40" />
@@ -284,8 +333,26 @@ export function StoryCamera({
         </div>
       </div>
 
+      {/* live filter strip */}
+      <div ref={filterStripRef} className="flex gap-1.5 overflow-x-auto bg-black px-3 pt-2.5" data-testid="camera-filter-strip">
+        {STORY_FILTERS.map((f, i) => (
+          <button
+            key={f.name}
+            type="button"
+            data-filter-idx={i}
+            onClick={() => changeFilter(i)}
+            className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
+              filterIdx === i ? "bg-white text-black" : "bg-white/10 text-white/75"
+            }`}
+            data-testid={`button-camera-filter-${f.name}`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       {/* bottom bar */}
-      <div className="flex items-center justify-between bg-black px-10 pb-[calc(env(safe-area-inset-bottom,0px)+18px)] pt-4">
+      <div className="flex items-center justify-between bg-black px-10 pb-[calc(env(safe-area-inset-bottom,0px)+18px)] pt-3">
         <div className="w-11" />
         <button
           type="button"

@@ -59,10 +59,23 @@ const EMOJI_CATEGORIES: { id: string; label: string; emojis: string[] }[] = [
   { id: "boats", label: "Boats", emojis: ["🚤", "⛵", "🛥️", "🛶", "🚣", "⚓", "🪝", "🧭", "🌬️", "🏁", "🛳️", "🦺"] },
   { id: "fishing", label: "Fishing", emojis: ["🎣", "🐟", "🐠", "🦈", "🪱", "🪰", "🐊", "🦞", "🦀", "🏆", "📏", "😤"] },
   { id: "campfire", label: "Campfire", emojis: ["🔥", "🏕️", "🌲", "🪵", "🌌", "🦟", "🌭", "🍢", "☕", "🎸", "🌙", "⭐"] },
-  { id: "fireworks", label: "Fireworks", emojis: ["🎆", "🎇", "✨", "🧨", "🎉", "🎊", "🇺🇸", "🗽", "❤️", "💙", "🤍", "💥"] },
+  { id: "holidays", label: "Holidays", emojis: ["🎆", "🎇", "✨", "🎉", "🎊", "🇺🇸", "🗽", "🎄", "🎃", "🦃", "🐰", "❄️"] },
   { id: "summer", label: "Summer", emojis: ["☀️", "😎", "🩳", "🩱", "🧴", "🍉", "🍦", "🍹", "🍻", "🥤", "🏖️", "🕶️"] },
   { id: "reactions", label: "Reactions", emojis: ["❤️", "🔥", "👏", "😍", "🤙", "💯", "🙌", "👀", "😱", "🥳", "💪", "🫡"] },
   { id: "funny", label: "Funny", emojis: ["😂", "🤣", "😅", "🫠", "🤪", "😜", "🥴", "💀", "🙃", "🐸", "🦅", "🤠"] },
+];
+
+// Exclusive Gillie-branded stickers — rendered as styled text stickers so
+// they pass server validation and resize/rotate like everything else.
+const GILLIE_STICKERS: { text: string; font: string; style: string; color: string }[] = [
+  { text: "GILLIE 🌊", font: "heavy", style: "gradient", color: "#ffffff" },
+  { text: "Lake Life", font: "script", style: "bubble", color: "#0d9488" },
+  { text: "Dale Hollow\nLocal", font: "heavy", style: "outline", color: "#facc15" },
+  { text: "Catch of\nthe Day 🎣", font: "heavy", style: "shadow", color: "#ffffff" },
+  { text: "Lake Mode: ON", font: "mono", style: "neon", color: "#38bdf8" },
+  { text: "Boat Hair,\nDon't Care", font: "script", style: "shadow", color: "#ffffff" },
+  { text: "Sunset Chaser", font: "classic", style: "gradient", color: "#ffffff" },
+  { text: "Dock Vibes", font: "heavy", style: "bubble", color: "#0369a1" },
 ];
 
 const TEXT_FONT_OPTIONS = [
@@ -111,17 +124,21 @@ export function StoryEditor({
   kind,
   mediaPreview,
   mediaUrl,
+  initialFilterIdx,
   onCancel,
   onPosted,
 }: {
   kind: "photo" | "video" | "text";
   mediaPreview: string | null;
   mediaUrl: string | null;
+  initialFilterIdx?: number;
   onCancel: () => void;
   onPosted: () => void;
 }) {
   const [sheet, setSheet] = useState<SheetName>(null);
-  const [filterIdx, setFilterIdx] = useState(0);
+  const [filterIdx, setFilterIdx] = useState(() =>
+    initialFilterIdx != null && initialFilterIdx >= 0 && initialFilterIdx < STORY_FILTERS.length ? initialFilterIdx : 0,
+  );
   const [filterFlash, setFilterFlash] = useState(false);
   const [stickers, setStickers] = useState<StorySticker[]>([]);
   const [caption, setCaption] = useState("");
@@ -487,7 +504,7 @@ export function StoryEditor({
 
       {/* sheets */}
       {sheet === "filters" && kind !== "text" && (
-        <div className="max-h-[45vh] overflow-y-auto bg-black px-3 pt-2" data-testid="sheet-filters">
+        <div className="animate-in fade-in slide-in-from-bottom-4 max-h-[45vh] overflow-y-auto bg-black px-3 pt-2 duration-200" data-testid="sheet-filters">
           {FILTER_CATEGORIES.map((cat) => (
             <div key={cat.id} className="mb-2">
               <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-white/50">{cat.label}</p>
@@ -521,9 +538,9 @@ export function StoryEditor({
       )}
 
       {sheet === "stickers" && (
-        <div className="flex max-h-[45vh] flex-col bg-black px-3 pt-2" data-testid="sheet-stickers">
+        <div className="animate-in fade-in slide-in-from-bottom-4 flex max-h-[45vh] flex-col bg-black px-3 pt-2 duration-200" data-testid="sheet-stickers">
           <div className="flex gap-1.5 overflow-x-auto pb-2">
-            {[{ id: "live", label: "Live" }, ...EMOJI_CATEGORIES.map((c) => ({ id: c.id, label: c.label })), { id: "gifs", label: "Animated" }].map((t) => (
+            {[{ id: "live", label: "Live" }, { id: "gillie", label: "Gillie ✨" }, ...EMOJI_CATEGORIES.map((c) => ({ id: c.id, label: c.label })), { id: "gifs", label: "Animated" }].map((t) => (
               <button
                 key={t.id}
                 type="button"
@@ -547,6 +564,34 @@ export function StoryEditor({
                 <button type="button" onClick={addBoatSticker} className="rounded-full bg-white/10 px-3.5 py-2 text-sm font-medium text-white" data-testid="button-sticker-boat">
                   🚤 My boat
                 </button>
+              </div>
+            )}
+            {stickerTab === "gillie" && (
+              <div className="grid grid-cols-2 gap-2">
+                {GILLIE_STICKERS.map((g) => (
+                  <button
+                    key={g.text}
+                    type="button"
+                    onClick={() => addSticker({ type: "text", data: { text: g.text, font: g.font, style: g.style, color: g.color } })}
+                    className="flex min-h-14 items-center justify-center rounded-xl bg-white/5 px-2 py-2.5"
+                    data-testid={`button-gillie-${g.text.slice(0, 10)}`}
+                  >
+                    <span
+                      className="whitespace-pre-wrap text-center text-sm font-bold"
+                      style={
+                        g.style === "gradient"
+                          ? { background: "linear-gradient(90deg, #22d3ee, #a78bfa, #f472b6)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }
+                          : g.style === "neon"
+                            ? { color: g.color, textShadow: `0 0 6px ${g.color}, 0 0 14px ${g.color}` }
+                            : g.style === "bubble"
+                              ? { color: g.color, background: "rgba(255,255,255,0.92)", borderRadius: 10, padding: "3px 8px" }
+                              : { color: g.color, textShadow: "0 1px 6px rgba(0,0,0,0.8)" }
+                      }
+                    >
+                      {g.text}
+                    </span>
+                  </button>
+                ))}
               </div>
             )}
             {EMOJI_CATEGORIES.map(
@@ -605,7 +650,7 @@ export function StoryEditor({
       )}
 
       {sheet === "text" && (
-        <div className="max-h-[50vh] space-y-2.5 overflow-y-auto bg-black px-3 pt-2" data-testid="sheet-text">
+        <div className="animate-in fade-in slide-in-from-bottom-4 max-h-[50vh] space-y-2.5 overflow-y-auto bg-black px-3 pt-2 duration-200" data-testid="sheet-text">
           <Textarea
             value={draftText}
             onChange={(e) => setDraftText(e.target.value.slice(0, 200))}
@@ -659,7 +704,7 @@ export function StoryEditor({
       )}
 
       {sheet === "draw" && kind === "photo" && (
-        <div className="space-y-2.5 bg-black px-3 pt-2" data-testid="sheet-draw">
+        <div className="animate-in fade-in slide-in-from-bottom-4 space-y-2.5 bg-black px-3 pt-2 duration-200" data-testid="sheet-draw">
           <div className="flex gap-1.5 overflow-x-auto">
             {DRAW_TOOLS.map((t) => (
               <button
@@ -704,7 +749,7 @@ export function StoryEditor({
       )}
 
       {sheet === "more" && (
-        <div className="max-h-[55vh] space-y-2.5 overflow-y-auto bg-black px-3 pt-2" data-testid="sheet-more">
+        <div className="animate-in fade-in slide-in-from-bottom-4 max-h-[55vh] space-y-2.5 overflow-y-auto bg-black px-3 pt-2 duration-200" data-testid="sheet-more">
           <Select value={placeName || "none"} onValueChange={(v) => setPlaceName(v === "none" ? "" : v)}>
             <SelectTrigger className="border-white/15 bg-white/10 text-white" data-testid="select-story-place">
               <div className="flex items-center gap-1.5">
