@@ -25,6 +25,13 @@ export function formatBoat(b: Boat) {
     flag: b.flag,
     accent: b.accent,
     notes: b.notes,
+    horsepower: b.horsepower,
+    engineInfo: b.engineInfo,
+    lengthFt: b.lengthFt,
+    favoriteMarina: b.favoriteMarina,
+    favoriteCove: b.favoriteCove,
+    favoriteActivity: b.favoriteActivity,
+    mods: b.mods,
     isPrimary: b.isPrimary,
     createdAt: b.createdAt.toISOString(),
   };
@@ -114,6 +121,28 @@ function validateBoatFields(body: any, { requireName }: { requireName: boolean }
   if (notes !== undefined && notes !== null && (typeof notes !== "string" || notes.length > 500)) {
     return { error: "notes must be 500 characters or less" };
   }
+  const { horsepower, engineInfo, lengthFt, favoriteMarina, favoriteCove, favoriteActivity, mods } = body;
+  if (horsepower !== undefined && horsepower !== null) {
+    if (typeof horsepower !== "number" || !Number.isInteger(horsepower) || horsepower < 1 || horsepower > 20000) {
+      return { error: "horsepower must be between 1 and 20000" };
+    }
+  }
+  if (lengthFt !== undefined && lengthFt !== null) {
+    if (typeof lengthFt !== "number" || !Number.isInteger(lengthFt) || lengthFt < 1 || lengthFt > 500) {
+      return { error: "length must be between 1 and 500 feet" };
+    }
+  }
+  for (const [key, val, max] of [
+    ["engineInfo", engineInfo, 100],
+    ["favoriteMarina", favoriteMarina, 80],
+    ["favoriteCove", favoriteCove, 80],
+    ["favoriteActivity", favoriteActivity, 80],
+    ["mods", mods, 500],
+  ] as const) {
+    if (val !== undefined && val !== null && (typeof val !== "string" || val.length > max)) {
+      return { error: `${key} must be ${max} characters or less` };
+    }
+  }
   return null;
 }
 
@@ -152,6 +181,13 @@ fleetRouter.post("/", async (req, res) => {
       flag: req.body.flag ?? false,
       accent: req.body.accent ?? null,
       notes: req.body.notes?.trim() || null,
+      horsepower: req.body.horsepower ?? null,
+      engineInfo: req.body.engineInfo?.trim() || null,
+      lengthFt: req.body.lengthFt ?? null,
+      favoriteMarina: req.body.favoriteMarina?.trim() || null,
+      favoriteCove: req.body.favoriteCove?.trim() || null,
+      favoriteActivity: req.body.favoriteActivity?.trim() || null,
+      mods: req.body.mods?.trim() || null,
       isPrimary: makePrimary,
     })
     .returning();
@@ -187,6 +223,13 @@ router.patch("/:boatId", async (req, res) => {
   if (req.body.flag !== undefined) updates.flag = req.body.flag;
   if (req.body.accent !== undefined) updates.accent = req.body.accent ?? null;
   if (req.body.notes !== undefined) updates.notes = req.body.notes?.trim() || null;
+  if (req.body.horsepower !== undefined) updates.horsepower = req.body.horsepower ?? null;
+  if (req.body.engineInfo !== undefined) updates.engineInfo = req.body.engineInfo?.trim() || null;
+  if (req.body.lengthFt !== undefined) updates.lengthFt = req.body.lengthFt ?? null;
+  if (req.body.favoriteMarina !== undefined) updates.favoriteMarina = req.body.favoriteMarina?.trim() || null;
+  if (req.body.favoriteCove !== undefined) updates.favoriteCove = req.body.favoriteCove?.trim() || null;
+  if (req.body.favoriteActivity !== undefined) updates.favoriteActivity = req.body.favoriteActivity?.trim() || null;
+  if (req.body.mods !== undefined) updates.mods = req.body.mods?.trim() || null;
 
   const [updated] = await db.update(boatsTable).set(updates).where(eq(boatsTable.id, boatId)).returning();
 

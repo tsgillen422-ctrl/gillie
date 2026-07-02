@@ -27,6 +27,7 @@ export * from './demoDataStatus';
 export * from './dockLabel';
 export * from './dockLabelInput';
 export * from './errorEnvelope';
+export * from './favoriteThing';
 export * from './fishingPressure';
 export * from './fishingPressureLevel';
 export * from './friendLocation';

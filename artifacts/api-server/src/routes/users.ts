@@ -321,6 +321,7 @@ function formatUser(u: typeof usersTable.$inferSelect, opts: { hideLiveLocation?
     boatFlag: u.boatFlag,
     boatAccent: u.boatAccent,
     interests: u.interests ?? [],
+    favoriteThings: u.favoriteThings ?? [],
     shareLocation: u.shareLocation,
     locationSharingExpiresAt: u.locationSharingExpiresAt ? u.locationSharingExpiresAt.toISOString() : null,
     isSharingLocation: sharing,
@@ -419,7 +420,7 @@ router.post("/me/sos", async (req, res) => {
 
 router.patch("/me", async (req, res) => {
   const uid = currentUserId(req);
-  const { displayName, bio, location, hometown, birthday, relationshipStatus, gender, work, avatarUrl, coverUrl, boatName, boatColor, boatType, boatBrand, boatModel, boatYear, boatPhotoUrl, homeMarina, showBoat, boatNeon, boatFlag, boatAccent, interests, isBusiness } = req.body;
+  const { displayName, bio, location, hometown, birthday, relationshipStatus, gender, work, avatarUrl, coverUrl, boatName, boatColor, boatType, boatBrand, boatModel, boatYear, boatPhotoUrl, homeMarina, showBoat, boatNeon, boatFlag, boatAccent, interests, favoriteThings, isBusiness } = req.body;
   const updates: Partial<typeof usersTable.$inferInsert> = {};
   if (displayName !== undefined) updates.displayName = displayName;
   if (bio !== undefined) updates.bio = bio;
@@ -518,6 +519,29 @@ router.patch("/me", async (req, res) => {
       return res.status(400).json({ error: "interests contains an unknown value" });
     }
     updates.interests = Array.from(new Set(interests as string[]));
+  }
+  if (favoriteThings !== undefined) {
+    if (!Array.isArray(favoriteThings) || favoriteThings.length > 12) {
+      return res.status(400).json({ error: "favoriteThings must be an array of at most 12 items" });
+    }
+    for (const f of favoriteThings) {
+      if (
+        !f ||
+        typeof f !== "object" ||
+        typeof f.label !== "string" ||
+        !f.label.trim() ||
+        f.label.length > 40 ||
+        typeof f.value !== "string" ||
+        !f.value.trim() ||
+        f.value.length > 80
+      ) {
+        return res.status(400).json({ error: "each favorite needs a label (≤40 chars) and value (≤80 chars)" });
+      }
+    }
+    updates.favoriteThings = favoriteThings.map((f: any) => ({
+      label: String(f.label).trim(),
+      value: String(f.value).trim(),
+    }));
   }
   if (isBusiness !== undefined) updates.isBusiness = isBusiness;
   // Apple 5.1.2: shareLocation is no longer a persistent toggle. Live location

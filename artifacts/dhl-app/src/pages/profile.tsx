@@ -1,11 +1,11 @@
 import React from "react";
 import { useParams, Link, useLocation } from "wouter";
-import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useReactToPost, useDeletePost, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useDeleteUser, useGetFriends, useGetFollowers, useGetFollowing, useGetUserFriends, useGetCatches, useGetFavoritePins, getGetUserQueryKey, getGetGalleryQueryKey, getGetPostsQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey, getGetUserFriendsQueryKey } from "@workspace/api-client-react";
+import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useReactToPost, useDeletePost, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useDeleteUser, useGetFriends, useGetFollowers, useGetFollowing, useGetUserFriends, useGetCatches, useGetFavoritePins, useUpdateMe, getGetMeQueryKey, getGetUserQueryKey, getGetGalleryQueryKey, getGetPostsQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey, getGetUserFriendsQueryKey } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MatureGate } from "@/components/MatureGate";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Fish, Tent, Anchor, Mountain, Waves, Camera, Image as ImageIcon, Bookmark, FileText, ChevronRight, Star } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Fish, Tent, Anchor, Mountain, Waves, Camera, Image as ImageIcon, Bookmark, FileText, ChevronRight, Star, Trophy, Pencil, Sparkles, Gauge, Ruler, Cog, Wrench } from "lucide-react";
 import { INTEREST_MAP } from "@/lib/interests";
 import { ReportDialog } from "@/components/ReportDialog";
 import { BadgeRow, badgeMeta } from "@/components/Badges";
@@ -372,13 +372,14 @@ function MyBoatCard({ user, isSelf, onPhotoView, onOpenDetail }: { user: any; is
 }
 
 /** Fleet strip — every boat in the captain's fleet, tap one to open its profile. */
-function FleetSection({ fleet, onOpenBoat }: { fleet: any[]; onOpenBoat: (b: any) => void }) {
+function FleetSection({ fleet, gallery, onOpenBoat }: { fleet: any[]; gallery?: any[]; onOpenBoat: (b: any) => void }) {
   return (
     <div className={`${CARD} p-4`} data-testid="card-my-fleet">
       <SectionTitle icon={Ship}>My Fleet · {fleet.length}</SectionTitle>
       <div className="flex gap-2.5 overflow-x-auto pb-1 -mx-1 px-1">
         {fleet.map((b) => {
           const photo = resolveAvatarUrl(b.photoUrl);
+          const photoCount = (gallery ?? []).filter((g: any) => g.boatId === b.id).length + (b.photoUrl ? 1 : 0);
           return (
             <button
               key={b.id}
@@ -407,7 +408,9 @@ function FleetSection({ fleet, onOpenBoat }: { fleet: any[]; onOpenBoat: (b: any
               </div>
               <div className="p-2">
                 <p className="text-xs font-bold truncate">{b.name}</p>
-                <p className="text-[10px] text-muted-foreground truncate">{boatLabelFor(b.boatType)}</p>
+                <p className="text-[10px] text-muted-foreground truncate">
+                  {[boatLabelFor(b.boatType), photoCount > 0 ? `${photoCount} photo${photoCount === 1 ? "" : "s"}` : null].filter(Boolean).join(" · ")}
+                </p>
               </div>
             </button>
           );
@@ -479,14 +482,45 @@ function BoatDetailDialog({
                     Color
                   </span>
                 )}
-                {homeMarina && (
+                {boat.lengthFt && (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
-                    <Anchor className="w-3.5 h-3.5" /> {homeMarina}
+                    <Ruler className="w-3.5 h-3.5" /> {boat.lengthFt} ft
+                  </span>
+                )}
+                {boat.horsepower && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
+                    <Gauge className="w-3.5 h-3.5" /> {boat.horsepower} HP
+                  </span>
+                )}
+                {boat.engineInfo && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
+                    <Cog className="w-3.5 h-3.5" /> {boat.engineInfo}
+                  </span>
+                )}
+                {(boat.favoriteMarina || homeMarina) && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
+                    <Anchor className="w-3.5 h-3.5" /> {boat.favoriteMarina || homeMarina}
+                  </span>
+                )}
+                {boat.favoriteCove && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
+                    <Waves className="w-3.5 h-3.5" /> {boat.favoriteCove}
+                  </span>
+                )}
+                {boat.favoriteActivity && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-3 py-1 text-xs font-semibold">
+                    <Sparkles className="w-3.5 h-3.5" /> {boat.favoriteActivity}
                   </span>
                 )}
               </div>
               {boat.notes && (
                 <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{boat.notes}</p>
+              )}
+              {boat.mods && (
+                <div>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-1"><Wrench className="w-3 h-3" /> Mods & Upgrades</p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">{boat.mods}</p>
+                </div>
               )}
               <div>
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Memories</p>
@@ -547,14 +581,12 @@ function AboutCard({ user }: { user: any }) {
       <div className="flex gap-4 items-start">
         <div className="flex-1 min-w-0">
           {items.length > 0 ? (
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-wrap gap-1.5">
               {items.map((item, i) => (
-                <div key={i} className="flex items-center gap-3 text-sm">
-                  <span className="grid place-items-center w-7 h-7 rounded-lg bg-primary/10 text-primary shrink-0">
-                    {item.icon}
-                  </span>
-                  <span className="text-foreground/90">{item.label}</span>
-                </div>
+                <span key={i} className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 text-primary px-2.5 py-1 text-xs font-semibold max-w-full">
+                  <span className="shrink-0 [&>svg]:w-3.5 [&>svg]:h-3.5">{item.icon}</span>
+                  <span className="truncate text-foreground/80">{item.label}</span>
+                </span>
               ))}
             </div>
           ) : (
@@ -563,6 +595,139 @@ function AboutCard({ user }: { user: any }) {
         </div>
         <RankBadge rank={user.rank} />
       </div>
+    </div>
+  );
+}
+
+/** Dedicated lake stats card — the numbers that tell a captain's story. */
+function LakeStatsCard({ stats }: { stats: { icon: string; label: string; value: number }[] }) {
+  return (
+    <div className={`${CARD} p-4`} data-testid="card-lake-stats">
+      <SectionTitle icon={Trophy}>Lake Stats</SectionTitle>
+      <div className="grid grid-cols-3 gap-2">
+        {stats.map((s) => (
+          <div key={s.label} className="rounded-2xl bg-primary/5 border border-primary/10 px-2 py-2.5 text-center">
+            <p className="text-base leading-none mb-1">{s.icon}</p>
+            <p className="text-lg font-extrabold leading-tight">{s.value}</p>
+            <p className="text-[10px] font-semibold text-muted-foreground leading-tight">{s.label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const FAVORITE_PRESETS = [
+  { label: "Favorite Cove", icon: "🏞️" },
+  { label: "Favorite Sunset Spot", icon: "🌅" },
+  { label: "Favorite Restaurant", icon: "🍔" },
+  { label: "Favorite Marina", icon: "⚓" },
+  { label: "Favorite Fishing Spot", icon: "🎣" },
+  { label: "Favorite Sandbar", icon: "🏖️" },
+  { label: "Best Catch", icon: "🐟" },
+  { label: "Biggest Cruise", icon: "🚤" },
+];
+
+function favoriteIconFor(label: string) {
+  return FAVORITE_PRESETS.find((p) => p.label === label)?.icon ?? "⭐";
+}
+
+/** Pinned "Favorite Things" — user-curated highlights of their lake life. */
+function FavoriteThingsCard({ user, isSelf }: { user: any; isSelf: boolean }) {
+  const favorites: { label: string; value: string }[] = user.favoriteThings ?? [];
+  const [editOpen, setEditOpen] = React.useState(false);
+  const [draft, setDraft] = React.useState<Record<string, string>>({});
+  const updateMe = useUpdateMe();
+  const qc = useQueryClient();
+
+  if (!isSelf && favorites.length === 0) return null;
+
+  const openEditor = () => {
+    const d: Record<string, string> = {};
+    favorites.forEach((f) => { d[f.label] = f.value; });
+    setDraft(d);
+    setEditOpen(true);
+  };
+
+  const save = () => {
+    const labels = [
+      ...FAVORITE_PRESETS.map((p) => p.label),
+      ...favorites.map((f) => f.label).filter((l) => !FAVORITE_PRESETS.some((p) => p.label === l)),
+    ];
+    const next = labels
+      .map((label) => ({ label, value: (draft[label] ?? "").trim().slice(0, 80) }))
+      .filter((f) => f.value);
+    updateMe.mutate({ data: { favoriteThings: next } as any }, {
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
+        setEditOpen(false);
+        toast.success("Favorites saved");
+      },
+      onError: () => toast.error("Couldn't save your favorites."),
+    });
+  };
+
+  return (
+    <div className={`${CARD} p-4`} data-testid="card-favorite-things">
+      <SectionTitle
+        icon={Star}
+        action={
+          isSelf ? (
+            <button type="button" onClick={openEditor} className="text-xs font-semibold text-primary flex items-center gap-1 hover:opacity-70" data-testid="button-edit-favorites">
+              <Pencil className="w-3 h-3" /> Edit
+            </button>
+          ) : undefined
+        }
+      >
+        Favorite Things
+      </SectionTitle>
+      {favorites.length > 0 ? (
+        <div className="grid grid-cols-1 gap-1.5">
+          {favorites.map((f) => (
+            <div key={f.label} className="flex items-center gap-2.5 rounded-xl bg-primary/5 border border-primary/10 px-3 py-2">
+              <span className="text-base shrink-0">{favoriteIconFor(f.label)}</span>
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide leading-tight">{f.label}</p>
+                <p className="text-sm font-semibold truncate">{f.value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground py-1">
+          Pin your favorite cove, sunset spot, best catch and more.
+        </p>
+      )}
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Favorite Things</DialogTitle>
+            <DialogDescription>Fill in the ones you want on your profile — leave the rest blank.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            {FAVORITE_PRESETS.map((p) => (
+              <div key={p.label} className="space-y-1">
+                <Label className="text-xs flex items-center gap-1.5">
+                  <span>{p.icon}</span> {p.label}
+                </Label>
+                <Input
+                  value={draft[p.label] ?? ""}
+                  onChange={(e) => setDraft({ ...draft, [p.label]: e.target.value.slice(0, 80) })}
+                  placeholder="e.g. Wolf River Cove"
+                  data-testid={`input-favorite-${p.label.toLowerCase().replace(/\s+/g, "-")}`}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button onClick={save} disabled={updateMe.isPending} data-testid="button-save-favorites">
+              {updateMe.isPending ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -804,12 +969,33 @@ export function ProfilePage() {
       key: `pin-${p.id}`, Icon: MapPin, color: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
       label: p.type === "marina" ? `Checked in at ${p.title}` : `Marked ${p.title} on the map`, time: new Date(p.createdAt).getTime(),
     }));
-    (gallery ?? []).forEach((g) => items.push({
-      key: `gallery-${g.id}`, Icon: ImageIcon, color: "text-amber-600 dark:text-amber-400 bg-amber-500/10",
-      label: g.caption ? `Added a lake memory · ${g.caption}` : "Added a new lake memory", time: new Date(g.createdAt).getTime(),
-    }));
-    return items.filter((i) => !isNaN(i.time)).sort((a, b) => b.time - a.time).slice(0, 5);
-  }, [userPosts, catches, userPins, gallery]);
+    const fleet: any[] = (user as any)?.fleet ?? [];
+    (gallery ?? []).forEach((g) => {
+      const boat = (g as any).boatId ? fleet.find((b) => b.id === (g as any).boatId) : null;
+      items.push({
+        key: `gallery-${g.id}`, Icon: ImageIcon, color: "text-amber-600 dark:text-amber-400 bg-amber-500/10",
+        label: boat
+          ? `Added a photo of ${boat.name}`
+          : g.caption ? `Added a lake memory · ${g.caption}` : "Added a new lake memory",
+        time: new Date(g.createdAt).getTime(),
+      });
+    });
+    return items.filter((i) => !isNaN(i.time)).sort((a, b) => b.time - a.time).slice(0, 6);
+  }, [userPosts, catches, userPins, gallery, user]);
+
+  const lakeStats = React.useMemo(() => {
+    const fleet: any[] = (user as any)?.fleet ?? [];
+    const likes = (userPosts ?? []).reduce((sum: number, p: any) => sum + (p.likeCount ?? 0), 0);
+    const places = new Set((userPins ?? []).map((p: any) => (p.title ?? "").toLowerCase().trim()).filter(Boolean)).size;
+    return [
+      { icon: "📍", label: "Check-ins", value: userPins?.length ?? 0 },
+      { icon: "🗺️", label: "Places", value: places },
+      { icon: "🚤", label: "Boats", value: fleet.length },
+      { icon: "👥", label: "Friends", value: profileFriends?.length ?? 0 },
+      { icon: "❤️", label: "Likes", value: likes },
+      { icon: "🏅", label: "Badges", value: (user as any)?.badges?.filter((b: any) => b.earned).length ?? 0 },
+    ];
+  }, [user, userPosts, userPins, profileFriends]);
 
   const galleryPreview = (gallery ?? []).slice(0, 6);
 
@@ -1078,11 +1264,28 @@ export function ProfilePage() {
               }
             />
             {(user as any).showBoat !== false && ((user as any).fleet?.length ?? 0) > 1 && (
-              <FleetSection fleet={(user as any).fleet} onOpenBoat={setOpenBoat} />
+              <FleetSection fleet={(user as any).fleet} gallery={gallery} onOpenBoat={setOpenBoat} />
+            )}
+            {(user as any).showBoat === false && !isSelf && (
+              <div className={`${CARD} p-4`} data-testid="card-lake-enthusiast">
+                <div className="flex items-center gap-3">
+                  <span className="grid place-items-center w-10 h-10 rounded-2xl bg-primary/10 text-xl shrink-0">🌊</span>
+                  <div>
+                    <p className="text-sm font-bold">Lake Enthusiast</p>
+                    <p className="text-xs text-muted-foreground">Out here for the water, the sunsets, and the good company.</p>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* About */}
             <AboutCard user={user} />
+
+            {/* Lake stats */}
+            <LakeStatsCard stats={lakeStats} />
+
+            {/* Favorite things */}
+            <FavoriteThingsCard user={user} isSelf={isSelf} />
 
             {/* Interests */}
             {activeInterests.length > 0 && (
@@ -1222,7 +1425,55 @@ export function ProfilePage() {
                   <TabsTrigger value="posts" className="flex-1 rounded-xl">📰 Posts</TabsTrigger>
                   <TabsTrigger value="pins" className="flex-1 rounded-xl">📍 Check-ins</TabsTrigger>
                   <TabsTrigger value="gallery" className="flex-1 rounded-xl">📸 Photos</TabsTrigger>
+                  {(user as any).showBoat !== false && ((user as any).fleet?.length ?? 0) > 0 && (
+                    <TabsTrigger value="boats" className="flex-1 rounded-xl">🚤 Boats</TabsTrigger>
+                  )}
                 </TabsList>
+
+                <TabsContent value="boats" className="space-y-3">
+                  {((user as any).fleet ?? []).map((b: any) => {
+                    const photo = resolveAvatarUrl(b.photoUrl);
+                    const photoCount = (gallery ?? []).filter((g: any) => g.boatId === b.id).length + (b.photoUrl ? 1 : 0);
+                    const brandModel = [b.year, b.brand, b.model].filter(Boolean).join(" ");
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => setOpenBoat(b)}
+                        className="w-full text-left rounded-3xl border border-card-border bg-card shadow-soft overflow-hidden hover:border-primary/40 transition-colors"
+                        data-testid={`button-boats-tab-${b.id}`}
+                      >
+                        <div className="relative h-32 bg-gradient-to-br from-sky-200 via-primary/30 to-secondary/40">
+                          {photo ? (
+                            <img src={photo} alt={b.name} className="absolute inset-0 w-full h-full object-cover" />
+                          ) : (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span
+                                className="scale-150"
+                                style={{ color: b.color || "#0ea5e9", lineHeight: 0, filter: "drop-shadow(0 4px 6px rgba(11,58,91,0.3))" }}
+                                dangerouslySetInnerHTML={{ __html: boatSvgFor(b.boatType) }}
+                              />
+                            </div>
+                          )}
+                          {b.isPrimary && (
+                            <span className="absolute top-2 left-2 inline-flex items-center gap-0.5 rounded-full bg-white/90 text-primary text-[10px] font-bold px-1.5 py-0.5 shadow-sm">
+                              <Star className="w-2.5 h-2.5 fill-current" /> Primary
+                            </span>
+                          )}
+                        </div>
+                        <div className="p-3">
+                          <p className="text-sm font-bold truncate">{b.name}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {[boatLabelFor(b.boatType), brandModel || null, photoCount > 0 ? `${photoCount} photo${photoCount === 1 ? "" : "s"}` : null].filter(Boolean).join(" · ")}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                  {((user as any).fleet?.length ?? 0) === 0 && (
+                    <div className="text-center py-10 text-muted-foreground">No boats to show.</div>
+                  )}
+                </TabsContent>
 
                 <TabsContent value="posts" className="space-y-4">
                   {loadingPosts ? (

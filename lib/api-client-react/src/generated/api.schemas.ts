@@ -61,8 +61,27 @@ export interface Boat {
   accent?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  horsepower?: number | null;
+  /** @nullable */
+  engineInfo?: string | null;
+  /** @nullable */
+  lengthFt?: number | null;
+  /** @nullable */
+  favoriteMarina?: string | null;
+  /** @nullable */
+  favoriteCove?: string | null;
+  /** @nullable */
+  favoriteActivity?: string | null;
+  /** @nullable */
+  mods?: string | null;
   isPrimary: boolean;
   createdAt: string;
+}
+
+export interface FavoriteThing {
+  label: string;
+  value: string;
 }
 
 export interface User {
@@ -121,6 +140,8 @@ export interface User {
   /** The user's boats/watercraft (redacted for other viewers when showBoat=false) */
   fleet?: Boat[];
   interests?: string[];
+  /** Pinned favorites shown on the profile (label + value pairs) */
+  favoriteThings?: FavoriteThing[];
   shareLocation?: boolean;
   /** @nullable */
   locationSharingExpiresAt?: string | null;
@@ -210,6 +231,7 @@ export interface UserUpdate {
   /** @nullable */
   boatAccent?: string | null;
   interests?: string[];
+  favoriteThings?: FavoriteThing[];
   isBusiness?: boolean;
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
@@ -1026,6 +1048,20 @@ export interface BoatInput {
   accent?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  horsepower?: number | null;
+  /** @nullable */
+  engineInfo?: string | null;
+  /** @nullable */
+  lengthFt?: number | null;
+  /** @nullable */
+  favoriteMarina?: string | null;
+  /** @nullable */
+  favoriteCove?: string | null;
+  /** @nullable */
+  favoriteActivity?: string | null;
+  /** @nullable */
+  mods?: string | null;
   isPrimary?: boolean;
 }
 
@@ -1047,6 +1083,20 @@ export interface BoatUpdate {
   accent?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  horsepower?: number | null;
+  /** @nullable */
+  engineInfo?: string | null;
+  /** @nullable */
+  lengthFt?: number | null;
+  /** @nullable */
+  favoriteMarina?: string | null;
+  /** @nullable */
+  favoriteCove?: string | null;
+  /** @nullable */
+  favoriteActivity?: string | null;
+  /** @nullable */
+  mods?: string | null;
 }
 
 export interface RsvpUser {

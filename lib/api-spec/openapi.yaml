@@ -2263,6 +2263,11 @@ components:
           type: array
           items:
             type: string
+        favoriteThings:
+          type: array
+          description: Pinned favorites shown on the profile (label + value pairs)
+          items:
+            $ref: "#/components/schemas/FavoriteThing"
         shareLocation:
           type: boolean
         locationSharingExpiresAt:
@@ -2405,6 +2410,10 @@ components:
           type: array
           items:
             type: string
+        favoriteThings:
+          type: array
+          items:
+            $ref: "#/components/schemas/FavoriteThing"
         isBusiness:
           type: boolean
         requireFollowApproval:
@@ -2421,6 +2430,15 @@ components:
           type: boolean
         showMatureContent:
           type: boolean
+
+    FavoriteThing:
+      type: object
+      required: [label, value]
+      properties:
+        label:
+          type: string
+        value:
+          type: string
 
     LocationUpdate:
       type: object
@@ -3339,6 +3357,20 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        horsepower:
+          type: ["integer", "null"]
+        engineInfo:
+          type: ["string", "null"]
+        lengthFt:
+          type: ["integer", "null"]
+        favoriteMarina:
+          type: ["string", "null"]
+        favoriteCove:
+          type: ["string", "null"]
+        favoriteActivity:
+          type: ["string", "null"]
+        mods:
+          type: ["string", "null"]
         isPrimary:
           type: boolean
         createdAt:
@@ -3370,6 +3402,20 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        horsepower:
+          type: ["integer", "null"]
+        engineInfo:
+          type: ["string", "null"]
+        lengthFt:
+          type: ["integer", "null"]
+        favoriteMarina:
+          type: ["string", "null"]
+        favoriteCove:
+          type: ["string", "null"]
+        favoriteActivity:
+          type: ["string", "null"]
+        mods:
+          type: ["string", "null"]
         isPrimary:
           type: boolean
 
@@ -3397,6 +3443,20 @@ components:
         accent:
           type: ["string", "null"]
         notes:
+          type: ["string", "null"]
+        horsepower:
+          type: ["integer", "null"]
+        engineInfo:
+          type: ["string", "null"]
+        lengthFt:
+          type: ["integer", "null"]
+        favoriteMarina:
+          type: ["string", "null"]
+        favoriteCove:
+          type: ["string", "null"]
+        favoriteActivity:
+          type: ["string", "null"]
+        mods:
           type: ["string", "null"]
 
     RsvpUser:

@@ -99,6 +99,13 @@ type EditorState = {
   flag: boolean;
   accent: string;
   notes: string;
+  horsepower: string;
+  engineInfo: string;
+  lengthFt: string;
+  favoriteMarina: string;
+  favoriteCove: string;
+  favoriteActivity: string;
+  mods: string;
 };
 
 function editorFromBoat(b: Boat | null): EditorState {
@@ -115,6 +122,13 @@ function editorFromBoat(b: Boat | null): EditorState {
     flag: b?.flag ?? false,
     accent: b?.accent ?? "",
     notes: b?.notes ?? "",
+    horsepower: b?.horsepower ? String(b.horsepower) : "",
+    engineInfo: (b as any)?.engineInfo ?? "",
+    lengthFt: (b as any)?.lengthFt ? String((b as any).lengthFt) : "",
+    favoriteMarina: (b as any)?.favoriteMarina ?? "",
+    favoriteCove: (b as any)?.favoriteCove ?? "",
+    favoriteActivity: (b as any)?.favoriteActivity ?? "",
+    mods: (b as any)?.mods ?? "",
   };
 }
 
@@ -236,6 +250,13 @@ export function VesselDetailsPage() {
       flag: editor.flag,
       accent: editor.accent || null,
       notes: editor.notes.trim() || null,
+      horsepower: editor.horsepower.trim() ? Number(editor.horsepower.trim()) : null,
+      engineInfo: editor.engineInfo.trim() || null,
+      lengthFt: editor.lengthFt.trim() ? Number(editor.lengthFt.trim()) : null,
+      favoriteMarina: editor.favoriteMarina.trim() || null,
+      favoriteCove: editor.favoriteCove.trim() || null,
+      favoriteActivity: editor.favoriteActivity.trim() || null,
+      mods: editor.mods.trim() || null,
     };
     const opts = {
       onSuccess: () => {
@@ -417,6 +438,95 @@ export function VesselDetailsPage() {
                 data-testid="input-boat-year"
               />
             </div>
+          </div>
+
+          {/* Specs: length / horsepower / engine */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="boatLength">Length (ft) <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input
+                id="boatLength"
+                value={editor.lengthFt}
+                onChange={e => setEditor({ ...editor, lengthFt: e.target.value.replace(/[^0-9]/g, "").slice(0, 3) })}
+                inputMode="numeric"
+                placeholder="e.g. 24"
+                className="bg-background"
+                data-testid="input-boat-length"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="boatHp">Horsepower <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input
+                id="boatHp"
+                value={editor.horsepower}
+                onChange={e => setEditor({ ...editor, horsepower: e.target.value.replace(/[^0-9]/g, "").slice(0, 5) })}
+                inputMode="numeric"
+                placeholder="e.g. 350"
+                className="bg-background"
+                data-testid="input-boat-horsepower"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="boatEngine">Engine <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input
+              id="boatEngine"
+              value={editor.engineInfo}
+              onChange={e => setEditor({ ...editor, engineInfo: e.target.value.slice(0, 100) })}
+              placeholder="e.g. Twin Mercury 400R"
+              className="bg-background"
+              data-testid="input-boat-engine"
+            />
+          </div>
+
+          {/* Favorites */}
+          <div className="space-y-2">
+            <Label htmlFor="boatFavMarina">Favorite Marina <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Input
+              id="boatFavMarina"
+              value={editor.favoriteMarina}
+              onChange={e => setEditor({ ...editor, favoriteMarina: e.target.value.slice(0, 80) })}
+              placeholder="e.g. Sunset Marina"
+              className="bg-background"
+              data-testid="input-boat-fav-marina"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="boatFavCove">Favorite Cove <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input
+                id="boatFavCove"
+                value={editor.favoriteCove}
+                onChange={e => setEditor({ ...editor, favoriteCove: e.target.value.slice(0, 80) })}
+                placeholder="e.g. Wolf River"
+                className="bg-background"
+                data-testid="input-boat-fav-cove"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="boatFavActivity">Favorite Activity <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input
+                id="boatFavActivity"
+                value={editor.favoriteActivity}
+                onChange={e => setEditor({ ...editor, favoriteActivity: e.target.value.slice(0, 80) })}
+                placeholder="e.g. Sunset cruises"
+                className="bg-background"
+                data-testid="input-boat-fav-activity"
+              />
+            </div>
+          </div>
+
+          {/* Mods */}
+          <div className="space-y-2">
+            <Label htmlFor="boatMods">Mods / Upgrades <span className="text-muted-foreground font-normal">(optional)</span></Label>
+            <Textarea
+              id="boatMods"
+              value={editor.mods}
+              onChange={e => setEditor({ ...editor, mods: e.target.value.slice(0, 500) })}
+              placeholder="e.g. New tower speakers, underwater LEDs, upgraded prop"
+              className="bg-background min-h-[60px]"
+              data-testid="input-boat-mods"
+            />
           </div>
 
           {/* Notes */}

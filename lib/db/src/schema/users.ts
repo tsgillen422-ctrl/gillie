@@ -1,4 +1,4 @@
-import { pgTable, text, serial, boolean, real, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, boolean, real, timestamp, integer, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -42,6 +42,9 @@ export const usersTable = pgTable("users", {
   boatFlag: boolean("boat_flag").notNull().default(false),
   boatAccent: text("boat_accent"),
   interests: text("interests").array(),
+  // Pinned "Favorite Things" shown on the profile: [{ label, value }, ...]
+  // e.g. { label: "Favorite Cove", value: "Wolf River" }. Free-form, user-curated.
+  favoriteThings: jsonb("favorite_things").$type<{ label: string; value: string }[]>(),
   shareLocation: boolean("share_location").notNull().default(false),
   requireFollowApproval: boolean("require_follow_approval").notNull().default(false),
   showFollowers: boolean("show_followers").notNull().default(true),

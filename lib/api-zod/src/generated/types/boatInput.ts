@@ -24,5 +24,19 @@ export interface BoatInput {
   accent?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  horsepower?: number | null;
+  /** @nullable */
+  engineInfo?: string | null;
+  /** @nullable */
+  lengthFt?: number | null;
+  /** @nullable */
+  favoriteMarina?: string | null;
+  /** @nullable */
+  favoriteCove?: string | null;
+  /** @nullable */
+  favoriteActivity?: string | null;
+  /** @nullable */
+  mods?: string | null;
   isPrimary?: boolean;
 }

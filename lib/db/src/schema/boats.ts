@@ -22,6 +22,13 @@ export const boatsTable = pgTable("boats", {
   flag: boolean("flag").notNull().default(false),
   accent: text("accent"),
   notes: text("notes"),
+  horsepower: integer("horsepower"),
+  engineInfo: text("engine_info"),
+  lengthFt: integer("length_ft"),
+  favoriteMarina: text("favorite_marina"),
+  favoriteCove: text("favorite_cove"),
+  favoriteActivity: text("favorite_activity"),
+  mods: text("mods"),
   isPrimary: boolean("is_primary").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

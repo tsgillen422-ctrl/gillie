@@ -7,6 +7,7 @@
  */
 import type { Badge } from './badge';
 import type { Boat } from './boat';
+import type { FavoriteThing } from './favoriteThing';
 import type { Rank } from './rank';
 import type { UserFriendStatus } from './userFriendStatus';
 
@@ -66,6 +67,8 @@ export interface User {
   /** The user's boats/watercraft (redacted for other viewers when showBoat=false) */
   fleet?: Boat[];
   interests?: string[];
+  /** Pinned favorites shown on the profile (label + value pairs) */
+  favoriteThings?: FavoriteThing[];
   shareLocation?: boolean;
   /** @nullable */
   locationSharingExpiresAt?: string | null;

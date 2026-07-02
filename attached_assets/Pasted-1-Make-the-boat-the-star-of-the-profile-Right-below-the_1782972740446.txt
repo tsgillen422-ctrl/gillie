@@ -1,0 +1,323 @@
+1. Make the boat the star of the profile ⭐⭐⭐⭐⭐
+
+Right below the profile header, add a featured My Fleet section.
+
+Each boat should have:
+
+* Large photo of the actual boat (optional upload)
+* Boat nickname
+* Brand (Fountain, Malibu, Sea-Doo, Bennington, etc.)
+* Model
+* Year
+* Boat type
+* Boat colors
+* “Primary Boat” badge
+* View Boat button
+
+If a user owns multiple boats, show a horizontal carousel.
+
+Example:
+
+🚤 My Fleet (3)
+
+⭐ Lake Therapy
+2023 Fountain 38 LX
+
+Performance Boat
+
+Black / White
+
+18 Photos
+
+View Boat →
+
+⸻
+
+2. Boat Profiles
+
+Each boat should have its own profile page.
+
+Users should be able to add:
+
+• Photos
+• Brand
+• Model
+• Year
+• Horsepower
+• Engine
+• Length
+• Nickname
+• Favorite marina
+• Favorite cove
+• Favorite activity
+• Boat color
+• Mods/upgrades
+• Bio/story about the boat
+
+Friends can tap the boat to view it.
+
+⸻
+
+3. Upload real boat photos
+
+Instead of only using the little boat icon, allow users to upload pictures of their actual boat.
+
+When someone taps a boat they see:
+
+Photo gallery
+
+Boat information
+
+Boat story
+
+Favorite memories
+
+Recent adventures
+
+⸻
+
+4. About Me should be smaller
+
+Instead of a long list, make it compact chips.
+
+📍 Albany, KY
+
+💍 Married
+
+👩 Nurse
+
+🎂 Dec 16
+
+🌊 Dale Hollow
+
+⸻
+
+5. Lake Stats
+
+Create a dedicated stats card.
+
+Include:
+
+📍 Check-ins
+
+🗺️ Places visited
+
+🚤 Boats owned
+
+👥 Friends
+
+❤️ Likes received
+
+⭐ Favorite locations
+
+🏆 Badges earned
+
+⸻
+
+6. Achievements
+
+Move badges into their own section.
+
+Crowd Favorite
+
+Pathfinder
+
+Lake Explorer
+
+Check-In Champion
+
+Sunset Chaser
+
+Big Catch
+
+Night Rider
+
+Etc.
+
+⸻
+
+7. Favorite Things
+
+Instead of an empty “Lake Memories” card, let users pin favorites.
+
+Favorite Cove
+
+Favorite Sunset
+
+Favorite Restaurant
+
+Favorite Marina
+
+Favorite Fishing Spot
+
+Favorite Sandbar
+
+Best Catch
+
+Biggest Cruise
+
+⸻
+
+8. Recent Lake Photos
+
+Add a horizontal gallery.
+
+People should immediately see recent pictures.
+
+⸻
+
+9. Better Activity Feed
+
+Instead of only showing pins.
+
+Show things like:
+
+📍 Checked into Sunset Marina
+
+🚤 Took Lake Therapy out
+
+📸 Added 8 new boat photos
+
+🏆 Earned Pathfinder badge
+
+❤️ Favorited The Cliffs
+
+🌅 Posted a sunset
+
+⸻
+
+10. Better bottom tabs
+
+Instead of:
+
+Posts
+
+Pins
+
+Gallery
+
+Use:
+
+📝 Posts
+
+📍 Check-ins
+
+📸 Photos
+
+🚤 Boats
+
+⸻
+
+11. Make profiles feel alive
+
+Instead of only showing the green online dot.
+
+Show a status like:
+
+🚤 Out on the Water
+
+🌅 Watching Sunset
+
+🍔 At Sunset Marina
+
+🏡 Off the Lake
+
+📍 Checked in 2 hours ago
+
+⸻
+
+12. Optional Boat Display
+
+Some users don’t own boats.
+
+In Settings add:
+
+Show Boat on Profile
+
+ON/OFF
+
+If OFF:
+
+Hide the My Fleet section.
+
+Show “Lake Enthusiast” instead.
+
+⸻
+
+13. Boat Brands
+
+Expand the boat setup to include manufacturers.
+
+Examples:
+
+Fountain
+
+Cigarette
+
+Formula
+
+Donzi
+
+Nor-Tech
+
+Skater
+
+MTI
+
+Malibu
+
+MasterCraft
+
+Nautique
+
+Supra
+
+Moomba
+
+Sea Ray
+
+Chaparral
+
+Cobalt
+
+Bennington
+
+Harris
+
+Barletta
+
+Avalon
+
+Tracker
+
+Lund
+
+Nitro
+
+Ranger
+
+Bass Cat
+
+Phoenix
+
+Skeeter
+
+Sea-Doo
+
+Yamaha WaveRunner
+
+Kawasaki Jet Ski
+
+Custom
+
+Other
+
+⸻
+
+14. Make Gillie feel like a boating app
+
+The overall goal is for someone to open a profile and immediately think:
+
+“Wow… I want to build out my profile.”
+
+The profile should tell someone’s boating story—not just display account information.

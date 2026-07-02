@@ -5,6 +5,7 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { FavoriteThing } from './favoriteThing';
 
 export interface UserUpdate {
   displayName?: string;
@@ -42,6 +43,7 @@ export interface UserUpdate {
   /** @nullable */
   boatAccent?: string | null;
   interests?: string[];
+  favoriteThings?: FavoriteThing[];
   isBusiness?: boolean;
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
