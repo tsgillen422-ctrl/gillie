@@ -54,6 +54,7 @@
 - [Today on the Lake stories](stories-feature.md) — stories follow posts audience model; gate view endpoint AND notifications per recipient; LIVE state must be in marker sig.
 - [Radix dialog portal overlays](radix-dialog-portal-overlays.md) — body-portaled overlays over an open Dialog get dismissed as outside taps; guard onInteractOutside while open + pointer-events-auto on portal root.
 - [dhl-app typecheck TS6306](dhl-app-typecheck-refs.md) — dhl-app tsc always fails on a pre-existing non-composite lib reference; strip references to typecheck; manual vite build needs PORT+BASE_PATH.
+- [Story editor](story-editor.md) — full-screen z-[105] portal: Radix Select needs z-[110]; sticker coords are stage-relative; drawings flatten at post, filters stay metadata.
 - [Native iOS Sign in with Apple](native-apple-signin.md) — web Apple OAuth dead (bad .p8); native popup → backend verifies token vs Apple JWKS → Clerk ticket. PUBLIC endpoint: NEVER trust client email; match only by verified token email/`apple:<sub>`.
 - [showBoat privacy](show-boat-privacy.md) — redact boat showcase fields server-side for non-self when showBoat=false; boatName/color/type stay public (map markers need them).
 - [Public support & legal pages](public-support-legal-pages.md) — /support /privacy-policy /community-guidelines must be in the TOP-LEVEL Switch (before GatedRoutes) to be no-auth; auth-aware back targets or signed-out dead-ends.

@@ -712,7 +712,7 @@ export function StoryEditor({
                 <SelectValue placeholder="Tag a spot (optional)" />
               </div>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[110]">
               <SelectItem value="none">No location</SelectItem>
               {LAKE_PLACES.map((p) => (
                 <SelectItem key={p.name} value={p.name}>
@@ -730,7 +730,7 @@ export function StoryEditor({
                   <SelectValue placeholder="Tag your boat (optional)" />
                 </div>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[110]">
                 <SelectItem value="none">No boat</SelectItem>
                 {fleet.map((b) => (
                   <SelectItem key={b.id} value={String(b.id)}>

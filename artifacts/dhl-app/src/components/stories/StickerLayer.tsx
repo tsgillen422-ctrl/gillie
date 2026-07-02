@@ -192,7 +192,12 @@ export function StickerLayer({
       const dist = Math.max(10, Math.hypot(b.x - a.x, b.y - a.y));
       const angle = Math.atan2(b.y - a.y, b.x - a.x);
       const scale = Math.min(5, Math.max(0.2, g.startScale * (dist / g.startDist)));
-      let rotation = g.startRotation + ((angle - g.startAngle) * 180) / Math.PI;
+      // Normalize the angle delta to the shortest arc so crossing the ±π
+      // seam doesn't produce a ~360° jump.
+      let delta = angle - g.startAngle;
+      while (delta > Math.PI) delta -= 2 * Math.PI;
+      while (delta < -Math.PI) delta += 2 * Math.PI;
+      let rotation = g.startRotation + (delta * 180) / Math.PI;
       rotation = Math.max(-360, Math.min(360, rotation));
       onChange(stickers.map((s, i) => (i === g.idx ? { ...s, scale, rotation } : s)));
     }
