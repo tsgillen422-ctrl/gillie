@@ -39,7 +39,7 @@ export function StoriesRow() {
           className="flex w-16 shrink-0 flex-col items-center gap-1.5 transition-transform active:scale-95 ml-1"
           data-testid="button-add-story"
         >
-          <div className="relative rounded-full p-[2.5px] bg-border border-dashed border-2 border-transparent">
+          <div className="relative rounded-full p-[1.5px] bg-border border-dashed border-2 border-transparent">
             <UserAvatar
               name={me?.displayName || "You"}
               username={me?.username || ""}
@@ -112,8 +112,8 @@ function StoryCircle({ group, onClick }: { group: StoryGroup; onClick: () => voi
   const latest = group.stories[group.stories.length - 1];
   return (
     <button type="button" onClick={onClick} className="flex w-16 shrink-0 flex-col items-center gap-1" data-testid={`button-story-${group.user.id}`}>
-      <div className={`relative rounded-full p-[2.5px] transition-transform active:scale-95 ${ring}`}>
-        <div className="rounded-full bg-background p-[2px]">
+      <div className={`relative rounded-full p-[1.5px] transition-transform active:scale-95 ${ring}`}>
+        <div className="rounded-full bg-background p-[1px]">
           <StoryThumb story={latest} user={group.user} />
         </div>
         {group.user.isLive && (

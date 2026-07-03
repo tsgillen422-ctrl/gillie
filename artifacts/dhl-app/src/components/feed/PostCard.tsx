@@ -85,7 +85,7 @@ function ReactionButton({ post, onReact }: { post: any; onReact: (reaction: Reac
   React.useEffect(() => () => clearTimer(), []);
 
   return (
-    <div className="relative flex-1">
+    <div className="relative">
       {pickerOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setPickerOpen(false)} />
@@ -108,7 +108,7 @@ function ReactionButton({ post, onReact }: { post: any; onReact: (reaction: Reac
       <Button
         variant="ghost"
         size="sm"
-        className={`w-full select-none font-semibold transition-colors hover:bg-muted/50 ${current ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+        className={`select-none rounded-full px-3 font-semibold transition-colors hover:bg-muted/50 ${current ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
         onPointerDown={startPress}
         onPointerUp={clearTimer}
         onPointerLeave={clearTimer}
@@ -225,7 +225,7 @@ function PhotoCarousel({ photos, alt }: { photos: string[]; alt: string }) {
   if (photos.length === 1) {
     return (
       <div className="relative w-full overflow-hidden bg-muted">
-        <ClickableImage src={resolveImageSrc(photos[0])} alt={alt} className="w-full max-h-[600px] min-h-[280px] object-cover" />
+        <ClickableImage src={resolveImageSrc(photos[0])} alt={alt} className="w-full max-h-[640px] min-h-[360px] object-cover" />
       </div>
     );
   }
@@ -237,7 +237,7 @@ function PhotoCarousel({ photos, alt }: { photos: string[]; alt: string }) {
         className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth"
       >
         {photos.map((url, i) => (
-          <div key={`${url}-${i}`} className="w-full shrink-0 snap-center bg-muted aspect-[4/3] overflow-hidden">
+          <div key={`${url}-${i}`} className="w-full shrink-0 snap-center bg-muted aspect-[4/5] overflow-hidden">
             <ClickableImage src={resolveImageSrc(url)} alt={`${alt} ${i + 1}`} className="w-full h-full object-cover" />
           </div>
         ))}
@@ -622,7 +622,7 @@ export function PostCard({
                 <PhotoCarousel photos={mediaPhotos} alt={isBoat ? "Boat" : "Post photo"} />
               ) : null}
               {post.videoUrl && (
-                <VideoPlayer src={resolveImageSrc(post.videoUrl)} className="w-full aspect-[4/3] max-h-[600px]" />
+                <VideoPlayer src={resolveImageSrc(post.videoUrl)} className="w-full aspect-[4/5] max-h-[640px]" />
               )}
             </>
           )}
@@ -655,16 +655,16 @@ export function PostCard({
         )}
       </CardContent>
 
-      <CardFooter className="p-1.5 flex justify-between gap-1 border-t border-border/30">
+      <CardFooter className="px-2 pb-1.5 pt-0.5 flex items-center gap-0.5">
         <ReactionButton post={post} onReact={onReact} />
-        <Button variant="ghost" size="sm" className={`flex-1 font-semibold transition-colors hover:bg-muted/50 rounded-lg ${showComments ? 'text-primary bg-primary/5' : 'text-muted-foreground'}`} onClick={() => setShowComments(v => !v)}>
-          <MessageCircle className="w-4 h-4 mr-2" /> 
+        <Button variant="ghost" size="sm" className={`font-semibold transition-colors hover:bg-muted/50 rounded-full px-3 ${showComments ? 'text-primary bg-primary/5' : 'text-muted-foreground'}`} onClick={() => setShowComments(v => !v)}>
+          <MessageCircle className="w-5 h-5 mr-1.5" /> 
           <span>{commentCount > 0 ? commentCount : "Comment"}</span>
         </Button>
         {post.pinLat != null && post.pinLng != null && (
-          <Button asChild variant="ghost" size="sm" className="flex-1 font-semibold text-primary hover:bg-primary/5 rounded-lg">
+          <Button asChild variant="ghost" size="sm" className="font-semibold text-primary hover:bg-primary/5 rounded-full px-3">
             <Link href={`/map?lat=${post.pinLat}&lng=${post.pinLng}`}>
-              <MapPin className="w-4 h-4 mr-2" /> 
+              <MapPin className="w-5 h-5 mr-1.5" /> 
               <span>Map</span>
             </Link>
           </Button>

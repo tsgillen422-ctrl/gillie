@@ -682,7 +682,6 @@ export function FeedPage() {
 
         <div className="p-4">
         <HazardBanner />
-        <SuggestedFriendsButton />
         {isTrendingTab ? (
           <TrendingSection />
         ) : isLoading ? (
@@ -721,9 +720,10 @@ export function FeedPage() {
             </div>
           )
         ) : posts?.length ? (
-          <div className="space-y-5 mt-2">
-            {posts.map(post => (
-              <div key={post.id} id={`post-${post.id}`}>
+          <div className="space-y-5 mt-2 -mx-2">
+            {posts.map((post, postIndex) => (
+              <React.Fragment key={post.id}>
+              <div id={`post-${post.id}`}>
                 <PostCard
                   post={post}
                   onReact={(reaction: any) => reactPost.mutate({ postId: post.id, data: { reaction } }, { onSuccess: refreshPosts })}
@@ -743,6 +743,12 @@ export function FeedPage() {
                   onBlockUser={(userId: number) => blockUser.mutate({ userId }, { onSuccess: refreshPosts })}
                 />
               </div>
+              {postIndex === Math.min(2, posts.length - 1) && (
+                <div className="px-2">
+                  <SuggestedFriendsButton />
+                </div>
+              )}
+              </React.Fragment>
             ))}
           </div>
         ) : (

@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { 
   ChevronLeft, Calendar, Users, Fish, Flame, Store, MapPin, 
-  Camera, ChevronRight, Waves
+  Camera, ChevronRight, Waves, Sparkles
 } from "lucide-react";
 import { 
   useGetCatches, 
@@ -39,6 +39,7 @@ export function ExplorePage() {
   const categories = [
     { title: "Trending", icon: Flame, href: "/feed?tab=trending", bg: "bg-orange-500", text: "text-orange-50", color: "text-orange-500" },
     { title: "Fishing", icon: Fish, href: "/feed?tab=fishing", bg: "bg-emerald-500", text: "text-emerald-50", color: "text-emerald-500" },
+    { title: "For You", icon: Sparkles, href: "/feed?tab=all", bg: "bg-pink-500", text: "text-pink-50", color: "text-pink-500" },
     { title: "Events", icon: Calendar, href: "/feed?tab=event", bg: "bg-violet-500", text: "text-violet-50", color: "text-violet-500" },
     { title: "Community", icon: Users, href: "/feed?tab=community", bg: "bg-blue-500", text: "text-blue-50", color: "text-blue-500" },
     { title: "Places", icon: MapPin, href: "/pins", bg: "bg-rose-500", text: "text-rose-50", color: "text-rose-500" },
