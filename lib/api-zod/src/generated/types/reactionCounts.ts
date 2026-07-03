@@ -13,4 +13,7 @@ export interface ReactionCounts {
   laugh?: number;
   sad?: number;
   angry?: number;
+  fire?: number;
+  heart_eyes?: number;
+  wow?: number;
 }

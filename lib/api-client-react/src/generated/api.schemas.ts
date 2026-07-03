@@ -828,6 +828,9 @@ export const PostMyReaction = {
   laugh: 'laugh',
   sad: 'sad',
   angry: 'angry',
+  fire: 'fire',
+  heart_eyes: 'heart_eyes',
+  wow: 'wow',
 } as const;
 
 export type PostVisibility = typeof PostVisibility[keyof typeof PostVisibility];
@@ -845,6 +848,9 @@ export interface ReactionCounts {
   laugh?: number;
   sad?: number;
   angry?: number;
+  fire?: number;
+  heart_eyes?: number;
+  wow?: number;
 }
 
 export interface PollOption {
@@ -948,6 +954,9 @@ export const ReactionType = {
   laugh: 'laugh',
   sad: 'sad',
   angry: 'angry',
+  fire: 'fire',
+  heart_eyes: 'heart_eyes',
+  wow: 'wow',
 } as const;
 
 export interface ReactionInput {
@@ -1081,6 +1090,9 @@ export const CommentMyReaction = {
   laugh: 'laugh',
   sad: 'sad',
   angry: 'angry',
+  fire: 'fire',
+  heart_eyes: 'heart_eyes',
+  wow: 'wow',
 } as const;
 
 export interface Comment {

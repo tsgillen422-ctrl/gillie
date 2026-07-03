@@ -16,4 +16,7 @@ export const ReactionType = {
   laugh: 'laugh',
   sad: 'sad',
   angry: 'angry',
+  fire: 'fire',
+  heart_eyes: 'heart_eyes',
+  wow: 'wow',
 } as const;

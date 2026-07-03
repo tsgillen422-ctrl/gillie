@@ -8,7 +8,9 @@ import { moderateContent } from "../lib/moderation";
 import { getHiddenDemoUserIds } from "../lib/demoData";
 
 const router = Router();
-const ALLOWED_REACTIONS = ["thumbsup", "thumbsdown", "heart", "laugh", "sad", "angry"];
+// New primary set (heart/fire/laugh/heart_eyes/wow/thumbsup) plus legacy keys
+// (thumbsdown/sad/angry) so previously stored reactions stay valid.
+const ALLOWED_REACTIONS = ["heart", "fire", "laugh", "heart_eyes", "wow", "thumbsup", "thumbsdown", "sad", "angry"];
 
 function formatUser(u: typeof usersTable.$inferSelect) {
   return {

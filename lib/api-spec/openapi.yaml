@@ -3416,7 +3416,7 @@ components:
           type: boolean
         myReaction:
           type: ["string", "null"]
-          enum: [thumbsup, thumbsdown, heart, laugh, sad, angry, null]
+          enum: [thumbsup, thumbsdown, heart, laugh, sad, angry, fire, heart_eyes, wow, null]
         reactionCounts:
           $ref: "#/components/schemas/ReactionCounts"
         rsvpCount:
@@ -3496,7 +3496,7 @@ components:
 
     ReactionType:
       type: string
-      enum: [thumbsup, thumbsdown, heart, laugh, sad, angry]
+      enum: [thumbsup, thumbsdown, heart, laugh, sad, angry, fire, heart_eyes, wow]
 
     ReactionInput:
       type: object
@@ -3519,6 +3519,12 @@ components:
         sad:
           type: integer
         angry:
+          type: integer
+        fire:
+          type: integer
+        heart_eyes:
+          type: integer
+        wow:
           type: integer
 
     PostInput:
@@ -3697,7 +3703,7 @@ components:
           type: boolean
         myReaction:
           type: ["string", "null"]
-          enum: [thumbsup, thumbsdown, heart, laugh, sad, angry, null]
+          enum: [thumbsup, thumbsdown, heart, laugh, sad, angry, fire, heart_eyes, wow, null]
         reactionCounts:
           $ref: "#/components/schemas/ReactionCounts"
         isMature:

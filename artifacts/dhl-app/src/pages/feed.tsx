@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useGetPostComments, useGetPostLikes, useCreatePostComment, useDeletePostComment, useReactToComment, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useBlockUser, useShareToProfile, useVotePoll, useUpdatePost, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetPostCommentsQueryKey, getGetBlockedUsersQueryKey, useGetConditions } from "@workspace/api-client-react";
+import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useBlockUser, useShareToProfile, useVotePoll, useUpdatePost, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetBlockedUsersQueryKey, useGetConditions, useGetCatches } from "@workspace/api-client-react";
 import { PostInputPostType, PostInputVisibility } from "@workspace/api-client-react/src/generated/api.schemas";
 import { GifPickerDialog } from "@/components/GifPickerDialog";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -8,10 +8,9 @@ import { TrendingSection } from "@/components/TrendingSection";
 import { SuggestedFriendsDrawer, SuggestedFriendsButton } from "@/components/SuggestedFriends";
 import { StoriesRow } from "@/components/stories/StoriesRow";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Link, useSearch } from "wouter";
-import { Heart, MessageCircle, Share2, Calendar, CalendarPlus, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, MoreHorizontal, Flag, Bookmark, BookmarkCheck, Link2, Repeat2, Anchor, Sailboat, Search, Bell, Sun, Moon, Cloud, CloudSun, CloudMoon, CloudRain, CloudSnow, CloudFog, CloudLightning, Fish, Camera, Waves, Wind, Gauge, AlertTriangle, Info, CheckCircle2, Droplets, Sunrise, Sunset, ChevronRight, Smile, BarChart3, Hash, Globe, Lock, Pencil, EyeOff, Ban } from "lucide-react";
+import { Link, useSearch, useLocation } from "wouter";
+import { Heart, MessageCircle, Share2, Calendar, CalendarPlus, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, MoreHorizontal, Flag, Bookmark, BookmarkCheck, Link2, Repeat2, Anchor, Sailboat, Search, Bell, Sun, Moon, Cloud, CloudSun, CloudMoon, CloudRain, CloudSnow, CloudFog, CloudLightning, Fish, Camera, Waves, Wind, Gauge, AlertTriangle, Info, CheckCircle2, Droplets, Sunrise, Sunset, ChevronRight, Smile, BarChart3, Hash, Globe, Lock, Pencil, EyeOff, Ban, Compass } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
@@ -48,6 +47,9 @@ import { REACTIONS, REACTION_MAP, DEFAULT_REACTION, type ReactionKey } from "@/l
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+
+import { PostCard } from "@/components/feed/PostCard";
+import { CatchCard } from "@/components/feed/CatchCard";
 
 const FEELINGS: { emoji: string; label: string }[] = [
   { emoji: "😊", label: "happy" },
@@ -237,10 +239,11 @@ function ConditionsDrawer({ conditions, open, onOpenChange }: { conditions: any;
 }
 
 export function FeedPage() {
-  const [activeTab, setActiveTab] = React.useState<"all" | "friends" | "community" | "event" | "business" | "trending" | "saved">("all");
+  const [activeTab, setActiveTab] = React.useState<"all" | "friends" | "community" | "event" | "business" | "trending" | "fishing" | "saved">("all");
 
   const isSavedTab = activeTab === "saved";
   const isTrendingTab = activeTab === "trending";
+  const isFishingTab = activeTab === "fishing";
   const feedParams =
     activeTab === "friends"
       ? { audience: "friends" as const }
@@ -250,13 +253,16 @@ export function FeedPage() {
           ? { type: activeTab }
           : {};
   const { data: feedPosts, isLoading: feedLoading } = useGetPosts(feedParams, {
-    query: { enabled: !isSavedTab && !isTrendingTab },
+    query: { enabled: !isSavedTab && !isTrendingTab && !isFishingTab, queryKey: getGetPostsQueryKey(feedParams) },
   });
   const { data: savedPosts, isLoading: savedLoading } = useGetSavedPosts({
-    query: { enabled: isSavedTab },
+    query: { enabled: isSavedTab, queryKey: getGetSavedPostsQueryKey() },
+  });
+  const { data: catches, isLoading: catchesLoading } = useGetCatches({
+    query: { enabled: isFishingTab },
   });
   const posts = isSavedTab ? savedPosts : feedPosts;
-  const isLoading = isSavedTab ? savedLoading : feedLoading;
+  const isLoading = isSavedTab ? savedLoading : isFishingTab ? catchesLoading : feedLoading;
   
   const { data: summary } = useGetPostsSummary();
   const { data: me } = useGetMe();
@@ -264,7 +270,7 @@ export function FeedPage() {
   const search = useSearch();
   const resolveUrlTab = React.useCallback((s: string): typeof activeTab => {
     const tab = new URLSearchParams(s).get("tab");
-    return tab && ["all", "friends", "community", "event", "business", "trending", "saved"].includes(tab)
+    return tab && ["all", "friends", "community", "event", "business", "trending", "fishing", "saved"].includes(tab)
       ? (tab as typeof activeTab)
       : "all";
   }, []);
@@ -303,6 +309,13 @@ export function FeedPage() {
   const deletePost = useDeletePost();
   const createPost = useCreatePost();
   const updatePost = useUpdatePost();
+  const toggleRsvp = useToggleRsvp();
+  const savePost = useSavePost();
+  const unsavePost = useUnsavePost();
+  const shareToProfile = useShareToProfile();
+  const votePoll = useVotePoll();
+  const muteUser = useMuteUser();
+  const blockUser = useBlockUser();
   const queryClient = useQueryClient();
 
   const [editPostId, setEditPostId] = React.useState<number | null>(null);
@@ -814,13 +827,17 @@ export function FeedPage() {
         </div>
 
         {/* Filter tabs: stick to the top once the hero scrolls away */}
-        <div className="sticky top-0 z-10 mt-3 border-b border-border bg-card/95 backdrop-blur">
-          <div className="flex items-center justify-center gap-5 overflow-x-auto no-scrollbar px-4">
+        <div className="sticky top-0 z-20 pt-3 pb-2 bg-muted/90 backdrop-blur-xl border-b border-border/40 shadow-sm">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar px-4 pb-1">
+             <Link href="/explore" className="shrink-0 flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-md hover:opacity-90 transition-opacity mr-1">
+               <Compass className="h-4 w-4" /> Explore
+             </Link>
             {([
-              ["all", "All"],
+              ["all", "For You"],
               ["friends", "Friends"],
               ["community", "Community"],
               ["event", "Events"],
+              ["fishing", "Fishing"],
               ["trending", "Trending"],
               ["business", "Local"],
               ["saved", "Saved"],
@@ -828,55 +845,87 @@ export function FeedPage() {
               <button
                 key={value}
                 type="button"
-                onClick={() => setActiveTab(value)}
-                className={`relative shrink-0 py-3 text-sm font-medium transition-colors ${activeTab === value ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() => setActiveTab(value as any)}
+                className={`relative shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all duration-300 ${activeTab === value ? "bg-white text-primary shadow-sm ring-1 ring-black/5" : "text-muted-foreground hover:bg-black/5 hover:text-foreground"}`}
               >
                 {label}
-                {activeTab === value && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary" />}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="p-4 space-y-4">
+        <div className="p-4">
         <HazardBanner />
         {isTrendingTab ? (
           <TrendingSection />
         ) : isLoading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i} className="border-border/50">
-              <CardHeader className="flex flex-row items-center gap-4 p-4 pb-2">
-                <Skeleton className="w-10 h-10 rounded-full" />
-                <div className="space-y-2 flex-1">
-                  <Skeleton className="h-4 w-1/3" />
-                  <Skeleton className="h-3 w-1/4" />
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 pt-2">
-                <Skeleton className="h-20 w-full" />
-              </CardContent>
-            </Card>
-          ))
-        ) : posts?.length ? (
-          posts.map(post => (
-            <div key={post.id} id={`post-${post.id}`}>
-              <PostCard
-                post={post}
-                onReact={(reaction) => reactPost.mutate({ postId: post.id, data: { reaction } }, { onSuccess: refreshPosts })}
-                canDelete={me != null && (post.userId === me.id || me.isAdmin)}
-                onDelete={() => handleDeletePost(post.id)}
-                onEdit={() => openEditPost(post)}
-                currentUserId={me?.id}
-                onOpen={() => setOpenPostId(post.id)}
-              />
+          <div className="space-y-4 mt-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="border-none shadow-soft rounded-[20px] bg-card/60 overflow-hidden">
+                <CardHeader className="flex flex-row items-center gap-3 p-4 pb-2 border-none">
+                  <Skeleton className="w-11 h-11 rounded-full" />
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-1/3 rounded-full" />
+                    <Skeleton className="h-3 w-1/4 rounded-full" />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-2">
+                  <Skeleton className="h-[300px] w-full rounded-xl" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : isFishingTab ? (
+          catches?.length ? (
+            <div className="space-y-5 mt-2">
+              {catches.map(catchData => (
+                <CatchCard key={catchData.id} catchData={catchData} />
+              ))}
             </div>
-          ))
+          ) : (
+            <div className="text-center py-16 px-6 flex flex-col items-center">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mb-4">
+                <Fish className="w-8 h-8 text-emerald-500" />
+              </div>
+              <h3 className="font-display font-semibold text-xl mb-1">No catches yet</h3>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                Log a catch to share it with the community.
+              </p>
+            </div>
+          )
+        ) : posts?.length ? (
+          <div className="space-y-5 mt-2">
+            {posts.map(post => (
+              <div key={post.id} id={`post-${post.id}`}>
+                <PostCard
+                  post={post}
+                  onReact={(reaction: any) => reactPost.mutate({ postId: post.id, data: { reaction } }, { onSuccess: refreshPosts })}
+                  canDelete={me != null && (post.userId === me.id || me.isAdmin)}
+                  onDelete={() => handleDeletePost(post.id)}
+                  onUpdatePost={() => openEditPost(post)}
+                  currentUserId={me?.id}
+                  onOpen={() => setOpenPostId(post.id)}
+                  votePoll={votePoll}
+                  getGetPostsQueryKey={getGetPostsQueryKey}
+                  getGetSavedPostsQueryKey={getGetSavedPostsQueryKey}
+                  onToggleRsvp={(postId: number) => toggleRsvp.mutate({ postId }, { onSuccess: refreshPosts })}
+                  onSave={(postId: number) => savePost.mutate({ postId }, { onSuccess: refreshPosts })}
+                  onUnsave={(postId: number) => unsavePost.mutate({ postId }, { onSuccess: refreshPosts })}
+                  onShareToProfile={(postId: number) => shareToProfile.mutate({ postId }, { onSuccess: refreshPosts })}
+                  onMuteUser={(userId: number) => muteUser.mutate({ userId }, { onSuccess: refreshPosts })}
+                  onBlockUser={(userId: number) => blockUser.mutate({ userId }, { onSuccess: refreshPosts })}
+                  onReport={(type: string, id: number) => {}}
+                  showLikesForPost={() => {}}
+                />
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="text-center py-16 px-6 flex flex-col items-center">
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <MessageCircle className="w-8 h-8 text-primary" />
+              <Anchor className="w-8 h-8 text-primary" />
             </div>
-            <h3 className="font-semibold text-lg mb-1">Nothing here yet</h3>
+            <h3 className="font-display font-semibold text-xl mb-1">Nothing here yet</h3>
             <p className="text-sm text-muted-foreground max-w-xs">
               Be the first to share what's happening on the lake. Use the box above to post.
             </p>
@@ -895,11 +944,22 @@ export function FeedPage() {
           {openPost && (
             <PostCard
               post={openPost}
-              onReact={(reaction) => reactPost.mutate({ postId: openPost.id, data: { reaction } }, { onSuccess: refreshPosts })}
+              onReact={(reaction: any) => reactPost.mutate({ postId: openPost.id, data: { reaction } }, { onSuccess: refreshPosts })}
               canDelete={me != null && (openPost.userId === me.id || me.isAdmin)}
               onDelete={() => handleDeletePost(openPost.id)}
-              onEdit={() => openEditPost(openPost)}
+              onUpdatePost={() => openEditPost(openPost)}
               currentUserId={me?.id}
+              votePoll={votePoll}
+              getGetPostsQueryKey={getGetPostsQueryKey}
+              getGetSavedPostsQueryKey={getGetSavedPostsQueryKey}
+              onToggleRsvp={(postId: number) => toggleRsvp.mutate({ postId }, { onSuccess: refreshPosts })}
+              onSave={(postId: number) => savePost.mutate({ postId }, { onSuccess: refreshPosts })}
+              onUnsave={(postId: number) => unsavePost.mutate({ postId }, { onSuccess: refreshPosts })}
+              onShareToProfile={(postId: number) => shareToProfile.mutate({ postId }, { onSuccess: refreshPosts })}
+              onMuteUser={(userId: number) => muteUser.mutate({ userId }, { onSuccess: refreshPosts })}
+              onBlockUser={(userId: number) => blockUser.mutate({ userId }, { onSuccess: refreshPosts })}
+              onReport={(type: string, id: number) => {}}
+              showLikesForPost={() => {}}
             />
           )}
         </DialogContent>
