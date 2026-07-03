@@ -562,6 +562,29 @@ export function FeedPage() {
   const [conditionsOpen, setConditionsOpen] = React.useState(false);
   const WeatherIcon = weatherIcon(conditions?.weatherCode, conditions?.isDay ?? undefined);
 
+  const [tabBarHidden, setTabBarHidden] = React.useState(false);
+  const lastScrollTopRef = React.useRef(0);
+  const scrollTickingRef = React.useRef(false);
+  const handleScroll = React.useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    if (scrollTickingRef.current) return;
+    scrollTickingRef.current = true;
+    requestAnimationFrame(() => {
+      scrollTickingRef.current = false;
+      const y = el.scrollTop;
+      const last = lastScrollTopRef.current;
+      const delta = y - last;
+      if (y <= 80) {
+        setTabBarHidden(false);
+      } else if (delta > 6) {
+        setTabBarHidden(true);
+      } else if (delta < -6) {
+        setTabBarHidden(false);
+      }
+      lastScrollTopRef.current = y;
+    });
+  }, []);
+
   React.useEffect(() => {
     const params = new URLSearchParams(search);
     if (params.get("compose") === "1") {
@@ -574,19 +597,7 @@ export function FeedPage() {
 
   return (
     <div className="relative flex flex-col h-full min-w-0 bg-muted/30">
-      {me && (
-        <div className="absolute bottom-5 right-4 z-30" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
-          <button
-            type="button"
-            onClick={() => { setNewType("post"); setComposerOpen(true); }}
-            aria-label="Create a post"
-            className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 active:scale-95 transition"
-          >
-            <Plus className="h-7 w-7" strokeWidth={2.5} />
-          </button>
-        </div>
-      )}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" onScroll={handleScroll}>
         {/* Slim top bar */}
         <div className="bg-background px-4 pb-2" style={{ paddingTop: "max(env(safe-area-inset-top), 0.6rem)" }}>
           <div className="flex items-center justify-between pt-1">
@@ -652,8 +663,8 @@ export function FeedPage() {
           <StoriesRow />
         </div>
 
-        {/* Filter tabs: stick to the top once the hero scrolls away */}
-        <div className="sticky top-0 z-20 pt-3 pb-2 bg-muted/90 backdrop-blur-xl border-b border-border/40 shadow-sm">
+        {/* Filter tabs: stick to the top once the hero scrolls away; hide on scroll down, reveal on scroll up */}
+        <div className={`sticky top-0 z-20 pt-3 pb-2 bg-muted/90 backdrop-blur-xl border-b border-border/40 shadow-sm transition-transform duration-300 ease-out ${tabBarHidden ? "-translate-y-full" : "translate-y-0"}`}>
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar px-4 pb-1">
              <Link href="/explore" className="shrink-0 flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-md hover:opacity-90 transition-opacity mr-1">
                <Compass className="h-4 w-4" /> Explore
