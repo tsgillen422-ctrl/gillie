@@ -176,12 +176,23 @@ function StoryThumb({ story, user }: { story: StoryGroup["stories"][number]; use
 }
 
 // Opens the viewer for every active story at a named place (used by Trending
-// Today and the map's story rings via ?stories=<place> deep link).
-export function PlaceStoriesViewer({ placeName, meId, onClose }: { placeName: string; meId?: number; onClose: () => void }) {
+// Today and the map's story-marker preview cards).
+export function PlaceStoriesViewer({
+  placeName,
+  meId,
+  initialUserId,
+  onClose,
+}: {
+  placeName: string;
+  meId?: number;
+  initialUserId?: number;
+  onClose: () => void;
+}) {
   const { data: groups, isLoading } = useGetPlaceStories(placeName);
   useEffect(() => {
     if (!isLoading && groups && groups.length === 0) onClose();
   }, [isLoading, groups, onClose]);
   if (isLoading || !groups || !groups.length) return null;
-  return <StoryViewer groups={groups} initialGroupIndex={0} meId={meId} onClose={onClose} />;
+  const initialIdx = initialUserId != null ? groups.findIndex((g) => g.user.id === initialUserId) : -1;
+  return <StoryViewer groups={groups} initialGroupIndex={Math.max(0, initialIdx)} meId={meId} onClose={onClose} />;
 }

@@ -129,6 +129,7 @@ export * from './storyInput';
 export * from './storyInputMediaType';
 export * from './storyMediaType';
 export * from './storyPlace';
+export * from './storyPlacePreview';
 export * from './storyPollVoteInput';
 export * from './storyReactionCounts';
 export * from './storyReactionInput';

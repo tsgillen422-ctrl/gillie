@@ -3309,7 +3309,24 @@ export const GetStoryPlacesResponseItem = zod.object({
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish(),
   "storyCount": zod.number(),
-  "latestAt": zod.string().nullish()
+  "latestAt": zod.string().nullish(),
+  "thumbUrl": zod.string().nullish(),
+  "thumbType": zod.string().nullish(),
+  "allViewed": zod.boolean().optional(),
+  "previews": zod.array(zod.object({
+  "storyId": zod.number(),
+  "userId": zod.number(),
+  "displayName": zod.string(),
+  "username": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "mediaUrl": zod.string().nullish(),
+  "mediaType": zod.string(),
+  "caption": zod.string().nullish(),
+  "text": zod.string().nullish(),
+  "bgColor": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "viewedByMe": zod.boolean()
+})).optional()
 })
 export const GetStoryPlacesResponse = zod.array(GetStoryPlacesResponseItem)
 

@@ -400,6 +400,26 @@ export interface StoryGroup {
   allViewed: boolean;
 }
 
+export interface StoryPlacePreview {
+  storyId: number;
+  userId: number;
+  displayName: string;
+  username: string;
+  /** @nullable */
+  avatarUrl?: string | null;
+  /** @nullable */
+  mediaUrl?: string | null;
+  mediaType: string;
+  /** @nullable */
+  caption?: string | null;
+  /** @nullable */
+  text?: string | null;
+  /** @nullable */
+  bgColor?: string | null;
+  createdAt: string;
+  viewedByMe: boolean;
+}
+
 export interface StoryPlace {
   placeName: string;
   /** @nullable */
@@ -409,6 +429,12 @@ export interface StoryPlace {
   storyCount: number;
   /** @nullable */
   latestAt?: string | null;
+  /** @nullable */
+  thumbUrl?: string | null;
+  /** @nullable */
+  thumbType?: string | null;
+  allViewed?: boolean;
+  previews?: StoryPlacePreview[];
 }
 
 export type StoryInputMediaType = typeof StoryInputMediaType[keyof typeof StoryInputMediaType];

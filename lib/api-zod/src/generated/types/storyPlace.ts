@@ -5,6 +5,7 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { StoryPlacePreview } from './storyPlacePreview';
 
 export interface StoryPlace {
   placeName: string;
@@ -15,4 +16,10 @@ export interface StoryPlace {
   storyCount: number;
   /** @nullable */
   latestAt?: string | null;
+  /** @nullable */
+  thumbUrl?: string | null;
+  /** @nullable */
+  thumbType?: string | null;
+  allViewed?: boolean;
+  previews?: StoryPlacePreview[];
 }

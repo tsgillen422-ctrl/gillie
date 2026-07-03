@@ -510,25 +510,81 @@ router.get("/places", async (req, res) => {
   const stories = await db
     .select()
     .from(storiesTable)
-    .where(and(where, sql`${storiesTable.placeName} is not null`));
-  const byPlace = new Map<string, { placeName: string; lat: number | null; lng: number | null; storyCount: number; latestAt: Date }>();
+    .where(and(where, sql`${storiesTable.placeName} is not null`))
+    .orderBy(desc(storiesTable.createdAt));
+
+  // Author info + my viewed state for every story so the map can render
+  // thumbnail markers and the tap-preview carousel without extra requests.
+  const authorIds = [...new Set(stories.map((s) => s.userId))];
+  const authors = authorIds.length
+    ? await db.query.usersTable.findMany({ where: inArray(usersTable.id, authorIds) })
+    : [];
+  const authorById = new Map(authors.map((a) => [a.id, a]));
+  const viewedIds = await getViewedIds(uid, stories.map((s) => s.id));
+
+  type PlaceAgg = {
+    placeName: string;
+    lat: number | null;
+    lng: number | null;
+    storyCount: number;
+    latestAt: Date;
+    thumbUrl: string | null;
+    thumbType: string | null;
+    allViewed: boolean;
+    previews: any[];
+  };
+  const byPlace = new Map<string, PlaceAgg>();
   for (const s of stories) {
     const key = s.placeName!.toLowerCase();
-    const existing = byPlace.get(key);
-    if (existing) {
-      existing.storyCount += 1;
-      if (s.createdAt > existing.latestAt) existing.latestAt = s.createdAt;
-      if (existing.lat == null && s.lat != null) {
-        existing.lat = s.lat;
-        existing.lng = s.lng;
-      }
-    } else {
-      byPlace.set(key, { placeName: s.placeName!, lat: s.lat, lng: s.lng, storyCount: 1, latestAt: s.createdAt });
+    let agg = byPlace.get(key);
+    if (!agg) {
+      agg = {
+        placeName: s.placeName!,
+        lat: s.lat,
+        lng: s.lng,
+        storyCount: 0,
+        latestAt: s.createdAt,
+        thumbUrl: null,
+        thumbType: null,
+        allViewed: true,
+        previews: [],
+      };
+      byPlace.set(key, agg);
     }
+    agg.storyCount += 1;
+    if (s.createdAt > agg.latestAt) agg.latestAt = s.createdAt;
+    if (agg.lat == null && s.lat != null) {
+      agg.lat = s.lat;
+      agg.lng = s.lng;
+    }
+    const viewed = s.userId === uid || viewedIds.has(s.id);
+    if (!viewed) agg.allViewed = false;
+    // Stories arrive newest-first, so the first photo/video becomes the thumb.
+    if (!agg.thumbUrl && s.mediaUrl && (s.mediaType === "photo" || s.mediaType === "video")) {
+      agg.thumbUrl = s.mediaUrl;
+      agg.thumbType = s.mediaType;
+    }
+    const author = authorById.get(s.userId);
+    agg.previews.push({
+      storyId: s.id,
+      userId: s.userId,
+      displayName: author?.displayName ?? author?.username ?? "Someone",
+      username: author?.username ?? "",
+      avatarUrl: author?.avatarUrl ?? null,
+      mediaUrl: s.mediaUrl,
+      mediaType: s.mediaType,
+      caption: s.caption,
+      text: s.text,
+      bgColor: s.bgColor,
+      createdAt: s.createdAt.toISOString(),
+      viewedByMe: viewed,
+    });
   }
   const places = [...byPlace.values()]
     .sort((a, b) => b.storyCount - a.storyCount)
-    .map((p) => ({ ...p, latestAt: p.latestAt.toISOString() }));
+    // Cap the preview carousel payload; the fullscreen viewer fetches the
+    // complete set for a place separately.
+    .map((p) => ({ ...p, latestAt: p.latestAt.toISOString(), previews: p.previews.slice(0, 10) }));
   res.json(places);
 });
 

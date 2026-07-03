@@ -52,6 +52,8 @@ import { hapticTap } from "@/lib/haptics";
 import { createPinLongPress } from "@/lib/pinLongPress";
 import { LAKE_PLACES, placeEmoji, type LakePlace as LakePlaceShared } from "@/lib/lakePlaces";
 import { PlaceStoriesViewer } from "@/components/stories/StoriesRow";
+import { resolveImageSrc } from "@/lib/assets";
+import type { StoryPlace, StoryPlacePreview } from "@workspace/api-client-react/src/generated/api.schemas";
 
 const LAKE_CENTER: [number, number] = [-85.37, 36.53]; // [lng, lat]
 const BASE_ZOOM = 12;
@@ -571,7 +573,8 @@ export function MapPage() {
     [hiddenPlaceKeys],
   );
   const { data: storyPlaces } = useGetStoryPlaces();
-  const [storyPlaceViewer, setStoryPlaceViewer] = useState<string | null>(null);
+  const [storyPlaceViewer, setStoryPlaceViewer] = useState<{ placeName: string; userId?: number } | null>(null);
+  const [storyPlacePreview, setStoryPlacePreview] = useState<string | null>(null);
   const createPin = useCreatePin();
   const createDockLabel = useCreateDockLabel();
   const updateLocation = useUpdateMyLocation();
@@ -1179,8 +1182,9 @@ export function MapPage() {
   );
 
   // --- "Today on the Lake" story rings ---
-  // Places with active stories get a glowing ring + story count. Tapping one
-  // opens the fullscreen viewer with every story posted there in the last 24h.
+  // Places with active stories get a thumbnail marker wrapped in a story ring
+  // (bright gradient = unseen stories, muted = all seen). Tapping one opens a
+  // small preview card; "View Story" there opens the fullscreen viewer.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !styleReady) return;
@@ -1189,34 +1193,69 @@ export function MapPage() {
     for (const p of storyPlaces ?? []) {
       if (p.lat == null || p.lng == null) continue;
       wanted.add(p.placeName);
-      const countLabel = `${p.storyCount} ${p.storyCount === 1 ? "story" : "stories"}`;
+      // Anything that changes the marker's look forces a rebuild.
+      const sig = `${p.thumbUrl ?? ""}|${p.thumbType ?? ""}|${p.storyCount}|${p.allViewed ? "v" : "n"}`;
       let marker = pool.get(p.placeName);
+      if (marker && marker.getElement().dataset.sig !== sig) {
+        marker.remove();
+        pool.delete(p.placeName);
+        marker = undefined;
+      }
       if (!marker) {
         const root = document.createElement("div");
         root.className = "story-place-marker";
+        root.dataset.sig = sig;
         const ring = document.createElement("div");
-        ring.className = "story-place-ring";
+        ring.className = `story-place-ring${p.allViewed ? " viewed" : ""}`;
         const dot = document.createElement("div");
         dot.className = "story-place-dot";
-        dot.textContent = "🌊";
+        if (p.thumbUrl && p.thumbType === "video") {
+          // Video thumbnails: a muted <video> shows the first frame.
+          const vid = document.createElement("video");
+          vid.className = "story-place-thumb";
+          vid.src = resolveImageSrc(p.thumbUrl);
+          vid.muted = true;
+          vid.playsInline = true;
+          vid.preload = "metadata";
+          dot.appendChild(vid);
+        } else if (p.thumbUrl) {
+          const img = document.createElement("img");
+          img.className = "story-place-thumb";
+          img.src = resolveImageSrc(p.thumbUrl);
+          img.alt = "";
+          img.draggable = false;
+          dot.appendChild(img);
+        } else {
+          // Text-only stories: brand gradient tile instead of a photo.
+          dot.classList.add("text-only");
+          dot.textContent = "🌊";
+        }
+        if (p.thumbType === "video") {
+          const play = document.createElement("div");
+          play.className = "story-place-play";
+          play.innerHTML = `<svg viewBox="0 0 24 24" width="10" height="10" fill="white"><path d="M8 5v14l11-7z"/></svg>`;
+          dot.appendChild(play);
+        }
         ring.appendChild(dot);
+        if (p.storyCount > 1) {
+          const badge = document.createElement("div");
+          badge.className = "story-place-badge";
+          badge.textContent = `+${p.storyCount}`;
+          ring.appendChild(badge);
+        }
         const label = document.createElement("div");
         label.className = "story-place-label";
         const nameEl = document.createElement("span");
         nameEl.className = "story-place-name";
         nameEl.textContent = p.placeName; // textContent — place names are user data
-        const countEl = document.createElement("span");
-        countEl.className = "story-place-count";
-        countEl.textContent = countLabel;
         label.appendChild(nameEl);
-        label.appendChild(countEl);
         root.appendChild(ring);
         root.appendChild(label);
         const name = p.placeName;
         root.addEventListener("click", (ev) => {
           ev.stopPropagation();
           hapticTap();
-          setStoryPlaceViewer(name);
+          setStoryPlacePreview(name);
         });
         marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
           .setLngLat([p.lng, p.lat])
@@ -1224,8 +1263,6 @@ export function MapPage() {
         pool.set(p.placeName, marker);
       } else {
         marker.setLngLat([p.lng, p.lat]);
-        const countEl = marker.getElement().querySelector(".story-place-count");
-        if (countEl) countEl.textContent = countLabel;
       }
     }
     for (const [name, marker] of pool) {
@@ -1982,8 +2019,31 @@ export function MapPage() {
       <div ref={mapContainer} className="absolute inset-0 z-0" />
 
       {storyPlaceViewer && (
-        <PlaceStoriesViewer placeName={storyPlaceViewer} meId={me?.id} onClose={() => setStoryPlaceViewer(null)} />
+        <PlaceStoriesViewer
+          placeName={storyPlaceViewer.placeName}
+          initialUserId={storyPlaceViewer.userId}
+          meId={me?.id}
+          onClose={() => setStoryPlaceViewer(null)}
+        />
       )}
+
+      <AnimatePresence>
+        {storyPlacePreview && (() => {
+          const place = (storyPlaces ?? []).find((p) => p.placeName === storyPlacePreview);
+          if (!place) return null;
+          return (
+            <StoryPlacePreviewCard
+              key={place.placeName}
+              place={place}
+              onClose={() => setStoryPlacePreview(null)}
+              onView={(userId) => {
+                setStoryPlacePreview(null);
+                setStoryPlaceViewer({ placeName: place.placeName, userId });
+              }}
+            />
+          );
+        })()}
+      </AnimatePresence>
 
       {mapError && (
         <div className="absolute inset-0 z-[1] flex items-center justify-center bg-blue-50 p-6 text-center">
@@ -2943,6 +3003,145 @@ function DetailCard({
   );
 }
 
+function storyTimeAgo(iso: string): string {
+  const mins = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  return `${Math.floor(mins / 60)}h ago`;
+}
+
+// Small bottom card shown when a story marker is tapped: a swipeable carousel
+// of every story at that place (bigger thumbnail, author, time, caption) with
+// a "View Story" button that opens the fullscreen viewer on that person.
+function StoryPlacePreviewCard({
+  place,
+  onClose,
+  onView,
+}: {
+  place: StoryPlace;
+  onClose: () => void;
+  onView: (userId?: number) => void;
+}) {
+  const previews: StoryPlacePreview[] = place.previews ?? [];
+  const [idx, setIdx] = useState(0);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const onScroll = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el || el.clientWidth === 0) return;
+    setIdx(Math.min(previews.length - 1, Math.max(0, Math.round(el.scrollLeft / el.clientWidth))));
+  }, [previews.length]);
+  if (!previews.length) return null;
+
+  return (
+    <motion.div
+      initial={{ y: "130%" }}
+      animate={{ y: 0 }}
+      exit={{ y: "130%" }}
+      transition={{ type: "spring", damping: 30, stiffness: 340 }}
+      className="absolute bottom-4 left-3 right-3 z-[500] mx-auto max-w-sm"
+    >
+      <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-xl backdrop-blur">
+        <div className="flex items-center justify-between px-3 pb-1 pt-2.5">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-bold text-foreground">{place.placeName}</p>
+            <p className="text-[11px] text-muted-foreground">
+              {previews.length === 1 ? "1 story today" : `${previews.length} stories today`}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="ml-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div
+          ref={scrollerRef}
+          onScroll={onScroll}
+          className="flex snap-x snap-mandatory overflow-x-auto scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {previews.map((p) => (
+            <div key={p.storyId} className="w-full shrink-0 snap-center px-3 pb-3 pt-1.5">
+              <div className="relative h-44 w-full overflow-hidden rounded-xl bg-muted">
+                {p.mediaType === "video" && p.mediaUrl ? (
+                  <>
+                    <video
+                      src={resolveImageSrc(p.mediaUrl)}
+                      muted
+                      playsInline
+                      preload="metadata"
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-black/45 backdrop-blur-sm">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="white">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </div>
+                    </div>
+                  </>
+                ) : p.mediaType === "photo" && p.mediaUrl ? (
+                  <img src={resolveImageSrc(p.mediaUrl)} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div
+                    className="flex h-full w-full items-center justify-center px-6"
+                    style={{ background: p.bgColor || "linear-gradient(160deg, #0d9488, #0369a1)" }}
+                  >
+                    <span className="line-clamp-4 text-center text-sm font-semibold leading-snug text-white">
+                      {p.text}
+                    </span>
+                  </div>
+                )}
+                {!p.viewedByMe && (
+                  <div className="absolute left-2 top-2 rounded-full bg-sky-500 px-2 py-0.5 text-[10px] font-bold text-white shadow">
+                    NEW
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-2 flex items-center gap-2">
+                <UserAvatar
+                  name={p.displayName}
+                  username={p.username}
+                  avatarUrl={p.avatarUrl}
+                  className="h-7 w-7"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-semibold leading-tight text-foreground">{p.displayName}</p>
+                  <p className="text-[11px] leading-tight text-muted-foreground">{storyTimeAgo(p.createdAt)}</p>
+                </div>
+              </div>
+              {p.caption && (
+                <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-foreground/90">{p.caption}</p>
+              )}
+              <Button
+                size="sm"
+                className="mt-2 h-9 w-full rounded-xl font-semibold"
+                onClick={() => onView(p.userId)}
+              >
+                View Story
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        {previews.length > 1 && (
+          <div className="flex items-center justify-center gap-1.5 pb-2.5">
+            {previews.map((p, i) => (
+              <div
+                key={p.storyId}
+                className={`h-1.5 rounded-full transition-all ${i === idx ? "w-4 bg-primary" : "w-1.5 bg-muted-foreground/30"}`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 const MAP_CSS = `
   .maplibregl-map { height: 100%; width: 100%; font-family: inherit; }
   .maplibregl-ctrl-top-right { margin-top: 140px; }
@@ -3051,48 +3250,79 @@ const MAP_CSS = `
     user-select: none;
   }
   .story-place-ring {
-    width: 46px; height: 46px;
+    position: relative;
+    width: 38px; height: 38px;
     border-radius: 50%;
-    padding: 3px;
+    padding: 2.5px;
     background: conic-gradient(from 0deg, #2dd4bf, #0ea5e9, #2563eb, #2dd4bf);
-    box-shadow: 0 0 14px rgba(14,165,233,0.65), 0 3px 8px rgba(0,0,0,0.25);
-    animation: storyRingGlow 2.2s ease-in-out infinite;
+    filter: drop-shadow(0 2px 4px rgba(15,23,42,0.30));
+  }
+  .story-place-ring.viewed {
+    background: #93b4cd;
   }
   .story-place-dot {
+    position: relative;
     width: 100%; height: 100%;
     border-radius: 50%;
     background: #fff;
+    border: 1.5px solid #fff;
+    overflow: hidden;
     display: flex; align-items: center; justify-content: center;
-    font-size: 19px;
   }
-  @keyframes storyRingGlow {
-    0%, 100% { box-shadow: 0 0 8px rgba(14,165,233,0.5), 0 3px 8px rgba(0,0,0,0.25); transform: scale(1); }
-    50% { box-shadow: 0 0 20px rgba(14,165,233,0.9), 0 3px 8px rgba(0,0,0,0.25); transform: scale(1.05); }
+  .story-place-dot.text-only {
+    background: linear-gradient(160deg, #0d9488, #0369a1);
+    font-size: 14px;
+  }
+  .story-place-thumb {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .story-place-play {
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 17px; height: 17px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .story-place-play svg { margin-left: 1px; }
+  .story-place-badge {
+    position: absolute;
+    top: -3px; right: -5px;
+    min-width: 16px; height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #0ea5e9;
+    border: 1.5px solid #fff;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 13px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
   }
   .story-place-label {
-    margin-top: 3px;
+    margin-top: 2px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: rgba(255,255,255,0.94);
-    border-radius: 8px;
-    padding: 2px 7px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.18);
-    max-width: 130px;
+    background: rgba(255,255,255,0.92);
+    border-radius: 7px;
+    padding: 1px 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    max-width: 110px;
   }
   .story-place-name {
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
     color: #0f172a;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 116px;
-  }
-  .story-place-count {
-    font-size: 9px;
-    font-weight: 600;
-    color: #0284c7;
+    max-width: 98px;
   }
   @keyframes snapPulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.55); }

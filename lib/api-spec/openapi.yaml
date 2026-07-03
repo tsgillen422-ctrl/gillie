@@ -2916,6 +2916,45 @@ components:
           type: integer
         latestAt:
           type: ["string", "null"]
+        thumbUrl:
+          type: ["string", "null"]
+        thumbType:
+          type: ["string", "null"]
+        allViewed:
+          type: boolean
+        previews:
+          type: array
+          items:
+            $ref: "#/components/schemas/StoryPlacePreview"
+
+    StoryPlacePreview:
+      type: object
+      required: [storyId, userId, displayName, username, mediaType, createdAt, viewedByMe]
+      properties:
+        storyId:
+          type: integer
+        userId:
+          type: integer
+        displayName:
+          type: string
+        username:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+        mediaUrl:
+          type: ["string", "null"]
+        mediaType:
+          type: string
+        caption:
+          type: ["string", "null"]
+        text:
+          type: ["string", "null"]
+        bgColor:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        viewedByMe:
+          type: boolean
 
     StoryInput:
       type: object
