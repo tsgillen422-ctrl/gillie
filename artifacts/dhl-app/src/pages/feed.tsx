@@ -565,6 +565,7 @@ export function FeedPage() {
   const [tabBarHidden, setTabBarHidden] = React.useState(false);
   const lastScrollTopRef = React.useRef(0);
   const scrollTickingRef = React.useRef(false);
+  const tabBarSentinelRef = React.useRef<HTMLDivElement | null>(null);
   const handleScroll = React.useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
     if (scrollTickingRef.current) return;
@@ -574,7 +575,11 @@ export function FeedPage() {
       const y = el.scrollTop;
       const last = lastScrollTopRef.current;
       const delta = y - last;
-      if (y <= 80) {
+      // Where the tab bar starts sticking (its natural position in the flow).
+      const stickyStart = tabBarSentinelRef.current?.offsetTop ?? 240;
+      if (y <= stickyStart) {
+        // Bar is still in (or near) its natural in-flow spot: hiding it here
+        // would leave a visible gap and cause a jump, so always show it.
         setTabBarHidden(false);
       } else if (delta > 6) {
         setTabBarHidden(true);
@@ -664,6 +669,7 @@ export function FeedPage() {
         </div>
 
         {/* Filter tabs: stick to the top once the hero scrolls away; hide on scroll down, reveal on scroll up */}
+        <div ref={tabBarSentinelRef} aria-hidden="true" />
         <div className={`sticky top-0 z-20 pt-3 pb-2 bg-muted/90 backdrop-blur-xl border-b border-border/40 shadow-sm transition-transform duration-300 ease-out ${tabBarHidden ? "-translate-y-full" : "translate-y-0"}`}>
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar px-4 pb-1">
              <Link href="/explore" className="shrink-0 flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-md hover:opacity-90 transition-opacity mr-1">
