@@ -1,4 +1,5 @@
 import { db } from "@workspace/db";
+import type { StorySticker } from "@workspace/db";
 import {
   usersTable,
   friendRequestsTable,
@@ -17,8 +18,12 @@ import {
   messageReactionsTable,
   notificationsTable,
   boatsTable,
+  storiesTable,
+  storyViewsTable,
+  storyReactionsTable,
+  storyPollVotesTable,
 } from "@workspace/db";
-import { and, count, eq, inArray, isNull } from "drizzle-orm";
+import { and, count, eq, gt, inArray, isNull } from "drizzle-orm";
 import { deleteUserAndData } from "../routes/users";
 import { logger } from "./logger";
 
@@ -303,6 +308,99 @@ const DEMO_POSTS: PostSeed[] = [
   { username: "throttlejack", title: "Full send Saturday", content: "Met up with a few boats at the sandbar. Great day on the water, see y'all next weekend.", hoursAgo: 16 },
   { username: "lakelifelauren", title: "Floatie season", content: "Tied up with three other pontoons and just drifted all afternoon. This is the life.", hoursAgo: 28 },
   { username: "baitandbrews", title: "Coffee + cast", content: "5am wake up, thermos full, and the bite was worth it. Two solid largemouth before breakfast.", hoursAgo: 34 },
+];
+
+type StorySeed = {
+  username: string;
+  mediaType: "photo" | "text";
+  image?: string;
+  text?: string;
+  bgColor?: string;
+  caption?: string;
+  placeName?: string;
+  lat?: number;
+  lng?: number;
+  // Tag the author's primary boat ("Posted from ...").
+  withBoat?: boolean;
+  filterName?: string;
+  filterCss?: string;
+  stickers?: StorySticker[];
+  pollQuestion?: string;
+  pollOptions?: string[];
+  hoursAgo: number;
+};
+
+// Demo stories showcase every viewer feature: full-bleed photos, captions,
+// place chips (lake info card), boat tags, filters, stickers, polls, and text
+// stories. Friends-only like DEMO_POSTS, so only followers of demo users see
+// them. Place names/coords match the app's LAKE_PLACES catalog.
+const DEMO_STORIES: StorySeed[] = [
+  {
+    username: "lakelifelauren",
+    mediaType: "photo",
+    image: SEED("lake-sunset.png"),
+    caption: "Golden hour never gets old 🌅",
+    placeName: "Sunset Marina & Resort",
+    lat: 36.5905,
+    lng: -85.2456,
+    withBoat: true,
+    hoursAgo: 2,
+  },
+  {
+    username: "wakerider_tn",
+    mediaType: "photo",
+    image: SEED("wakeboard.png"),
+    caption: "Glass for days this morning",
+    placeName: "Pleasant Grove Recreation Area",
+    lat: 36.5784,
+    lng: -85.3304,
+    withBoat: true,
+    filterName: "Vivid",
+    filterCss: "saturate(1.2) contrast(1.05)",
+    stickers: [{ type: "emoji", x: 0.82, y: 0.22, data: { emoji: "🤙" } }],
+    hoursAgo: 5,
+  },
+  {
+    username: "baitandbrews",
+    mediaType: "photo",
+    image: SEED("catch-largemouth.png"),
+    caption: "Buzzbait bite is ON right now",
+    placeName: "Obey River Park",
+    lat: 36.5523,
+    lng: -85.3856,
+    pollQuestion: "What's your money bait this week?",
+    pollOptions: ["Topwater", "Jig", "Crankbait"],
+    hoursAgo: 7,
+  },
+  {
+    username: "captainjoe",
+    mediaType: "text",
+    text: "Perfect cruising weather today. Wave if you see Second Wind out there! 👋",
+    bgColor: "#0f766e",
+    withBoat: true,
+    hoursAgo: 3,
+  },
+  {
+    username: "striperking",
+    mediaType: "photo",
+    image: SEED("catch-striper.png"),
+    caption: "Channel monsters at first light 🎣",
+    placeName: "Dale Hollow Dam",
+    lat: 36.5396,
+    lng: -85.4558,
+    withBoat: true,
+    stickers: [{ type: "location", x: 0.5, y: 0.12, data: { emoji: "🌊", name: "Dale Hollow Dam" } }],
+    hoursAgo: 9,
+  },
+  {
+    username: "tubetime",
+    mediaType: "text",
+    text: "Sandbar Saturday!! Floaties out, music on 🛟🎶",
+    bgColor: "#db2777",
+    pollQuestion: "You pulling up?",
+    pollOptions: ["Already there", "On the way", "Next time"],
+    hoursAgo: 1,
+  },
 ];
 
 type CatchSeed = {
@@ -636,8 +734,96 @@ export async function seedDemoData(): Promise<{ created: number; message: string
     });
   }
 
+  // Fleets first (stories tag the author's primary boat), then stories
+  // (24h TTL — kept fresh afterwards by the presence refresher tick).
+  await ensureDemoFleets();
+  await ensureDemoStories();
+
   logger.info({ demoUsers: ids.length, posts: postIdByIndex.length }, "Seeded demo data");
   return { created: ids.length, message: `Created ${ids.length} demo users and a populated feed.` };
+}
+
+/**
+ * Keep the demo story ring alive. Stories expire after 24 hours, so whenever
+ * the set of unexpired demo stories drops below the full seed count this
+ * rebuilds them all with fresh staggered timestamps. No-op without demo users.
+ * Child rows (views/reactions/poll votes) are removed first — no FK cascades.
+ */
+let storiesSeedInFlight = false;
+
+export async function ensureDemoStories(): Promise<void> {
+  // Single-process concurrency guard: the refresher tick and seed calls can
+  // overlap; interleaved delete+insert would duplicate the story ring.
+  if (storiesSeedInFlight) return;
+  storiesSeedInFlight = true;
+  try {
+    await ensureDemoStoriesInner();
+  } finally {
+    storiesSeedInFlight = false;
+  }
+}
+
+async function ensureDemoStoriesInner(): Promise<void> {
+  const demos = await db
+    .select({ id: usersTable.id, username: usersTable.username })
+    .from(usersTable)
+    .where(eq(usersTable.isDemo, true));
+  if (!demos.length) return;
+  const idByName = new Map(demos.map((d) => [d.username, d.id]));
+  const demoIds = demos.map((d) => d.id);
+
+  const [live] = await db
+    .select({ value: count() })
+    .from(storiesTable)
+    .where(and(inArray(storiesTable.userId, demoIds), gt(storiesTable.expiresAt, new Date())));
+  if ((live?.value ?? 0) >= DEMO_STORIES.length) return;
+
+  const staleIds = (
+    await db.select({ id: storiesTable.id }).from(storiesTable).where(inArray(storiesTable.userId, demoIds))
+  ).map((s) => s.id);
+  if (staleIds.length) {
+    await db.delete(storyViewsTable).where(inArray(storyViewsTable.storyId, staleIds));
+    await db.delete(storyReactionsTable).where(inArray(storyReactionsTable.storyId, staleIds));
+    await db.delete(storyPollVotesTable).where(inArray(storyPollVotesTable.storyId, staleIds));
+    await db.delete(storiesTable).where(inArray(storiesTable.id, staleIds));
+  }
+
+  for (const s of DEMO_STORIES) {
+    const userId = idByName.get(s.username);
+    if (!userId) continue;
+    let boatId: number | null = null;
+    if (s.withBoat) {
+      const [boat] = await db
+        .select({ id: boatsTable.id })
+        .from(boatsTable)
+        .where(and(eq(boatsTable.userId, userId), eq(boatsTable.isPrimary, true)))
+        .limit(1);
+      boatId = boat?.id ?? null;
+    }
+    const createdAt = hoursAgo(s.hoursAgo);
+    await db.insert(storiesTable).values({
+      userId,
+      mediaType: s.mediaType,
+      mediaUrl: s.image ?? null,
+      text: s.text ?? null,
+      bgColor: s.bgColor ?? null,
+      caption: s.caption ?? null,
+      lat: s.lat ?? null,
+      lng: s.lng ?? null,
+      placeName: s.placeName ?? null,
+      // Friends-only (see DEMO_POSTS): visible only via demo follows.
+      visibility: "friends",
+      boatId,
+      filterName: s.filterName ?? null,
+      filterCss: s.filterCss ?? null,
+      stickers: s.stickers ?? null,
+      pollQuestion: s.pollQuestion ?? null,
+      pollOptions: s.pollOptions ?? null,
+      createdAt,
+      expiresAt: new Date(createdAt.getTime() + 24 * 60 * 60 * 1000),
+    });
+  }
+  logger.info({ stories: DEMO_STORIES.length }, "Seeded demo stories");
 }
 
 /** Remove every demo account and all of their data. */
@@ -881,6 +1067,7 @@ export function startDemoPresenceRefresher(): void {
   refresherStarted = true;
   const tick = () => {
     refreshDemoPresence().catch((err) => logger.error({ err }, "demo presence refresh failed"));
+    ensureDemoStories().catch((err) => logger.error({ err }, "demo stories refresh failed"));
   };
   tick();
   setInterval(tick, 2 * 60 * 1000).unref?.();

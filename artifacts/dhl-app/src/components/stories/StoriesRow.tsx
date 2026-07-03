@@ -8,6 +8,7 @@ import {
   type StoryGroup,
 } from "@workspace/api-client-react";
 import { UserAvatar } from "@/components/UserAvatar";
+import { resolveImageSrc } from "@/lib/assets";
 import { AddStoryDialog } from "./AddStoryDialog";
 import { StoryViewer } from "./StoryViewer";
 
@@ -135,7 +136,7 @@ function StoryThumb({ story, user }: { story: StoryGroup["stories"][number]; use
   if (!failed && story?.mediaType === "photo" && story.mediaUrl) {
     return (
       <img
-        src={story.mediaUrl}
+        src={resolveImageSrc(story.mediaUrl)}
         alt=""
         className={size}
         style={story.filterCss ? { filter: story.filterCss } : undefined}
@@ -149,7 +150,7 @@ function StoryThumb({ story, user }: { story: StoryGroup["stories"][number]; use
     return (
       <video
         // #t=0.1 nudges iOS Safari to actually render the first frame.
-        src={`${story.mediaUrl}#t=0.1`}
+        src={`${resolveImageSrc(story.mediaUrl)}#t=0.1`}
         className={size}
         style={story.filterCss ? { filter: story.filterCss } : undefined}
         muted

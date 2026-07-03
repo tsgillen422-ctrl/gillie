@@ -19,6 +19,7 @@ import {
   type Story,
 } from "@workspace/api-client-react";
 import { UserAvatar } from "@/components/UserAvatar";
+import { resolveImageSrc } from "@/lib/assets";
 import { StickerLayer } from "./StickerLayer";
 
 const PHOTO_MS = 5000;
@@ -375,7 +376,7 @@ export function StoryViewer({
         <div key={`${groupIdx}-${story.id}`} className="story-enter absolute inset-0">
           {story.mediaType === "photo" && (
             <img
-              src={story.mediaUrl ?? ""}
+              src={resolveImageSrc(story.mediaUrl)}
               alt=""
               className="h-full w-full object-cover"
               style={story.filterCss ? { filter: story.filterCss } : undefined}
@@ -386,7 +387,7 @@ export function StoryViewer({
             <video
               ref={videoRef}
               key={story.id}
-              src={story.mediaUrl ?? ""}
+              src={resolveImageSrc(story.mediaUrl)}
               className="h-full w-full object-cover"
               style={story.filterCss ? { filter: story.filterCss } : undefined}
               autoPlay
