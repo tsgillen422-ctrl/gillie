@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetPosts, useGetSavedPosts, useGetPostsSummary, useReactToPost, useGetMe, useDeletePost, useCreatePost, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useBlockUser, useShareToProfile, useVotePoll, useUpdatePost, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetBlockedUsersQueryKey, useGetConditions, getGetConditionsQueryKey, useGetCatches, getGetCatchesQueryKey } from "@workspace/api-client-react";
+import { useGetPosts, useGetSavedPosts, useReactToPost, useGetMe, useDeletePost, useCreatePost, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useBlockUser, useShareToProfile, useVotePoll, useUpdatePost, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetBlockedUsersQueryKey, useGetConditions, getGetConditionsQueryKey, useGetCatches, getGetCatchesQueryKey } from "@workspace/api-client-react";
 import { PostInputPostType, PostInputVisibility } from "@workspace/api-client-react/src/generated/api.schemas";
 import { GifPickerDialog } from "@/components/GifPickerDialog";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ReportDialog } from "@/components/ReportDialog";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
-import heroImg from "@assets/hero-lake-sunset.webp";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -218,7 +217,6 @@ export function FeedPage() {
   const posts = isSavedTab ? savedPosts : feedPosts;
   const isLoading = isSavedTab ? savedLoading : isFishingTab ? catchesLoading : feedLoading;
   
-  const { data: summary } = useGetPostsSummary();
   const { data: me } = useGetMe();
 
   const search = useSearch();
@@ -562,13 +560,6 @@ export function FeedPage() {
 
   const { data: conditions } = useGetConditions({ query: { refetchInterval: 1000 * 60 * 10, queryKey: getGetConditionsQueryKey() } });
   const [conditionsOpen, setConditionsOpen] = React.useState(false);
-  const greetingPrefix = (() => {
-    const h = new Date().getHours();
-    if (h >= 5 && h < 12) return "Good Morning";
-    if (h >= 12 && h < 17) return "Good Afternoon";
-    return "Good Evening";
-  })();
-  const firstName = me?.displayName?.trim().split(/\s+/)[0] || me?.username || "friend";
   const WeatherIcon = weatherIcon(conditions?.weatherCode, conditions?.isDay ?? undefined);
 
   React.useEffect(() => {
@@ -582,202 +573,83 @@ export function FeedPage() {
   }, [search]);
 
   return (
-    <div className="flex flex-col h-full min-w-0 bg-muted/30">
+    <div className="relative flex flex-col h-full min-w-0 bg-muted/30">
+      {me && (
+        <div className="absolute bottom-5 right-4 z-30" style={{ marginBottom: "env(safe-area-inset-bottom)" }}>
+          <button
+            type="button"
+            onClick={() => { setNewType("post"); setComposerOpen(true); }}
+            aria-label="Create a post"
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/30 active:scale-95 transition"
+          >
+            <Plus className="h-7 w-7" strokeWidth={2.5} />
+          </button>
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto">
-        {/* Immersive hero: scrolls away with the page */}
-        <div className="relative isolate">
-          <img
-            src={heroImg}
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 -z-10 h-full w-full object-cover select-none"
-            draggable={false}
-          />
-          <div className="absolute inset-0 -z-10 bg-gradient-to-b from-black/40 via-black/25 to-black/75" />
-          <div className="px-4 pb-5" style={{ paddingTop: "max(env(safe-area-inset-top), 0.85rem)" }}>
-            {/* Top bar */}
-            <div className="flex items-center justify-between pt-1.5">
-              <span className="font-script text-[34px] font-bold leading-none text-white drop-shadow-md">Gillie</span>
-              <div className="flex items-center gap-2">
-                <Link href="/search" aria-label="Search" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md hover:bg-white/25 active:scale-95 transition">
-                  <Search className="h-[18px] w-[18px]" />
+        {/* Slim top bar */}
+        <div className="bg-background px-4 pb-2" style={{ paddingTop: "max(env(safe-area-inset-top), 0.6rem)" }}>
+          <div className="flex items-center justify-between pt-1">
+            <span className="font-script text-[30px] font-bold leading-none text-primary">Gillie</span>
+            <div className="flex items-center gap-1.5">
+              <Link href="/search" aria-label="Search" className="flex h-9 w-9 items-center justify-center rounded-full text-foreground hover:bg-muted active:scale-95 transition">
+                <Search className="h-[20px] w-[20px]" />
+              </Link>
+              <Link href="/pins" aria-label="Pins" className="flex h-9 w-9 items-center justify-center rounded-full text-foreground hover:bg-muted active:scale-95 transition">
+                <MapPin className="h-[20px] w-[20px]" />
+              </Link>
+              <Link href="/friends" aria-label="Friends" className="flex h-9 w-9 items-center justify-center rounded-full text-foreground hover:bg-muted active:scale-95 transition">
+                <Users className="h-[20px] w-[20px]" />
+              </Link>
+              <Link href="/notifications" aria-label="Notifications" className="flex h-9 w-9 items-center justify-center rounded-full text-foreground hover:bg-muted active:scale-95 transition">
+                <Bell className="h-[20px] w-[20px]" />
+              </Link>
+              {me && (
+                <Link href="/profile/me" aria-label="Your profile" className="ml-0.5 rounded-full ring-2 ring-primary/40 active:scale-95 transition">
+                  <UserAvatar name={me.displayName || "You"} username={me.username || ""} avatarUrl={me.avatarUrl} className="h-8 w-8" />
                 </Link>
-                <Link href="/pins" aria-label="Pins" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md hover:bg-white/25 active:scale-95 transition">
-                  <MapPin className="h-[18px] w-[18px]" />
-                </Link>
-                <Link href="/friends" aria-label="Friends" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md hover:bg-white/25 active:scale-95 transition">
-                  <Users className="h-[18px] w-[18px]" />
-                </Link>
-                <Link href="/notifications" aria-label="Notifications" className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-md hover:bg-white/25 active:scale-95 transition">
-                  <Bell className="h-[18px] w-[18px]" />
-                </Link>
-                {me && (
-                  <Link href="/profile/me" aria-label="Your profile" className="rounded-full ring-2 ring-white/70 active:scale-95 transition">
-                    <UserAvatar name={me.displayName || "You"} username={me.username || ""} avatarUrl={me.avatarUrl} className="h-9 w-9" />
-                  </Link>
-                )}
-              </div>
-            </div>
-
-            {/* Greeting */}
-            <div className="mt-12">
-              <h1 className="text-[26px] font-bold leading-tight text-white drop-shadow-md">
-                {greetingPrefix},<br />{firstName} <span aria-hidden="true">👋</span>
-              </h1>
-              <p className="mt-1 text-sm text-white/85 drop-shadow">Dale Hollow Lake is looking great today.</p>
-            </div>
-
-            {/* Conditions glass card */}
-            <button
-              type="button"
-              onClick={() => conditions && setConditionsOpen(true)}
-              disabled={!conditions}
-              aria-label="View detailed weather conditions"
-              className="mt-4 block w-full rounded-2xl border border-white/15 bg-black/35 p-3.5 text-left text-white backdrop-blur-md transition active:scale-[0.99]"
-            >
-              {conditions ? (
-                <div className="flex items-center gap-2.5">
-                  <WeatherIcon className="h-9 w-9 shrink-0 text-amber-300" />
-                  <div className="min-w-0 shrink border-r border-white/20 pr-2.5">
-                    <div className="text-[26px] font-bold leading-none">{Math.round(conditions.temperature)}°</div>
-                    <div className="mt-1 truncate text-[11px] leading-none text-white/75">
-                      {conditions.weatherLabel}
-                      {conditions.apparentTemperature != null && ` · feels ${Math.round(conditions.apparentTemperature)}°`}
-                    </div>
-                  </div>
-                  <div className="grid flex-1 grid-cols-3 gap-1 text-center">
-                    <div className="min-w-0">
-                      <Waves className="mx-auto h-4 w-4 text-cyan-300" />
-                      <div className="mt-0.5 text-[13px] font-semibold leading-none">{conditions.waterTemperature != null ? `${Math.round(conditions.waterTemperature)}°` : "—"}</div>
-                      <div className="text-[10px] text-white/65">Water</div>
-                    </div>
-                    <div className="min-w-0">
-                      <Wind className="mx-auto h-4 w-4 text-sky-300" />
-                      <div className="mt-0.5 text-[13px] font-semibold leading-none">{Math.round(conditions.windSpeed)} mph</div>
-                      <div className="text-[10px] text-white/65">{windDirLabel(conditions.windDirection) || "Wind"}</div>
-                    </div>
-                    <div className="min-w-0">
-                      <Gauge className="mx-auto h-4 w-4 text-teal-300" />
-                      <div className="mt-0.5 text-[13px] font-semibold leading-none">{conditions.waterLevel != null ? `${conditions.waterLevel.toFixed(1)}ft` : "—"}</div>
-                      <div className="text-[10px] text-white/65">Lake Level</div>
-                    </div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-white/50" />
-                </div>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-9 w-9 rounded-full bg-white/20" />
-                  <Skeleton className="h-7 w-16 bg-white/20" />
-                  <Skeleton className="h-7 flex-1 bg-white/20" />
-                </div>
               )}
-            </button>
+            </div>
           </div>
+
+          {/* Compact expandable weather strip */}
+          <button
+            type="button"
+            onClick={() => conditions && setConditionsOpen(true)}
+            disabled={!conditions}
+            aria-label="View detailed weather conditions"
+            aria-expanded={conditionsOpen}
+            className="mt-2.5 flex w-full items-center gap-2.5 rounded-full border border-border bg-card px-3.5 py-2 text-left transition active:scale-[0.99]"
+          >
+            {conditions ? (
+              <>
+                <WeatherIcon className="h-5 w-5 shrink-0 text-amber-500" />
+                <span className="text-sm font-bold leading-none">{Math.round(conditions.temperature)}°</span>
+                <span className="hidden min-[380px]:inline truncate text-xs text-muted-foreground">{conditions.weatherLabel}</span>
+                <span className="ml-auto flex shrink-0 items-center gap-3 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1"><Waves className="h-3.5 w-3.5 text-cyan-500" />{conditions.waterTemperature != null ? `${Math.round(conditions.waterTemperature)}°` : "—"}</span>
+                  <span className="flex items-center gap-1"><Wind className="h-3.5 w-3.5 text-sky-500" />{Math.round(conditions.windSpeed)}</span>
+                  <span className="flex items-center gap-1"><Gauge className="h-3.5 w-3.5 text-teal-500" />{conditions.waterLevel != null ? conditions.waterLevel.toFixed(1) : "—"}</span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+              </>
+            ) : (
+              <>
+                <Skeleton className="h-5 w-5 rounded-full" />
+                <Skeleton className="h-4 w-10" />
+                <Skeleton className="h-4 flex-1" />
+              </>
+            )}
+          </button>
         </div>
 
         <ConditionsDrawer conditions={conditions ?? null} open={conditionsOpen} onOpenChange={setConditionsOpen} />
 
         <SuggestedFriendsDrawer />
 
-        {/* Stats + composer */}
-        <div className="space-y-3 px-4 pt-4">
-          {summary && (
-            <div className="grid grid-cols-4 gap-2">
-              <Link href="/map?presence=1" className="rounded-2xl border border-border bg-card p-2.5 hover-elevate active:scale-[0.98] transition-transform">
-                <div className="mb-1 flex items-center gap-1">
-                  <Users className="h-3.5 w-3.5 shrink-0 text-blue-500" />
-                  <span className="truncate text-[10px] font-medium text-muted-foreground">Lake Active</span>
-                </div>
-                <div className="text-xl font-bold leading-none">{summary.activeUsersToday}</div>
-                <div className="mt-1 truncate text-[10px] text-muted-foreground">Now on the water</div>
-              </Link>
-              <Link href="/catches" className="rounded-2xl border border-border bg-card p-2.5 hover-elevate active:scale-[0.98] transition-transform">
-                <div className="mb-1 flex items-center gap-1">
-                  <Fish className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                  <span className="truncate text-[10px] font-medium text-muted-foreground">Fishing</span>
-                </div>
-                <div className="text-xl font-bold leading-none">{summary.fishingReports ?? 0}</div>
-                <div className="mt-1 truncate text-[10px] text-muted-foreground">Reports logged</div>
-              </Link>
-              <button type="button" onClick={() => setActiveTab("event")} className="rounded-2xl border border-border bg-card p-2.5 text-left hover-elevate active:scale-[0.98] transition-transform">
-                <div className="mb-1 flex items-center gap-1">
-                  <Calendar className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-                  <span className="truncate text-[10px] font-medium text-muted-foreground">Events</span>
-                </div>
-                <div className="text-xl font-bold leading-none">{summary.totalEvents}</div>
-                <div className="mt-1 truncate text-[10px] text-muted-foreground">Upcoming</div>
-              </button>
-              <Link href="/map" className="rounded-2xl border border-border bg-card p-2.5 hover-elevate active:scale-[0.98] transition-transform">
-                <div className="mb-1 flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5 shrink-0 text-rose-500" />
-                  <span className="truncate text-[10px] font-medium text-muted-foreground">Live Pins</span>
-                </div>
-                <div className="text-xl font-bold leading-none">{summary.totalPins}</div>
-                <div className="mt-1 truncate text-[10px] text-muted-foreground">On the map</div>
-              </Link>
-            </div>
-          )}
-
-          {me && (
-            <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
-              <button
-                type="button"
-                onClick={() => { setNewType("post"); setComposerOpen(true); }}
-                className="flex w-full items-center gap-3 text-left"
-                aria-label="Create a new post"
-              >
-                <UserAvatar name={me.displayName || "You"} username={me.username || ""} avatarUrl={me.avatarUrl} className="h-9 w-9 shrink-0" />
-                <span className="flex-1 truncate text-sm text-muted-foreground">What's happening on the lake?</span>
-              </button>
-              <div className="mt-3 grid grid-cols-4 gap-1 border-t border-border pt-2">
-                <button type="button" onClick={() => { setNewType("post"); setComposerOpen(true); }} className="flex flex-col items-center gap-1 rounded-lg py-1.5 hover-elevate active:scale-95 transition">
-                  <Camera className="h-[18px] w-[18px] text-sky-500" />
-                  <span className="text-[11px] font-medium text-muted-foreground">Photo</span>
-                </button>
-                <Link href="/catches" className="flex flex-col items-center gap-1 rounded-lg py-1.5 hover-elevate active:scale-95 transition">
-                  <Fish className="h-[18px] w-[18px] text-teal-500" />
-                  <span className="text-[11px] font-medium text-muted-foreground">Catch</span>
-                </Link>
-                <Link href="/map" className="flex flex-col items-center gap-1 rounded-lg py-1.5 hover-elevate active:scale-95 transition">
-                  <MapPin className="h-[18px] w-[18px] text-rose-500" />
-                  <span className="text-[11px] font-medium text-muted-foreground">Drop Pin</span>
-                </Link>
-                <button type="button" onClick={() => { setNewType("event"); setComposerOpen(true); }} className="flex flex-col items-center gap-1 rounded-lg py-1.5 hover-elevate active:scale-95 transition">
-                  <CalendarPlus className="h-[18px] w-[18px] text-violet-500" />
-                  <span className="text-[11px] font-medium text-muted-foreground">Event</span>
-                </button>
-              </div>
-            </div>
-          )}
-
+        {/* Stories: front and center */}
+        <div className="bg-background px-4 pb-3 pt-1">
           <StoriesRow />
-
-          <SuggestedFriendsButton />
-
-          {conditions?.fishingPressure && (() => {
-            const style = pressureStyles[conditions.fishingPressure.level] ?? pressureStyles.moderate;
-            return (
-              <div className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-xs ${style.wrap}`}>
-                <Fish className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                <span><span className="font-semibold">Fishing pressure: {style.label}.</span> {conditions.fishingPressure.detail}</span>
-              </div>
-            );
-          })()}
-
-          {conditions?.advisories && conditions.advisories.length > 0 && (
-            <div className="space-y-2">
-              {conditions.advisories.map((a, i) => {
-                const style = advisoryStyles[a.level] ?? advisoryStyles.good;
-                const Icon = style.icon;
-                return (
-                  <div key={i} className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-xs ${style.wrap}`}>
-                    <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span><span className="font-semibold">{a.title}.</span> {a.detail}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
 
         {/* Filter tabs: stick to the top once the hero scrolls away */}
@@ -810,6 +682,7 @@ export function FeedPage() {
 
         <div className="p-4">
         <HazardBanner />
+        <SuggestedFriendsButton />
         {isTrendingTab ? (
           <TrendingSection />
         ) : isLoading ? (
@@ -879,7 +752,7 @@ export function FeedPage() {
             </div>
             <h3 className="font-display font-semibold text-xl mb-1">Nothing here yet</h3>
             <p className="text-sm text-muted-foreground max-w-xs">
-              Be the first to share what's happening on the lake. Use the box above to post.
+              Be the first to share what's happening on the lake. Tap the + button to post.
             </p>
           </div>
         )}
