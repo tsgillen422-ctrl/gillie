@@ -56,6 +56,7 @@
 - [dhl-app typecheck TS6306](dhl-app-typecheck-refs.md) — dhl-app tsc always fails on a pre-existing non-composite lib reference; strip references to typecheck; manual vite build needs PORT+BASE_PATH.
 - [Story editor](story-editor.md) — z-layering, sticker coords, drawings flatten at post, filters stay CSS metadata; AR face lenses (self-hosted MediaPipe) ARE baked at capture.
 - [Native iOS Sign in with Apple](native-apple-signin.md) — web Apple OAuth dead (bad .p8); native popup → backend verifies token vs Apple JWKS → Clerk ticket. PUBLIC endpoint: NEVER trust client email; match only by verified token email/`apple:<sub>`.
+- [Storage URL persistence](storage-url-persistence.md) — always persist `/api/storage${objectPath}`, never raw objectPath; previews can mask the broken saved URL.
 - [showBoat privacy](show-boat-privacy.md) — redact boat showcase fields server-side for non-self when showBoat=false; boatName/color/type stay public (map markers need them).
 - [Public support & legal pages](public-support-legal-pages.md) — /support /privacy-policy /community-guidelines must be in the TOP-LEVEL Switch (before GatedRoutes) to be no-auth; auth-aware back targets or signed-out dead-ends.
 - [Suspension enforcement](suspension-enforcement.md) — `suspend` was cosmetic; now requireAuth 403s suspended users (except GET/DELETE /users/me) + App.tsx SuspendedGate; reversible via PATCH /users/:id/suspension.

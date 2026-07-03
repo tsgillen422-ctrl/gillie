@@ -67,7 +67,7 @@ compliance commits that local doesn't have.
 all blocked in this env (even inside an assigned Project Task), and the one push that
 did run failed GitHub auth ("password authentication is not supported"). Only the
 user's Replit Git pane / Shell (their GitHub creds) can. Correct reconciliation =
-rebase local onto `subrepl-10yjcilf/main` (replays build-5 commits on top of GitHub's
+rebase local onto the GitHub remote's main (replays build-5 commits on top of GitHub's
 icon/splash/export-compliance base) and resolve the generated
 `artifacts/mockup-sandbox/src/.generated/mockup-components.ts` conflict, then push —
 NOT force-push. Verify the GitHub tip's `codemagic.yaml` shows build 5 afterward.

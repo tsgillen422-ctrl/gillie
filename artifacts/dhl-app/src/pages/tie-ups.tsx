@@ -27,7 +27,7 @@ import { useUpload } from "@workspace/object-storage-web";
 import { compressImage } from "@/lib/compress";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { PostCard } from "@/pages/feed";
+import { PostCard } from "@/components/feed/PostCard";
 
 export function TieUpsPage() {
   const { data: tieUps, isLoading } = useGetPosts({ type: "tie_up" });
@@ -134,7 +134,7 @@ export function TieUpsPage() {
             <div key={t.id} id={`tieup-${t.id}`}>
               <PostCard
                 post={t}
-                onReact={(reaction) => reactPost.mutate({ postId: t.id, data: { reaction } }, { onSuccess: refresh })}
+                onReact={(reaction: any) => reactPost.mutate({ postId: t.id, data: { reaction } }, { onSuccess: refresh })}
                 canDelete={me != null && (t.userId === me.id || me.isAdmin)}
                 onDelete={() => handleDelete(t.id)}
                 currentUserId={me?.id}

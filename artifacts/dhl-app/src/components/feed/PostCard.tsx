@@ -27,7 +27,10 @@ import {
   useDeletePostComment,
   useGetPostComments,
   useReactToComment,
+  useVotePoll,
   getGetPostCommentsQueryKey,
+  getGetPostsQueryKey,
+  getGetSavedPostsQueryKey,
 } from "@workspace/api-client-react";
 import { ReportDialog } from "@/components/ReportDialog";
 import { LikesDialog } from "./LikesDialog";
@@ -254,7 +257,9 @@ function PhotoCarousel({ photos, alt }: { photos: string[]; alt: string }) {
   );
 }
 
-function PollView({ post, votePoll, queryClient, getGetPostsQueryKey, getGetSavedPostsQueryKey }: any) {
+function PollView({ post }: any) {
+  const queryClient = useQueryClient();
+  const votePoll = useVotePoll();
   const poll = post.poll as { options: { id: number; text: string; voteCount: number }[]; totalVotes: number; myVote?: number | null } | undefined;
   if (!poll || !poll.options?.length) return null;
   const total = poll.totalVotes || 0;
@@ -311,9 +316,6 @@ export function PostCard({
   onUnsave,
   onShareToProfile,
   onUpdatePost,
-  votePoll,
-  getGetPostsQueryKey,
-  getGetSavedPostsQueryKey
 }: any) {
   const [showComments, setShowComments] = React.useState(false);
   const [showLikes, setShowLikes] = React.useState(false);
@@ -397,8 +399,8 @@ export function PostCard({
       postId: post.id,
       data: {
         content: commentText.trim() || undefined,
-        imageUrl: commentImageUrl || undefined,
-        videoUrl: commentVideoUrl || undefined,
+        imageUrl: commentImageUrl ? `/api/storage${commentImageUrl}` : undefined,
+        videoUrl: commentVideoUrl ? `/api/storage${commentVideoUrl}` : undefined,
       }
     }, {
       onSuccess: () => {
@@ -501,28 +503,28 @@ export function PostCard({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-lg border-border/50">
             {post.savedByMe ? (
-              <DropdownMenuItem onClick={() => onUnsave(post.id)} className="font-medium cursor-pointer">
+              <DropdownMenuItem onClick={() => onUnsave?.(post.id)} className="font-medium cursor-pointer">
                 <BookmarkCheck className="mr-2 h-4 w-4" /> Unsave post
               </DropdownMenuItem>
             ) : (
-              <DropdownMenuItem onClick={() => onSave(post.id)} className="font-medium cursor-pointer">
+              <DropdownMenuItem onClick={() => onSave?.(post.id)} className="font-medium cursor-pointer">
                 <Bookmark className="mr-2 h-4 w-4" /> Save post
               </DropdownMenuItem>
             )}
             <DropdownMenuItem className="font-medium cursor-pointer" onClick={handleShareExternal}>
               <Link2 className="mr-2 h-4 w-4" /> Share link
             </DropdownMenuItem>
-            <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => onShareToProfile(post.id)}>
+            <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => onShareToProfile?.(post.id)}>
               <Repeat2 className="mr-2 h-4 w-4" /> Repost to my profile
             </DropdownMenuItem>
             {currentUserId === post.userId && (
-              <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => onUpdatePost(post)}>
+              <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => onUpdatePost?.(post)}>
                 <Pencil className="mr-2 h-4 w-4" /> Edit post
               </DropdownMenuItem>
             )}
             {currentUserId !== post.userId && (
               <>
-                <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => onMuteUser(post.userId)}>
+                <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => onMuteUser?.(post.userId)}>
                   <EyeOff className="mr-2 h-4 w-4" /> Mute user
                 </DropdownMenuItem>
                 <DropdownMenuItem className="text-destructive font-medium cursor-pointer" onClick={() => setBlockConfirmOpen(true)}>
@@ -534,7 +536,7 @@ export function PostCard({
               </>
             )}
             {canDelete && (
-              <DropdownMenuItem className="text-destructive focus:text-destructive font-medium cursor-pointer" onClick={() => onDelete(post.id)}>
+              <DropdownMenuItem className="text-destructive focus:text-destructive font-medium cursor-pointer" onClick={() => onDelete?.(post.id)}>
                 <Trash2 className="mr-2 h-4 w-4" /> Delete post
               </DropdownMenuItem>
             )}
@@ -580,7 +582,7 @@ export function PostCard({
               <Button
                 size="sm"
                 variant={post.rsvpByMe ? "secondary" : "default"}
-                onClick={() => onToggleRsvp(post.id)}
+                onClick={() => onToggleRsvp?.(post.id)}
                 className={`rounded-full h-8 px-4 font-bold ${post.rsvpByMe ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90'}`}
               >
                 {post.rsvpByMe ? "Going" : "RSVP"}
@@ -637,7 +639,7 @@ export function PostCard({
           </div>
         )}
 
-        <PollView post={post} votePoll={votePoll} queryClient={queryClient} getGetPostsQueryKey={getGetPostsQueryKey} getGetSavedPostsQueryKey={getGetSavedPostsQueryKey} />
+        {post.poll && <PollView post={post} />}
 
         {likeTotal > 0 && (
           <div className="px-4 py-2 flex items-center gap-1.5">
@@ -804,7 +806,7 @@ export function PostCard({
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setBlockConfirmOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={() => { setBlockConfirmOpen(false); onBlockUser(post.userId); }}>Block</Button>
+            <Button variant="destructive" onClick={() => { setBlockConfirmOpen(false); onBlockUser?.(post.userId); }}>Block</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

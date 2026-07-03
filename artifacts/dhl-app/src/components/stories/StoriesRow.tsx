@@ -25,9 +25,10 @@ export function StoriesRow() {
   const hasStories = (groups?.length ?? 0) > 0;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-1.5 px-0.5">
-        <span className="text-sm font-bold">🌊 Today on the Lake</span>
+    <div className="space-y-3 pb-2 pt-1 border-b border-border/40">
+      <div className="flex items-center gap-2 px-1">
+        <div className="h-5 w-1.5 rounded-full bg-primary" />
+        <span className="text-sm font-display font-bold tracking-tight text-foreground">Today on the Lake</span>
       </div>
 
       <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
@@ -35,21 +36,21 @@ export function StoriesRow() {
         <button
           type="button"
           onClick={() => setAddOpen(true)}
-          className="flex w-16 shrink-0 flex-col items-center gap-1"
+          className="flex w-16 shrink-0 flex-col items-center gap-1.5 transition-transform active:scale-95 ml-1"
           data-testid="button-add-story"
         >
-          <div className="relative">
+          <div className="relative rounded-full p-[2.5px] bg-border border-dashed border-2 border-transparent">
             <UserAvatar
               name={me?.displayName || "You"}
               username={me?.username || ""}
               avatarUrl={me?.avatarUrl}
-              className="h-14 w-14 opacity-90"
+              className="h-[52px] w-[52px] opacity-90"
             />
-            <div className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-card bg-primary text-primary-foreground">
+            <div className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-sm">
               <Plus className="h-3 w-3" strokeWidth={3} />
             </div>
           </div>
-          <span className="w-full truncate text-center text-[11px] text-muted-foreground">Add Story</span>
+          <span className="w-full truncate text-center text-[10px] font-semibold text-muted-foreground">Add Story</span>
         </button>
 
         {(groups ?? []).map((g, i) => (
@@ -66,23 +67,25 @@ export function StoriesRow() {
       {/* Trending Today */}
       {trending.length > 0 && (
         <div className="space-y-1.5">
-          <div className="flex items-center gap-1 px-0.5">
-            <Flame className="h-3.5 w-3.5 text-orange-500" />
-            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Trending Today</span>
+          <div className="flex items-center gap-1.5 px-1 mt-2">
+            <Flame className="h-4 w-4 text-orange-500" />
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Trending places</span>
           </div>
-          <div className="flex gap-2 overflow-x-auto no-scrollbar">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar px-1 pb-1">
             {trending.map((p) => (
               <button
                 key={p.placeName}
                 type="button"
                 onClick={() => setPlaceViewer(p.placeName)}
-                className="flex shrink-0 items-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-3 py-1.5 text-left dark:border-orange-900/50 dark:bg-orange-950/30 hover-elevate"
+                className="flex shrink-0 items-center gap-2 rounded-full border border-orange-200/60 bg-orange-50/50 px-3 py-1.5 text-left dark:border-orange-900/40 dark:bg-orange-950/20 transition-all hover:bg-orange-100/50 active:scale-95"
                 data-testid={`button-trending-${p.placeName}`}
               >
-                <span className="text-base">🔥</span>
-                <span className="min-w-0">
-                  <span className="block max-w-36 truncate text-xs font-semibold">{p.placeName}</span>
-                  <span className="block text-[11px] text-muted-foreground">
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 dark:bg-orange-900/50">
+                  <Flame className="h-3 w-3 text-orange-600 dark:text-orange-400" />
+                </div>
+                <span className="min-w-0 pr-1">
+                  <span className="block max-w-28 truncate text-[11px] font-bold text-foreground">{p.placeName}</span>
+                  <span className="block text-[9px] text-muted-foreground font-medium uppercase tracking-wide">
                     {p.storyCount} {p.storyCount === 1 ? "story" : "stories"}
                   </span>
                 </span>
@@ -109,17 +112,17 @@ function StoryCircle({ group, onClick }: { group: StoryGroup; onClick: () => voi
   const latest = group.stories[group.stories.length - 1];
   return (
     <button type="button" onClick={onClick} className="flex w-16 shrink-0 flex-col items-center gap-1" data-testid={`button-story-${group.user.id}`}>
-      <div className={`relative rounded-full p-[2.5px] ${ring}`}>
-        <div className="rounded-full bg-card p-[2px]">
+      <div className={`relative rounded-full p-[2.5px] transition-transform active:scale-95 ${ring}`}>
+        <div className="rounded-full bg-background p-[2px]">
           <StoryThumb story={latest} user={group.user} />
         </div>
         {group.user.isLive && (
-          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded border border-card bg-red-500 px-1 py-px text-[8px] font-bold uppercase tracking-wide text-white">
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded border-2 border-background bg-red-500 px-1.5 py-[2px] text-[8px] font-bold uppercase tracking-widest text-white shadow-sm">
             Live
           </span>
         )}
       </div>
-      <span className={`w-full truncate text-center text-[11px] ${group.allViewed ? "text-muted-foreground" : "font-medium text-foreground"}`}>
+      <span className={`w-full truncate text-center text-[10px] ${group.allViewed ? "text-muted-foreground" : "font-bold text-foreground"}`}>
         {group.user.displayName.split(" ")[0]}
       </span>
     </button>

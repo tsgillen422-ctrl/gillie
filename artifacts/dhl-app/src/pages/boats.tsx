@@ -27,7 +27,7 @@ import { useUpload } from "@workspace/object-storage-web";
 import { compressImage } from "@/lib/compress";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { PostCard } from "@/pages/feed";
+import { PostCard } from "@/components/feed/PostCard";
 
 export function BoatsPage() {
   const { data: boats, isLoading } = useGetPosts({ type: "boat_showcase" });
@@ -156,7 +156,7 @@ export function BoatsPage() {
             <div key={b.id} id={`boat-${b.id}`}>
               <PostCard
                 post={b}
-                onReact={(reaction) => reactPost.mutate({ postId: b.id, data: { reaction } }, { onSuccess: refresh })}
+                onReact={(reaction: any) => reactPost.mutate({ postId: b.id, data: { reaction } }, { onSuccess: refresh })}
                 canDelete={me != null && (b.userId === me.id || me.isAdmin)}
                 onDelete={() => handleDelete(b.id)}
                 currentUserId={me?.id}

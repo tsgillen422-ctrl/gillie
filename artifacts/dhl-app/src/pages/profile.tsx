@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar, resolveAvatarUrl } from "@/components/UserAvatar";
 import { ImageLightbox } from "@/components/ImageLightbox";
-import { PostCard } from "./feed";
+import { PostCard } from "@/components/feed/PostCard";
 import { StoryViewer } from "@/components/stories/StoryViewer";
 import { HighlightsRow } from "@/components/stories/HighlightsRow";
 import {
@@ -1689,7 +1689,7 @@ export function ProfilePage() {
           {openPost && (
             <PostCard
               post={openPost}
-              onReact={(reaction) => reactPost.mutate({ postId: openPost.id, data: { reaction } }, { onSuccess: refreshPosts })}
+              onReact={(reaction: any) => reactPost.mutate({ postId: openPost.id, data: { reaction } }, { onSuccess: refreshPosts })}
               canDelete={isSelf}
               onDelete={() => handleDeletePost(openPost.id)}
               currentUserId={me?.id}
