@@ -23,7 +23,7 @@ const router = Router();
 
 const STORY_TTL_MS = 24 * 60 * 60 * 1000;
 const MEDIA_TYPES = ["photo", "video", "text"];
-export const REACTION_EMOJIS = ["❤️", "🔥", "🚤", "🌊", "😂", "👏", "😍"];
+export const REACTION_EMOJIS = ["❤️", "🔥", "🚤", "🌊", "😂", "👏", "😍", "😮", "👍"];
 const STICKER_TYPES = ["location", "weather", "boat", "emoji", "giphy", "text"];
 // Only allow giphy CDN media so sticker URLs can't point anywhere else.
 const GIPHY_URL_RE = /^https:\/\/(media\d*|i)\.giphy\.com\//;

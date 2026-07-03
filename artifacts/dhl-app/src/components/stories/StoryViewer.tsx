@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { X, MapPin, Trash2, Eye, Ship, Check } from "lucide-react";
+import { X, MapPin, Trash2, Eye, Ship, Check, ChevronUp, Send } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -9,6 +9,10 @@ import {
   useReactToStory,
   useRemoveStoryReaction,
   useVoteStoryPoll,
+  useCreateConversation,
+  useSendMessage,
+  useGetConditions,
+  getGetConditionsQueryKey,
   getGetStoriesQueryKey,
   getGetStoryPlacesQueryKey,
   type StoryGroup,
@@ -19,9 +23,10 @@ import { StickerLayer } from "./StickerLayer";
 
 const PHOTO_MS = 5000;
 const TEXT_MS = 6000;
+const UI_HIDE_MS = 3000;
 
-// Keep in sync with REACTION_EMOJIS on the server (api-server routes/stories.ts).
-const REACTION_EMOJIS = ["❤️", "🔥", "🚤", "🌊", "😂", "👏", "😍"];
+// Quick-reaction set (must be a subset of REACTION_EMOJIS on the server).
+const REACTION_EMOJIS = ["❤️", "😂", "😮", "🔥", "👍"];
 
 function timeAgo(iso: string): string {
   const mins = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
@@ -29,6 +34,14 @@ function timeAgo(iso: string): string {
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
   return `${hrs}h ago`;
+}
+
+function timeOfDay(iso: string): { label: string; emoji: string } {
+  const h = new Date(iso).getHours();
+  if (h >= 5 && h < 11) return { label: "Morning", emoji: "🌄" };
+  if (h >= 11 && h < 17) return { label: "Afternoon", emoji: "☀️" };
+  if (h >= 17 && h < 21) return { label: "Evening", emoji: "🌅" };
+  return { label: "Night", emoji: "🌙" };
 }
 
 export function StoryViewer({
@@ -50,6 +63,14 @@ export function StoryViewer({
   const [paused, setPaused] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [replyText, setReplyText] = useState("");
+  const [replyFocused, setReplyFocused] = useState(false);
+  const [sendingReply, setSendingReply] = useState(false);
+
+  // Chrome (header/toolbar) auto-hides so the media can breathe.
+  const [uiVisible, setUiVisible] = useState(true);
+  const [uiKick, setUiKick] = useState(0);
 
   const queryClient = useQueryClient();
   const viewMutation = useViewStory();
@@ -57,10 +78,21 @@ export function StoryViewer({
   const reactMutation = useReactToStory();
   const unreactMutation = useRemoveStoryReaction();
   const voteMutation = useVoteStoryPoll();
+  const createConv = useCreateConversation();
+  const sendMessage = useSendMessage();
 
   const group = groups[groupIdx];
   const story: Story | undefined = group?.stories[storyIdx];
   const isOwn = meId != null && group?.user.id === meId;
+
+  // Anything that demands attention keeps playback paused and the UI shown.
+  const engaged = confirmDelete || infoOpen || replyFocused || sendingReply;
+  const effectivePaused = paused || engaged;
+
+  const hasLakeInfo = !!(story && (story.placeName || story.boatName || story.lat != null));
+  const { data: conditions } = useGetConditions({
+    query: { enabled: infoOpen && hasLakeInfo, queryKey: getGetConditionsQueryKey() },
+  });
 
   // Local overlays so reactions/votes reflect immediately without refetching
   // the whole stories list mid-view.
@@ -108,12 +140,45 @@ export function StoryViewer({
     );
   };
 
+  const handleSendReply = async () => {
+    const text = replyText.trim();
+    if (!story || !group || isOwn || !text || sendingReply) return;
+    setSendingReply(true);
+    try {
+      const conv = await createConv.mutateAsync({ data: { participantId: group.user.id } });
+      await sendMessage.mutateAsync({
+        conversationId: conv.id,
+        data: { content: `↪️ Replied to your story: ${text}` },
+      });
+      setReplyText("");
+      toast.success("Reply sent");
+    } catch {
+      toast.error("Couldn't send your reply.");
+    } finally {
+      setSendingReply(false);
+    }
+  };
+
   // Clear the reaction burst animation.
   useEffect(() => {
     if (!burstEmoji) return;
     const id = window.setTimeout(() => setBurstEmoji(null), 900);
     return () => window.clearTimeout(id);
   }, [burstEmoji]);
+
+  // ---- auto-hide UI ----
+  useEffect(() => {
+    setUiVisible(true);
+    if (effectivePaused) return;
+    const id = window.setTimeout(() => setUiVisible(false), UI_HIDE_MS);
+    return () => window.clearTimeout(id);
+  }, [story?.id, uiKick, effectivePaused]);
+
+  // Reset transient panels when moving to a different story.
+  useEffect(() => {
+    setInfoOpen(false);
+    setReplyText("");
+  }, [story?.id]);
 
   // ---- view tracking ----
   const viewedRef = useRef<Set<number>>(new Set());
@@ -159,7 +224,7 @@ export function StoryViewer({
   // ---- auto-advance timer (photos & text; videos advance on ended) ----
   const videoRef = useRef<HTMLVideoElement | null>(null);
   useEffect(() => {
-    if (!story || paused) return;
+    if (!story || effectivePaused) return;
     if (story.mediaType === "video") {
       videoRef.current?.play().catch(() => {});
       return;
@@ -173,15 +238,15 @@ export function StoryViewer({
     }, 50);
     return () => window.clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [story?.id, paused]);
+  }, [story?.id, effectivePaused]);
 
   useEffect(() => {
     if (story?.mediaType !== "video") return;
     const v = videoRef.current;
     if (!v) return;
-    if (paused) v.pause();
+    if (effectivePaused) v.pause();
     else v.play().catch(() => {});
-  }, [paused, story?.id, story?.mediaType]);
+  }, [effectivePaused, story?.id, story?.mediaType]);
 
   // ---- gestures: tap left/right, hold to pause, swipe down to close ----
   const pointerRef = useRef<{ x: number; y: number; t: number; holdTimer: number | null; held: boolean } | null>(null);
@@ -222,8 +287,15 @@ export function StoryViewer({
       closeAndRefresh();
       return;
     }
-    if (wasHeld) return;
+    if (wasHeld) {
+      setUiKick((k) => k + 1);
+      return;
+    }
     if (Math.abs(dx) < 12 && Math.abs(dy) < 12 && Date.now() - p.t < 350) {
+      setUiKick((k) => k + 1);
+      // First tap while the chrome is hidden just brings it back — it
+      // shouldn't also skip to another story.
+      if (!uiVisible) return;
       const x = e.clientX;
       const w = window.innerWidth;
       if (x < w * 0.35) goPrev();
@@ -277,6 +349,9 @@ export function StoryViewer({
 
   if (!group || !story) return null;
 
+  const chrome = uiVisible ? "opacity-100" : "pointer-events-none opacity-0";
+  const tod = timeOfDay(story.createdAt);
+
   return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black"
@@ -284,7 +359,7 @@ export function StoryViewer({
       data-testid="story-viewer"
     >
       <div
-        className="relative h-full w-full max-w-lg select-none overflow-hidden"
+        className="relative h-full w-full max-w-lg select-none overflow-hidden bg-black"
         style={{
           transform: dragY > 0 ? `translateY(${dragY}px) scale(${1 - Math.min(0.12, dragY / 900)})` : undefined,
           transition: dragY === 0 ? "transform 180ms ease" : "none",
@@ -296,114 +371,92 @@ export function StoryViewer({
         onPointerUp={endPointer}
         onPointerCancel={endPointer}
       >
-        {/* media */}
-        {story.mediaType === "photo" && (
-          <img
-            src={story.mediaUrl ?? ""}
-            alt=""
-            className="h-full w-full object-contain"
-            style={story.filterCss ? { filter: story.filterCss } : undefined}
-            draggable={false}
-          />
-        )}
-        {story.mediaType === "video" && (
-          <video
-            ref={videoRef}
-            key={story.id}
-            src={story.mediaUrl ?? ""}
-            className="h-full w-full object-contain"
-            style={story.filterCss ? { filter: story.filterCss } : undefined}
-            autoPlay
-            playsInline
-            onEnded={goNext}
-            onTimeUpdate={(e) => {
-              const v = e.currentTarget;
-              if (v.duration > 0) setProgress(v.currentTime / v.duration);
-            }}
-          />
-        )}
-        {story.mediaType === "text" && (
-          <div
-            className="flex h-full w-full items-center justify-center px-8"
-            style={{ background: story.bgColor || "linear-gradient(160deg, #0d9488, #0369a1)" }}
-          >
-            <p className="whitespace-pre-wrap break-words text-center text-2xl font-semibold leading-snug text-white drop-shadow-md">
-              {story.text}
-            </p>
-          </div>
-        )}
+        {/* media — full-bleed, animated in per story */}
+        <div key={`${groupIdx}-${story.id}`} className="story-enter absolute inset-0">
+          {story.mediaType === "photo" && (
+            <img
+              src={story.mediaUrl ?? ""}
+              alt=""
+              className="h-full w-full object-cover"
+              style={story.filterCss ? { filter: story.filterCss } : undefined}
+              draggable={false}
+            />
+          )}
+          {story.mediaType === "video" && (
+            <video
+              ref={videoRef}
+              key={story.id}
+              src={story.mediaUrl ?? ""}
+              className="h-full w-full object-cover"
+              style={story.filterCss ? { filter: story.filterCss } : undefined}
+              autoPlay
+              playsInline
+              onEnded={goNext}
+              onTimeUpdate={(e) => {
+                const v = e.currentTarget;
+                if (v.duration > 0) setProgress(v.currentTime / v.duration);
+              }}
+            />
+          )}
+          {story.mediaType === "text" && (
+            <div
+              className="flex h-full w-full items-center justify-center px-8"
+              style={{ background: story.bgColor || "linear-gradient(160deg, #0d9488, #0369a1)" }}
+            >
+              <p className="whitespace-pre-wrap break-words text-center text-2xl font-semibold leading-snug text-white drop-shadow-md">
+                {story.text}
+              </p>
+            </div>
+          )}
 
-        {/* stickers */}
-        {!!story.stickers?.length && <StickerLayer stickers={story.stickers} />}
+          {/* stickers */}
+          {!!story.stickers?.length && <StickerLayer stickers={story.stickers} />}
+        </div>
 
         {/* reaction burst */}
         {burstEmoji && (
-          <div key={burstEmoji.key} className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div key={burstEmoji.key} className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
             <span className="animate-ping text-7xl">{burstEmoji.emoji}</span>
           </div>
         )}
 
-        {/* top gradient + progress bars + header (padded for iOS notch) */}
-        <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/70 to-transparent pb-10 pt-[calc(env(safe-area-inset-top,0px)+8px)]">
-          <div className="flex gap-1 px-3">
+        {/* top chrome: subtle gradient + progress + header */}
+        <div
+          className={`absolute inset-x-0 top-0 bg-gradient-to-b from-black/60 via-black/25 to-transparent pb-12 pt-[calc(env(safe-area-inset-top,0px)+10px)] transition-opacity duration-300 ${chrome}`}
+        >
+          <div className="flex gap-[3px] px-3">
             {group.stories.map((s, i) => (
-              <div key={s.id} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/30">
+              <div key={s.id} className="h-[2px] flex-1 overflow-hidden rounded-full bg-white/30">
                 <div
-                  className="h-full rounded-full bg-white"
-                  style={{ width: i < storyIdx ? "100%" : i === storyIdx ? `${Math.round(progress * 100)}%` : "0%" }}
+                  className="h-full rounded-full bg-white transition-[width] duration-100 ease-linear"
+                  style={{ width: i < storyIdx ? "100%" : i === storyIdx ? `${progress * 100}%` : "0%" }}
                 />
               </div>
             ))}
           </div>
-          <div className="mt-2.5 flex items-center gap-2.5 px-3">
+          <div className="mt-3 flex items-center gap-3 px-3.5">
             <UserAvatar
               name={group.user.displayName}
               username={group.user.username}
               avatarUrl={group.user.avatarUrl}
-              className="h-9 w-9 ring-2 ring-white/70"
+              className="h-11 w-11 shrink-0 rounded-full ring-2 ring-white/90 shadow-lg"
             />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className="truncate text-sm font-semibold text-white">{group.user.displayName}</span>
+                <span className="truncate text-[15px] font-bold leading-tight text-white drop-shadow-sm">
+                  {group.user.displayName}
+                </span>
                 {group.user.isLive && (
                   <span className="rounded bg-red-500 px-1 py-px text-[9px] font-bold uppercase tracking-wide text-white">Live</span>
                 )}
-                <span className="shrink-0 text-xs text-white/70">{timeAgo(story.createdAt)}</span>
               </div>
-              {(story.placeName || story.boatName) && (
-                <div className="flex items-center gap-2 text-xs text-white/80">
-                  {story.placeName && (
-                    <span className="flex min-w-0 items-center gap-0.5">
-                      <MapPin className="h-3 w-3 shrink-0" />
-                      <span className="truncate">{story.placeName}</span>
-                    </span>
-                  )}
-                  {story.boatName && (
-                    <span className="flex min-w-0 items-center gap-0.5">
-                      <Ship className="h-3 w-3 shrink-0" />
-                      <span className="truncate">{story.boatName}</span>
-                    </span>
-                  )}
-                </div>
-              )}
+              <span className="block text-xs leading-tight text-white/75">{timeAgo(story.createdAt)}</span>
             </div>
-            {isOwn && (
-              <button
-                type="button"
-                onPointerDown={(e) => e.stopPropagation()}
-                onClick={() => setConfirmDelete(true)}
-                className="rounded-full bg-black/30 p-2 text-white"
-                aria-label="Delete story"
-                data-testid="button-delete-story"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
             <button
               type="button"
               onPointerDown={(e) => e.stopPropagation()}
               onClick={closeAndRefresh}
-              className="rounded-full bg-black/30 p-2 text-white"
+              className="rounded-full bg-black/25 p-2 text-white backdrop-blur-sm"
               aria-label="Close"
               data-testid="button-close-story"
             >
@@ -412,8 +465,10 @@ export function StoryViewer({
           </div>
         </div>
 
-        {/* bottom: poll + caption + reactions / own stats */}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-4 pb-[calc(env(safe-area-inset-bottom,0px)+14px)] pt-12">
+        {/* bottom chrome: gradient + poll + caption + lake card + toolbar */}
+        <div
+          className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-3.5 pb-[calc(env(safe-area-inset-bottom,0px)+12px)] pt-16 transition-opacity duration-300 ${chrome}`}
+        >
           {/* poll */}
           {story.pollQuestion && !!story.pollOptions?.length && (
             <div
@@ -463,48 +518,149 @@ export function StoryViewer({
             </div>
           )}
 
-          {story.caption && <p className="text-sm text-white">{story.caption}</p>}
-
-          {/* own story: view count + reaction totals */}
-          {isOwn && (
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/85">
-              {story.viewCount != null && (
-                <span className="flex items-center gap-1">
-                  <Eye className="h-3.5 w-3.5" />
-                  {story.viewCount} {story.viewCount === 1 ? "view" : "views"}
-                </span>
-              )}
-              {Object.entries(story.reactionCounts ?? {})
-                .filter(([, n]) => (n as number) > 0)
-                .map(([emoji, n]) => (
-                  <span key={emoji}>
-                    {emoji} {n as number}
-                  </span>
-                ))}
+          {/* caption bubble */}
+          {story.caption && (
+            <div className="mb-2.5 flex justify-center">
+              <p className="max-w-[85%] rounded-2xl bg-black/40 px-3.5 py-2 text-center text-sm leading-snug text-white backdrop-blur-sm">
+                {story.caption}
+              </p>
             </div>
           )}
 
-          {/* someone else's story: reaction bar */}
-          {!isOwn && (
-            <div
-              className="mt-2.5 flex items-center justify-center gap-1"
-              onPointerDown={(e) => e.stopPropagation()}
-              data-testid="story-reaction-bar"
-            >
-              {REACTION_EMOJIS.map((emoji) => (
+          {/* lake info card (Gillie special) */}
+          {hasLakeInfo && (
+            <div className="mb-2.5" onPointerDown={(e) => e.stopPropagation()}>
+              {!infoOpen ? (
                 <button
-                  key={emoji}
                   type="button"
-                  onClick={() => handleReact(emoji)}
-                  className={`rounded-full px-1.5 py-1 text-2xl transition-transform active:scale-125 ${
-                    effectiveReaction === emoji ? "scale-110 bg-white/25" : "opacity-90"
-                  }`}
-                  aria-label={`React ${emoji}`}
-                  data-testid={`button-react-${emoji}`}
+                  onClick={() => setInfoOpen(true)}
+                  className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm"
+                  data-testid="button-lake-info"
                 >
-                  {emoji}
+                  <MapPin className="h-3.5 w-3.5 text-teal-300" />
+                  <span className="max-w-40 truncate">{story.placeName || "On the lake"}</span>
+                  <ChevronUp className="h-3.5 w-3.5 text-white/70" />
                 </button>
-              ))}
+              ) : (
+                <div className="w-full max-w-sm rounded-2xl bg-black/55 p-3.5 backdrop-blur-md" data-testid="lake-info-card">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wide text-teal-300">Lake conditions</span>
+                    <button
+                      type="button"
+                      onClick={() => setInfoOpen(false)}
+                      className="rounded-full p-1 text-white/70"
+                      aria-label="Collapse"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <div className="space-y-1.5 text-sm text-white">
+                    {story.placeName && (
+                      <div className="flex items-center gap-2">
+                        <span>📍</span>
+                        <span className="truncate">{story.placeName}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <span>🌡️</span>
+                      <span>
+                        {conditions
+                          ? `${Math.round(conditions.temperature)}° · ${conditions.weatherLabel}`
+                          : "Loading weather…"}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>{tod.emoji}</span>
+                      <span>{tod.label}</span>
+                    </div>
+                    {story.boatName && (
+                      <div className="flex items-center gap-2">
+                        <span>🚤</span>
+                        <span className="truncate">{story.boatName}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* bottom toolbar */}
+          {isOwn ? (
+            <div
+              className="flex items-center justify-between rounded-2xl bg-black/40 px-3.5 py-2.5 backdrop-blur-sm"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-white/90">
+                {story.viewCount != null && (
+                  <span className="flex items-center gap-1.5">
+                    <Eye className="h-4 w-4" />
+                    {story.viewCount}
+                  </span>
+                )}
+                {Object.entries(story.reactionCounts ?? {})
+                  .filter(([, n]) => (n as number) > 0)
+                  .map(([emoji, n]) => (
+                    <span key={emoji} className="text-sm">
+                      {emoji} {n as number}
+                    </span>
+                  ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                className="rounded-full p-2 text-white/85"
+                aria-label="Delete story"
+                data-testid="button-delete-story"
+              >
+                <Trash2 className="h-4.5 w-4.5" />
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2" onPointerDown={(e) => e.stopPropagation()}>
+              {/* quick reactions */}
+              <div className="flex items-center justify-center gap-1.5" data-testid="story-reaction-bar">
+                {REACTION_EMOJIS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => handleReact(emoji)}
+                    className={`rounded-full px-2 py-1.5 text-2xl transition-transform active:scale-125 ${
+                      effectiveReaction === emoji ? "scale-110 rounded-full bg-white/25" : "opacity-90"
+                    }`}
+                    aria-label={`React ${emoji}`}
+                    data-testid={`button-react-${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+              {/* private reply */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  onFocus={() => setReplyFocused(true)}
+                  onBlur={() => setReplyFocused(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSendReply();
+                  }}
+                  placeholder={`Reply to ${group.user.displayName.split(" ")[0]}…`}
+                  className="min-w-0 flex-1 rounded-full border border-white/30 bg-black/30 px-4 py-2.5 text-sm text-white placeholder:text-white/60 backdrop-blur-sm focus:border-white/60 focus:outline-none"
+                  data-testid="input-story-reply"
+                />
+                <button
+                  type="button"
+                  onClick={handleSendReply}
+                  disabled={!replyText.trim() || sendingReply}
+                  className="rounded-full bg-white/90 p-2.5 text-black transition-opacity disabled:opacity-40"
+                  aria-label="Send reply"
+                  data-testid="button-send-story-reply"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           )}
         </div>

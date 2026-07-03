@@ -273,21 +273,21 @@ export function StoryEditor({
     const nw = img.naturalWidth;
     const nh = img.naturalHeight;
     const box = stage.getBoundingClientRect();
-    // The photo is object-contain inside the stage: find its on-screen rect.
-    const scale = Math.min(box.width / nw, box.height / nh);
-    const rw = nw * scale;
-    const rh = nh * scale;
-    const rx = (box.width - rw) / 2;
-    const ry = (box.height - rh) / 2;
-    const factor = nw / rw; // stage px -> natural px
-    const overlay = drawHandle.renderTo(Math.round(box.width * factor), Math.round(box.height * factor));
+    // The photo is object-cover inside the stage (matches the viewer): the
+    // stage shows a centered crop of the image. Map stage -> that region.
+    const scale = Math.max(box.width / nw, box.height / nh);
+    const vw = box.width / scale; // visible natural-px region
+    const vh = box.height / scale;
+    const vx = (nw - vw) / 2;
+    const vy = (nh - vh) / 2;
+    const overlay = drawHandle.renderTo(Math.max(1, Math.round(vw)), Math.max(1, Math.round(vh)));
     const out = document.createElement("canvas");
     out.width = nw;
     out.height = nh;
     const ctx = out.getContext("2d");
     if (!ctx) return mediaUrl;
     ctx.drawImage(img, 0, 0);
-    ctx.drawImage(overlay, rx * factor, ry * factor, rw * factor, rh * factor, 0, 0, nw, nh);
+    ctx.drawImage(overlay, vx, vy, vw, vh);
     const blob = await new Promise<Blob | null>((resolve) => out.toBlob(resolve, "image/jpeg", 0.9));
     if (!blob) return mediaUrl;
     const res = await uploadFile(new File([blob], `story-${Date.now()}.jpg`, { type: "image/jpeg" }));
@@ -379,14 +379,14 @@ export function StoryEditor({
           <img
             src={mediaPreview ?? ""}
             alt=""
-            className="h-full w-full object-contain"
+            className="h-full w-full object-cover"
             style={filterCss ? { filter: filterCss } : undefined}
             draggable={false}
           />
         ) : (
           <video
             src={mediaPreview ?? ""}
-            className="h-full w-full object-contain"
+            className="h-full w-full object-cover"
             style={filterCss ? { filter: filterCss } : undefined}
             autoPlay
             loop
