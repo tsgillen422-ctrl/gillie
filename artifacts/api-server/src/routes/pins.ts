@@ -5,6 +5,7 @@ import { eq, and, or, sql, inArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { moderateContent } from "../lib/moderation";
 import { getHiddenDemoUserIds } from "../lib/demoData";
+import { isValidLakeId, DEFAULT_LAKE_ID } from "@workspace/lake-config";
 
 const router = Router();
 
@@ -73,6 +74,7 @@ async function formatPin(pin: typeof pinsTable.$inferSelect, viewerId: number) {
     id: pin.id,
     userId: pin.userId,
     user: user ? formatUser(user) : null,
+    lakeId: pin.lakeId,
     lat: pin.lat,
     lng: pin.lng,
     type: pin.type,
@@ -99,11 +101,16 @@ router.get("/", async (req, res) => {
   const profileUserId = req.query.profileUserId
     ? parseInt(req.query.profileUserId as string)
     : undefined;
+  const rawLakeId = req.query.lakeId != null ? Number(req.query.lakeId) : undefined;
+  const lakeCondition =
+    rawLakeId !== undefined
+      ? eq(pinsTable.lakeId, isValidLakeId(rawLakeId) ? rawLakeId : DEFAULT_LAKE_ID)
+      : undefined;
   let pins;
   if (type) {
-    pins = await db.select().from(pinsTable).where(eq(pinsTable.type, type));
+    pins = await db.select().from(pinsTable).where(lakeCondition ? and(eq(pinsTable.type, type), lakeCondition) : eq(pinsTable.type, type));
   } else {
-    pins = await db.select().from(pinsTable);
+    pins = await db.select().from(pinsTable).where(lakeCondition);
   }
 
   const friendIds = await getFriendIds(uid);
@@ -133,7 +140,7 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const uid = currentUserId(req);
-  const { lat, lng, type, title, description, visibility, imageUrl, startTime, endTime, severity, expiresAt } = req.body;
+  const { lat, lng, type, title, description, visibility, imageUrl, startTime, endTime, severity, expiresAt, lakeId } = req.body;
   const vis = visibility === "public" || visibility === "community" ? visibility : "friends";
   const expires = expiresAt ? new Date(expiresAt) : null;
   if (expires && isNaN(expires.getTime())) {
@@ -171,6 +178,7 @@ router.post("/", async (req, res) => {
     .insert(pinsTable)
     .values({
       userId: uid,
+      lakeId: isValidLakeId(lakeId) ? lakeId : DEFAULT_LAKE_ID,
       lat,
       lng,
       type,
@@ -192,8 +200,13 @@ router.post("/", async (req, res) => {
 router.get("/hazards/active", async (req, res) => {
   const uid = currentUserId(req);
   const now = new Date();
+  const rawLakeId = req.query.lakeId != null ? Number(req.query.lakeId) : undefined;
+  const hazardCondition =
+    rawLakeId !== undefined
+      ? and(eq(pinsTable.type, "hazard"), eq(pinsTable.lakeId, isValidLakeId(rawLakeId) ? rawLakeId : DEFAULT_LAKE_ID))
+      : eq(pinsTable.type, "hazard");
   const friendIds = await getFriendIds(uid);
-  const hazards = await db.select().from(pinsTable).where(eq(pinsTable.type, "hazard"));
+  const hazards = await db.select().from(pinsTable).where(hazardCondition);
   const active = hazards.filter((pin) => {
     if (!canViewPin(pin, uid, friendIds)) return false;
     if (pin.expiresAt && pin.expiresAt.getTime() < now.getTime()) return false;

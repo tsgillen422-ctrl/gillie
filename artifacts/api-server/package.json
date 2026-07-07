@@ -15,6 +15,7 @@
     "@google-cloud/storage": "^7.19.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/boat-config": "workspace:*",
+    "@workspace/lake-config": "workspace:*",
     "@workspace/db": "workspace:*",
     "apns2": "^12.2.0",
     "cookie-parser": "^1.4.7",

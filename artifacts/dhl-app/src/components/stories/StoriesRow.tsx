@@ -11,11 +11,13 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { resolveImageSrc } from "@/lib/assets";
 import { AddStoryDialog } from "./AddStoryDialog";
 import { StoryViewer } from "./StoryViewer";
+import { useLake } from "@/lib/lake-context";
 
 // Feed section: "Today on the Lake" story circles + Trending Today places.
 export function StoriesRow() {
   const { data: me } = useGetMe();
-  const { data: groups } = useGetStories();
+  const { lakeId } = useLake();
+  const { data: groups } = useGetStories({ lakeId });
   const { data: places } = useGetStoryPlaces();
   const [addOpen, setAddOpen] = useState(false);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);

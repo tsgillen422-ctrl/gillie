@@ -11,4 +11,9 @@ export interface DockLabelInput {
   emoji?: string;
   lat: number;
   lng: number;
+  /**
+     * Which lake the dock label belongs to (defaults to Dale Hollow Lake)
+     * @nullable
+     */
+  lakeId?: number | null;
 }

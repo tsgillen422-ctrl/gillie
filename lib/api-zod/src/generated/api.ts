@@ -115,6 +115,8 @@ export const GetMeResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 
@@ -151,6 +153,7 @@ export const UpdateMeBody = zod.object({
   "value": zod.string()
 })).optional(),
   "isBusiness": zod.boolean().optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake id (must exist in the lakes catalog)'),
   "requireFollowApproval": zod.boolean().optional(),
   "showFollowers": zod.boolean().optional(),
   "showFriends": zod.boolean().optional(),
@@ -256,6 +259,8 @@ export const UpdateMeResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 
@@ -365,6 +370,8 @@ export const UpdateMyLocationResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 
@@ -377,7 +384,8 @@ export const CheckInLocationBody = zod.object({
   "lng": zod.number(),
   "onWater": zod.boolean().optional(),
   "durationHours": zod.number().optional().describe('How long the check-in stays active (clamped 1-8h, default 6h)'),
-  "boatId": zod.number().nullish().describe('Which boat from the user\'s fleet is out today; its look is used on the map')
+  "boatId": zod.number().nullish().describe('Which boat from the user\'s fleet is out today; its look is used on the map'),
+  "lakeId": zod.number().nullish().describe('Which lake the user is checking in at (defaults to their current lake)')
 })
 
 export const CheckInLocationResponse = zod.object({
@@ -476,6 +484,8 @@ export const CheckInLocationResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 
@@ -579,6 +589,8 @@ export const CheckOutLocationResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 
@@ -834,6 +846,8 @@ export const GetAdminsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 export const GetAdminsResponse = zod.array(GetAdminsResponseItem)
@@ -963,6 +977,8 @@ export const SetUserAdminResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 
@@ -1066,6 +1082,8 @@ export const GetSuspendedUsersResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 export const GetSuspendedUsersResponse = zod.array(GetSuspendedUsersResponseItem)
@@ -1178,6 +1196,8 @@ export const SetUserSuspensionResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 
@@ -1310,6 +1330,8 @@ export const SearchUsersResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 export const SearchUsersResponse = zod.array(SearchUsersResponseItem)
@@ -1418,6 +1440,8 @@ export const GetUserResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 
@@ -1529,6 +1553,8 @@ export const GetFriendsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 export const GetFriendsResponse = zod.array(GetFriendsResponseItem)
@@ -1537,6 +1563,10 @@ export const GetFriendsResponse = zod.array(GetFriendsResponseItem)
 /**
  * @summary Get all friends' current locations on the lake
  */
+export const GetFriendLocationsQueryParams = zod.object({
+  "lakeId": zod.coerce.number().optional().describe('Only include friends checked in at this lake')
+})
+
 export const GetFriendLocationsResponseItem = zod.object({
   "userId": zod.number(),
   "displayName": zod.string(),
@@ -1550,6 +1580,7 @@ export const GetFriendLocationsResponseItem = zod.object({
   "boatAccent": zod.string().nullish(),
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish(),
+  "lakeId": zod.number().optional().describe('The lake this friend last checked in at'),
   "isSharingLocation": zod.boolean().optional(),
   "isBusiness": zod.boolean().nullish(),
   "isOnline": zod.boolean().optional(),
@@ -1665,6 +1696,8 @@ export const GetFriendRequestsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
   "followee": zod.object({
@@ -1763,6 +1796,8 @@ export const GetFriendRequestsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -1895,6 +1930,8 @@ export const FollowUserResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
   "followee": zod.object({
@@ -1993,6 +2030,8 @@ export const FollowUserResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -2106,6 +2145,8 @@ export const GetBlockedUsersResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 export const GetBlockedUsersResponse = zod.array(GetBlockedUsersResponseItem)
@@ -2214,6 +2255,8 @@ export const GetFollowersResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 export const GetFollowersResponse = zod.array(GetFollowersResponseItem)
@@ -2322,6 +2365,8 @@ export const GetFollowingResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 export const GetFollowingResponse = zod.array(GetFollowingResponseItem)
@@ -2430,6 +2475,8 @@ export const GetUserFriendsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 export const GetUserFriendsResponse = zod.array(GetUserFriendsResponseItem)
@@ -2540,6 +2587,8 @@ export const GetMutualFriendsResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })).optional()
 })
@@ -2669,6 +2718,8 @@ export const AcceptFriendRequestResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
   "followee": zod.object({
@@ -2767,6 +2818,8 @@ export const AcceptFriendRequestResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
   "createdAt": zod.string()
@@ -2876,6 +2929,8 @@ export const GetConversationsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })).optional(),
   "lastMessage": zod.object({
@@ -2978,6 +3033,8 @@ export const GetConversationsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -3116,6 +3173,8 @@ export const GetConversationMessagesResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -3189,6 +3248,10 @@ export const CreateGroupConversationBody = zod.object({
 /**
  * @summary Get current weather and water conditions for the lake
  */
+export const GetConditionsQueryParams = zod.object({
+  "lakeId": zod.coerce.number().optional().describe('Which lake to fetch conditions for (defaults to Dale Hollow Lake)')
+})
+
 export const GetConditionsResponse = zod.object({
   "temperature": zod.number().describe('Air temperature in Fahrenheit.'),
   "apparentTemperature": zod.number().nullish(),
@@ -3223,8 +3286,27 @@ export const GetConditionsResponse = zod.object({
 
 
 /**
+ * @summary Get the supported lakes catalog
+ */
+export const GetLakesResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "region": zod.string(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "zoom": zod.number().describe('Default map zoom level for this lake')
+})
+export const GetLakesResponse = zod.array(GetLakesResponseItem)
+
+
+/**
  * @summary Get active stories grouped by author (privacy-filtered)
  */
+export const GetStoriesQueryParams = zod.object({
+  "lakeId": zod.coerce.number().optional().describe('Only include stories posted to this lake')
+})
+
 export const GetStoriesResponseItem = zod.object({
   "user": zod.object({
   "id": zod.number(),
@@ -3236,6 +3318,7 @@ export const GetStoriesResponseItem = zod.object({
   "stories": zod.array(zod.object({
   "id": zod.number(),
   "userId": zod.number(),
+  "lakeId": zod.number().optional(),
   "mediaType": zod.enum(['photo', 'video', 'text']),
   "mediaUrl": zod.string().nullish(),
   "text": zod.string().nullish(),
@@ -3286,6 +3369,7 @@ export const CreateStoryBody = zod.object({
   "placeName": zod.string().nullish(),
   "visibility": zod.string().nullish(),
   "boatId": zod.number().nullish(),
+  "lakeId": zod.number().nullish().describe('Which lake community the story is posted to'),
   "filterName": zod.string().nullish(),
   "filterCss": zod.string().nullish(),
   "stickers": zod.array(zod.object({
@@ -3349,6 +3433,7 @@ export const GetPlaceStoriesResponseItem = zod.object({
   "stories": zod.array(zod.object({
   "id": zod.number(),
   "userId": zod.number(),
+  "lakeId": zod.number().optional(),
   "mediaType": zod.enum(['photo', 'video', 'text']),
   "mediaUrl": zod.string().nullish(),
   "text": zod.string().nullish(),
@@ -3435,6 +3520,7 @@ export const VoteStoryPollBody = zod.object({
 export const VoteStoryPollResponse = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
+  "lakeId": zod.number().optional(),
   "mediaType": zod.enum(['photo', 'video', 'text']),
   "mediaUrl": zod.string().nullish(),
   "text": zod.string().nullish(),
@@ -3636,6 +3722,8 @@ export const SetLakeStatusResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 
@@ -3650,6 +3738,7 @@ export const GetUserStoriesParams = zod.object({
 export const GetUserStoriesResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
+  "lakeId": zod.number().optional(),
   "mediaType": zod.enum(['photo', 'video', 'text']),
   "mediaUrl": zod.string().nullish(),
   "text": zod.string().nullish(),
@@ -3689,7 +3778,8 @@ export const GetUserStoriesResponse = zod.array(GetUserStoriesResponseItem)
  */
 export const GetPinsQueryParams = zod.object({
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'rope_swing', 'shallow_water', 'tubing', 'skiing', 'houseboat', 'divers', 'landmark', 'hazard', 'marina', 'campsite', 'other']).optional(),
-  "profileUserId": zod.coerce.number().optional().describe('When set, returns the given user\'s pins for display on their profile (includes their friends-only pins).')
+  "profileUserId": zod.coerce.number().optional().describe('When set, returns the given user\'s pins for display on their profile (includes their friends-only pins).'),
+  "lakeId": zod.coerce.number().optional().describe('Only include pins on this lake')
 })
 
 export const GetPinsResponseItem = zod.object({
@@ -3791,8 +3881,11 @@ export const GetPinsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "lat": zod.number(),
   "lng": zod.number(),
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'rope_swing', 'shallow_water', 'tubing', 'skiing', 'houseboat', 'divers', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
@@ -3828,7 +3921,8 @@ export const CreatePinBody = zod.object({
   "startTime": zod.string().nullish(),
   "endTime": zod.string().nullish(),
   "severity": zod.enum(['low', 'medium', 'high']).optional(),
-  "expiresAt": zod.string().nullish()
+  "expiresAt": zod.string().nullish(),
+  "lakeId": zod.number().nullish().describe('Which lake the pin belongs to (defaults to Dale Hollow Lake)')
 })
 
 
@@ -3938,8 +4032,11 @@ export const GetPinResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "lat": zod.number(),
   "lng": zod.number(),
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'rope_swing', 'shallow_water', 'tubing', 'skiing', 'houseboat', 'divers', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
@@ -4074,8 +4171,11 @@ export const LikePinResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "lat": zod.number(),
   "lng": zod.number(),
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'rope_swing', 'shallow_water', 'tubing', 'skiing', 'houseboat', 'divers', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
@@ -4198,8 +4298,11 @@ export const GetFavoritePinsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "lat": zod.number(),
   "lng": zod.number(),
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'rope_swing', 'shallow_water', 'tubing', 'skiing', 'houseboat', 'divers', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
@@ -4327,8 +4430,11 @@ export const ToggleFavoritePinResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "lat": zod.number(),
   "lng": zod.number(),
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'rope_swing', 'shallow_water', 'tubing', 'skiing', 'houseboat', 'divers', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
@@ -4451,8 +4557,11 @@ export const GetPendingPinsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "lat": zod.number(),
   "lng": zod.number(),
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'rope_swing', 'shallow_water', 'tubing', 'skiing', 'houseboat', 'divers', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
@@ -4580,8 +4689,11 @@ export const ApprovePinResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "lat": zod.number(),
   "lng": zod.number(),
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'rope_swing', 'shallow_water', 'tubing', 'skiing', 'houseboat', 'divers', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
@@ -4605,9 +4717,14 @@ export const ApprovePinResponse = zod.object({
 /**
  * @summary Get all dock labels on the lake
  */
+export const GetDockLabelsQueryParams = zod.object({
+  "lakeId": zod.coerce.number().optional().describe('Only include dock labels on this lake')
+})
+
 export const GetDockLabelsResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
+  "lakeId": zod.number().optional(),
   "label": zod.string(),
   "emoji": zod.string().nullish(),
   "lat": zod.number(),
@@ -4624,7 +4741,8 @@ export const CreateDockLabelBody = zod.object({
   "label": zod.string(),
   "emoji": zod.string().optional(),
   "lat": zod.number(),
-  "lng": zod.number()
+  "lng": zod.number(),
+  "lakeId": zod.number().nullish().describe('Which lake the dock label belongs to (defaults to Dale Hollow Lake)')
 })
 
 
@@ -4658,7 +4776,8 @@ export const HidePlaceBody = zod.object({
  */
 export const GetPostsQueryParams = zod.object({
   "type": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']).optional(),
-  "audience": zod.enum(['friends', 'community']).optional().describe('Filter by author relationship. \"friends\" shows posts from your friends; \"community\" shows posts from people you are not friends with.')
+  "audience": zod.enum(['friends', 'community']).optional().describe('Filter by author relationship. \"friends\" shows posts from your friends; \"community\" shows posts from people you are not friends with.'),
+  "lakeId": zod.coerce.number().optional().describe('Only include posts for this lake community')
 })
 
 export const GetPostsResponseItem = zod.object({
@@ -4760,8 +4879,11 @@ export const GetPostsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
   "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
@@ -4828,7 +4950,8 @@ export const CreatePostBody = zod.object({
   "pinLat": zod.number().optional(),
   "pinLng": zod.number().optional(),
   "visibility": zod.enum(['community', 'friends']).optional(),
-  "pollOptions": zod.array(zod.string()).optional().describe('2-10 poll choices. When present, the post includes a poll.')
+  "pollOptions": zod.array(zod.string()).optional().describe('2-10 poll choices. When present, the post includes a poll.'),
+  "lakeId": zod.number().nullish().describe('Which lake community the post belongs to (defaults to Dale Hollow Lake)')
 })
 
 
@@ -4950,8 +5073,11 @@ export const GetPostResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
   "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
@@ -5116,8 +5242,11 @@ export const UpdatePostResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
   "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
@@ -5283,8 +5412,11 @@ export const ReactToPostResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
   "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
@@ -5442,8 +5574,11 @@ export const VotePollResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
   "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
@@ -5613,6 +5748,8 @@ export const GetPostLikesResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional()
 })
@@ -5726,6 +5863,8 @@ export const GetPostCommentsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -5886,6 +6025,8 @@ export const ReactToCommentResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -6018,8 +6159,11 @@ export const GetPostsSummaryResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
   "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
@@ -6164,8 +6308,11 @@ export const GetPostsSummaryResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "lat": zod.number(),
   "lng": zod.number(),
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'rope_swing', 'shallow_water', 'tubing', 'skiing', 'houseboat', 'divers', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
@@ -6321,6 +6468,8 @@ export const ReactToMessageResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
   "content": zod.string(),
@@ -6458,6 +6607,10 @@ export const UnregisterNativePushBody = zod.object({
 /**
  * @summary Get active (non-expired) hazard pins
  */
+export const GetActiveHazardsQueryParams = zod.object({
+  "lakeId": zod.coerce.number().optional().describe('Only include hazards on this lake')
+})
+
 export const GetActiveHazardsResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
@@ -6557,8 +6710,11 @@ export const GetActiveHazardsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "lat": zod.number(),
   "lng": zod.number(),
   "type": zod.enum(['fishing_spot', 'cliff', 'waterfall', 'rope_swing', 'shallow_water', 'tubing', 'skiing', 'houseboat', 'divers', 'landmark', 'hazard', 'marina', 'campsite', 'other']),
@@ -6686,8 +6842,11 @@ export const ToggleRsvpResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
   "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
@@ -6840,6 +6999,8 @@ export const GetRsvpsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional()
 })
@@ -6952,6 +7113,8 @@ export const GetCatchesResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
   "species": zod.string(),
@@ -7099,6 +7262,8 @@ export const GetGalleryResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
   "mediaUrl": zod.string(),
@@ -7234,6 +7399,8 @@ export const SearchResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })),
   "pins": zod.array(zod.object({
@@ -7372,6 +7539,8 @@ export const AcceptWaiverResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 
@@ -7479,6 +7648,8 @@ export const AcceptTermsResponse = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 
@@ -7662,8 +7833,11 @@ export const GetSavedPostsResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 }).optional(),
+  "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
   "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
@@ -7827,6 +8001,8 @@ export const GetMutedUsersResponseItem = zod.object({
   "nextTitle": zod.string().nullish(),
   "nextNeeded": zod.number().nullish()
 }).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
   "createdAt": zod.string()
 })
 export const GetMutedUsersResponse = zod.array(GetMutedUsersResponseItem)

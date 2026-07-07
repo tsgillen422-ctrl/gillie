@@ -6,6 +6,8 @@ import { usersTable } from "./users";
 export const pinsTable = pgTable("pins", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => usersTable.id),
+  // Multi-lake: which lake this pin belongs to (@workspace/lake-config).
+  lakeId: integer("lake_id").notNull().default(1),
   lat: real("lat").notNull(),
   lng: real("lng").notNull(),
   type: text("type").notNull().default("other"),

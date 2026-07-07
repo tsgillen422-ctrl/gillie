@@ -41,11 +41,16 @@ import type {
   FriendRequest,
   GalleryItem,
   GalleryItemInput,
+  GetActiveHazardsParams,
   GetCatchesParams,
+  GetConditionsParams,
+  GetDockLabelsParams,
+  GetFriendLocationsParams,
   GetGalleryParams,
   GetPinsParams,
   GetPostsParams,
   GetReportsParams,
+  GetStoriesParams,
   GifResult,
   GroupConversationInput,
   HealthStatus,
@@ -54,6 +59,7 @@ import type {
   Highlight,
   HighlightInput,
   HighlightStory,
+  Lake,
   LakeStatusInput,
   LocationUpdate,
   Message,
@@ -1885,20 +1891,27 @@ export function useGetFriends<TData = Awaited<ReturnType<typeof getFriends>>, TE
 
 
 
-export const getGetFriendLocationsUrl = () => {
+export const getGetFriendLocationsUrl = (params?: GetFriendLocationsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/friends/locations`
+  return stringifiedParams.length > 0 ? `/api/friends/locations?${stringifiedParams}` : `/api/friends/locations`
 }
 
 /**
  * @summary Get all friends' current locations on the lake
  */
-export const getFriendLocations = async ( options?: RequestInit): Promise<FriendLocation[]> => {
+export const getFriendLocations = async (params?: GetFriendLocationsParams, options?: RequestInit): Promise<FriendLocation[]> => {
 
-  return customFetch<FriendLocation[]>(getGetFriendLocationsUrl(),
+  return customFetch<FriendLocation[]>(getGetFriendLocationsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1911,23 +1924,23 @@ export const getFriendLocations = async ( options?: RequestInit): Promise<Friend
 
 
 
-export const getGetFriendLocationsQueryKey = () => {
+export const getGetFriendLocationsQueryKey = (params?: GetFriendLocationsParams,) => {
     return [
-    `/api/friends/locations`
+    `/api/friends/locations`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetFriendLocationsQueryOptions = <TData = Awaited<ReturnType<typeof getFriendLocations>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFriendLocations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetFriendLocationsQueryOptions = <TData = Awaited<ReturnType<typeof getFriendLocations>>, TError = ErrorType<unknown>>(params?: GetFriendLocationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFriendLocations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetFriendLocationsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetFriendLocationsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFriendLocations>>> = ({ signal }) => getFriendLocations({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFriendLocations>>> = ({ signal }) => getFriendLocations(params, { signal, ...requestOptions });
 
 
 
@@ -1945,11 +1958,11 @@ export type GetFriendLocationsQueryError = ErrorType<unknown>
  */
 
 export function useGetFriendLocations<TData = Awaited<ReturnType<typeof getFriendLocations>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFriendLocations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetFriendLocationsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFriendLocations>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetFriendLocationsQueryOptions(options)
+  const queryOptions = getGetFriendLocationsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -3431,20 +3444,27 @@ export const useCreateGroupConversation = <TError = ErrorType<unknown>,
       return useMutation(getCreateGroupConversationMutationOptions(options));
     }
 
-export const getGetConditionsUrl = () => {
+export const getGetConditionsUrl = (params?: GetConditionsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/conditions`
+  return stringifiedParams.length > 0 ? `/api/conditions?${stringifiedParams}` : `/api/conditions`
 }
 
 /**
  * @summary Get current weather and water conditions for the lake
  */
-export const getConditions = async ( options?: RequestInit): Promise<Conditions> => {
+export const getConditions = async (params?: GetConditionsParams, options?: RequestInit): Promise<Conditions> => {
 
-  return customFetch<Conditions>(getGetConditionsUrl(),
+  return customFetch<Conditions>(getGetConditionsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -3457,23 +3477,23 @@ export const getConditions = async ( options?: RequestInit): Promise<Conditions>
 
 
 
-export const getGetConditionsQueryKey = () => {
+export const getGetConditionsQueryKey = (params?: GetConditionsParams,) => {
     return [
-    `/api/conditions`
+    `/api/conditions`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetConditionsQueryOptions = <TData = Awaited<ReturnType<typeof getConditions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConditions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetConditionsQueryOptions = <TData = Awaited<ReturnType<typeof getConditions>>, TError = ErrorType<unknown>>(params?: GetConditionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConditions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetConditionsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetConditionsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConditions>>> = ({ signal }) => getConditions({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getConditions>>> = ({ signal }) => getConditions(params, { signal, ...requestOptions });
 
 
 
@@ -3491,11 +3511,11 @@ export type GetConditionsQueryError = ErrorType<unknown>
  */
 
 export function useGetConditions<TData = Awaited<ReturnType<typeof getConditions>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConditions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetConditionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getConditions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetConditionsQueryOptions(options)
+  const queryOptions = getGetConditionsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -3508,20 +3528,20 @@ export function useGetConditions<TData = Awaited<ReturnType<typeof getConditions
 
 
 
-export const getGetStoriesUrl = () => {
+export const getGetLakesUrl = () => {
 
 
 
 
-  return `/api/stories`
+  return `/api/lakes`
 }
 
 /**
- * @summary Get active stories grouped by author (privacy-filtered)
+ * @summary Get the supported lakes catalog
  */
-export const getStories = async ( options?: RequestInit): Promise<StoryGroup[]> => {
+export const getLakes = async ( options?: RequestInit): Promise<Lake[]> => {
 
-  return customFetch<StoryGroup[]>(getGetStoriesUrl(),
+  return customFetch<Lake[]>(getGetLakesUrl(),
   {
     ...options,
     method: 'GET'
@@ -3534,23 +3554,107 @@ export const getStories = async ( options?: RequestInit): Promise<StoryGroup[]> 
 
 
 
-export const getGetStoriesQueryKey = () => {
+export const getGetLakesQueryKey = () => {
     return [
-    `/api/stories`
+    `/api/lakes`
     ] as const;
     }
 
 
-export const getGetStoriesQueryOptions = <TData = Awaited<ReturnType<typeof getStories>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetLakesQueryOptions = <TData = Awaited<ReturnType<typeof getLakes>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLakes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetStoriesQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetLakesQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStories>>> = ({ signal }) => getStories({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLakes>>> = ({ signal }) => getLakes({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLakes>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLakesQueryResult = NonNullable<Awaited<ReturnType<typeof getLakes>>>
+export type GetLakesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get the supported lakes catalog
+ */
+
+export function useGetLakes<TData = Awaited<ReturnType<typeof getLakes>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLakes>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLakesQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetStoriesUrl = (params?: GetStoriesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/stories?${stringifiedParams}` : `/api/stories`
+}
+
+/**
+ * @summary Get active stories grouped by author (privacy-filtered)
+ */
+export const getStories = async (params?: GetStoriesParams, options?: RequestInit): Promise<StoryGroup[]> => {
+
+  return customFetch<StoryGroup[]>(getGetStoriesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStoriesQueryKey = (params?: GetStoriesParams,) => {
+    return [
+    `/api/stories`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetStoriesQueryOptions = <TData = Awaited<ReturnType<typeof getStories>>, TError = ErrorType<unknown>>(params?: GetStoriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStoriesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStories>>> = ({ signal }) => getStories(params, { signal, ...requestOptions });
 
 
 
@@ -3568,11 +3672,11 @@ export type GetStoriesQueryError = ErrorType<unknown>
  */
 
 export function useGetStories<TData = Awaited<ReturnType<typeof getStories>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetStoriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetStoriesQueryOptions(options)
+  const queryOptions = getGetStoriesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -5273,20 +5377,27 @@ export const useApprovePin = <TError = ErrorType<ErrorEnvelope>,
       return useMutation(getApprovePinMutationOptions(options));
     }
 
-export const getGetDockLabelsUrl = () => {
+export const getGetDockLabelsUrl = (params?: GetDockLabelsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/dock-labels`
+  return stringifiedParams.length > 0 ? `/api/dock-labels?${stringifiedParams}` : `/api/dock-labels`
 }
 
 /**
  * @summary Get all dock labels on the lake
  */
-export const getDockLabels = async ( options?: RequestInit): Promise<DockLabel[]> => {
+export const getDockLabels = async (params?: GetDockLabelsParams, options?: RequestInit): Promise<DockLabel[]> => {
 
-  return customFetch<DockLabel[]>(getGetDockLabelsUrl(),
+  return customFetch<DockLabel[]>(getGetDockLabelsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -5299,23 +5410,23 @@ export const getDockLabels = async ( options?: RequestInit): Promise<DockLabel[]
 
 
 
-export const getGetDockLabelsQueryKey = () => {
+export const getGetDockLabelsQueryKey = (params?: GetDockLabelsParams,) => {
     return [
-    `/api/dock-labels`
+    `/api/dock-labels`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetDockLabelsQueryOptions = <TData = Awaited<ReturnType<typeof getDockLabels>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDockLabels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetDockLabelsQueryOptions = <TData = Awaited<ReturnType<typeof getDockLabels>>, TError = ErrorType<unknown>>(params?: GetDockLabelsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDockLabels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetDockLabelsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetDockLabelsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDockLabels>>> = ({ signal }) => getDockLabels({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getDockLabels>>> = ({ signal }) => getDockLabels(params, { signal, ...requestOptions });
 
 
 
@@ -5333,11 +5444,11 @@ export type GetDockLabelsQueryError = ErrorType<unknown>
  */
 
 export function useGetDockLabels<TData = Awaited<ReturnType<typeof getDockLabels>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDockLabels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetDockLabelsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getDockLabels>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetDockLabelsQueryOptions(options)
+  const queryOptions = getGetDockLabelsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -7716,20 +7827,27 @@ export const useUnregisterNativePush = <TError = ErrorType<unknown>,
       return useMutation(getUnregisterNativePushMutationOptions(options));
     }
 
-export const getGetActiveHazardsUrl = () => {
+export const getGetActiveHazardsUrl = (params?: GetActiveHazardsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/pins/hazards/active`
+  return stringifiedParams.length > 0 ? `/api/pins/hazards/active?${stringifiedParams}` : `/api/pins/hazards/active`
 }
 
 /**
  * @summary Get active (non-expired) hazard pins
  */
-export const getActiveHazards = async ( options?: RequestInit): Promise<Pin[]> => {
+export const getActiveHazards = async (params?: GetActiveHazardsParams, options?: RequestInit): Promise<Pin[]> => {
 
-  return customFetch<Pin[]>(getGetActiveHazardsUrl(),
+  return customFetch<Pin[]>(getGetActiveHazardsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -7742,23 +7860,23 @@ export const getActiveHazards = async ( options?: RequestInit): Promise<Pin[]> =
 
 
 
-export const getGetActiveHazardsQueryKey = () => {
+export const getGetActiveHazardsQueryKey = (params?: GetActiveHazardsParams,) => {
     return [
-    `/api/pins/hazards/active`
+    `/api/pins/hazards/active`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetActiveHazardsQueryOptions = <TData = Awaited<ReturnType<typeof getActiveHazards>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActiveHazards>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetActiveHazardsQueryOptions = <TData = Awaited<ReturnType<typeof getActiveHazards>>, TError = ErrorType<unknown>>(params?: GetActiveHazardsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActiveHazards>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetActiveHazardsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetActiveHazardsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getActiveHazards>>> = ({ signal }) => getActiveHazards({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getActiveHazards>>> = ({ signal }) => getActiveHazards(params, { signal, ...requestOptions });
 
 
 
@@ -7776,11 +7894,11 @@ export type GetActiveHazardsQueryError = ErrorType<unknown>
  */
 
 export function useGetActiveHazards<TData = Awaited<ReturnType<typeof getActiveHazards>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActiveHazards>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetActiveHazardsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getActiveHazards>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetActiveHazardsQueryOptions(options)
+  const queryOptions = getGetActiveHazardsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

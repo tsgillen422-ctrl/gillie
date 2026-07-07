@@ -16,6 +16,7 @@ export interface Post {
   id: number;
   userId: number;
   user?: User;
+  lakeId?: number;
   title: string;
   content: string;
   postType: PostPostType;

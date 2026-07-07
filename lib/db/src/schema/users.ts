@@ -16,6 +16,11 @@ export const usersTable = pgTable("users", {
   relationshipStatus: text("relationship_status"),
   gender: text("gender"),
   work: text("work"),
+  // Multi-lake: the user's home community (set in onboarding/settings) and the
+  // lake they were browsing when they last checked in on the water. IDs map to
+  // the static catalog in @workspace/lake-config; 1 = Dale Hollow.
+  primaryLakeId: integer("primary_lake_id").notNull().default(1),
+  currentLakeId: integer("current_lake_id"),
   isOnline: boolean("is_online").notNull().default(false),
   isOnWater: boolean("is_on_water").notNull().default(false),
   isBusiness: boolean("is_business").notNull().default(false),

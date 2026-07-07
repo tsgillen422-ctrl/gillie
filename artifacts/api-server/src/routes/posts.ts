@@ -5,6 +5,7 @@ import { eq, and, gte, gt, sql, desc, count, inArray, notInArray, or, asc } from
 import { currentUserId } from "../middlewares/auth";
 import { canViewPin, getFriendIds as getPinFriendIds } from "./pins";
 import { moderateContent } from "../lib/moderation";
+import { isValidLakeId, DEFAULT_LAKE_ID } from "@workspace/lake-config";
 import { getHiddenDemoUserIds } from "../lib/demoData";
 
 const router = Router();
@@ -124,6 +125,7 @@ async function formatPost(post: typeof postsTable.$inferSelect, viewerId: number
     sharedPostId: post.sharedPostId ?? null,
     sharedPost,
     visibility: post.visibility,
+    lakeId: post.lakeId,
     poll,
     createdAt: post.createdAt.toISOString(),
   };
@@ -179,9 +181,13 @@ router.get("/", async (req, res) => {
   const uid = currentUserId(req);
   const type = req.query.type as string | undefined;
   const audience = req.query.audience as string | undefined;
+  const rawLakeId = req.query.lakeId != null ? Number(req.query.lakeId) : undefined;
   const mutedIds = await getMutedUserIds(uid);
   const friendIds = await getFriendIds(uid);
   const conditions: any[] = [visibilityCondition(uid, friendIds)];
+  if (rawLakeId !== undefined) {
+    conditions.push(eq(postsTable.lakeId, isValidLakeId(rawLakeId) ? rawLakeId : DEFAULT_LAKE_ID));
+  }
   if (type) conditions.push(eq(postsTable.postType, type));
   if (audience === "friends") {
     conditions.push(friendIds.length ? inArray(postsTable.userId, friendIds) : sql`false`);
@@ -211,7 +217,7 @@ router.get("/saved", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const uid = currentUserId(req);
-  const { title, content, postType, eventDate, imageUrl, videoUrl, photos, engineSetup, horsepower, topSpeed, mods, pinLat, pinLng, visibility, pollOptions } = req.body;
+  const { title, content, postType, eventDate, imageUrl, videoUrl, photos, engineSetup, horsepower, topSpeed, mods, pinLat, pinLng, visibility, pollOptions, lakeId } = req.body;
   const photoList = Array.isArray(photos) ? photos.filter((p: unknown) => typeof p === "string") : null;
   const pollChoices = Array.isArray(pollOptions)
     ? pollOptions.map((p: unknown) => (typeof p === "string" ? p.trim() : "")).filter((p) => p.length > 0).slice(0, 10)
@@ -224,6 +230,7 @@ router.post("/", async (req, res) => {
     .insert(postsTable)
     .values({
       userId: uid,
+      lakeId: isValidLakeId(lakeId) ? lakeId : DEFAULT_LAKE_ID,
       title,
       content,
       postType: postType || "post",
@@ -268,6 +275,8 @@ router.post("/:postId/share", async (req, res) => {
     .insert(postsTable)
     .values({
       userId: uid,
+      // A share lives in the same lake community as the post it shares.
+      lakeId: original.lakeId,
       title: "",
       content,
       postType: "post",

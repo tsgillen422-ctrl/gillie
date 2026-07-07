@@ -6,13 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface DockLabel {
+export interface Lake {
   id: number;
-  userId: number;
-  lakeId?: number;
-  label: string;
-  emoji?: string | null;
+  name: string;
+  slug: string;
+  region: string;
   lat: number;
   lng: number;
-  createdAt: string;
+  /** Default map zoom level for this lake */
+  zoom: number;
 }

@@ -6,6 +6,8 @@ import { usersTable } from "./users";
 export const dockLabelsTable = pgTable("dock_labels", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => usersTable.id),
+  // Multi-lake: which lake this dock label belongs to (@workspace/lake-config).
+  lakeId: integer("lake_id").notNull().default(1),
   label: text("label").notNull(),
   emoji: text("emoji"),
   lat: real("lat").notNull(),

@@ -14,4 +14,8 @@ type?: GetPostsType;
  * Filter by author relationship. "friends" shows posts from your friends; "community" shows posts from people you are not friends with.
  */
 audience?: GetPostsAudience;
+/**
+ * Only include posts for this lake community
+ */
+lakeId?: number;
 };

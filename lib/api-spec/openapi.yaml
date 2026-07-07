@@ -485,6 +485,13 @@ paths:
       operationId: getFriendLocations
       tags: [friends]
       summary: Get all friends' current locations on the lake
+      parameters:
+        - name: lakeId
+          in: query
+          required: false
+          description: Only include friends checked in at this lake
+          schema:
+            type: integer
       responses:
         "200":
           description: Friends with location data
@@ -861,6 +868,13 @@ paths:
       operationId: getConditions
       tags: [conditions]
       summary: Get current weather and water conditions for the lake
+      parameters:
+        - name: lakeId
+          in: query
+          required: false
+          description: Which lake to fetch conditions for (defaults to Dale Hollow Lake)
+          schema:
+            type: integer
       responses:
         "200":
           description: Current conditions
@@ -869,11 +883,33 @@ paths:
               schema:
                 $ref: "#/components/schemas/Conditions"
 
+  /lakes:
+    get:
+      operationId: getLakes
+      tags: [lakes]
+      summary: Get the supported lakes catalog
+      responses:
+        "200":
+          description: List of supported lakes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lake"
+
   /stories:
     get:
       operationId: getStories
       tags: [stories]
       summary: Get active stories grouped by author (privacy-filtered)
+      parameters:
+        - name: lakeId
+          in: query
+          required: false
+          description: Only include stories posted to this lake
+          schema:
+            type: integer
       responses:
         "200":
           description: Story groups
@@ -1159,6 +1195,12 @@ paths:
           description: When set, returns the given user's pins for display on their profile (includes their friends-only pins).
           schema:
             type: integer
+        - name: lakeId
+          in: query
+          required: false
+          description: Only include pins on this lake
+          schema:
+            type: integer
       responses:
         "200":
           description: List of pins
@@ -1324,6 +1366,13 @@ paths:
       operationId: getDockLabels
       tags: [dockLabels]
       summary: Get all dock labels on the lake
+      parameters:
+        - name: lakeId
+          in: query
+          required: false
+          description: Only include dock labels on this lake
+          schema:
+            type: integer
       responses:
         "200":
           description: List of dock labels
@@ -1436,6 +1485,12 @@ paths:
           schema:
             type: string
             enum: [friends, community]
+        - name: lakeId
+          in: query
+          required: false
+          description: Only include posts for this lake community
+          schema:
+            type: integer
       responses:
         "200":
           description: Feed posts
@@ -2014,6 +2069,13 @@ paths:
       operationId: getActiveHazards
       tags: [pins]
       summary: Get active (non-expired) hazard pins
+      parameters:
+        - name: lakeId
+          in: query
+          required: false
+          description: Only include hazards on this lake
+          schema:
+            type: integer
       responses:
         "200":
           description: List of active hazard pins
@@ -2597,6 +2659,12 @@ components:
             $ref: "#/components/schemas/Badge"
         rank:
           $ref: "#/components/schemas/Rank"
+        primaryLakeId:
+          type: integer
+          description: The user's home lake (from the static lakes catalog)
+        currentLakeId:
+          type: ["integer", "null"]
+          description: The lake of the user's most recent check-in
         createdAt:
           type: string
 
@@ -2696,6 +2764,9 @@ components:
             $ref: "#/components/schemas/FavoriteThing"
         isBusiness:
           type: boolean
+        primaryLakeId:
+          type: integer
+          description: The user's home lake id (must exist in the lakes catalog)
         requireFollowApproval:
           type: boolean
         showFollowers:
@@ -2747,6 +2818,9 @@ components:
         boatId:
           type: ["integer", "null"]
           description: Which boat from the user's fleet is out today; its look is used on the map
+        lakeId:
+          type: ["integer", "null"]
+          description: Which lake the user is checking in at (defaults to their current lake)
 
     FriendLocation:
       type: object
@@ -2776,6 +2850,9 @@ components:
           type: ["number", "null"]
         lng:
           type: ["number", "null"]
+        lakeId:
+          type: integer
+          description: The lake this friend last checked in at
         isSharingLocation:
           type: boolean
         isBusiness:
@@ -2798,6 +2875,8 @@ components:
         id:
           type: integer
         userId:
+          type: integer
+        lakeId:
           type: integer
         mediaType:
           type: string
@@ -2981,6 +3060,9 @@ components:
           type: ["string", "null"]
         boatId:
           type: ["integer", "null"]
+        lakeId:
+          type: ["integer", "null"]
+          description: Which lake community the story is posted to
         filterName:
           type: ["string", "null"]
         filterCss:
@@ -3251,6 +3333,8 @@ components:
           type: integer
         user:
           $ref: "#/components/schemas/User"
+        lakeId:
+          type: integer
         lat:
           type: number
         lng:
@@ -3318,6 +3402,9 @@ components:
           enum: [low, medium, high]
         expiresAt:
           type: ["string", "null"]
+        lakeId:
+          type: ["integer", "null"]
+          description: Which lake the pin belongs to (defaults to Dale Hollow Lake)
 
     DockLabel:
       type: object
@@ -3326,6 +3413,8 @@ components:
         id:
           type: integer
         userId:
+          type: integer
+        lakeId:
           type: integer
         label:
           type: string
@@ -3339,6 +3428,26 @@ components:
         createdAt:
           type: string
 
+    Lake:
+      type: object
+      required: [id, name, slug, region, lat, lng, zoom]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        region:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        zoom:
+          type: number
+          description: Default map zoom level for this lake
+
     DockLabelInput:
       type: object
       required: [label, lat, lng]
@@ -3351,6 +3460,9 @@ components:
           type: number
         lng:
           type: number
+        lakeId:
+          type: ["integer", "null"]
+          description: Which lake the dock label belongs to (defaults to Dale Hollow Lake)
 
     HiddenPlace:
       type: object
@@ -3376,6 +3488,8 @@ components:
           type: integer
         user:
           $ref: "#/components/schemas/User"
+        lakeId:
+          type: integer
         title:
           type: string
         content:
@@ -3568,6 +3682,9 @@ components:
           items:
             type: string
           description: 2-10 poll choices. When present, the post includes a poll.
+        lakeId:
+          type: ["integer", "null"]
+          description: Which lake community the post belongs to (defaults to Dale Hollow Lake)
 
     PostUpdateInput:
       type: object

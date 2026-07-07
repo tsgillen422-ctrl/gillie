@@ -99,5 +99,12 @@ export interface User {
   followingCount?: number;
   badges?: Badge[];
   rank?: Rank;
+  /** The user's home lake (from the static lakes catalog) */
+  primaryLakeId?: number;
+  /**
+     * The lake of the user's most recent check-in
+     * @nullable
+     */
+  currentLakeId?: number | null;
   createdAt: string;
 }

@@ -13,4 +13,8 @@ type?: GetPinsType;
  * When set, returns the given user's pins for display on their profile (includes their friends-only pins).
  */
 profileUserId?: number;
+/**
+ * Only include pins on this lake
+ */
+lakeId?: number;
 };

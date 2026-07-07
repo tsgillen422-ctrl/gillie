@@ -28,9 +28,11 @@ import { compressImage } from "@/lib/compress";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { PostCard } from "@/components/feed/PostCard";
+import { useLake } from "@/lib/lake-context";
 
 export function BoatsPage() {
-  const { data: boats, isLoading } = useGetPosts({ type: "boat_showcase" });
+  const { lakeId } = useLake();
+  const { data: boats, isLoading } = useGetPosts({ type: "boat_showcase", lakeId });
   const { data: me } = useGetMe();
   const createPost = useCreatePost();
   const deletePost = useDeletePost();
@@ -118,6 +120,7 @@ export function BoatsPage() {
           horsepower: !Number.isNaN(hp) ? hp : undefined,
           topSpeed: !Number.isNaN(speed) ? speed : undefined,
           mods: mods.trim() || undefined,
+          lakeId,
         },
       },
       {

@@ -28,6 +28,8 @@ export interface FriendLocation {
   lat?: number | null;
   /** @nullable */
   lng?: number | null;
+  /** The lake this friend last checked in at */
+  lakeId?: number;
   isSharingLocation?: boolean;
   /** @nullable */
   isBusiness?: boolean | null;

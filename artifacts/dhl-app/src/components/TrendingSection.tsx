@@ -1,5 +1,6 @@
 import { useGetCatches, useGetPins, useGetPosts } from "@workspace/api-client-react";
 import { Link } from "wouter";
+import { useLake } from "@/lib/lake-context";
 import { format } from "date-fns";
 
 import { Fish, Camera, MapPin, Calendar, Anchor, Sailboat } from "lucide-react";
@@ -16,9 +17,10 @@ type Trend = {
 };
 
 export function TrendingSection() {
+  const { lakeId } = useLake();
   const { data: catches } = useGetCatches({});
-  const { data: pins } = useGetPins({});
-  const { data: posts } = useGetPosts({});
+  const { data: pins } = useGetPins({ lakeId });
+  const { data: posts } = useGetPosts({ lakeId });
 
   const items: Trend[] = [];
 

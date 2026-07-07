@@ -51,6 +51,9 @@ import { boatSvgFor, FLAG_SVG } from "../boats";
 import { hapticTap } from "@/lib/haptics";
 import { createPinLongPress } from "@/lib/pinLongPress";
 import { LAKE_PLACES, placeEmoji, type LakePlace as LakePlaceShared } from "@/lib/lakePlaces";
+import { DEFAULT_LAKE_ID } from "@workspace/lake-config";
+import { useLake } from "@/lib/lake-context";
+import { LakeSwitcher } from "@/components/LakeSwitcher";
 import { PlaceStoriesViewer } from "@/components/stories/StoriesRow";
 import { resolveImageSrc } from "@/lib/assets";
 import type { StoryPlace, StoryPlacePreview } from "@workspace/api-client-react/src/generated/api.schemas";
@@ -560,17 +563,20 @@ function buildClusterEl(count: number, emoji: string, label?: string, kind: "pin
 
 export function MapPage() {
   const { data: me } = useGetMe();
-  const { data: friends } = useGetFriendLocations();
-  const { data: pins } = useGetPins({});
-  const { data: dockLabels } = useGetDockLabels();
+  const { lakeId, lake } = useLake();
+  const { data: friends } = useGetFriendLocations({ lakeId });
+  const { data: pins } = useGetPins({ lakeId });
+  const { data: dockLabels } = useGetDockLabels({ lakeId });
   const { data: hiddenPlaces } = useGetHiddenPlaces();
   const hiddenPlaceKeys = useMemo(
     () => new Set((hiddenPlaces ?? []).map((h) => h.placeKey)),
     [hiddenPlaces],
   );
+  // The built-in named places catalog is Dale Hollow-specific — hide it on
+  // other lakes rather than showing wrong labels on the wrong water.
   const visiblePlaces = useMemo(
-    () => LAKE_PLACES.filter((p) => !hiddenPlaceKeys.has(p.name)),
-    [hiddenPlaceKeys],
+    () => (lakeId === DEFAULT_LAKE_ID ? LAKE_PLACES.filter((p) => !hiddenPlaceKeys.has(p.name)) : []),
+    [hiddenPlaceKeys, lakeId],
   );
   const { data: storyPlaces } = useGetStoryPlaces();
   const [storyPlaceViewer, setStoryPlaceViewer] = useState<{ placeName: string; userId?: number } | null>(null);
@@ -747,6 +753,14 @@ export function MapPage() {
     }
   }, []);
 
+  // Fly to the newly selected lake when the user switches lakes.
+  const prevLakeIdRef = useRef(lakeId);
+  useEffect(() => {
+    if (prevLakeIdRef.current === lakeId) return;
+    prevLakeIdRef.current = lakeId;
+    mapRef.current?.flyTo({ center: [lake.lng, lake.lat], zoom: lake.zoom, duration: 1500 });
+  }, [lakeId, lake]);
+
   // --- Initialize the map once ---
   useEffect(() => {
     if (mapRef.current || !mapContainer.current) return;
@@ -756,8 +770,8 @@ export function MapPage() {
       map = new maplibregl.Map({
         container: mapContainer.current,
         style: MAP_STYLE,
-        center: LAKE_CENTER,
-        zoom: BASE_ZOOM,
+        center: [lake.lng, lake.lat],
+        zoom: lake.zoom,
         pitch: 0,
         bearing: 0,
         maxPitch: 0,
@@ -1916,8 +1930,8 @@ export function MapPage() {
     // so on iOS (where a fresh user has no shared location and the permission
     // prompt may be denied/slow) the tap appeared to do nothing — the button
     // felt dead even though onClick fired.
-    const lat = me?.currentLat ?? LAKE_CENTER[1];
-    const lng = me?.currentLng ?? LAKE_CENTER[0];
+    const lat = me?.currentLat ?? lake.lat;
+    const lng = me?.currentLng ?? lake.lng;
     setPinDialog({ open: true, lat, lng });
 
     // If we don't have a known position yet, refine it in the background.
@@ -1953,7 +1967,7 @@ export function MapPage() {
   const submitDockLabel = () => {
     if (pinDialog.lat == null || pinDialog.lng == null) return;
     createDockLabel.mutate(
-      { data: { label: pinTitle.trim() || "Dock", emoji: dockEmoji, lat: pinDialog.lat, lng: pinDialog.lng } },
+      { data: { label: pinTitle.trim() || "Dock", emoji: dockEmoji, lat: pinDialog.lat, lng: pinDialog.lng, lakeId } },
       {
         onSuccess: () => {
           toast.success("Dock sign placed!");
@@ -1985,6 +1999,7 @@ export function MapPage() {
             !isLandmark && pinType === "hazard" && pinExpiresHours !== "0"
               ? new Date(Date.now() + parseInt(pinExpiresHours, 10) * 3600 * 1000).toISOString()
               : undefined,
+          lakeId,
         },
       },
       {
@@ -1999,7 +2014,7 @@ export function MapPage() {
               : "Pin dropped successfully!"
           );
           closePinDialog();
-          queryClient.invalidateQueries({ queryKey: getGetPinsQueryKey({}) });
+          queryClient.invalidateQueries({ queryKey: getGetPinsQueryKey() });
         },
       }
     );
@@ -2078,7 +2093,10 @@ export function MapPage() {
 
       {/* Search bar */}
       {!pinDialog.open && (
-      <div className="absolute top-3 left-4 right-20 z-[400]">
+      <div className="absolute top-3 left-4 right-20 z-[400] flex flex-col items-start gap-2">
+        <div className="rounded-full bg-card/95 backdrop-blur shadow-md border border-border px-3 py-1.5">
+          <LakeSwitcher className="max-w-[240px] text-sm" />
+        </div>
         {searchOpen ? (
           <div className="rounded-2xl bg-card shadow-lg border border-border overflow-hidden">
             <div className="flex items-center gap-2 px-3 py-2">
@@ -2586,7 +2604,8 @@ function DetailCard({
   const deletePin = useDeletePin();
   const deleteDockLabel = useDeleteDockLabel();
   const hidePlace = useHidePlace();
-  const { data: freshPins } = useGetPins({});
+  const { lakeId } = useLake();
+  const { data: freshPins } = useGetPins({ lakeId });
 
   if (selected.kind === "boatCluster") {
     const { friends, boatCount, lng, lat, expansionZoom } = selected.data;

@@ -31,6 +31,7 @@ import {
 } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { LAKE_PLACES, placeEmoji } from "@/lib/lakePlaces";
+import { useLake } from "@/lib/lake-context";
 import { FILTER_CATEGORIES, STORY_FILTERS } from "@/lib/storyFilters";
 import { StickerLayer } from "./StickerLayer";
 import { DrawCanvas, type DrawCanvasHandle, type DrawTool } from "./DrawCanvas";
@@ -178,7 +179,8 @@ export function StoryEditor({
   const createStory = useCreateStory();
   const queryClient = useQueryClient();
   const { data: me } = useGetMe();
-  const { data: conditions } = useGetConditions();
+  const { lakeId } = useLake();
+  const { data: conditions } = useGetConditions({ lakeId });
   const fleet: any[] = (me as any)?.fleet ?? [];
 
   const filter = STORY_FILTERS[filterIdx] ?? STORY_FILTERS[0];
@@ -321,6 +323,7 @@ export function StoryEditor({
           stickers: stickers.length ? stickers : null,
           pollQuestion: pollOpen && pollValid && pollQuestion.trim() ? pollQuestion.trim() : null,
           pollOptions: pollOpen && pollValid && validPollOptions.length >= 2 ? validPollOptions.slice(0, 4) : null,
+          lakeId,
         },
       });
       queryClient.invalidateQueries({ queryKey: getGetStoriesQueryKey() });

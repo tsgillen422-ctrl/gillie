@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { BOAT_TYPE_VALUES, BOAT_BRAND_MAX_LENGTH } from "@workspace/boat-config";
+import { isValidLakeId } from "@workspace/lake-config";
 import { db } from "@workspace/db";
 import {
   usersTable,
@@ -337,6 +338,8 @@ function formatUser(u: typeof usersTable.$inferSelect, opts: { hideLiveLocation?
     relationshipStatus: u.relationshipStatus,
     gender: u.gender,
     work: u.work,
+    primaryLakeId: u.primaryLakeId,
+    currentLakeId: u.currentLakeId,
     isOnline: u.isOnline,
     isBusiness: u.isBusiness,
     currentLat: sharing ? u.currentLat : null,
@@ -455,9 +458,15 @@ router.post("/me/sos", async (req, res) => {
 
 router.patch("/me", async (req, res) => {
   const uid = currentUserId(req);
-  const { displayName, bio, location, hometown, birthday, relationshipStatus, gender, work, avatarUrl, coverUrl, boatName, boatColor, boatType, boatBrand, boatModel, boatYear, boatPhotoUrl, homeMarina, showBoat, boatNeon, boatFlag, boatAccent, interests, favoriteThings, isBusiness } = req.body;
+  const { displayName, bio, location, hometown, birthday, relationshipStatus, gender, work, avatarUrl, coverUrl, boatName, boatColor, boatType, boatBrand, boatModel, boatYear, boatPhotoUrl, homeMarina, showBoat, boatNeon, boatFlag, boatAccent, interests, favoriteThings, isBusiness, primaryLakeId } = req.body;
   const updates: Partial<typeof usersTable.$inferInsert> = {};
   if (displayName !== undefined) updates.displayName = displayName;
+  if (primaryLakeId !== undefined) {
+    if (!isValidLakeId(primaryLakeId)) {
+      return res.status(400).json({ error: "Invalid primaryLakeId" });
+    }
+    updates.primaryLakeId = primaryLakeId;
+  }
   if (bio !== undefined) updates.bio = bio;
   if (location !== undefined) updates.location = location;
   if (hometown !== undefined) updates.hometown = hometown;
@@ -701,9 +710,12 @@ router.patch("/me/location", async (req, res) => {
 // corresponds to a real, user-initiated position.
 router.post("/me/checkin", async (req, res) => {
   const uid = currentUserId(req);
-  const { lat, lng, onWater, durationHours, boatId } = req.body;
+  const { lat, lng, onWater, durationHours, boatId, lakeId } = req.body;
   if (typeof lat !== "number" || typeof lng !== "number" || !Number.isFinite(lat) || !Number.isFinite(lng)) {
     return res.status(400).json({ error: "lat and lng are required numbers" });
+  }
+  if (lakeId !== undefined && lakeId !== null && !isValidLakeId(lakeId)) {
+    return res.status(400).json({ error: "Invalid lakeId" });
   }
   let hours = CHECKIN_DEFAULT_HOURS;
   if (durationHours !== undefined) {
@@ -733,6 +745,9 @@ router.post("/me/checkin", async (req, res) => {
       shareLocation: true,
       locationSharingExpiresAt: expiresAt,
       lastSeen: new Date(),
+      // Which lake the user checked in at — used to place their boat on the
+      // right lake's map. Defaults to the catalog default for older clients.
+      ...(lakeId != null ? { currentLakeId: lakeId } : {}),
     })
     .where(eq(usersTable.id, uid))
     .returning();

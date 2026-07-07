@@ -49,6 +49,8 @@ import { formatDistanceToNow } from "date-fns";
 
 import { PostCard } from "@/components/feed/PostCard";
 import { CatchCard } from "@/components/feed/CatchCard";
+import { useLake } from "@/lib/lake-context";
+import { LakeSwitcher } from "@/components/LakeSwitcher";
 
 const FEELINGS: { emoji: string; label: string }[] = [
   { emoji: "😊", label: "happy" },
@@ -197,14 +199,15 @@ export function FeedPage() {
   const isSavedTab = activeTab === "saved";
   const isTrendingTab = activeTab === "trending";
   const isFishingTab = activeTab === "fishing";
+  const { lakeId } = useLake();
   const feedParams =
     activeTab === "friends"
-      ? { audience: "friends" as const }
+      ? { audience: "friends" as const, lakeId }
       : activeTab === "community"
-        ? { audience: "community" as const }
+        ? { audience: "community" as const, lakeId }
         : activeTab === "event" || activeTab === "business"
-          ? { type: activeTab }
-          : {};
+          ? { type: activeTab, lakeId }
+          : { lakeId };
   const { data: feedPosts, isLoading: feedLoading } = useGetPosts(feedParams, {
     query: { enabled: !isSavedTab && !isTrendingTab && !isFishingTab, queryKey: getGetPostsQueryKey(feedParams) },
   });
@@ -544,6 +547,7 @@ export function FeedPage() {
           mods: isBoat && newMods.trim() ? newMods.trim() : undefined,
           visibility: newVisibility as PostInputVisibility,
           pollOptions: validPollOptions.length >= 2 ? validPollOptions : undefined,
+          lakeId,
         },
       },
       {
@@ -558,7 +562,7 @@ export function FeedPage() {
     );
   };
 
-  const { data: conditions } = useGetConditions({ query: { refetchInterval: 1000 * 60 * 10, queryKey: getGetConditionsQueryKey() } });
+  const { data: conditions } = useGetConditions({ lakeId }, { query: { refetchInterval: 1000 * 60 * 10, queryKey: getGetConditionsQueryKey({ lakeId }) } });
   const [conditionsOpen, setConditionsOpen] = React.useState(false);
   const WeatherIcon = weatherIcon(conditions?.weatherCode, conditions?.isDay ?? undefined);
 
@@ -606,7 +610,10 @@ export function FeedPage() {
         {/* Slim top bar */}
         <div className="bg-background px-4 pb-2" style={{ paddingTop: "max(env(safe-area-inset-top), 0.6rem)" }}>
           <div className="flex items-center justify-between pt-1">
-            <span className="font-script text-[30px] font-bold leading-none text-primary">Gillie</span>
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="shrink-0 font-script text-[30px] font-bold leading-none text-primary">Gillie</span>
+              <LakeSwitcher className="min-w-0 text-sm" />
+            </div>
             <div className="flex items-center gap-1.5">
               <Link href="/search" aria-label="Search" className="flex h-9 w-9 items-center justify-center rounded-full text-foreground hover:bg-muted active:scale-95 transition">
                 <Search className="h-[20px] w-[20px]" />

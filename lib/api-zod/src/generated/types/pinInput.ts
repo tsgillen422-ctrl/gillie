@@ -24,4 +24,9 @@ export interface PinInput {
   severity?: PinInputSeverity;
   /** @nullable */
   expiresAt?: string | null;
+  /**
+     * Which lake the pin belongs to (defaults to Dale Hollow Lake)
+     * @nullable
+     */
+  lakeId?: number | null;
 }

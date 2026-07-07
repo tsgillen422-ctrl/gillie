@@ -14,6 +14,7 @@ export interface Pin {
   id: number;
   userId: number;
   user?: User;
+  lakeId?: number;
   lat: number;
   lng: number;
   type: PinType;

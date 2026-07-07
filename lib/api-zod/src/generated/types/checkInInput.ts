@@ -17,4 +17,9 @@ export interface CheckInInput {
      * @nullable
      */
   boatId?: number | null;
+  /**
+     * Which lake the user is checking in at (defaults to their current lake)
+     * @nullable
+     */
+  lakeId?: number | null;
 }

@@ -25,4 +25,9 @@ export interface PostInput {
   visibility?: PostInputVisibility;
   /** 2-10 poll choices. When present, the post includes a poll. */
   pollOptions?: string[];
+  /**
+     * Which lake community the post belongs to (defaults to Dale Hollow Lake)
+     * @nullable
+     */
+  lakeId?: number | null;
 }

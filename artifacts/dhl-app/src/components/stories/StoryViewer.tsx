@@ -21,6 +21,7 @@ import {
 import { UserAvatar } from "@/components/UserAvatar";
 import { resolveImageSrc } from "@/lib/assets";
 import { StickerLayer } from "./StickerLayer";
+import { useLake } from "@/lib/lake-context";
 
 const PHOTO_MS = 5000;
 const TEXT_MS = 6000;
@@ -91,8 +92,9 @@ export function StoryViewer({
   const effectivePaused = paused || engaged;
 
   const hasLakeInfo = !!(story && (story.placeName || story.boatName || story.lat != null));
-  const { data: conditions } = useGetConditions({
-    query: { enabled: infoOpen && hasLakeInfo, queryKey: getGetConditionsQueryKey() },
+  const { lakeId } = useLake();
+  const { data: conditions } = useGetConditions({ lakeId }, {
+    query: { enabled: infoOpen && hasLakeInfo, queryKey: getGetConditionsQueryKey({ lakeId }) },
   });
 
   // Local overlays so reactions/votes reflect immediately without refetching

@@ -172,6 +172,13 @@ export interface User {
   followingCount?: number;
   badges?: Badge[];
   rank?: Rank;
+  /** The user's home lake (from the static lakes catalog) */
+  primaryLakeId?: number;
+  /**
+     * The lake of the user's most recent check-in
+     * @nullable
+     */
+  currentLakeId?: number | null;
   createdAt: string;
 }
 
@@ -235,6 +242,8 @@ export interface UserUpdate {
   interests?: string[];
   favoriteThings?: FavoriteThing[];
   isBusiness?: boolean;
+  /** The user's home lake id (must exist in the lakes catalog) */
+  primaryLakeId?: number;
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
   showFriends?: boolean;
@@ -261,6 +270,11 @@ export interface CheckInInput {
      * @nullable
      */
   boatId?: number | null;
+  /**
+     * Which lake the user is checking in at (defaults to their current lake)
+     * @nullable
+     */
+  lakeId?: number | null;
 }
 
 export interface FriendLocation {
@@ -285,6 +299,8 @@ export interface FriendLocation {
   lat?: number | null;
   /** @nullable */
   lng?: number | null;
+  /** The lake this friend last checked in at */
+  lakeId?: number;
   isSharingLocation?: boolean;
   /** @nullable */
   isBusiness?: boolean | null;
@@ -341,6 +357,7 @@ export interface StorySticker {
 export interface Story {
   id: number;
   userId: number;
+  lakeId?: number;
   mediaType: StoryMediaType;
   /** @nullable */
   mediaUrl?: string | null;
@@ -466,6 +483,11 @@ export interface StoryInput {
   visibility?: string | null;
   /** @nullable */
   boatId?: number | null;
+  /**
+     * Which lake community the story is posted to
+     * @nullable
+     */
+  lakeId?: number | null;
   /** @nullable */
   filterName?: string | null;
   /** @nullable */
@@ -699,6 +721,7 @@ export interface Pin {
   id: number;
   userId: number;
   user?: User;
+  lakeId?: number;
   lat: number;
   lng: number;
   type: PinType;
@@ -777,11 +800,17 @@ export interface PinInput {
   severity?: PinInputSeverity;
   /** @nullable */
   expiresAt?: string | null;
+  /**
+     * Which lake the pin belongs to (defaults to Dale Hollow Lake)
+     * @nullable
+     */
+  lakeId?: number | null;
 }
 
 export interface DockLabel {
   id: number;
   userId: number;
+  lakeId?: number;
   label: string;
   emoji?: string | null;
   lat: number;
@@ -789,11 +818,27 @@ export interface DockLabel {
   createdAt: string;
 }
 
+export interface Lake {
+  id: number;
+  name: string;
+  slug: string;
+  region: string;
+  lat: number;
+  lng: number;
+  /** Default map zoom level for this lake */
+  zoom: number;
+}
+
 export interface DockLabelInput {
   label: string;
   emoji?: string;
   lat: number;
   lng: number;
+  /**
+     * Which lake the dock label belongs to (defaults to Dale Hollow Lake)
+     * @nullable
+     */
+  lakeId?: number | null;
 }
 
 export interface HiddenPlace {
@@ -873,6 +918,7 @@ export interface Post {
   id: number;
   userId: number;
   user?: User;
+  lakeId?: number;
   title: string;
   content: string;
   postType: PostPostType;
@@ -999,6 +1045,11 @@ export interface PostInput {
   visibility?: PostInputVisibility;
   /** 2-10 poll choices. When present, the post includes a poll. */
   pollOptions?: string[];
+  /**
+     * Which lake community the post belongs to (defaults to Dale Hollow Lake)
+     * @nullable
+     */
+  lakeId?: number | null;
 }
 
 export type PostUpdateInputVisibility = typeof PostUpdateInputVisibility[keyof typeof PostUpdateInputVisibility];
@@ -1553,12 +1604,37 @@ export type SearchUsersParams = {
 q: string;
 };
 
+export type GetFriendLocationsParams = {
+/**
+ * Only include friends checked in at this lake
+ */
+lakeId?: number;
+};
+
+export type GetConditionsParams = {
+/**
+ * Which lake to fetch conditions for (defaults to Dale Hollow Lake)
+ */
+lakeId?: number;
+};
+
+export type GetStoriesParams = {
+/**
+ * Only include stories posted to this lake
+ */
+lakeId?: number;
+};
+
 export type GetPinsParams = {
 type?: GetPinsType;
 /**
  * When set, returns the given user's pins for display on their profile (includes their friends-only pins).
  */
 profileUserId?: number;
+/**
+ * Only include pins on this lake
+ */
+lakeId?: number;
 };
 
 export type GetPinsType = typeof GetPinsType[keyof typeof GetPinsType];
@@ -1581,12 +1657,23 @@ export const GetPinsType = {
   other: 'other',
 } as const;
 
+export type GetDockLabelsParams = {
+/**
+ * Only include dock labels on this lake
+ */
+lakeId?: number;
+};
+
 export type GetPostsParams = {
 type?: GetPostsType;
 /**
  * Filter by author relationship. "friends" shows posts from your friends; "community" shows posts from people you are not friends with.
  */
 audience?: GetPostsAudience;
+/**
+ * Only include posts for this lake community
+ */
+lakeId?: number;
 };
 
 export type GetPostsType = typeof GetPostsType[keyof typeof GetPostsType];
@@ -1620,6 +1707,13 @@ export const SearchGifsKind = {
   gifs: 'gifs',
   stickers: 'stickers',
 } as const;
+
+export type GetActiveHazardsParams = {
+/**
+ * Only include hazards on this lake
+ */
+lakeId?: number;
+};
 
 export type GetCatchesParams = {
 /**

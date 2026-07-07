@@ -1,5 +1,6 @@
 import { useGetConditions } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLake } from "@/lib/lake-context";
 import { Wind, Droplets, Waves, Gauge, Sunrise, Sunset, Fish, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
 
 const advisoryStyles: Record<string, { wrap: string; icon: typeof Info }> = {
@@ -45,7 +46,8 @@ function windDir(deg?: number | null): string {
 }
 
 export function ConditionsWidget() {
-  const { data, isLoading, isError } = useGetConditions({
+  const { lakeId } = useLake();
+  const { data, isLoading, isError } = useGetConditions({ lakeId }, {
     query: { refetchInterval: 1000 * 60 * 10 },
   });
 

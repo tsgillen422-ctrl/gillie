@@ -17,6 +17,7 @@ import { currentUserId } from "../middlewares/auth";
 import { createNotification } from "../lib/notify";
 import { getHiddenDemoUserIds } from "../lib/demoData";
 import { getActiveStoryAuthorIds } from "./stories";
+import { isValidLakeId, DEFAULT_LAKE_ID } from "@workspace/lake-config";
 
 const router = Router();
 
@@ -154,6 +155,9 @@ router.get("/", async (req, res) => {
 
 router.get("/locations", async (req, res) => {
   const me = currentUserId(req);
+  const rawLakeId = req.query.lakeId != null ? Number(req.query.lakeId) : undefined;
+  const filterLakeId =
+    rawLakeId !== undefined ? (isValidLakeId(rawLakeId) ? rawLakeId : DEFAULT_LAKE_ID) : undefined;
   const hidden = await getHiddenDemoUserIds(me);
   // The map shows people I follow. A non-mutual followee can hide their live
   // location from followers they don't follow back via followerSeeLocation.
@@ -171,7 +175,10 @@ router.get("/locations", async (req, res) => {
   );
   const visibleFriends = friends
     .filter(Boolean)
-    .filter((u) => mutualSet.has(u!.id) || u!.followerSeeLocation);
+    .filter((u) => mutualSet.has(u!.id) || u!.followerSeeLocation)
+    // Lake filter: a checked-in friend belongs to the lake they checked in at
+    // (older clients without a lake default to the catalog default).
+    .filter((u) => filterLakeId === undefined || (u!.currentLakeId ?? DEFAULT_LAKE_ID) === filterLakeId);
   const activeStoryIds = await getActiveStoryAuthorIds(visibleFriends.map((u) => u!.id));
   const locations = visibleFriends
     .map((u) => {
@@ -192,6 +199,7 @@ router.get("/locations", async (req, res) => {
         boatAccent: u!.boatAccent,
         lat: sharing ? u!.currentLat : null,
         lng: sharing ? u!.currentLng : null,
+        lakeId: u!.currentLakeId ?? DEFAULT_LAKE_ID,
         isSharingLocation: sharing,
         isBusiness: u!.isBusiness,
         isOnline: u!.isOnline,

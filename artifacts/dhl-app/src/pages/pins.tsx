@@ -32,6 +32,7 @@ import {
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useLake } from "@/lib/lake-context";
 
 const OWNER_ID = 1;
 
@@ -87,6 +88,7 @@ function formatWindow(startTime?: string | null, endTime?: string | null) {
 }
 
 export function PinsPage() {
+  const { lakeId } = useLake();
   const [filter, setFilter] = React.useState('all');
   const [search, setSearch] = React.useState("");
 
@@ -95,15 +97,16 @@ export function PinsPage() {
   const [reportPinId, setReportPinId] = React.useState<number | null>(null);
 
   const isSaved = filter === "saved";
+  const pinParams = filter !== 'all' && !isSaved ? { type: filter as any, lakeId } : { lakeId };
   const { data: pins, isLoading } = useGetPins(
-    filter !== 'all' && !isSaved ? { type: filter as any } : {},
-    { query: { enabled: !isSaved } }
+    pinParams,
+    { query: { enabled: !isSaved, queryKey: getGetPinsQueryKey(pinParams) } }
   );
   const { data: favoritePins, isLoading: favoritesLoading } = useGetFavoritePins({
     query: { enabled: isSaved },
   });
   const { data: pendingPins } = useGetPendingPins({ query: { enabled: isOwner } });
-  const { data: dockLabels } = useGetDockLabels();
+  const { data: dockLabels } = useGetDockLabels({ lakeId });
   const approvePin = useApprovePin();
   const deletePin = useDeletePin();
   const queryClient = useQueryClient();

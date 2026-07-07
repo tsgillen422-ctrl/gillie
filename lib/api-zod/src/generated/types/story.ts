@@ -12,6 +12,7 @@ import type { StorySticker } from './storySticker';
 export interface Story {
   id: number;
   userId: number;
+  lakeId?: number;
   mediaType: StoryMediaType;
   /** @nullable */
   mediaUrl?: string | null;

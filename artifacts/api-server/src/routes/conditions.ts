@@ -1,13 +1,13 @@
 import { Router } from "express";
+import { lakeById, DEFAULT_LAKE_ID } from "@workspace/lake-config";
 
 const router = Router();
 
-// Dale Hollow Lake approximate center
-const LAKE_LAT = 36.5384;
-const LAKE_LNG = -85.3094;
-
-// USACE CWMS pool-elevation timeseries for Dale Hollow Lake
-const WATER_LEVEL_TSID = "DLHT1-DALE_HOLLOW.Elev-Pool.Inst.1Hour.0.dcp-rev";
+// USACE CWMS pool-elevation timeseries, per lake. Only Dale Hollow is wired up
+// today; other lakes simply report no water level rather than a wrong one.
+const WATER_LEVEL_TSIDS: Record<number, string> = {
+  1: "DLHT1-DALE_HOLLOW.Elev-Pool.Inst.1Hour.0.dcp-rev",
+};
 
 const WEATHER_LABELS: Record<number, string> = {
   0: "Clear sky",
@@ -177,14 +177,17 @@ function estimateFishingPressure(i: PressureInput): { level: "low" | "moderate" 
   };
 }
 
-// Fetch the latest Dale Hollow pool elevation (feet) from the USACE CWMS Data API.
-async function fetchWaterLevel(): Promise<number | null> {
+// Fetch the latest pool elevation (feet) from the USACE CWMS Data API for
+// lakes that have a known timeseries id.
+async function fetchWaterLevel(lakeId: number): Promise<number | null> {
+  const tsid = WATER_LEVEL_TSIDS[lakeId];
+  if (!tsid) return null;
   try {
     const end = new Date();
     const begin = new Date(end.getTime() - 24 * 60 * 60 * 1000);
     const url =
       `https://cwms-data.usace.army.mil/cwms-data/timeseries?office=LRN` +
-      `&name=${encodeURIComponent(WATER_LEVEL_TSID)}` +
+      `&name=${encodeURIComponent(tsid)}` +
       `&begin=${begin.toISOString()}&end=${end.toISOString()}&unit=ft`;
     const response = await fetch(url, { headers: { Accept: "application/json;version=2" } });
     if (!response.ok) return null;
@@ -200,17 +203,21 @@ async function fetchWaterLevel(): Promise<number | null> {
   }
 }
 
-let cache: { data: unknown; expires: number } | null = null;
+const cacheByLake = new Map<number, { data: unknown; expires: number }>();
 
-router.get("/", async (_req, res) => {
+router.get("/", async (req, res) => {
   try {
-    if (cache && cache.expires > Date.now()) {
-      return res.json(cache.data);
+    const rawLakeId = Number(req.query.lakeId);
+    const lake = lakeById(Number.isInteger(rawLakeId) ? rawLakeId : DEFAULT_LAKE_ID);
+
+    const cached = cacheByLake.get(lake.id);
+    if (cached && cached.expires > Date.now()) {
+      return res.json(cached.data);
     }
 
     const params = new URLSearchParams({
-      latitude: String(LAKE_LAT),
-      longitude: String(LAKE_LNG),
+      latitude: String(lake.lat),
+      longitude: String(lake.lng),
       current:
         "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,wind_gusts_10m,wind_direction_10m,is_day",
       daily: "sunrise,sunset",
@@ -223,7 +230,7 @@ router.get("/", async (_req, res) => {
 
     const [weatherResponse, waterLevel] = await Promise.all([
       fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`),
-      fetchWaterLevel(),
+      fetchWaterLevel(lake.id),
     ]);
 
     if (!weatherResponse.ok) {
@@ -298,7 +305,7 @@ router.get("/", async (_req, res) => {
       updatedAt: new Date().toISOString(),
     };
 
-    cache = { data, expires: Date.now() + 10 * 60 * 1000 };
+    cacheByLake.set(lake.id, { data, expires: Date.now() + 10 * 60 * 1000 });
     res.json(data);
   } catch {
     res.status(502).json({ error: "Weather service unavailable" });

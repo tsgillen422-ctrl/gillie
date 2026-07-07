@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useGetMe, useCheckOutLocation, getGetMeQueryKey } from "@workspace/api-client-react";
 import { WAIVER_VERSION } from "@/lib/waiver";
+import { LakeProvider } from "@/lib/lake-context";
 
 import { LandingPage } from "@/pages/landing";
 import { MapPage } from "@/pages/map";
@@ -324,6 +325,7 @@ function AuthedApp() {
   }
 
   return (
+    <LakeProvider primaryLakeId={me.primaryLakeId}>
     <AppLayout>
       <Switch>
         <Route path="/" component={MapPage} />
@@ -348,6 +350,7 @@ function AuthedApp() {
       </Switch>
       <Onboarding />
     </AppLayout>
+    </LakeProvider>
   );
 }
 

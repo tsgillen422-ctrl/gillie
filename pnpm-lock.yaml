@@ -184,6 +184,9 @@ importers:
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
+      '@workspace/lake-config':
+        specifier: workspace:*
+        version: link:../../lib/lake-config
       apns2:
         specifier: ^12.2.0
         version: 12.2.0
@@ -293,6 +296,9 @@ importers:
       '@workspace/boat-config':
         specifier: workspace:*
         version: link:../../lib/boat-config
+      '@workspace/lake-config':
+        specifier: workspace:*
+        version: link:../../lib/lake-config
       '@workspace/object-storage-web':
         specifier: workspace:*
         version: link:../../lib/object-storage-web
@@ -973,6 +979,8 @@ importers:
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10
+
+  lib/lake-config: {}
 
   lib/object-storage-web:
     dependencies:

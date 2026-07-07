@@ -1,11 +1,13 @@
 import { useGetActiveHazards } from "@workspace/api-client-react";
 import { AlertTriangle } from "lucide-react";
 import { Link } from "wouter";
+import { useLake } from "@/lib/lake-context";
 
 const severityRank: Record<string, number> = { high: 3, medium: 2, low: 1 };
 
 export function HazardBanner() {
-  const { data: hazards } = useGetActiveHazards({
+  const { lakeId } = useLake();
+  const { data: hazards } = useGetActiveHazards({ lakeId }, {
     query: { refetchInterval: 1000 * 60 * 5 },
   });
 

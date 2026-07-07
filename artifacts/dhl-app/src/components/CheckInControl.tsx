@@ -19,6 +19,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { MapPin, MapPinOff, Loader2, Clock, Users, ShieldCheck, X, Ship } from "lucide-react";
+import { useLake } from "@/lib/lake-context";
 
 // How long a check-in lasts. Mirrors the server default (CHECKIN_DEFAULT_HOURS)
 // so the confirmation copy matches reality.
@@ -55,6 +56,7 @@ function remainingLabel(expiresAt: string | null | undefined): string | null {
  */
 export function CheckInControl({ variant = "card" }: { variant?: "card" | "compact" }) {
   const { data: me } = useGetMe();
+  const { lakeId } = useLake();
   const qc = useQueryClient();
   const checkIn = useCheckInLocation();
   const checkOut = useCheckOutLocation();
@@ -97,7 +99,7 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         checkIn.mutate(
-          { data: { lat: pos.coords.latitude, lng: pos.coords.longitude, ...(boatId ? { boatId } : {}) } },
+          { data: { lat: pos.coords.latitude, lng: pos.coords.longitude, lakeId, ...(boatId ? { boatId } : {}) } },
           {
             onSuccess: () => {
               // Best-effort: publish the chosen live status alongside the check-in.

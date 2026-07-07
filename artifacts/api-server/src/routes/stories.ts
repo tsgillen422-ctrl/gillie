@@ -18,6 +18,7 @@ import { currentUserId } from "../middlewares/auth";
 import { getHiddenDemoUserIds } from "../lib/demoData";
 import { createNotifications } from "../lib/notify";
 import { isLocationLive } from "./users";
+import { isValidLakeId, DEFAULT_LAKE_ID } from "@workspace/lake-config";
 
 const router = Router();
 
@@ -230,6 +231,7 @@ function formatStory(
   return {
     id: s.id,
     userId: s.userId,
+    lakeId: s.lakeId,
     mediaType: s.mediaType,
     mediaUrl: s.mediaUrl,
     text: s.text,
@@ -331,8 +333,13 @@ async function groupStories(uid: number, stories: (typeof storiesTable.$inferSel
 
 router.get("/", async (req, res) => {
   const uid = currentUserId(req);
+  const rawLakeId = req.query.lakeId != null ? Number(req.query.lakeId) : undefined;
   const { where } = await visibleStoriesWhere(uid);
-  const stories = await db.select().from(storiesTable).where(where).orderBy(asc(storiesTable.createdAt));
+  const fullWhere =
+    rawLakeId !== undefined
+      ? and(where, eq(storiesTable.lakeId, isValidLakeId(rawLakeId) ? rawLakeId : DEFAULT_LAKE_ID))
+      : where;
+  const stories = await db.select().from(storiesTable).where(fullWhere).orderBy(asc(storiesTable.createdAt));
   res.json(await groupStories(uid, stories));
 });
 
@@ -340,7 +347,7 @@ router.post("/", async (req, res) => {
   const uid = currentUserId(req);
   const {
     mediaType, mediaUrl, text, bgColor, caption, lat, lng, placeName, visibility,
-    boatId, filterName, filterCss, stickers, pollQuestion, pollOptions,
+    boatId, filterName, filterCss, stickers, pollQuestion, pollOptions, lakeId,
   } = req.body ?? {};
 
   if (!MEDIA_TYPES.includes(mediaType)) {
@@ -425,6 +432,7 @@ router.post("/", async (req, res) => {
     .insert(storiesTable)
     .values({
       userId: uid,
+      lakeId: isValidLakeId(lakeId) ? lakeId : DEFAULT_LAKE_ID,
       mediaType,
       mediaUrl: mediaType === "text" ? null : mediaUrl.trim(),
       text: mediaType === "text" ? text.trim() : null,

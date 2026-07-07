@@ -28,9 +28,11 @@ import { compressImage } from "@/lib/compress";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { PostCard } from "@/components/feed/PostCard";
+import { useLake } from "@/lib/lake-context";
 
 export function TieUpsPage() {
-  const { data: tieUps, isLoading } = useGetPosts({ type: "tie_up" });
+  const { lakeId } = useLake();
+  const { data: tieUps, isLoading } = useGetPosts({ type: "tie_up", lakeId });
   const { data: me } = useGetMe();
   const createPost = useCreatePost();
   const deletePost = useDeletePost();
@@ -96,6 +98,7 @@ export function TieUpsPage() {
           postType: "tie_up" as PostInputPostType,
           eventDate: whenAt ? new Date(whenAt).toISOString() : undefined,
           imageUrl: imageUrl ? `/api/storage${imageUrl}` : undefined,
+          lakeId,
         },
       },
       {

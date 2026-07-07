@@ -6,6 +6,8 @@ import { usersTable } from "./users";
 export const postsTable = pgTable("posts", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => usersTable.id),
+  // Multi-lake: which lake community this post belongs to (@workspace/lake-config).
+  lakeId: integer("lake_id").notNull().default(1),
   title: text("title").notNull(),
   content: text("content").notNull(),
   postType: text("post_type").notNull().default("post"),

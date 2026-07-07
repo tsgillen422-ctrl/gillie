@@ -16,6 +16,8 @@ export type StorySticker = {
 export const storiesTable = pgTable("stories", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => usersTable.id),
+  // Multi-lake: which lake community this story belongs to (@workspace/lake-config).
+  lakeId: integer("lake_id").notNull().default(1),
   mediaType: text("media_type").notNull(), // photo | video | text
   mediaUrl: text("media_url"),
   text: text("text"),

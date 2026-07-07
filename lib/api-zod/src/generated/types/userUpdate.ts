@@ -45,6 +45,8 @@ export interface UserUpdate {
   interests?: string[];
   favoriteThings?: FavoriteThing[];
   isBusiness?: boolean;
+  /** The user's home lake id (must exist in the lakes catalog) */
+  primaryLakeId?: number;
   requireFollowApproval?: boolean;
   showFollowers?: boolean;
   showFriends?: boolean;

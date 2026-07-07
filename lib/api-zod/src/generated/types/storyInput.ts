@@ -28,6 +28,11 @@ export interface StoryInput {
   visibility?: string | null;
   /** @nullable */
   boatId?: number | null;
+  /**
+     * Which lake community the story is posted to
+     * @nullable
+     */
+  lakeId?: number | null;
   /** @nullable */
   filterName?: string | null;
   /** @nullable */

@@ -13,11 +13,13 @@ import {
 } from "@workspace/api-client-react";
 import { resolveImageSrc } from "@/lib/assets";
 import { format } from "date-fns";
+import { useLake } from "@/lib/lake-context";
 
 export function ExplorePage() {
+  const { lakeId } = useLake();
   const { data: catches } = useGetCatches({}, { query: { queryKey: getGetCatchesQueryKey({}) } });
-  const { data: pins } = useGetPins({}, { query: { queryKey: getGetPinsQueryKey({}) } });
-  const { data: posts } = useGetPosts({}, { query: { queryKey: getGetPostsQueryKey({}) } });
+  const { data: pins } = useGetPins({ lakeId }, { query: { queryKey: getGetPinsQueryKey({ lakeId }) } });
+  const { data: posts } = useGetPosts({ lakeId }, { query: { queryKey: getGetPostsQueryKey({ lakeId }) } });
 
   const biggestCatch = [...(catches ?? [])]
     .filter((c: any) => c.weight != null)
