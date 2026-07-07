@@ -1910,13 +1910,18 @@ export function MapPage() {
       }
     }
     for (const f of friends ?? []) {
+      // Friends without shared coordinates can't be flown to — skip them so a
+      // tap never passes null into the map camera.
+      if (typeof f.lat !== "number" || typeof f.lng !== "number") continue;
+      const flat = f.lat;
+      const flng = f.lng;
       if (f.displayName?.toLowerCase().includes(q) || f.username?.toLowerCase().includes(q) || f.boatName?.toLowerCase().includes(q)) {
         results.push({
           key: `friend-${f.userId}`,
           icon: "🧑",
           title: f.displayName,
           subtitle: f.lakeStatus ? f.lakeStatus : f.boatName ? `🚤 ${f.boatName}` : f.isOnline ? "Online now" : "On the lake",
-          onSelect: () => flyToLocation(f.lng, f.lat, { kind: "friend", data: f }),
+          onSelect: () => flyToLocation(flng, flat, { kind: "friend", data: f }),
         });
       }
     }

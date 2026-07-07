@@ -11,6 +11,7 @@ import {
   useDeleteCurrentUser,
   getGetBlockedUsersQueryKey,
   getGetMutedUsersQueryKey,
+  getGetMeQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
@@ -44,6 +45,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Check, Waves } from "lucide-react";
+import { LAKES } from "@workspace/lake-config";
+import { useLake } from "@/lib/lake-context";
 import { WaiverBody } from "@/lib/waiver";
 import { useToast } from "@/hooks/use-toast";
 import { SettingsShell, SettingsGroup, SettingsSwitchRow } from "@/components/settings-ui";
@@ -352,6 +356,65 @@ function WaiverPage() {
   );
 }
 
+/* ------------------------------- Home Lake ------------------------------- */
+
+function HomeLakePage() {
+  const { data: me, isLoading } = useGetMe();
+  const updateMe = useUpdateMe();
+  const { setLakeId } = useLake();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const currentId = (me as any)?.primaryLakeId ?? null;
+
+  const choose = (id: number, name: string) => {
+    if (id === currentId) return;
+    updateMe.mutate(
+      { data: { primaryLakeId: id } },
+      {
+        onSuccess: () => {
+          // Follow the user to their new home lake right away.
+          setLakeId(id);
+          queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
+          toast({ title: "Home lake updated", description: `${name} is now your home lake.` });
+        },
+        onError: () =>
+          toast({ title: "Error", description: "Failed to update your home lake.", variant: "destructive" }),
+      },
+    );
+  };
+
+  return (
+    <SettingsShell title="Home Lake">
+      {isLoading ? (
+        <p className="text-center text-muted-foreground py-8">Loading...</p>
+      ) : (
+        <SettingsGroup footer="Your home lake is the community you see first when you open the app. You can always browse other lakes from the switcher at the top of the feed or map.">
+          <div className="divide-y divide-border">
+            {LAKES.map((l) => (
+              <button
+                key={l.id}
+                type="button"
+                onClick={() => choose(l.id, l.name)}
+                disabled={updateMe.isPending}
+                className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/60 active:bg-muted transition-colors disabled:opacity-60"
+                data-testid={`row-home-lake-${l.id}`}
+              >
+                <Waves className="w-5 h-5 shrink-0 text-teal-600" />
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-medium truncate">{l.name}</span>
+                  <span className="block text-xs text-muted-foreground truncate">{l.region}</span>
+                </span>
+                {l.id === currentId && <Check className="w-5 h-5 shrink-0 text-teal-600" />}
+              </button>
+            ))}
+          </div>
+        </SettingsGroup>
+      )}
+    </SettingsShell>
+  );
+}
+
 /* ----------------------------- Delete Account ---------------------------- */
 
 function DeleteAccountPage() {
@@ -435,6 +498,7 @@ export function SettingsDetailPage() {
   if (section === "blocked") return <BlockedUsersPage />;
   if (section === "hidden-posts") return <HiddenPostsPage />;
   if (section === "waiver") return <WaiverPage />;
+  if (section === "home-lake") return <HomeLakePage />;
 
   const toggle = section ? TOGGLE_CONFIGS[section] : undefined;
   if (toggle) return <ToggleSettingPage config={toggle} />;

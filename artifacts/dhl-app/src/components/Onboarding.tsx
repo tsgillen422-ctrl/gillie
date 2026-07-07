@@ -1,7 +1,11 @@
 import React from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { MapPin, Users, MessageSquare, Anchor, ChevronRight, Map, Fish, Newspaper, LifeBuoy } from "lucide-react";
+import { MapPin, Users, MessageSquare, Anchor, ChevronRight, Map, Fish, Newspaper, LifeBuoy, Waves, Check } from "lucide-react";
+import { useUpdateMe, useGetMe, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { LAKES, DEFAULT_LAKE_ID } from "@workspace/lake-config";
+import { useLake } from "@/lib/lake-context";
 
 const ONBOARDING_KEY = "dhl-onboarding-complete-v1";
 
@@ -48,6 +52,11 @@ export function Onboarding() {
   const [visible, setVisible] = React.useState(false);
   const [step, setStep] = React.useState(0);
   const [, navigate] = useLocation();
+  const { data: me } = useGetMe();
+  const updateMe = useUpdateMe();
+  const { setLakeId } = useLake();
+  const queryClient = useQueryClient();
+  const [chosenLakeId, setChosenLakeId] = React.useState<number | null>(null);
 
   React.useEffect(() => {
     try {
@@ -69,7 +78,61 @@ export function Onboarding() {
 
   if (!visible) return null;
 
-  const onPayoff = step === SLIDES.length;
+  const onLakePicker = step === SLIDES.length;
+  const onPayoff = step === SLIDES.length + 1;
+
+  if (onLakePicker) {
+    const selected = chosenLakeId ?? (me as any)?.primaryLakeId ?? DEFAULT_LAKE_ID;
+    const confirmLake = () => {
+      // Best-effort save; don't block onboarding if the request fails.
+      updateMe.mutate(
+        { data: { primaryLakeId: selected } },
+        { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() }) },
+      );
+      setLakeId(selected);
+      setStep((s) => s + 1);
+    };
+    return (
+      <div className="fixed inset-0 z-[2000] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="w-full max-w-sm rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
+          <div className="bg-gradient-to-br from-primary/20 to-cyan-500/10 px-6 pt-8 pb-6 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-card shadow-md flex items-center justify-center text-3xl mx-auto mb-2">
+              🌊
+            </div>
+            <h2 className="text-xl font-bold">Pick your home lake</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              This is the community you'll see first. You can browse other lakes anytime.
+            </p>
+          </div>
+          <div className="max-h-[40vh] overflow-y-auto px-3 py-2">
+            {LAKES.map((l) => (
+              <button
+                key={l.id}
+                type="button"
+                onClick={() => setChosenLakeId(l.id)}
+                className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                  l.id === selected ? "bg-primary/10" : "hover:bg-muted"
+                }`}
+                data-testid={`onboarding-lake-${l.id}`}
+              >
+                <Waves className="w-4 h-4 shrink-0 text-teal-600" />
+                <span className="flex-1 min-w-0">
+                  <span className="block text-sm font-medium truncate">{l.name}</span>
+                  <span className="block text-xs text-muted-foreground truncate">{l.region}</span>
+                </span>
+                {l.id === selected && <Check className="w-4 h-4 shrink-0 text-teal-600" />}
+              </button>
+            ))}
+          </div>
+          <div className="px-6 pb-6 pt-3">
+            <Button className="w-full" onClick={confirmLake} data-testid="button-confirm-home-lake">
+              Continue
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (onPayoff) {
     return (

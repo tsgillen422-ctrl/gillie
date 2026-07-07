@@ -61,3 +61,4 @@
 - [Public support & legal pages](public-support-legal-pages.md) — /support /privacy-policy /community-guidelines must be in the TOP-LEVEL Switch (before GatedRoutes) to be no-auth; auth-aware back targets or signed-out dead-ends.
 - [Suspension enforcement](suspension-enforcement.md) — `suspend` was cosmetic; now requireAuth 403s suspended users (except GET/DELETE /users/me) + App.tsx SuspendedGate; reversible via PATCH /users/:id/suspension.
 - [Boat type catalog](boat-type-catalog.md) — boat types live in @workspace/boat-config; stored values speedboat/fishing keep old names (labels renamed); always use boatLabelFor.
+- [Multi-lake model](multi-lake-model.md) — lakeId OPTIONAL everywhere (old iOS builds), default lake 1; gate Dale Hollow-only data (LAKE_PLACES/CWMS) on lakeId===1; invalidate with no-arg query keys.

@@ -31,6 +31,7 @@ import {
   FileText,
   LifeBuoy,
   ShieldCheck,
+  Waves,
 } from "lucide-react";
 import {
   SettingsGroup,
@@ -84,6 +85,7 @@ export function SettingsPage() {
         {/* Account */}
         <SettingsGroup title="Account">
           <SettingsLinkRow href="/settings/profile" icon={User} label="Captain Profile" />
+          <SettingsLinkRow href="/settings/home-lake" icon={Waves} label="Home Lake" />
           <SettingsLinkRow href="/settings/vessel" icon={Ship} label="My Fleet" />
           <SettingsLinkRow href="/settings/delete-account" icon={Trash2} label="Delete Account" danger />
         </SettingsGroup>
