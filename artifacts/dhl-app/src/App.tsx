@@ -325,7 +325,7 @@ function AuthedApp() {
   }
 
   return (
-    <LakeProvider primaryLakeId={me.primaryLakeId}>
+    <LakeProvider primaryLakeId={me.primaryLakeId} userId={me.id}>
     <AppLayout>
       <Switch>
         <Route path="/" component={MapPage} />

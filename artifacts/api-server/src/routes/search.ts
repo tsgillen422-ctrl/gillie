@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db } from "@workspace/db";
 import { usersTable, pinsTable, postsTable } from "@workspace/db";
 import { eq, and, or, ilike, desc, notInArray } from "drizzle-orm";
+import { DEFAULT_LAKE_ID, isValidLakeId } from "@workspace/lake-config";
 import { currentUserId } from "../middlewares/auth";
 import { getHiddenDemoUserIds } from "../lib/demoData";
 
@@ -28,6 +29,11 @@ router.get("/", async (req, res) => {
   }
   const term = `%${q}%`;
 
+  // Scope lake-bound content (pins, posts) to the requested lake. People are
+  // global. Old app builds don't send lakeId — they get the default lake.
+  const rawLakeId = req.query.lakeId != null ? Number(req.query.lakeId) : undefined;
+  const lakeId = isValidLakeId(rawLakeId) ? rawLakeId : DEFAULT_LAKE_ID;
+
   // Hide demo users + their posts from anyone not in Demo Mode. Demo pins are
   // friends-only, so they're already excluded by the visibility filter below.
   const hidden = await getHiddenDemoUserIds(currentUserId(req));
@@ -45,12 +51,16 @@ router.get("/", async (req, res) => {
     .where(
       and(
         eq(pinsTable.approved, true),
+        eq(pinsTable.lakeId, lakeId),
         or(ilike(pinsTable.title, term), ilike(pinsTable.description, term))
       )
     )
     .limit(10);
 
-  const postMatch = or(ilike(postsTable.title, term), ilike(postsTable.content, term));
+  const postMatch = and(
+    eq(postsTable.lakeId, lakeId),
+    or(ilike(postsTable.title, term), ilike(postsTable.content, term))
+  );
   const posts = await db
     .select()
     .from(postsTable)

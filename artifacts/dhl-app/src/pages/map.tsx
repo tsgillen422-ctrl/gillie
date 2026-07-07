@@ -53,7 +53,6 @@ import { createPinLongPress } from "@/lib/pinLongPress";
 import { LAKE_PLACES, placeEmoji, type LakePlace as LakePlaceShared } from "@/lib/lakePlaces";
 import { DEFAULT_LAKE_ID } from "@workspace/lake-config";
 import { useLake } from "@/lib/lake-context";
-import { LakeSwitcher } from "@/components/LakeSwitcher";
 import { PlaceStoriesViewer } from "@/components/stories/StoriesRow";
 import { resolveImageSrc } from "@/lib/assets";
 import type { StoryPlace, StoryPlacePreview } from "@workspace/api-client-react/src/generated/api.schemas";
@@ -628,8 +627,6 @@ export function MapPage() {
   // friend" ETA. null until we get a fix with a usable speed reading.
   const [mySpeedMps, setMySpeedMps] = useState<number | null>(null);
   const [mapError, setMapError] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [presenceOpen, setPresenceOpen] = useState(false);
   const [heatmapOn, setHeatmapOn] = useState(false);
   // Who is geospatially over water (vs. on land), keyed by friend userId.
@@ -847,11 +844,24 @@ export function MapPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // --- Fly to a location passed via ?lat=&lng= (e.g. from a feed post or pin link) ---
+  // --- Fly to a location passed via ?lat=&lng= or ?place= (e.g. from search) ---
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !styleReady) return;
     const params = new URLSearchParams(search);
+
+    // Named place from the search screen — fly there and open its card.
+    const placeName = params.get("place");
+    if (placeName != null) {
+      if (handledFocusRef.current === `place:${placeName}`) return;
+      const pl = LAKE_PLACES.find((p) => p.name === placeName);
+      if (pl) {
+        handledFocusRef.current = `place:${placeName}`;
+        flyToPlace(pl);
+        return;
+      }
+    }
+
     const latStr = params.get("lat");
     const lngStr = params.get("lng");
     if (latStr == null || lngStr == null) return;
@@ -862,6 +872,7 @@ export function MapPage() {
     if (handledFocusRef.current === key) return;
     handledFocusRef.current = key;
     map.flyTo({ center: [lng, lat], zoom: 15, essential: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, styleReady]);
 
   // --- Open the "Who's on the lake" panel when arriving via ?presence=1 ---
@@ -1800,8 +1811,6 @@ export function MapPage() {
     const map = mapRef.current;
     if (map) map.flyTo({ center: [lng, lat], zoom: 15, essential: true });
     setSelected(sel);
-    setSearchOpen(false);
-    setSearchQuery("");
     setPresenceOpen(false);
   };
 
@@ -1809,8 +1818,6 @@ export function MapPage() {
     const map = mapRef.current;
     if (map) map.flyTo({ center: [place.lng, place.lat], zoom: 14, essential: true });
     setSelected({ kind: "place", data: place });
-    setSearchOpen(false);
-    setSearchQuery("");
     setPresenceOpen(false);
   };
 
@@ -1865,68 +1872,6 @@ export function MapPage() {
   const onlineFriends = onWaterFriends.filter((f: any) => f.isOnline);
   const meOnWater = me?.currentLat != null && me?.currentLng != null && !meOnLand;
   const onlineCount = onlineFriends.length + (meOnWater ? 1 : 0);
-
-  const searchResults = (() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return [] as Array<{ key: string; icon: string; title: string; subtitle: string; onSelect: () => void }>;
-    const results: Array<{ key: string; icon: string; title: string; subtitle: string; onSelect: () => void }> = [];
-    for (const p of pins ?? []) {
-      if (
-        p.title?.toLowerCase().includes(q) ||
-        p.description?.toLowerCase().includes(q) ||
-        p.type?.toLowerCase().includes(q)
-      ) {
-        results.push({
-          key: `pin-${p.id}`,
-          icon: getPinEmoji(p.type),
-          title: p.title,
-          subtitle: (p.type || "").replace(/_/g, " "),
-          onSelect: () => flyToLocation(p.lng, p.lat, { kind: "pin", data: p }),
-        });
-      }
-    }
-    for (const pl of visiblePlaces) {
-      const hay = [pl.name, pl.category, ...(pl.aliases ?? [])].join(" ").toLowerCase();
-      if (hay.includes(q)) {
-        results.push({
-          key: `place-${pl.name}`,
-          icon: placeEmoji(pl.category),
-          title: pl.name,
-          subtitle: pl.category,
-          onSelect: () => flyToPlace(pl),
-        });
-      }
-    }
-    for (const dl of dockLabels ?? []) {
-      if (dl.lat == null || dl.lng == null) continue;
-      if (dl.label?.toLowerCase().includes(q)) {
-        results.push({
-          key: `dock-${dl.id}`,
-          icon: "⚓",
-          title: dl.label,
-          subtitle: "Dock",
-          onSelect: () => flyToLocation(dl.lng!, dl.lat!, { kind: "dockLabel", data: dl }),
-        });
-      }
-    }
-    for (const f of friends ?? []) {
-      // Friends without shared coordinates can't be flown to — skip them so a
-      // tap never passes null into the map camera.
-      if (typeof f.lat !== "number" || typeof f.lng !== "number") continue;
-      const flat = f.lat;
-      const flng = f.lng;
-      if (f.displayName?.toLowerCase().includes(q) || f.username?.toLowerCase().includes(q) || f.boatName?.toLowerCase().includes(q)) {
-        results.push({
-          key: `friend-${f.userId}`,
-          icon: "🧑",
-          title: f.displayName,
-          subtitle: f.lakeStatus ? f.lakeStatus : f.boatName ? `🚤 ${f.boatName}` : f.isOnline ? "Online now" : "On the lake",
-          onSelect: () => flyToLocation(flng, flat, { kind: "friend", data: f }),
-        });
-      }
-    }
-    return results.slice(0, 20);
-  })();
 
   const handleFabClick = () => {
     // Open the create menu IMMEDIATELY using the best location we already have.
@@ -2094,64 +2039,6 @@ export function MapPage() {
             <span>Party</span>
           </div>
         </div>
-      )}
-
-      {/* Search bar */}
-      {!pinDialog.open && (
-      <div className="absolute top-3 left-4 right-20 z-[400] flex flex-col items-start gap-2">
-        <div className="rounded-full bg-card/95 backdrop-blur shadow-md border border-border px-3 py-1.5">
-          <LakeSwitcher className="max-w-[240px] text-sm" />
-        </div>
-        {searchOpen ? (
-          <div className="rounded-2xl bg-card shadow-lg border border-border overflow-hidden">
-            <div className="flex items-center gap-2 px-3 py-2">
-              <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-              <input
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search places, docks, pins, and people..."
-                className="flex-1 bg-transparent outline-none text-sm"
-              />
-              <button
-                aria-label="Close search"
-                onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            {searchQuery.trim() && (
-              <div className="max-h-72 overflow-y-auto border-t border-border">
-                {searchResults.length === 0 ? (
-                  <p className="px-4 py-3 text-sm text-muted-foreground">No matches found.</p>
-                ) : (
-                  searchResults.map((r) => (
-                    <button
-                      key={r.key}
-                      onClick={r.onSelect}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-muted text-left transition-colors"
-                    >
-                      <span className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-lg shrink-0">{r.icon}</span>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{r.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">{r.subtitle}</p>
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          <button
-            onClick={() => setSearchOpen(true)}
-            className="flex items-center gap-2 rounded-full bg-card shadow-md border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-muted transition-colors"
-          >
-            <Search className="h-4 w-4" /> Search the lake
-          </button>
-        )}
-      </div>
       )}
 
       {/* Manual location check-in (Apple 5.1.2) */}

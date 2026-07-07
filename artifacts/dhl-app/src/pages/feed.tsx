@@ -612,6 +612,7 @@ export function FeedPage() {
           <div className="flex items-center justify-between pt-1">
             <div className="flex min-w-0 items-center gap-2">
               <span className="shrink-0 font-script text-[30px] font-bold leading-none text-primary">Gillie</span>
+              <span className="h-5 w-px shrink-0 bg-border" aria-hidden />
               <LakeSwitcher className="min-w-0 text-sm" />
             </div>
             <div className="flex items-center gap-1.5">

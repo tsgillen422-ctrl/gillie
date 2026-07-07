@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useLocation } from "wouter";
 import { Home, Users, MessageCircle, MapPin, Bell, Settings, User, Search, Plus } from "lucide-react";
 import { SwipeBack } from "@/components/swipe-back";
+import { LakeSwitcher } from "@/components/LakeSwitcher";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -41,8 +42,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           style={{ paddingTop: "env(safe-area-inset-top)" }}
           className="flex items-center justify-between px-4 min-h-[3rem] border-b border-border bg-card shrink-0 z-50"
         >
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="font-script text-2xl font-bold leading-none text-primary">Gillie</span>
+          <div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
+            <span className="shrink-0 font-script text-2xl font-bold leading-none text-primary">Gillie</span>
+            <span className="h-5 w-px shrink-0 bg-border" aria-hidden />
+            <LakeSwitcher className="min-w-0 text-sm" />
           </div>
           <div className="flex items-center gap-1">
             <Link

@@ -8,4 +8,5 @@
 
 export type SearchParams = {
 q: string;
+lakeId?: number;
 };

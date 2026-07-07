@@ -7299,7 +7299,8 @@ export const DeleteGalleryItemParams = zod.object({
  * @summary Unified search across users, pins, and posts
  */
 export const SearchQueryParams = zod.object({
-  "q": zod.coerce.string()
+  "q": zod.coerce.string(),
+  "lakeId": zod.coerce.number().optional()
 })
 
 export const SearchResponse = zod.object({

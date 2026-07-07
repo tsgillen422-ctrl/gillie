@@ -1731,6 +1731,7 @@ profileUserId?: number;
 
 export type SearchParams = {
 q: string;
+lakeId?: number;
 };
 
 export type GetReportsParams = {
