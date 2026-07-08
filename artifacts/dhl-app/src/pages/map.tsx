@@ -242,6 +242,17 @@ const textScaleForZoom = (zoom: number) => {
   return Math.max(0.5, Math.min(1.0, t));
 };
 
+// Story markers get a gentler zoom curve than boats/pins: slightly smaller
+// when zoomed out, only slightly larger when zoomed in.
+const storyScaleForZoom = (zoom: number) => {
+  const s = 1 + (zoom - BASE_ZOOM) * 0.08;
+  return Math.max(0.7, Math.min(1.15, s));
+};
+// Zoom at which story place-name labels appear (below this, thumbnail only).
+const STORY_LABEL_ZOOM = SECONDARY_PIN_ZOOM;
+// Screen distance (px) under which nearby story markers merge into one stack.
+const STORY_CLUSTER_PX = 34;
+
 type Selected =
   | { kind: "friend"; data: any }
   | { kind: "pin"; data: any }
@@ -580,6 +591,8 @@ export function MapPage() {
   const { data: storyPlaces } = useGetStoryPlaces();
   const [storyPlaceViewer, setStoryPlaceViewer] = useState<{ placeName: string; userId?: number } | null>(null);
   const [storyPlacePreview, setStoryPlacePreview] = useState<string | null>(null);
+  // Bumped on zoomend so story markers re-cluster for the new zoom level.
+  const [storyZoomTick, setStoryZoomTick] = useState(0);
   const createPin = useCreatePin();
   const createDockLabel = useCreateDockLabel();
   const updateLocation = useUpdateMyLocation();
@@ -671,6 +684,21 @@ export function MapPage() {
       toast.error("Photo upload failed. Try again.");
     }
   };
+
+  // Story markers: gentle zoom scaling + labels only when zoomed in close.
+  const applyStoryPresentation = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const zoom = map.getZoom();
+    const s = storyScaleForZoom(zoom);
+    const showLabels = zoom >= STORY_LABEL_ZOOM;
+    for (const [, marker] of storyPlaceMarkerMap.current) {
+      const rootEl = marker.getElement();
+      const wrap = rootEl.querySelector(".story-place-scale") as HTMLElement | null;
+      if (wrap) wrap.style.transform = `scale(${s.toFixed(3)})`;
+      rootEl.classList.toggle("labels-on", showLabels);
+    }
+  }, []);
 
   const applyZoomScale = useCallback((zoom: number) => {
     const s = scaleForZoom(zoom);
@@ -1207,87 +1235,146 @@ export function MapPage() {
   );
 
   // --- "Today on the Lake" story rings ---
-  // Places with active stories get a thumbnail marker wrapped in a story ring
-  // (bright gradient = unseen stories, muted = all seen). Tapping one opens a
-  // small preview card; "View Story" there opens the fullscreen viewer.
+  // Places with active stories get a small thumbnail marker wrapped in a story
+  // ring (bright gradient = unseen stories, muted = all seen). Tapping one
+  // opens a small preview card; "View Story" there opens the fullscreen
+  // viewer. Markers are deliberately compact so they read as map markers, not
+  // floating bubbles: labels only appear when zoomed in or selected, size
+  // tracks zoom, and places that would overlap merge into a single "+N" stack
+  // (tap to zoom in and split it apart).
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !styleReady) return;
     const pool = storyPlaceMarkerMap.current;
     const wanted = new Set<string>();
-    for (const p of storyPlaces ?? []) {
-      if (p.lat == null || p.lng == null) continue;
-      wanted.add(p.placeName);
+
+    // Group story places that would overlap at the current zoom (pixel-space
+    // greedy clustering; re-runs on zoomend via storyZoomTick).
+    const pts = (storyPlaces ?? [])
+      .filter((p) => p.lat != null && p.lng != null)
+      .map((p) => ({ p, xy: map.project([p.lng as number, p.lat as number]) }));
+    const taken = new Array(pts.length).fill(false);
+    const groups: { members: StoryPlace[]; lng: number; lat: number }[] = [];
+    for (let i = 0; i < pts.length; i++) {
+      if (taken[i]) continue;
+      taken[i] = true;
+      const members = [pts[i].p];
+      for (let j = i + 1; j < pts.length; j++) {
+        if (taken[j]) continue;
+        const dx = pts[i].xy.x - pts[j].xy.x;
+        const dy = pts[i].xy.y - pts[j].xy.y;
+        if (dx * dx + dy * dy <= STORY_CLUSTER_PX * STORY_CLUSTER_PX) {
+          taken[j] = true;
+          members.push(pts[j].p);
+        }
+      }
+      groups.push({
+        members,
+        lng: members.reduce((s, m) => s + (m.lng as number), 0) / members.length,
+        lat: members.reduce((s, m) => s + (m.lat as number), 0) / members.length,
+      });
+    }
+
+    const buildDot = (p: StoryPlace) => {
+      const dot = document.createElement("div");
+      dot.className = "story-place-dot";
+      if (p.thumbUrl && p.thumbType === "video") {
+        // Video thumbnails: a muted <video> shows the first frame.
+        const vid = document.createElement("video");
+        vid.className = "story-place-thumb";
+        vid.src = resolveImageSrc(p.thumbUrl);
+        vid.muted = true;
+        vid.playsInline = true;
+        vid.preload = "metadata";
+        dot.appendChild(vid);
+      } else if (p.thumbUrl) {
+        const img = document.createElement("img");
+        img.className = "story-place-thumb";
+        img.src = resolveImageSrc(p.thumbUrl);
+        img.alt = "";
+        img.draggable = false;
+        dot.appendChild(img);
+      } else {
+        // Text-only stories: brand gradient tile instead of a photo.
+        dot.classList.add("text-only");
+        dot.textContent = "🌊";
+      }
+      if (p.thumbType === "video") {
+        const play = document.createElement("div");
+        play.className = "story-place-play";
+        play.innerHTML = `<svg viewBox="0 0 24 24" width="8" height="8" fill="white"><path d="M8 5v14l11-7z"/></svg>`;
+        dot.appendChild(play);
+      }
+      return dot;
+    };
+
+    for (const g of groups) {
+      const isCluster = g.members.length > 1;
+      // Lead = the place with the most stories (its thumb fronts the stack).
+      const lead = [...g.members].sort((a, b) => b.storyCount - a.storyCount)[0];
+      const totalStories = g.members.reduce((s, m) => s + m.storyCount, 0);
+      const allViewed = g.members.every((m) => m.allViewed);
+      const key = isCluster
+        ? `cluster:${g.members.map((m) => m.placeName).sort().join("|")}`
+        : lead.placeName;
+      wanted.add(key);
       // Anything that changes the marker's look forces a rebuild.
-      const sig = `${p.thumbUrl ?? ""}|${p.thumbType ?? ""}|${p.storyCount}|${p.allViewed ? "v" : "n"}`;
-      let marker = pool.get(p.placeName);
+      const sig = `${lead.thumbUrl ?? ""}|${lead.thumbType ?? ""}|${totalStories}|${allViewed ? "v" : "n"}|${g.members.length}`;
+      let marker = pool.get(key);
       if (marker && marker.getElement().dataset.sig !== sig) {
         marker.remove();
-        pool.delete(p.placeName);
+        pool.delete(key);
         marker = undefined;
       }
       if (!marker) {
         const root = document.createElement("div");
         root.className = "story-place-marker";
         root.dataset.sig = sig;
+        const scaleWrap = document.createElement("div");
+        scaleWrap.className = "story-place-scale";
         const ring = document.createElement("div");
-        ring.className = `story-place-ring${p.allViewed ? " viewed" : ""}`;
-        const dot = document.createElement("div");
-        dot.className = "story-place-dot";
-        if (p.thumbUrl && p.thumbType === "video") {
-          // Video thumbnails: a muted <video> shows the first frame.
-          const vid = document.createElement("video");
-          vid.className = "story-place-thumb";
-          vid.src = resolveImageSrc(p.thumbUrl);
-          vid.muted = true;
-          vid.playsInline = true;
-          vid.preload = "metadata";
-          dot.appendChild(vid);
-        } else if (p.thumbUrl) {
-          const img = document.createElement("img");
-          img.className = "story-place-thumb";
-          img.src = resolveImageSrc(p.thumbUrl);
-          img.alt = "";
-          img.draggable = false;
-          dot.appendChild(img);
-        } else {
-          // Text-only stories: brand gradient tile instead of a photo.
-          dot.classList.add("text-only");
-          dot.textContent = "🌊";
-        }
-        if (p.thumbType === "video") {
-          const play = document.createElement("div");
-          play.className = "story-place-play";
-          play.innerHTML = `<svg viewBox="0 0 24 24" width="10" height="10" fill="white"><path d="M8 5v14l11-7z"/></svg>`;
-          dot.appendChild(play);
-        }
-        ring.appendChild(dot);
-        if (p.storyCount > 1) {
+        ring.className = `story-place-ring${allViewed ? " viewed" : ""}`;
+        ring.appendChild(buildDot(lead));
+        // Badge: "+N" = more stories behind the front thumbnail (stacked
+        // places count all their stories together).
+        if (totalStories > 1) {
           const badge = document.createElement("div");
           badge.className = "story-place-badge";
-          badge.textContent = `+${p.storyCount}`;
+          badge.textContent = `+${totalStories - 1}`;
           ring.appendChild(badge);
         }
+        scaleWrap.appendChild(ring);
         const label = document.createElement("div");
         label.className = "story-place-label";
         const nameEl = document.createElement("span");
         nameEl.className = "story-place-name";
-        nameEl.textContent = p.placeName; // textContent — place names are user data
+        // textContent — place names are user data
+        nameEl.textContent = isCluster ? `${g.members.length} spots` : lead.placeName;
         label.appendChild(nameEl);
-        root.appendChild(ring);
-        root.appendChild(label);
-        const name = p.placeName;
-        root.addEventListener("click", (ev) => {
-          ev.stopPropagation();
-          hapticTap();
-          setStoryPlacePreview(name);
-        });
-        marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
-          .setLngLat([p.lng, p.lat])
+        scaleWrap.appendChild(label);
+        root.appendChild(scaleWrap);
+        if (isCluster) {
+          const center: [number, number] = [g.lng, g.lat];
+          root.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            hapticTap();
+            // Zoom in to split the stack into individual story markers.
+            map.easeTo({ center, zoom: Math.min(map.getZoom() + 1.6, 16.5), duration: 350 });
+          });
+        } else {
+          const name = lead.placeName;
+          root.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            hapticTap();
+            setStoryPlacePreview(name);
+          });
+        }
+        marker = new maplibregl.Marker({ element: root, anchor: "center" })
+          .setLngLat([g.lng, g.lat])
           .addTo(map);
-        pool.set(p.placeName, marker);
+        pool.set(key, marker);
       } else {
-        marker.setLngLat([p.lng, p.lat]);
+        marker.setLngLat([g.lng, g.lat]);
       }
     }
     for (const [name, marker] of pool) {
@@ -1296,7 +1383,39 @@ export function MapPage() {
         pool.delete(name);
       }
     }
-  }, [storyPlaces, styleReady]);
+    applyStoryPresentation();
+  }, [storyPlaces, styleReady, storyZoomTick, applyStoryPresentation]);
+
+  // Re-cluster story markers when the zoom settles (pixel distance between
+  // fixed points only changes with zoom, not pan).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    const onZoomEnd = () => setStoryZoomTick((t) => t + 1);
+    map.on("zoomend", onZoomEnd);
+    return () => {
+      map.off("zoomend", onZoomEnd);
+    };
+  }, [styleReady]);
+
+  // Continuous zoom-driven presentation: gentle size scaling and label
+  // visibility (labels only when zoomed in close or the marker is selected).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    applyStoryPresentation();
+    map.on("zoom", applyStoryPresentation);
+    return () => {
+      map.off("zoom", applyStoryPresentation);
+    };
+  }, [styleReady, applyStoryPresentation]);
+
+  // Highlight the tapped story marker (shows its label while previewing).
+  useEffect(() => {
+    for (const [key, marker] of storyPlaceMarkerMap.current) {
+      marker.getElement().classList.toggle("selected", storyPlacePreview === key);
+    }
+  }, [storyPlacePreview, storyPlaces, storyZoomTick]);
 
   // Build the boat supercluster index whenever the grouped set changes, then
   // render. A solo "me" group is excluded here — the dedicated me-marker effect
@@ -3150,23 +3269,27 @@ const MAP_CSS = `
     0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.55); }
     50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
   }
-  /* "Today on the Lake" story rings on places with active stories */
+  /* "Today on the Lake" story rings on places with active stories.
+     Compact map-marker sizing: small thumbnail circle, thin gradient ring,
+     label hidden unless zoomed in (.labels-on) or tapped (.selected). */
   .story-place-marker {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     cursor: pointer;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
   }
+  .story-place-scale {
+    position: relative;
+    transform-origin: center center;
+    will-change: transform;
+  }
   .story-place-ring {
     position: relative;
-    width: 38px; height: 38px;
+    width: 25px; height: 25px;
     border-radius: 50%;
-    padding: 2.5px;
+    padding: 1.5px;
     background: conic-gradient(from 0deg, #2dd4bf, #0ea5e9, #2563eb, #2dd4bf);
-    filter: drop-shadow(0 2px 4px rgba(15,23,42,0.30));
+    filter: drop-shadow(0 2px 4px rgba(15,23,42,0.38));
   }
   .story-place-ring.viewed {
     background: #93b4cd;
@@ -3176,13 +3299,13 @@ const MAP_CSS = `
     width: 100%; height: 100%;
     border-radius: 50%;
     background: #fff;
-    border: 1.5px solid #fff;
+    border: 1px solid #fff;
     overflow: hidden;
     display: flex; align-items: center; justify-content: center;
   }
   .story-place-dot.text-only {
     background: linear-gradient(160deg, #0d9488, #0369a1);
-    font-size: 14px;
+    font-size: 10px;
   }
   .story-place-thumb {
     width: 100%; height: 100%;
@@ -3194,7 +3317,7 @@ const MAP_CSS = `
     position: absolute;
     left: 50%; top: 50%;
     transform: translate(-50%, -50%);
-    width: 17px; height: 17px;
+    width: 12px; height: 12px;
     border-radius: 50%;
     background: rgba(0,0,0,0.5);
     display: flex; align-items: center; justify-content: center;
@@ -3202,38 +3325,48 @@ const MAP_CSS = `
   .story-place-play svg { margin-left: 1px; }
   .story-place-badge {
     position: absolute;
-    top: -3px; right: -5px;
-    min-width: 16px; height: 16px;
-    padding: 0 4px;
+    top: -4px; right: -6px;
+    min-width: 13px; height: 13px;
+    padding: 0 3px;
     border-radius: 999px;
     background: #0ea5e9;
-    border: 1.5px solid #fff;
+    border: 1px solid #fff;
     color: #fff;
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 800;
-    line-height: 13px;
+    line-height: 11px;
     text-align: center;
     box-shadow: 0 1px 3px rgba(0,0,0,0.25);
   }
+  /* Label floats below the ring (absolute, so toggling it never shifts the
+     marker) and only shows when zoomed in or this marker is selected. */
   .story-place-label {
-    margin-top: 2px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: none;
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
     background: rgba(255,255,255,0.92);
-    border-radius: 7px;
-    padding: 1px 6px;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
-    max-width: 110px;
+    border-radius: 6px;
+    padding: 0px 5px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+    max-width: 88px;
+    pointer-events: none;
+  }
+  .story-place-marker.labels-on .story-place-label,
+  .story-place-marker.selected .story-place-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .story-place-name {
-    font-size: 9px;
+    font-size: 8px;
     font-weight: 700;
     color: #0f172a;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 98px;
+    max-width: 78px;
   }
   @keyframes snapPulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.55); }
