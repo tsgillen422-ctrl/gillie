@@ -547,6 +547,7 @@ router.get("/places", async (req, res) => {
     thumbType: string | null;
     allViewed: boolean;
     previews: any[];
+    userIds: Set<number>;
   };
   const byPlace = new Map<string, PlaceAgg>();
   for (const s of stories) {
@@ -563,10 +564,12 @@ router.get("/places", async (req, res) => {
         thumbType: null,
         allViewed: true,
         previews: [],
+        userIds: new Set<number>(),
       };
       byPlace.set(key, agg);
     }
     agg.storyCount += 1;
+    agg.userIds.add(s.userId);
     if (s.createdAt > agg.latestAt) agg.latestAt = s.createdAt;
     if (agg.lat == null && s.lat != null) {
       agg.lat = s.lat;
@@ -599,7 +602,12 @@ router.get("/places", async (req, res) => {
     .sort((a, b) => b.storyCount - a.storyCount)
     // Cap the preview carousel payload; the fullscreen viewer fetches the
     // complete set for a place separately.
-    .map((p) => ({ ...p, latestAt: p.latestAt.toISOString(), previews: p.previews.slice(0, 10) }));
+    .map(({ userIds, ...p }) => ({
+      ...p,
+      latestAt: p.latestAt.toISOString(),
+      previews: p.previews.slice(0, 10),
+      activeUserCount: userIds.size,
+    }));
   res.json(places);
 });
 

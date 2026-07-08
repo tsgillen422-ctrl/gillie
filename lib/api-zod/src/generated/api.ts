@@ -3511,6 +3511,7 @@ export const GetStoryPlacesResponseItem = zod.object({
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish(),
   "storyCount": zod.number(),
+  "activeUserCount": zod.number().optional(),
   "latestAt": zod.string().nullish(),
   "thumbUrl": zod.string().nullish(),
   "thumbType": zod.string().nullish(),

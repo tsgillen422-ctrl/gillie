@@ -31,6 +31,16 @@ export function StoriesRow() {
       <div className="flex items-center gap-2 px-1">
         <div className="h-5 w-1.5 rounded-full bg-primary" />
         <span className="text-sm font-display font-bold tracking-tight text-foreground">Today on the Lake</span>
+        {hasStories && (
+          <button
+            type="button"
+            onClick={() => setViewerIndex(0)}
+            className="ml-auto rounded-full px-2 py-1 text-xs font-bold text-primary hover:bg-primary/10 active:scale-95 transition"
+            data-testid="button-view-all-stories"
+          >
+            View All
+          </button>
+        )}
       </div>
 
       <div className="flex gap-3 overflow-x-auto no-scrollbar pb-1">
@@ -74,25 +84,28 @@ export function StoriesRow() {
             <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Trending places</span>
           </div>
           <div className="flex gap-2 overflow-x-auto no-scrollbar px-1 pb-1">
-            {trending.map((p) => (
-              <button
-                key={p.placeName}
-                type="button"
-                onClick={() => setPlaceViewer(p.placeName)}
-                className="flex shrink-0 items-center gap-2 rounded-full border border-orange-200/60 bg-orange-50/50 px-3 py-1.5 text-left dark:border-orange-900/40 dark:bg-orange-950/20 transition-all hover:bg-orange-100/50 active:scale-95"
-                data-testid={`button-trending-${p.placeName}`}
-              >
-                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-orange-100 dark:bg-orange-900/50">
-                  <Flame className="h-3 w-3 text-orange-600 dark:text-orange-400" />
-                </div>
-                <span className="min-w-0 pr-1">
-                  <span className="block max-w-28 truncate text-[11px] font-bold text-foreground">{p.placeName}</span>
-                  <span className="block text-[9px] text-muted-foreground font-medium uppercase tracking-wide">
-                    {p.storyCount} {p.storyCount === 1 ? "story" : "stories"}
+            {trending.map((p) => {
+              const active =
+                p.activeUserCount ??
+                new Set((p.previews ?? []).map((pv) => pv.userId)).size;
+              return (
+                <button
+                  key={p.placeName}
+                  type="button"
+                  onClick={() => setPlaceViewer(p.placeName)}
+                  className="flex shrink-0 items-center gap-2.5 rounded-2xl border border-orange-200/60 bg-orange-50/50 py-1.5 pl-1.5 pr-3 text-left dark:border-orange-900/40 dark:bg-orange-950/20 transition-all hover:bg-orange-100/50 active:scale-95"
+                  data-testid={`button-trending-${p.placeName}`}
+                >
+                  <PlaceThumb thumbUrl={p.thumbUrl ?? null} thumbType={p.thumbType ?? null} />
+                  <span className="min-w-0 pr-1">
+                    <span className="block max-w-32 truncate text-[11px] font-bold text-foreground">{p.placeName}</span>
+                    <span className="block text-[9px] text-muted-foreground font-medium uppercase tracking-wide">
+                      {p.storyCount} {p.storyCount === 1 ? "story" : "stories"} • {active} active
+                    </span>
                   </span>
-                </span>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -102,6 +115,33 @@ export function StoriesRow() {
         <StoryViewer groups={groups} initialGroupIndex={viewerIndex} meId={me?.id} onClose={() => setViewerIndex(null)} />
       )}
       {placeViewer && <PlaceStoriesViewer placeName={placeViewer} meId={me?.id} onClose={() => setPlaceViewer(null)} />}
+    </div>
+  );
+}
+
+// Small photo/video preview beside a trending place; falls back to a flame.
+function PlaceThumb({ thumbUrl, thumbType }: { thumbUrl: string | null; thumbType: string | null }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [thumbUrl]);
+  const size = "h-9 w-9 rounded-xl object-cover";
+  if (!failed && thumbUrl && thumbType === "photo") {
+    return <img src={resolveImageSrc(thumbUrl)} alt="" className={size} loading="lazy" draggable={false} onError={() => setFailed(true)} />;
+  }
+  if (!failed && thumbUrl && thumbType === "video") {
+    return (
+      <video
+        src={`${resolveImageSrc(thumbUrl)}#t=0.1`}
+        className={size}
+        muted
+        playsInline
+        preload="metadata"
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+  return (
+    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-900/50">
+      <Flame className="h-4 w-4 text-orange-600 dark:text-orange-400" />
     </div>
   );
 }

@@ -14,6 +14,7 @@ export interface StoryPlace {
   /** @nullable */
   lng?: number | null;
   storyCount: number;
+  activeUserCount?: number;
   /** @nullable */
   latestAt?: string | null;
   /** @nullable */

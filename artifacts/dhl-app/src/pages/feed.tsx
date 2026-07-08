@@ -10,7 +10,7 @@ import { StoriesRow } from "@/components/stories/StoriesRow";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link, useSearch, useLocation } from "wouter";
-import { Heart, MessageCircle, Share2, Calendar, CalendarPlus, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, MoreHorizontal, Flag, Bookmark, BookmarkCheck, Link2, Repeat2, Anchor, Sailboat, Search, Bell, Sun, Moon, Cloud, CloudSun, CloudMoon, CloudRain, CloudSnow, CloudFog, CloudLightning, Fish, Camera, Waves, Wind, Gauge, AlertTriangle, Info, CheckCircle2, Droplets, Sunrise, Sunset, ChevronRight, Smile, BarChart3, Hash, Globe, Lock, Pencil, EyeOff, Ban, Compass } from "lucide-react";
+import { Heart, MessageCircle, Share2, Calendar, CalendarPlus, MapPin, Trash2, Plus, ImagePlus, X, Send, Video, Check, Users, MoreVertical, MoreHorizontal, Flag, Bookmark, BookmarkCheck, Link2, Repeat2, Anchor, Sailboat, Search, Bell, Sun, Moon, Cloud, CloudSun, CloudMoon, CloudRain, CloudSnow, CloudFog, CloudLightning, Fish, Camera, Waves, Wind, Gauge, AlertTriangle, Info, CheckCircle2, Droplets, Sunrise, Sunset, ChevronRight, Smile, BarChart3, Hash, Globe, Lock, Pencil, EyeOff, Ban, Compass, Sparkles, Flame, Store } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   DropdownMenu,
@@ -691,26 +691,32 @@ export function FeedPage() {
         <div ref={tabBarSentinelRef} aria-hidden="true" />
         <div className={`sticky top-0 z-20 pt-3 pb-2 bg-muted/90 backdrop-blur-xl border-b border-border/40 shadow-sm transition-transform duration-300 ease-out ${tabBarHidden ? "-translate-y-full" : "translate-y-0"}`}>
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar px-4 pb-1">
-             <Link href="/explore" className="shrink-0 flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-md hover:opacity-90 transition-opacity mr-1">
-               <Compass className="h-4 w-4" /> Explore
-             </Link>
+            {/* Explore opens the Explore hub page (not a feed filter). */}
+            <Link
+              href="/explore"
+              data-testid="tab-explore"
+              className="shrink-0 flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold text-foreground shadow-sm ring-1 ring-black/5 hover:bg-black/5 transition-colors"
+            >
+              <Compass className="h-4 w-4 text-primary" /> Explore
+            </Link>
             {([
-              ["all", "For You"],
-              ["friends", "Friends"],
-              ["community", "Community"],
-              ["event", "Events"],
-              ["fishing", "Fishing"],
-              ["trending", "Trending"],
-              ["business", "Local"],
-              ["saved", "Saved"],
-            ] as const).map(([value, label]) => (
+              ["all", "For You", Sparkles],
+              ["friends", "Friends", Users],
+              ["community", "Community", Waves],
+              // Secondary filters only appear when reached from the Explore
+              // hub (?tab=...), keeping the main bar as the four mockup pills.
+              ...((["event", "fishing", "trending", "business", "saved"] as const).includes(activeTab as any)
+                ? [[activeTab, { event: "Events", fishing: "Fishing", trending: "Trending", business: "Local", saved: "Saved" }[activeTab as "event" | "fishing" | "trending" | "business" | "saved"], { event: Calendar, fishing: Fish, trending: Flame, business: Store, saved: Bookmark }[activeTab as "event" | "fishing" | "trending" | "business" | "saved"]] as const]
+                : []),
+            ] as ReadonlyArray<readonly [string, string, React.ComponentType<{ className?: string }>]>).map(([value, label, Icon]) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setActiveTab(value as any)}
-                className={`relative shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all duration-300 ${activeTab === value ? "bg-white text-primary shadow-sm ring-1 ring-black/5" : "text-muted-foreground hover:bg-black/5 hover:text-foreground"}`}
+                data-testid={`tab-${value}`}
+                className={`relative shrink-0 flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold transition-all duration-300 ${activeTab === value ? "bg-primary text-primary-foreground shadow-md" : "bg-white text-muted-foreground shadow-sm ring-1 ring-black/5 hover:bg-black/5 hover:text-foreground"}`}
               >
-                {label}
+                <Icon className="h-4 w-4" /> {label}
               </button>
             ))}
           </div>

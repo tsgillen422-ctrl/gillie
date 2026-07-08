@@ -3086,6 +3086,8 @@ components:
           type: ["number", "null"]
         storyCount:
           type: integer
+        activeUserCount:
+          type: integer
         latestAt:
           type: ["string", "null"]
         thumbUrl:
