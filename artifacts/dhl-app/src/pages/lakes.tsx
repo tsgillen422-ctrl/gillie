@@ -102,8 +102,8 @@ export function LakesPage() {
   };
 
   return (
-    <div className="min-h-full bg-background pb-24">
-      <header className="sticky top-0 z-30 flex h-14 items-center border-b border-border/50 bg-background/80 px-4 backdrop-blur-md">
+    <div className="flex h-full flex-col bg-background">
+      <header className="z-30 flex h-14 shrink-0 items-center border-b border-border/50 bg-background/80 px-4 backdrop-blur-md">
         <Link
           href="/feed"
           className="-ml-2 flex h-8 w-8 items-center justify-center rounded-full text-foreground transition-colors hover:bg-muted/50"
@@ -116,7 +116,7 @@ export function LakesPage() {
         </h1>
       </header>
 
-      <div className="space-y-4 p-4">
+      <div className="flex-1 space-y-4 overflow-y-auto p-4 pb-24">
         <p className="text-sm text-muted-foreground">
           Every lake is its own hometown community. Pick one to see its map, feed,
           stories, and events — Gillie will remember where you left off.
