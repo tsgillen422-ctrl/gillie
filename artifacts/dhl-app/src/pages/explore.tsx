@@ -49,7 +49,7 @@ export function ExplorePage() {
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-background pb-20">
+    <div className="h-full overflow-y-auto bg-background pb-20">
       <header className="sticky top-0 z-30 flex items-center h-14 px-4 bg-background/80 backdrop-blur-md border-b border-border/50">
         <Link href="/feed" className="flex items-center justify-center w-8 h-8 -ml-2 rounded-full hover:bg-muted/50 transition-colors text-foreground">
           <ChevronLeft className="w-6 h-6" />
