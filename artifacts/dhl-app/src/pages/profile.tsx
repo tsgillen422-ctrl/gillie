@@ -225,7 +225,7 @@ const STARS = [
 
 function RankBadge({ rank }: { rank?: { tier?: number; title?: string; nextTitle?: string | null; nextNeeded?: number | null } | null }) {
   const tier = rank?.tier ?? 3;
-  const title = rank?.title ?? "Dale Hollow Adventurer";
+  const title = rank?.title ?? "Lake Adventurer";
   const p = RANK_PALETTES[tier] ?? RANK_PALETTES[3];
   const gid = `rank-sky-${tier}`;
   return (

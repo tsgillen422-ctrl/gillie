@@ -32,6 +32,7 @@ import {
 import { useUpload } from "@workspace/object-storage-web";
 import { LAKE_PLACES, placeEmoji } from "@/lib/lakePlaces";
 import { useLake } from "@/lib/lake-context";
+import { DEFAULT_LAKE_ID } from "@workspace/lake-config";
 import { FILTER_CATEGORIES, STORY_FILTERS } from "@/lib/storyFilters";
 import { StickerLayer } from "./StickerLayer";
 import { DrawCanvas, type DrawCanvasHandle, type DrawTool } from "./DrawCanvas";
@@ -68,10 +69,11 @@ const EMOJI_CATEGORIES: { id: string; label: string; emojis: string[] }[] = [
 
 // Exclusive Gillie-branded stickers — rendered as styled text stickers so
 // they pass server validation and resize/rotate like everything else.
-const GILLIE_STICKERS: { text: string; font: string; style: string; color: string }[] = [
+// The "Local" sticker is branded with the user's currently selected lake.
+const gillieStickers = (lakeLocal: string): { text: string; font: string; style: string; color: string }[] => [
   { text: "GILLIE 🌊", font: "heavy", style: "gradient", color: "#ffffff" },
   { text: "Lake Life", font: "script", style: "bubble", color: "#0d9488" },
-  { text: "Dale Hollow\nLocal", font: "heavy", style: "outline", color: "#facc15" },
+  { text: `${lakeLocal}\nLocal`, font: "heavy", style: "outline", color: "#facc15" },
   { text: "Catch of\nthe Day 🎣", font: "heavy", style: "shadow", color: "#ffffff" },
   { text: "Lake Mode: ON", font: "mono", style: "neon", color: "#38bdf8" },
   { text: "Boat Hair,\nDon't Care", font: "script", style: "shadow", color: "#ffffff" },
@@ -179,7 +181,9 @@ export function StoryEditor({
   const createStory = useCreateStory();
   const queryClient = useQueryClient();
   const { data: me } = useGetMe();
-  const { lakeId } = useLake();
+  const { lakeId, lake } = useLake();
+  // Built-in named places only exist for Dale Hollow; other lakes get none.
+  const availablePlaces = lakeId === DEFAULT_LAKE_ID ? LAKE_PLACES : [];
   const { data: conditions } = useGetConditions({ lakeId });
   const fleet: any[] = (me as any)?.fleet ?? [];
 
@@ -231,7 +235,7 @@ export function StoryEditor({
     const place = LAKE_PLACES.find((p) => p.name === placeName);
     addSticker({
       type: "location",
-      data: place ? { name: place.name, emoji: placeEmoji(place.category) } : { name: "Dale Hollow Lake", emoji: "📍" },
+      data: place ? { name: place.name, emoji: placeEmoji(place.category) } : { name: lake.name, emoji: "📍" },
     });
   };
 
@@ -571,7 +575,7 @@ export function StoryEditor({
             )}
             {stickerTab === "gillie" && (
               <div className="grid grid-cols-2 gap-2">
-                {GILLIE_STICKERS.map((g) => (
+                {gillieStickers(lake.name.replace(/\s+Lake$/i, "")).map((g) => (
                   <button
                     key={g.text}
                     type="button"
@@ -762,7 +766,7 @@ export function StoryEditor({
             </SelectTrigger>
             <SelectContent className="z-[110]">
               <SelectItem value="none">No location</SelectItem>
-              {LAKE_PLACES.map((p) => (
+              {availablePlaces.map((p) => (
                 <SelectItem key={p.name} value={p.name}>
                   {placeEmoji(p.category)} {p.name}
                 </SelectItem>

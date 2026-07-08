@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { UserPlus, Check, Sparkles, Users } from "lucide-react";
 import { toast } from "sonner";
+import { useLake } from "@/lib/lake-context";
 
 const DISMISS_KEY = "dhl-suggested-friends-dismissed";
 const OPEN_EVENT = "dhl:open-suggested-friends";
@@ -142,6 +143,7 @@ export function SuggestedFriendsList() {
  */
 export function SuggestedFriendsDrawer() {
   const { data } = useGetFriendSuggestions();
+  const { lake } = useLake();
   const [open, setOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -174,7 +176,7 @@ export function SuggestedFriendsDrawer() {
           <DrawerTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" /> Suggested Friends
           </DrawerTitle>
-          <DrawerDescription>People you may know around Dale Hollow Lake.</DrawerDescription>
+          <DrawerDescription>People you may know around {lake.name}.</DrawerDescription>
         </DrawerHeader>
         <div className="px-4 pb-6 space-y-3 overflow-y-auto max-h-[60vh]">
           {data.map((user) => (
@@ -199,6 +201,7 @@ export function SuggestedFriendsDrawer() {
  */
 export function SuggestedFriendsButton() {
   const { data } = useGetFriendSuggestions();
+  const { lake } = useLake();
   if (!data || data.length === 0) return null;
 
   return (
@@ -213,7 +216,7 @@ export function SuggestedFriendsButton() {
       <div className="min-w-0 flex-1">
         <div className="text-sm font-semibold text-foreground">Suggested friends</div>
         <div className="truncate text-xs text-muted-foreground">
-          {data.length} {data.length === 1 ? "person" : "people"} you may know around Dale Hollow
+          {data.length} {data.length === 1 ? "person" : "people"} you may know around {lake.name}
         </div>
       </div>
       <UserPlus className="h-5 w-5 shrink-0 text-muted-foreground" />

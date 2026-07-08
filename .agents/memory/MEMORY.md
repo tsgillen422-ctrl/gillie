@@ -63,3 +63,4 @@
 - [Boat type catalog](boat-type-catalog.md) — boat types live in @workspace/boat-config; stored values speedboat/fishing keep old names (labels renamed); always use boatLabelFor.
 - [wouter param decoding](wouter-param-decoding.md) — wouter v3 params come pre-decoded (never decodeURIComponent again); maplibre Map() throws w/o WebGL, wrap in try/catch + fallback.
 - [Multi-lake model](multi-lake-model.md) — lakeId OPTIONAL everywhere (old iOS builds), default lake 1; gate Dale Hollow-only data (LAKE_PLACES/CWMS) on lakeId===1; invalidate with no-arg query keys.
+- [Lake community scoping](lake-community-scoping.md) — each lake is its own community; ONLY Friends/Saved cross lakes (w/ 📍 badge); no lake picker in composer.

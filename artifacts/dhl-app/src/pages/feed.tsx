@@ -199,10 +199,13 @@ export function FeedPage() {
   const isSavedTab = activeTab === "saved";
   const isTrendingTab = activeTab === "trending";
   const isFishingTab = activeTab === "fishing";
-  const { lakeId } = useLake();
+  const { lakeId, lake } = useLake();
+  // Friends feed intentionally spans lakes: posts from friends on other lakes
+  // appear here (with a lake label on the card). Every other tab is scoped to
+  // the currently selected lake community.
   const feedParams =
     activeTab === "friends"
-      ? { audience: "friends" as const, lakeId }
+      ? { audience: "friends" as const }
       : activeTab === "community"
         ? { audience: "community" as const, lakeId }
         : activeTab === "event" || activeTab === "business"
@@ -912,7 +915,7 @@ export function FeedPage() {
               {createPost.isPending ? "Posting..." : "Post"}
             </Button>
           </div>
-          <DialogDescription className="sr-only">Share something with the Dale Hollow community.</DialogDescription>
+          <DialogDescription className="sr-only">Share something with the {lake.name} community.</DialogDescription>
 
           <div className="max-h-[70vh] space-y-4 overflow-y-auto px-4 py-4">
             <div className="flex items-center gap-3">
@@ -1124,7 +1127,7 @@ export function FeedPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="community">
-                        <span className="flex items-center gap-1.5"><Globe className="h-3.5 w-3.5" /> Dale Hollow Community</span>
+                        <span className="flex items-center gap-1.5"><Globe className="h-3.5 w-3.5" /> {lake.name} Community</span>
                       </SelectItem>
                       <SelectItem value="friends">
                         <span className="flex items-center gap-1.5"><Lock className="h-3.5 w-3.5" /> Friends only</span>

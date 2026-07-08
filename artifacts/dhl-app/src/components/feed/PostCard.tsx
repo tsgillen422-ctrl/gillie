@@ -37,6 +37,8 @@ import { LikesDialog } from "./LikesDialog";
 import { toast } from "sonner";
 import { useUpload } from "@workspace/object-storage-web";
 import { compressImage } from "@/lib/compress";
+import { lakeById } from "@workspace/lake-config";
+import { useLake } from "@/lib/lake-context";
 
 function ReactionButton({ post, onReact }: { post: any; onReact: (reaction: ReactionKey) => void }) {
   const [pickerOpen, setPickerOpen] = React.useState(false);
@@ -317,6 +319,7 @@ export function PostCard({
   onShareToProfile,
   onUpdatePost,
 }: any) {
+  const { lakeId: currentLakeId } = useLake();
   const [showComments, setShowComments] = React.useState(false);
   const [showLikes, setShowLikes] = React.useState(false);
   const [reportOpen, setReportOpen] = React.useState(false);
@@ -483,6 +486,15 @@ export function PostCard({
           </div>
           <div className="flex items-center text-[11px] font-medium text-muted-foreground mt-0.5 gap-1.5 flex-wrap">
             <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
+            {post.lakeId != null && post.lakeId !== currentLakeId && (
+              <>
+                <span className="text-muted-foreground/50">•</span>
+                <span className="flex items-center gap-0.5 text-primary/80" data-testid={`badge-post-lake-${post.id}`}>
+                  <MapPin className="h-3 w-3" />
+                  {lakeById(post.lakeId).name}
+                </span>
+              </>
+            )}
             {post.placeName && (
               <>
                 <span className="text-muted-foreground/50">•</span>

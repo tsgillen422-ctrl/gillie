@@ -5,7 +5,7 @@ import { MapPin, Anchor, Fish, Users, ShieldAlert, Waves } from "lucide-react";
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 const features = [
-  { icon: MapPin, title: "Live Lake Map", text: "See checked-in friends, hazards, and hot spots on Dale Hollow." },
+  { icon: MapPin, title: "Live Lake Map", text: "See checked-in friends, hazards, and hot spots on your lake." },
   { icon: Fish, title: "Log Your Catches", text: "Track and share your best catches with the community." },
   { icon: Users, title: "Boater Network", text: "Follow friends, message, and find people on the water." },
   { icon: ShieldAlert, title: "Stay Safe", text: "Report hazards, share conditions, and send an SOS in a pinch." },
@@ -38,7 +38,7 @@ export function LandingPage() {
             <span className="text-primary">your lake.</span>
           </h1>
           <p className="mt-5 text-lg text-muted-foreground max-w-xl mx-auto">
-            The social map for Dale Hollow Lake. Find friends on the water, drop pins,
+            The social map for your lake community. Find friends on the water, drop pins,
             log catches, and stay safe — all in one place.
           </p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
