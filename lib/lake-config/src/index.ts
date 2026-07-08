@@ -18,7 +18,9 @@ export type Lake = {
  * content.
  */
 export const LAKES: Lake[] = [
-  { id: 1, name: "Dale Hollow Lake", slug: "dale-hollow", region: "Tennessee/Kentucky", lat: 36.5384, lng: -85.3094, zoom: 12 },
+  // Center matches the map page's original proven view — over the main lake
+  // body west of Star Point, not the land east of it.
+  { id: 1, name: "Dale Hollow Lake", slug: "dale-hollow", region: "Tennessee/Kentucky", lat: 36.53, lng: -85.37, zoom: 12 },
   { id: 2, name: "Lake Cumberland", slug: "lake-cumberland", region: "Kentucky", lat: 36.87, lng: -85.05, zoom: 10 },
   { id: 3, name: "Center Hill Lake", slug: "center-hill", region: "Tennessee", lat: 36.03, lng: -85.78, zoom: 11 },
   { id: 4, name: "Norris Lake", slug: "norris", region: "Tennessee", lat: 36.32, lng: -83.94, zoom: 11 },
