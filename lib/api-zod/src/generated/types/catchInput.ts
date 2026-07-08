@@ -16,4 +16,9 @@ export interface CatchInput {
   lng?: number;
   isPrivate?: boolean;
   caughtAt?: string;
+  /**
+     * Which lake the catch belongs to (defaults to Dale Hollow Lake)
+     * @nullable
+     */
+  lakeId?: number | null;
 }

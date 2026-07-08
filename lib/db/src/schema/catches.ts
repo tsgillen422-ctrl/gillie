@@ -6,6 +6,8 @@ import { usersTable } from "./users";
 export const catchesTable = pgTable("catches", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => usersTable.id),
+  // Which lake community the catch belongs to; 1 (Dale Hollow) for legacy rows.
+  lakeId: integer("lake_id").notNull().default(1),
   species: text("species").notNull(),
   weight: real("weight"),
   length: real("length"),

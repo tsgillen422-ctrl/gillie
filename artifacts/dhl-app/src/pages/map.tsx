@@ -588,7 +588,7 @@ export function MapPage() {
     () => (lakeId === DEFAULT_LAKE_ID ? LAKE_PLACES.filter((p) => !hiddenPlaceKeys.has(p.name)) : []),
     [hiddenPlaceKeys, lakeId],
   );
-  const { data: storyPlaces } = useGetStoryPlaces();
+  const { data: storyPlaces } = useGetStoryPlaces({ lakeId });
   const [storyPlaceViewer, setStoryPlaceViewer] = useState<{ placeName: string; userId?: number } | null>(null);
   const [storyPlacePreview, setStoryPlacePreview] = useState<string | null>(null);
   // Bumped on zoomend so story markers re-cluster for the new zoom level.

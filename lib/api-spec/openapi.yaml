@@ -898,6 +898,21 @@ paths:
                 items:
                   $ref: "#/components/schemas/Lake"
 
+  /lakes/overview:
+    get:
+      operationId: getLakesOverview
+      tags: [lakes]
+      summary: Per-lake community activity stats, ranked by trending score
+      responses:
+        "200":
+          description: One entry per supported lake, most trending first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LakeOverview"
+
   /stories:
     get:
       operationId: getStories
@@ -943,6 +958,13 @@ paths:
       operationId: getStoryPlaces
       tags: [stories]
       summary: Active story counts by tagged place (for map rings + trending)
+      parameters:
+        - name: lakeId
+          in: query
+          required: false
+          description: Only include stories posted to this lake
+          schema:
+            type: integer
       responses:
         "200":
           description: Places with active stories
@@ -964,6 +986,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: lakeId
+          in: query
+          required: false
+          description: Scope to one lake so same-named places on other lakes don't mix (omitted by older clients)
+          schema:
+            type: integer
       responses:
         "200":
           description: Story groups at this place
@@ -1798,6 +1826,13 @@ paths:
       operationId: getPostsSummary
       tags: [posts]
       summary: Get a quick summary of community activity
+      parameters:
+        - name: lakeId
+          in: query
+          required: false
+          description: Scope the summary to one lake's community
+          schema:
+            type: integer
       responses:
         "200":
           description: Activity summary
@@ -2142,6 +2177,12 @@ paths:
           in: query
           required: false
           description: When set, returns the given user's catches (public only unless it's the current user).
+          schema:
+            type: integer
+        - name: lakeId
+          in: query
+          required: false
+          description: Only include catches logged on this lake (ignored when profileUserId is set)
           schema:
             type: integer
       responses:
@@ -3453,6 +3494,34 @@ components:
           type: number
           description: Default map zoom level for this lake
 
+    LakeOverview:
+      type: object
+      required: [id, name, slug, region, activeUsers, storyCount, liveEvents, recentPosts, trendingScore]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        region:
+          type: string
+        activeUsers:
+          type: integer
+          description: People active this week (checked in now, or posted/storied in the last 7 days)
+        storyCount:
+          type: integer
+          description: Live (non-expired) stories
+        liveEvents:
+          type: integer
+          description: Events happening today or later
+        recentPosts:
+          type: integer
+          description: Posts in the last 7 days
+        trendingScore:
+          type: integer
+          description: Weighted activity blend used to rank lakes
+
     DockLabelInput:
       type: object
       required: [label, lat, lng]
@@ -3934,6 +4003,8 @@ components:
           type: integer
         userId:
           type: integer
+        lakeId:
+          type: integer
         user:
           $ref: "#/components/schemas/User"
         species:
@@ -3981,6 +4052,9 @@ components:
           type: boolean
         caughtAt:
           type: string
+        lakeId:
+          type: ["integer", "null"]
+          description: Which lake the catch belongs to (defaults to Dale Hollow Lake)
 
     GalleryItem:
       type: object

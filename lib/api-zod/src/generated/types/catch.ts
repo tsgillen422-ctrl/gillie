@@ -10,6 +10,7 @@ import type { User } from './user';
 export interface Catch {
   id: number;
   userId: number;
+  lakeId?: number;
   user?: User;
   species: string;
   /** @nullable */

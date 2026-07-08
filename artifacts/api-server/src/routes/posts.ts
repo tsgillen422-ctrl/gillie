@@ -289,25 +289,35 @@ router.post("/:postId/share", async (req, res) => {
 
 router.get("/summary", async (req, res) => {
   const uid = currentUserId(req);
+  // Optional lake scoping so the community overview reflects one lake only.
+  // Older iOS builds don't send lakeId — omitting it keeps the global counts.
+  const rawLakeId = req.query.lakeId != null ? Number(req.query.lakeId) : undefined;
+  const lakeId =
+    rawLakeId !== undefined ? (isValidLakeId(rawLakeId) ? rawLakeId : DEFAULT_LAKE_ID) : undefined;
+  const lakePosts = lakeId !== undefined ? eq(postsTable.lakeId, lakeId) : undefined;
   // Demo authors' content is invisible to anyone not in Demo Mode (hidden is
   // empty for the reviewer, so they still see the full demo world).
   const hidden = await getHiddenDemoUserIds(uid);
+  const notHidden = hidden.length ? notInArray(postsTable.userId, hidden) : undefined;
   const eventOnly = eq(postsTable.postType, "event");
   const [postCountResult] = await db
     .select({ value: count() })
     .from(postsTable)
-    .where(hidden.length ? notInArray(postsTable.userId, hidden) : undefined);
+    .where(and(notHidden, lakePosts));
   const [eventCountResult] = await db
     .select({ value: count() })
     .from(postsTable)
-    .where(hidden.length ? and(eventOnly, notInArray(postsTable.userId, hidden)) : eventOnly);
+    .where(and(eventOnly, notHidden, lakePosts));
   // "Pins" must match exactly what the viewer sees via GET /pins (and on the
   // map): filtered by canViewPin (own, approved public/community, or
   // friends-only from a friend). A raw count() of every row over-counts
   // unapproved pins and other people's friends-only pins. We reuse pins.ts's
   // own canViewPin + getFriendIds so the count never drifts from the list.
   const pinFriendIds = await getPinFriendIds(uid);
-  const allPins = await db.select().from(pinsTable);
+  const allPins = await db
+    .select()
+    .from(pinsTable)
+    .where(lakeId !== undefined ? eq(pinsTable.lakeId, lakeId) : undefined);
   const visiblePins = allPins.filter((pin) => canViewPin(pin, uid, pinFriendIds));
   // "Now on the water" = users the map has detected as geospatially over water
   // (not on land at marinas/homes), still sharing location, and seen recently.
@@ -324,14 +334,18 @@ router.get("/summary", async (req, res) => {
         eq(usersTable.isOnWater, true),
         // Apple 5.1.2: only count people with an active (non-expired) check-in.
         gt(usersTable.locationSharingExpiresAt, new Date()),
-        gte(usersTable.lastSeen, onlineSince)
+        gte(usersTable.lastSeen, onlineSince),
+        // currentLakeId predates multi-lake; null means the default lake (1).
+        lakeId !== undefined
+          ? sql`coalesce(${usersTable.currentLakeId}, 1) = ${lakeId}`
+          : undefined
       )
     );
 
   const upcomingEvents = await db
     .select()
     .from(postsTable)
-    .where(hidden.length ? and(eventOnly, notInArray(postsTable.userId, hidden)) : eventOnly)
+    .where(and(eventOnly, notHidden, lakePosts))
     .orderBy(desc(postsTable.createdAt))
     .limit(3);
 
@@ -362,9 +376,11 @@ router.get("/summary", async (req, res) => {
     .select({ value: count() })
     .from(catchesTable)
     .where(
-      hidden.length
-        ? and(eq(catchesTable.isPrivate, false), notInArray(catchesTable.userId, hidden))
-        : eq(catchesTable.isPrivate, false)
+      and(
+        eq(catchesTable.isPrivate, false),
+        hidden.length ? notInArray(catchesTable.userId, hidden) : undefined,
+        lakeId !== undefined ? eq(catchesTable.lakeId, lakeId) : undefined
+      )
     );
 
   res.json({

@@ -514,11 +514,18 @@ async function notifyFollowersOfStory(uid: number, story: typeof storiesTable.$i
 
 router.get("/places", async (req, res) => {
   const uid = currentUserId(req);
+  // Optional lake scoping so each lake's map only shows its own stories.
+  // Older iOS builds don't send lakeId — omitting it keeps the old behavior.
+  const rawLakeId = req.query.lakeId != null ? Number(req.query.lakeId) : undefined;
   const { where } = await visibleStoriesWhere(uid);
+  const conds = [where, sql`${storiesTable.placeName} is not null`];
+  if (rawLakeId !== undefined) {
+    conds.push(eq(storiesTable.lakeId, isValidLakeId(rawLakeId) ? rawLakeId : DEFAULT_LAKE_ID));
+  }
   const stories = await db
     .select()
     .from(storiesTable)
-    .where(and(where, sql`${storiesTable.placeName} is not null`))
+    .where(and(...conds))
     .orderBy(desc(storiesTable.createdAt));
 
   // Author info + my viewed state for every story so the map can render
@@ -600,11 +607,18 @@ router.get("/place/:placeName", async (req, res) => {
   const uid = currentUserId(req);
   const placeName = String(req.params.placeName ?? "").trim();
   if (!placeName) return res.status(400).json({ error: "placeName required" });
+  // Optional lake scoping so identically-named places on different lakes don't
+  // mix stories. Older iOS builds omit lakeId — that keeps the old behavior.
+  const rawLakeId = req.query.lakeId != null ? Number(req.query.lakeId) : undefined;
   const { where } = await visibleStoriesWhere(uid);
+  const conds = [where, sql`lower(${storiesTable.placeName}) = ${placeName.toLowerCase()}`];
+  if (rawLakeId !== undefined) {
+    conds.push(eq(storiesTable.lakeId, isValidLakeId(rawLakeId) ? rawLakeId : DEFAULT_LAKE_ID));
+  }
   const stories = await db
     .select()
     .from(storiesTable)
-    .where(and(where, sql`lower(${storiesTable.placeName}) = ${placeName.toLowerCase()}`))
+    .where(and(...conds))
     .orderBy(asc(storiesTable.createdAt));
   res.json(await groupStories(uid, stories));
 });

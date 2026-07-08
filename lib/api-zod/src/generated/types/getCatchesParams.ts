@@ -11,4 +11,8 @@ export type GetCatchesParams = {
  * When set, returns the given user's catches (public only unless it's the current user).
  */
 profileUserId?: number;
+/**
+ * Only include catches logged on this lake (ignored when profileUserId is set)
+ */
+lakeId?: number;
 };

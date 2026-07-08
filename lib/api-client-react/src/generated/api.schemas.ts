@@ -829,6 +829,23 @@ export interface Lake {
   zoom: number;
 }
 
+export interface LakeOverview {
+  id: number;
+  name: string;
+  slug: string;
+  region: string;
+  /** People active this week (checked in now, or posted/storied in the last 7 days) */
+  activeUsers: number;
+  /** Live (non-expired) stories */
+  storyCount: number;
+  /** Events happening today or later */
+  liveEvents: number;
+  /** Posts in the last 7 days */
+  recentPosts: number;
+  /** Weighted activity blend used to rank lakes */
+  trendingScore: number;
+}
+
 export interface DockLabelInput {
   label: string;
   emoji?: string;
@@ -1254,6 +1271,7 @@ export interface Conditions {
 export interface Catch {
   id: number;
   userId: number;
+  lakeId?: number;
   user?: User;
   species: string;
   /** @nullable */
@@ -1284,6 +1302,11 @@ export interface CatchInput {
   lng?: number;
   isPrivate?: boolean;
   caughtAt?: string;
+  /**
+     * Which lake the catch belongs to (defaults to Dale Hollow Lake)
+     * @nullable
+     */
+  lakeId?: number | null;
 }
 
 export type GalleryItemMediaType = typeof GalleryItemMediaType[keyof typeof GalleryItemMediaType];
@@ -1625,6 +1648,20 @@ export type GetStoriesParams = {
 lakeId?: number;
 };
 
+export type GetStoryPlacesParams = {
+/**
+ * Only include stories posted to this lake
+ */
+lakeId?: number;
+};
+
+export type GetPlaceStoriesParams = {
+/**
+ * Scope to one lake so same-named places on other lakes don't mix (omitted by older clients)
+ */
+lakeId?: number;
+};
+
 export type GetPinsParams = {
 type?: GetPinsType;
 /**
@@ -1708,6 +1745,13 @@ export const SearchGifsKind = {
   stickers: 'stickers',
 } as const;
 
+export type GetPostsSummaryParams = {
+/**
+ * Scope the summary to one lake's community
+ */
+lakeId?: number;
+};
+
 export type GetActiveHazardsParams = {
 /**
  * Only include hazards on this lake
@@ -1720,6 +1764,10 @@ export type GetCatchesParams = {
  * When set, returns the given user's catches (public only unless it's the current user).
  */
 profileUserId?: number;
+/**
+ * Only include catches logged on this lake (ignored when profileUserId is set)
+ */
+lakeId?: number;
 };
 
 export type GetGalleryParams = {

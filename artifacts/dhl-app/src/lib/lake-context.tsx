@@ -5,6 +5,9 @@ import { lakeById, isValidLakeId, type Lake } from "@workspace/lake-config";
  * Keyed per user so account switches on a shared device don't mix histories. */
 const recentsKey = (userId: string | number | null | undefined) =>
   `gillie:recentLakeIds${userId != null ? `:${userId}` : ""}`;
+/** The lake the user was last browsing — the app reopens to it next launch. */
+const selectedKey = (userId: string | number | null | undefined) =>
+  `gillie:selectedLakeId${userId != null ? `:${userId}` : ""}`;
 const MAX_RECENTS = 5;
 
 type LakeContextValue = {
@@ -40,10 +43,30 @@ function writeRecents(key: string, ids: number[]) {
   }
 }
 
+function readSelected(key: string): number | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const id = Number(raw);
+    return isValidLakeId(id) ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSelected(key: string, id: number) {
+  try {
+    localStorage.setItem(key, String(id));
+  } catch {
+    // localStorage unavailable (private mode) — selection is session-only.
+  }
+}
+
 /**
- * Provides the currently-selected lake. The app always opens to the user's
- * primary (home) lake; browsing another lake lasts for the session and is
- * remembered in the Recent Lakes list.
+ * Provides the currently-selected lake. The app reopens to the lake the user
+ * was last browsing (falling back to their primary/home lake), so switching
+ * communities sticks across launches. Browsing history also feeds the
+ * Recent Lakes list in the switcher.
  */
 export function LakeProvider({
   primaryLakeId,
@@ -56,11 +79,15 @@ export function LakeProvider({
 }) {
   const homeId = isValidLakeId(primaryLakeId ?? undefined) ? (primaryLakeId as number) : null;
   const storageKey = recentsKey(userId);
-  const [lakeId, setLakeIdState] = useState<number>(() => lakeById(homeId).id);
+  const lastKey = selectedKey(userId);
+  const [lakeId, setLakeIdState] = useState<number>(
+    () => readSelected(lastKey) ?? lakeById(homeId).id,
+  );
   const [recentLakeIds, setRecentLakeIds] = useState<number[]>(() => readRecents(storageKey));
 
   const setLakeId = useCallback((id: number) => {
     const valid = lakeById(id).id;
+    writeSelected(lastKey, valid);
     setLakeIdState((prev) => {
       if (prev !== valid) {
         // Remember the lake we're leaving so it shows up under Recent Lakes.
@@ -72,7 +99,7 @@ export function LakeProvider({
       }
       return valid;
     });
-  }, [storageKey]);
+  }, [storageKey, lastKey]);
 
   const value = useMemo<LakeContextValue>(
     () => ({

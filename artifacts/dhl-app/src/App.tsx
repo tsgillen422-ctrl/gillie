@@ -21,6 +21,7 @@ import { LandingPage } from "@/pages/landing";
 import { MapPage } from "@/pages/map";
 import { FeedPage } from "@/pages/feed";
 import { ExplorePage } from "@/pages/explore";
+import { LakesPage } from "@/pages/lakes";
 import { MessagesPage } from "@/pages/messages";
 import { MessageThreadPage } from "@/pages/message-thread";
 import { MessageSettingsPage } from "@/pages/message-settings";
@@ -324,14 +325,17 @@ function AuthedApp() {
     return <TermsGate />;
   }
 
+  // key={me.id} remounts the provider on account switch so one user's lake
+  // selection/recents never leak into another account on a shared device.
   return (
-    <LakeProvider primaryLakeId={me.primaryLakeId} userId={me.id}>
+    <LakeProvider key={me.id} primaryLakeId={me.primaryLakeId} userId={me.id}>
     <AppLayout>
       <Switch>
         <Route path="/" component={MapPage} />
         <Route path="/map" component={MapPage} />
         <Route path="/feed" component={FeedPage} />
         <Route path="/explore" component={ExplorePage} />
+        <Route path="/lakes" component={LakesPage} />
         <Route path="/messages" component={MessagesPage} />
         <Route path="/messages/:id/settings" component={MessageSettingsPage} />
         <Route path="/messages/:id" component={MessageThreadPage} />

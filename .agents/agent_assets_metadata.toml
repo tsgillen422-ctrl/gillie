@@ -54,6 +54,96 @@ uri = "file://artifacts/gillie-mobile/assets/images/icon.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "w4PPs4yzmyUKVqLMlnx_g"
+uri = "file://artifacts/dhl-app/public/lakes/lake-mead.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "oxKLdJ5OXsrN1H-i6KkdJ"
+uri = "file://artifacts/dhl-app/public/lakes/table-rock.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "03Ubu-qmuuNd3SZ_z55Zl"
+uri = "file://artifacts/dhl-app/public/lakes/smith-lake.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "3QQlfjnhhyIrEVLMcUn_Q"
+uri = "file://artifacts/dhl-app/public/lakes/lake-martin.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "VLwSBwt1I0qbUfkD2vyE9"
+uri = "file://artifacts/dhl-app/public/lakes/lake-texoma.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "hSsXruMmmKq_L0W9jDM8Q"
+uri = "file://artifacts/dhl-app/public/lakes/dale-hollow.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "uaj9qt6lwoDeQWuj0edcQ"
+uri = "file://artifacts/dhl-app/public/lakes/lake-tahoe.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "-aF5WegmzlYa7pZ4NC-bX"
+uri = "file://artifacts/dhl-app/public/lakes/lake-champlain.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "CYLrK1RHXTMeo7lweTnSU"
+uri = "file://artifacts/dhl-app/public/lakes/norris.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "9ucdS08UO8XYNo7cPVCUZ"
+uri = "file://artifacts/dhl-app/public/lakes/lake-of-the-ozarks.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "gOZN-nsJdjIhrzTOKJXFA"
+uri = "file://artifacts/dhl-app/public/lakes/shasta.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "AfTApZ2Dt_AHqz9ed6qbI"
+uri = "file://artifacts/dhl-app/public/lakes/lake-lanier.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "EZtT9K9uMJcGCzxNmonte"
+uri = "file://artifacts/dhl-app/public/lakes/lake-travis.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "xFaKpzFHwR-qzUBXWPZTA"
+uri = "file://artifacts/dhl-app/public/lakes/lake-norman.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "syRMxOI7BTFV-DYSvQhh-"
+uri = "file://artifacts/dhl-app/public/lakes/lake-powell.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "T5YDjCAIoQUUwTlifm7eU"
 uri = "file://screenshots/gallery-fixed.jpg"

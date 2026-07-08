@@ -48,9 +48,12 @@ import type {
   GetFriendLocationsParams,
   GetGalleryParams,
   GetPinsParams,
+  GetPlaceStoriesParams,
   GetPostsParams,
+  GetPostsSummaryParams,
   GetReportsParams,
   GetStoriesParams,
+  GetStoryPlacesParams,
   GifResult,
   GroupConversationInput,
   HealthStatus,
@@ -60,6 +63,7 @@ import type {
   HighlightInput,
   HighlightStory,
   Lake,
+  LakeOverview,
   LakeStatusInput,
   LocationUpdate,
   Message,
@@ -3605,6 +3609,83 @@ export function useGetLakes<TData = Awaited<ReturnType<typeof getLakes>>, TError
 
 
 
+export const getGetLakesOverviewUrl = () => {
+
+
+
+
+  return `/api/lakes/overview`
+}
+
+/**
+ * @summary Per-lake community activity stats, ranked by trending score
+ */
+export const getLakesOverview = async ( options?: RequestInit): Promise<LakeOverview[]> => {
+
+  return customFetch<LakeOverview[]>(getGetLakesOverviewUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLakesOverviewQueryKey = () => {
+    return [
+    `/api/lakes/overview`
+    ] as const;
+    }
+
+
+export const getGetLakesOverviewQueryOptions = <TData = Awaited<ReturnType<typeof getLakesOverview>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLakesOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLakesOverviewQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLakesOverview>>> = ({ signal }) => getLakesOverview({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLakesOverview>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLakesOverviewQueryResult = NonNullable<Awaited<ReturnType<typeof getLakesOverview>>>
+export type GetLakesOverviewQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Per-lake community activity stats, ranked by trending score
+ */
+
+export function useGetLakesOverview<TData = Awaited<ReturnType<typeof getLakesOverview>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLakesOverview>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLakesOverviewQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
 export const getGetStoriesUrl = (params?: GetStoriesParams,) => {
   const normalizedParams = new URLSearchParams();
 
@@ -3760,20 +3841,27 @@ export const useCreateStory = <TError = ErrorType<unknown>,
       return useMutation(getCreateStoryMutationOptions(options));
     }
 
-export const getGetStoryPlacesUrl = () => {
+export const getGetStoryPlacesUrl = (params?: GetStoryPlacesParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/stories/places`
+  return stringifiedParams.length > 0 ? `/api/stories/places?${stringifiedParams}` : `/api/stories/places`
 }
 
 /**
  * @summary Active story counts by tagged place (for map rings + trending)
  */
-export const getStoryPlaces = async ( options?: RequestInit): Promise<StoryPlace[]> => {
+export const getStoryPlaces = async (params?: GetStoryPlacesParams, options?: RequestInit): Promise<StoryPlace[]> => {
 
-  return customFetch<StoryPlace[]>(getGetStoryPlacesUrl(),
+  return customFetch<StoryPlace[]>(getGetStoryPlacesUrl(params),
   {
     ...options,
     method: 'GET'
@@ -3786,23 +3874,23 @@ export const getStoryPlaces = async ( options?: RequestInit): Promise<StoryPlace
 
 
 
-export const getGetStoryPlacesQueryKey = () => {
+export const getGetStoryPlacesQueryKey = (params?: GetStoryPlacesParams,) => {
     return [
-    `/api/stories/places`
+    `/api/stories/places`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetStoryPlacesQueryOptions = <TData = Awaited<ReturnType<typeof getStoryPlaces>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStoryPlaces>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetStoryPlacesQueryOptions = <TData = Awaited<ReturnType<typeof getStoryPlaces>>, TError = ErrorType<unknown>>(params?: GetStoryPlacesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStoryPlaces>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetStoryPlacesQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetStoryPlacesQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStoryPlaces>>> = ({ signal }) => getStoryPlaces({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStoryPlaces>>> = ({ signal }) => getStoryPlaces(params, { signal, ...requestOptions });
 
 
 
@@ -3820,11 +3908,11 @@ export type GetStoryPlacesQueryError = ErrorType<unknown>
  */
 
 export function useGetStoryPlaces<TData = Awaited<ReturnType<typeof getStoryPlaces>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStoryPlaces>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetStoryPlacesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getStoryPlaces>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetStoryPlacesQueryOptions(options)
+  const queryOptions = getGetStoryPlacesQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -3837,20 +3925,29 @@ export function useGetStoryPlaces<TData = Awaited<ReturnType<typeof getStoryPlac
 
 
 
-export const getGetPlaceStoriesUrl = (placeName: string,) => {
+export const getGetPlaceStoriesUrl = (placeName: string,
+    params?: GetPlaceStoriesParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/stories/place/${placeName}`
+  return stringifiedParams.length > 0 ? `/api/stories/place/${placeName}?${stringifiedParams}` : `/api/stories/place/${placeName}`
 }
 
 /**
  * @summary Active stories tagged at a place, grouped by author
  */
-export const getPlaceStories = async (placeName: string, options?: RequestInit): Promise<StoryGroup[]> => {
+export const getPlaceStories = async (placeName: string,
+    params?: GetPlaceStoriesParams, options?: RequestInit): Promise<StoryGroup[]> => {
 
-  return customFetch<StoryGroup[]>(getGetPlaceStoriesUrl(placeName),
+  return customFetch<StoryGroup[]>(getGetPlaceStoriesUrl(placeName,params),
   {
     ...options,
     method: 'GET'
@@ -3863,23 +3960,25 @@ export const getPlaceStories = async (placeName: string, options?: RequestInit):
 
 
 
-export const getGetPlaceStoriesQueryKey = (placeName: string,) => {
+export const getGetPlaceStoriesQueryKey = (placeName: string,
+    params?: GetPlaceStoriesParams,) => {
     return [
-    `/api/stories/place/${placeName}`
+    `/api/stories/place/${placeName}`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetPlaceStoriesQueryOptions = <TData = Awaited<ReturnType<typeof getPlaceStories>>, TError = ErrorType<unknown>>(placeName: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPlaceStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetPlaceStoriesQueryOptions = <TData = Awaited<ReturnType<typeof getPlaceStories>>, TError = ErrorType<unknown>>(placeName: string,
+    params?: GetPlaceStoriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPlaceStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetPlaceStoriesQueryKey(placeName);
+  const queryKey =  queryOptions?.queryKey ?? getGetPlaceStoriesQueryKey(placeName,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPlaceStories>>> = ({ signal }) => getPlaceStories(placeName, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPlaceStories>>> = ({ signal }) => getPlaceStories(placeName,params, { signal, ...requestOptions });
 
 
 
@@ -3897,11 +3996,12 @@ export type GetPlaceStoriesQueryError = ErrorType<unknown>
  */
 
 export function useGetPlaceStories<TData = Awaited<ReturnType<typeof getPlaceStories>>, TError = ErrorType<unknown>>(
- placeName: string, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPlaceStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ placeName: string,
+    params?: GetPlaceStoriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPlaceStories>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetPlaceStoriesQueryOptions(placeName,options)
+  const queryOptions = getGetPlaceStoriesQueryOptions(placeName,params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 
@@ -6796,20 +6896,27 @@ export const useReactToComment = <TError = ErrorType<unknown>,
       return useMutation(getReactToCommentMutationOptions(options));
     }
 
-export const getGetPostsSummaryUrl = () => {
+export const getGetPostsSummaryUrl = (params?: GetPostsSummaryParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/posts/summary`
+  return stringifiedParams.length > 0 ? `/api/posts/summary?${stringifiedParams}` : `/api/posts/summary`
 }
 
 /**
  * @summary Get a quick summary of community activity
  */
-export const getPostsSummary = async ( options?: RequestInit): Promise<PostsSummary> => {
+export const getPostsSummary = async (params?: GetPostsSummaryParams, options?: RequestInit): Promise<PostsSummary> => {
 
-  return customFetch<PostsSummary>(getGetPostsSummaryUrl(),
+  return customFetch<PostsSummary>(getGetPostsSummaryUrl(params),
   {
     ...options,
     method: 'GET'
@@ -6822,23 +6929,23 @@ export const getPostsSummary = async ( options?: RequestInit): Promise<PostsSumm
 
 
 
-export const getGetPostsSummaryQueryKey = () => {
+export const getGetPostsSummaryQueryKey = (params?: GetPostsSummaryParams,) => {
     return [
-    `/api/posts/summary`
+    `/api/posts/summary`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetPostsSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getPostsSummary>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPostsSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetPostsSummaryQueryOptions = <TData = Awaited<ReturnType<typeof getPostsSummary>>, TError = ErrorType<unknown>>(params?: GetPostsSummaryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPostsSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetPostsSummaryQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetPostsSummaryQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPostsSummary>>> = ({ signal }) => getPostsSummary({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPostsSummary>>> = ({ signal }) => getPostsSummary(params, { signal, ...requestOptions });
 
 
 
@@ -6856,11 +6963,11 @@ export type GetPostsSummaryQueryError = ErrorType<unknown>
  */
 
 export function useGetPostsSummary<TData = Awaited<ReturnType<typeof getPostsSummary>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPostsSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetPostsSummaryParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPostsSummary>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetPostsSummaryQueryOptions(options)
+  const queryOptions = getGetPostsSummaryQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

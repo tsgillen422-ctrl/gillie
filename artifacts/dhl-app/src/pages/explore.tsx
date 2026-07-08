@@ -17,7 +17,7 @@ import { useLake } from "@/lib/lake-context";
 
 export function ExplorePage() {
   const { lakeId } = useLake();
-  const { data: catches } = useGetCatches({}, { query: { queryKey: getGetCatchesQueryKey({}) } });
+  const { data: catches } = useGetCatches({ lakeId }, { query: { queryKey: getGetCatchesQueryKey({ lakeId }) } });
   const { data: pins } = useGetPins({ lakeId }, { query: { queryKey: getGetPinsQueryKey({ lakeId }) } });
   const { data: posts } = useGetPosts({ lakeId }, { query: { queryKey: getGetPostsQueryKey({ lakeId }) } });
 

@@ -3301,6 +3301,23 @@ export const GetLakesResponse = zod.array(GetLakesResponseItem)
 
 
 /**
+ * @summary Per-lake community activity stats, ranked by trending score
+ */
+export const GetLakesOverviewResponseItem = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "region": zod.string(),
+  "activeUsers": zod.number().describe('People active this week (checked in now, or posted\/storied in the last 7 days)'),
+  "storyCount": zod.number().describe('Live (non-expired) stories'),
+  "liveEvents": zod.number().describe('Events happening today or later'),
+  "recentPosts": zod.number().describe('Posts in the last 7 days'),
+  "trendingScore": zod.number().describe('Weighted activity blend used to rank lakes')
+})
+export const GetLakesOverviewResponse = zod.array(GetLakesOverviewResponseItem)
+
+
+/**
  * @summary Get active stories grouped by author (privacy-filtered)
  */
 export const GetStoriesQueryParams = zod.object({
@@ -3388,6 +3405,10 @@ export const CreateStoryBody = zod.object({
 /**
  * @summary Active story counts by tagged place (for map rings + trending)
  */
+export const GetStoryPlacesQueryParams = zod.object({
+  "lakeId": zod.coerce.number().optional().describe('Only include stories posted to this lake')
+})
+
 export const GetStoryPlacesResponseItem = zod.object({
   "placeName": zod.string(),
   "lat": zod.number().nullish(),
@@ -3420,6 +3441,10 @@ export const GetStoryPlacesResponse = zod.array(GetStoryPlacesResponseItem)
  */
 export const GetPlaceStoriesParams = zod.object({
   "placeName": zod.coerce.string()
+})
+
+export const GetPlaceStoriesQueryParams = zod.object({
+  "lakeId": zod.coerce.number().optional().describe('Scope to one lake so same-named places on other lakes don\'t mix (omitted by older clients)')
 })
 
 export const GetPlaceStoriesResponseItem = zod.object({
@@ -6054,6 +6079,10 @@ export const ReactToCommentResponse = zod.object({
 /**
  * @summary Get a quick summary of community activity
  */
+export const GetPostsSummaryQueryParams = zod.object({
+  "lakeId": zod.coerce.number().optional().describe('Scope the summary to one lake\'s community')
+})
+
 export const GetPostsSummaryResponse = zod.object({
   "totalPosts": zod.number(),
   "totalEvents": zod.number(),
@@ -7011,12 +7040,14 @@ export const GetRsvpsResponse = zod.array(GetRsvpsResponseItem)
  * @summary Get the catch log feed
  */
 export const GetCatchesQueryParams = zod.object({
-  "profileUserId": zod.coerce.number().optional().describe('When set, returns the given user\'s catches (public only unless it\'s the current user).')
+  "profileUserId": zod.coerce.number().optional().describe('When set, returns the given user\'s catches (public only unless it\'s the current user).'),
+  "lakeId": zod.coerce.number().optional().describe('Only include catches logged on this lake (ignored when profileUserId is set)')
 })
 
 export const GetCatchesResponseItem = zod.object({
   "id": zod.number(),
   "userId": zod.number(),
+  "lakeId": zod.number().optional(),
   "user": zod.object({
   "id": zod.number(),
   "username": zod.string(),
@@ -7144,7 +7175,8 @@ export const CreateCatchBody = zod.object({
   "lat": zod.number().optional(),
   "lng": zod.number().optional(),
   "isPrivate": zod.boolean().optional(),
-  "caughtAt": zod.string().optional()
+  "caughtAt": zod.string().optional(),
+  "lakeId": zod.number().nullish().describe('Which lake the catch belongs to (defaults to Dale Hollow Lake)')
 })
 
 

@@ -43,9 +43,11 @@ import { resolveImageSrc } from "@/lib/assets";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { useLake } from "@/lib/lake-context";
 
 export function CatchesPage() {
-  const { data: catches, isLoading } = useGetCatches({});
+  const { lakeId } = useLake();
+  const { data: catches, isLoading } = useGetCatches({ lakeId });
   const { data: me } = useGetMe();
   const createCatch = useCreateCatch();
   const deleteCatch = useDeleteCatch();
@@ -109,6 +111,7 @@ export function CatchesPage() {
     createCatch.mutate(
       {
         data: {
+          lakeId,
           species: species.trim(),
           weight: weight ? parseFloat(weight) : undefined,
           length: length ? parseFloat(length) : undefined,

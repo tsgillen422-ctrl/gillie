@@ -214,8 +214,8 @@ export function FeedPage() {
   const { data: savedPosts, isLoading: savedLoading } = useGetSavedPosts({
     query: { enabled: isSavedTab, queryKey: getGetSavedPostsQueryKey() },
   });
-  const { data: catches, isLoading: catchesLoading } = useGetCatches(undefined, {
-    query: { enabled: isFishingTab, queryKey: getGetCatchesQueryKey() },
+  const { data: catches, isLoading: catchesLoading } = useGetCatches({ lakeId }, {
+    query: { enabled: isFishingTab, queryKey: getGetCatchesQueryKey({ lakeId }) },
   });
   const posts = isSavedTab ? savedPosts : feedPosts;
   const isLoading = isSavedTab ? savedLoading : isFishingTab ? catchesLoading : feedLoading;
@@ -614,6 +614,14 @@ export function FeedPage() {
               <span className="shrink-0 font-script text-[30px] font-bold leading-none text-primary">Gillie</span>
               <span className="h-5 w-px shrink-0 bg-border" aria-hidden />
               <LakeSwitcher className="min-w-0 text-sm" />
+              <Link
+                href="/lakes"
+                aria-label="Explore lakes"
+                data-testid="button-explore-lakes-feed"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-base hover:bg-muted active:scale-95 transition"
+              >
+                <span aria-hidden>🌎</span>
+              </Link>
             </div>
             <div className="flex items-center gap-1.5">
               <Link href="/search" aria-label="Search" className="flex h-9 w-9 items-center justify-center rounded-full text-foreground hover:bg-muted active:scale-95 transition">

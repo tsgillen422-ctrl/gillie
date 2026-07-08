@@ -5,6 +5,7 @@ import { eq, and, desc, or, notInArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { moderateContent } from "../lib/moderation";
 import { getHiddenDemoUserIds } from "../lib/demoData";
+import { isValidLakeId, DEFAULT_LAKE_ID } from "@workspace/lake-config";
 
 const router = Router();
 
@@ -70,23 +71,32 @@ router.get("/", async (req, res) => {
       )
       .orderBy(desc(catchesTable.caughtAt));
   } else {
-    // Global feed: hide demo authors' catches from anyone not in Demo Mode.
+    // Lake feed: hide demo authors' catches from anyone not in Demo Mode.
+    // Optional lakeId scopes fishing reports to one lake community; older
+    // iOS builds don't send it, which keeps the old all-lakes behavior.
     const hidden = await getHiddenDemoUserIds(currentUserId(req));
-    const visibility = or(
-      eq(catchesTable.isPrivate, false),
-      eq(catchesTable.userId, currentUserId(req)),
-    );
+    const rawLakeId = req.query.lakeId != null ? Number(req.query.lakeId) : undefined;
+    const conds = [
+      or(
+        eq(catchesTable.isPrivate, false),
+        eq(catchesTable.userId, currentUserId(req)),
+      ),
+    ];
+    if (hidden.length) conds.push(notInArray(catchesTable.userId, hidden));
+    if (rawLakeId !== undefined) {
+      conds.push(eq(catchesTable.lakeId, isValidLakeId(rawLakeId) ? rawLakeId : DEFAULT_LAKE_ID));
+    }
     rows = await db
       .select()
       .from(catchesTable)
-      .where(hidden.length ? and(visibility, notInArray(catchesTable.userId, hidden)) : visibility)
+      .where(and(...conds))
       .orderBy(desc(catchesTable.caughtAt));
   }
   res.json(await Promise.all(rows.map(formatCatch)));
 });
 
 router.post("/", async (req, res) => {
-  const { species, weight, length, notes, imageUrl, lat, lng, isPrivate, caughtAt } = req.body;
+  const { species, weight, length, notes, imageUrl, lat, lng, isPrivate, caughtAt, lakeId } = req.body;
   if (!species || !String(species).trim()) {
     return res.status(400).json({ error: "Species is required" });
   }
@@ -102,6 +112,7 @@ router.post("/", async (req, res) => {
     .insert(catchesTable)
     .values({
       userId: currentUserId(req),
+      lakeId: isValidLakeId(lakeId) ? lakeId : DEFAULT_LAKE_ID,
       species: String(species).trim(),
       weight: weight ?? null,
       length: length ?? null,

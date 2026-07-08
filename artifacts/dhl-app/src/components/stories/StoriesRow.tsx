@@ -18,7 +18,7 @@ export function StoriesRow() {
   const { data: me } = useGetMe();
   const { lakeId } = useLake();
   const { data: groups } = useGetStories({ lakeId });
-  const { data: places } = useGetStoryPlaces();
+  const { data: places } = useGetStoryPlaces({ lakeId });
   const [addOpen, setAddOpen] = useState(false);
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const [placeViewer, setPlaceViewer] = useState<string | null>(null);
@@ -193,7 +193,9 @@ export function PlaceStoriesViewer({
   initialUserId?: number;
   onClose: () => void;
 }) {
-  const { data: groups, isLoading } = useGetPlaceStories(placeName);
+  // Scope to the current lake so same-named places on other lakes don't mix.
+  const { lakeId } = useLake();
+  const { data: groups, isLoading } = useGetPlaceStories(placeName, { lakeId });
   useEffect(() => {
     if (!isLoading && groups && groups.length === 0) onClose();
   }, [isLoading, groups, onClose]);

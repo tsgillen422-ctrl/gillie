@@ -46,6 +46,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             <span className="shrink-0 font-script text-2xl font-bold leading-none text-primary">Gillie</span>
             <span className="h-5 w-px shrink-0 bg-border" aria-hidden />
             <LakeSwitcher className="min-w-0 text-sm" />
+            <Link
+              href="/lakes"
+              aria-label="Explore lakes"
+              data-testid="button-explore-lakes"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-base hover:bg-muted active:scale-95 transition"
+            >
+              <span aria-hidden>🌎</span>
+            </Link>
           </div>
           <div className="flex items-center gap-1">
             <Link

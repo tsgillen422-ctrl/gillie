@@ -18,7 +18,7 @@ type Trend = {
 
 export function TrendingSection() {
   const { lakeId } = useLake();
-  const { data: catches } = useGetCatches({});
+  const { data: catches } = useGetCatches({ lakeId });
   const { data: pins } = useGetPins({ lakeId });
   const { data: posts } = useGetPosts({ lakeId });
 
