@@ -829,6 +829,16 @@ export interface Lake {
   zoom: number;
 }
 
+/**
+ * Featured card media — the best-liked public community photo/video post from this lake, preferring the last 48h, then 7 days, then 30 days. Null when the lake has no recent community media (client shows its static artwork placeholder).
+ */
+export type LakeOverviewHeroPhoto = {
+  url: string;
+  /** True when the media is a video clip (render its thumbnail with a play icon) */
+  isVideo: boolean;
+  likeCount: number;
+} | null;
+
 export interface LakeOverview {
   id: number;
   name: string;
@@ -844,6 +854,8 @@ export interface LakeOverview {
   recentPosts: number;
   /** Weighted activity blend used to rank lakes */
   trendingScore: number;
+  /** Featured card media — the best-liked public community photo/video post from this lake, preferring the last 48h, then 7 days, then 30 days. Null when the lake has no recent community media (client shows its static artwork placeholder). */
+  heroPhoto?: LakeOverviewHeroPhoto;
 }
 
 export interface LakeUserPreview {

@@ -69,6 +69,7 @@ export * from './lakeDetailStories';
 export * from './lakeDetailTrendingPlacesItem';
 export * from './lakeDetailUpcomingEventsItem';
 export * from './lakeOverview';
+export * from './lakeOverviewHeroPhoto';
 export * from './lakePlaceDetail';
 export * from './lakePlaceDetailNearbyEventsItem';
 export * from './lakePlaceDetailPhotosItem';

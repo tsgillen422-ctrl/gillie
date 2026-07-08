@@ -5,6 +5,7 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { LakeOverviewHeroPhoto } from './lakeOverviewHeroPhoto';
 
 export interface LakeOverview {
   id: number;
@@ -21,4 +22,6 @@ export interface LakeOverview {
   recentPosts: number;
   /** Weighted activity blend used to rank lakes */
   trendingScore: number;
+  /** Featured card media — the best-liked public community photo/video post from this lake, preferring the last 48h, then 7 days, then 30 days. Null when the lake has no recent community media (client shows its static artwork placeholder). */
+  heroPhoto?: LakeOverviewHeroPhoto;
 }

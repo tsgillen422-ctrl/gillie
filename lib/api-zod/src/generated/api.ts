@@ -3312,7 +3312,12 @@ export const GetLakesOverviewResponseItem = zod.object({
   "storyCount": zod.number().describe('Live (non-expired) stories'),
   "liveEvents": zod.number().describe('Events happening today or later'),
   "recentPosts": zod.number().describe('Posts in the last 7 days'),
-  "trendingScore": zod.number().describe('Weighted activity blend used to rank lakes')
+  "trendingScore": zod.number().describe('Weighted activity blend used to rank lakes'),
+  "heroPhoto": zod.object({
+  "url": zod.string(),
+  "isVideo": zod.boolean().describe('True when the media is a video clip (render its thumbnail with a play icon)'),
+  "likeCount": zod.number()
+}).nullish().describe('Featured card media — the best-liked public community photo\/video post from this lake, preferring the last 48h, then 7 days, then 30 days. Null when the lake has no recent community media (client shows its static artwork placeholder).')
 })
 export const GetLakesOverviewResponse = zod.array(GetLakesOverviewResponseItem)
 

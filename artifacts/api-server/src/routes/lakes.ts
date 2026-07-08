@@ -51,6 +51,38 @@ router.get("/overview", async (req, res) => {
     .from(postsTable)
     .where(and(gte(postsTable.createdAt, weekAgo), notHiddenPosts));
 
+  // Featured card image candidates: real public (community-visibility,
+  // non-mature) photo/video posts from the last 30 days. Each lake's card
+  // features the best-liked one, preferring the freshest window first
+  // (48h → 7 days → 30 days) so cards always show what the lake looks like
+  // *today* when there's anything recent. Never AI/stock imagery — the client
+  // only falls back to its static artwork when a lake has no community media.
+  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+  const heroCandidates = await db
+    .select({
+      lakeId: postsTable.lakeId,
+      imageUrl: postsTable.imageUrl,
+      photos: postsTable.photos,
+      videoUrl: postsTable.videoUrl,
+      likeCount: postsTable.likeCount,
+      createdAt: postsTable.createdAt,
+    })
+    .from(postsTable)
+    .where(
+      and(
+        gte(postsTable.createdAt, monthAgo),
+        eq(postsTable.visibility, "community"),
+        eq(postsTable.isMature, false),
+        or(
+          sql`${postsTable.imageUrl} is not null`,
+          sql`cardinality(${postsTable.photos}) > 0`,
+          sql`${postsTable.videoUrl} is not null`,
+        ),
+        notHiddenPosts,
+      ),
+    );
+
   // Events happening today or in the future.
   const liveEvents = await db
     .select({ lakeId: postsTable.lakeId })
@@ -102,6 +134,37 @@ router.get("/overview", async (req, res) => {
     aggFor(u.currentLakeId)?.activeUserIds.add(u.id);
   }
 
+  // Pick each lake's featured card media: best-liked candidate in the
+  // freshest window that has any (48h, then 7d, then 30d). Ties break to the
+  // newest post so cards refresh naturally as new content comes in.
+  type HeroCandidate = (typeof heroCandidates)[number];
+  const heroByLake = new Map<number, HeroCandidate[]>();
+  for (const c of heroCandidates) {
+    const key = c.lakeId ?? 1;
+    const list = heroByLake.get(key);
+    if (list) list.push(c);
+    else heroByLake.set(key, [c]);
+  }
+  const mediaUrlOf = (c: HeroCandidate) =>
+    c.imageUrl ?? c.photos?.[0] ?? c.videoUrl ?? null;
+  const pickHero = (lakeId: number) => {
+    const all = heroByLake.get(lakeId);
+    if (!all?.length) return null;
+    for (const cutoff of [twoDaysAgo, weekAgo, monthAgo]) {
+      const windowed = all.filter((c) => c.createdAt >= cutoff && mediaUrlOf(c));
+      if (!windowed.length) continue;
+      const best = windowed.reduce((a, b) =>
+        b.likeCount > a.likeCount ||
+        (b.likeCount === a.likeCount && b.createdAt > a.createdAt)
+          ? b
+          : a,
+      );
+      const isVideo = !best.imageUrl && !best.photos?.[0] && !!best.videoUrl;
+      return { url: mediaUrlOf(best)!, isVideo, likeCount: best.likeCount };
+    }
+    return null;
+  };
+
   const overview = LAKES.map((lake) => {
     const agg = byLake.get(lake.id)!;
     const activeUsers = agg.activeUserIds.size;
@@ -118,6 +181,7 @@ router.get("/overview", async (req, res) => {
       liveEvents: agg.liveEvents,
       recentPosts: agg.recentPosts,
       trendingScore,
+      heroPhoto: pickHero(lake.id),
     };
   }).sort((a, b) => b.trendingScore - a.trendingScore || a.name.localeCompare(b.name));
 

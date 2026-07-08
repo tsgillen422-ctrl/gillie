@@ -3568,6 +3568,23 @@ components:
         trendingScore:
           type: integer
           description: Weighted activity blend used to rank lakes
+        heroPhoto:
+          nullable: true
+          description: >-
+            Featured card media — the best-liked public community photo/video
+            post from this lake, preferring the last 48h, then 7 days, then 30
+            days. Null when the lake has no recent community media (client
+            shows its static artwork placeholder).
+          type: object
+          required: [url, isVideo, likeCount]
+          properties:
+            url:
+              type: string
+            isVideo:
+              type: boolean
+              description: True when the media is a video clip (render its thumbnail with a play icon)
+            likeCount:
+              type: integer
 
     LakeUserPreview:
       type: object

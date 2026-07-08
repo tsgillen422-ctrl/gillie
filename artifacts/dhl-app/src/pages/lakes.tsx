@@ -1,12 +1,50 @@
 import { Link, useLocation } from "wouter";
-import { ChevronLeft, Users, Flame, Calendar, CircleCheck } from "lucide-react";
+import { ChevronLeft, Users, Flame, Calendar, CircleCheck, Play } from "lucide-react";
 import { useGetLakesOverview, type LakeOverview } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { resolveImageSrc } from "@/lib/assets";
 import { useLake } from "@/lib/lake-context";
 
-/** Photo generated for each lake, shipped with the app in public/lakes/. */
+/**
+ * Placeholder artwork shipped with the app in public/lakes/. Only shown when
+ * a lake has no community photos yet — cards always prefer real Gillie posts.
+ */
 function lakePhotoUrl(slug: string): string {
   return `${import.meta.env.BASE_URL}lakes/${slug}.png`;
+}
+
+/**
+ * Card image: the lake's best-liked recent community photo. When the top post
+ * is a video we show its first frame as a thumbnail with a play badge.
+ */
+function LakeCardMedia({ lake }: { lake: LakeOverview }) {
+  const hero = lake.heroPhoto;
+  if (hero?.isVideo) {
+    return (
+      <>
+        <video
+          src={resolveImageSrc(hero.url)}
+          muted
+          playsInline
+          preload="metadata"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          data-testid={`video-lake-hero-${lake.id}`}
+        />
+        <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-black/55 backdrop-blur-sm">
+          <Play className="h-3.5 w-3.5 fill-white text-white" aria-label="Video" />
+        </span>
+      </>
+    );
+  }
+  return (
+    <img
+      src={hero ? resolveImageSrc(hero.url) : lakePhotoUrl(lake.slug)}
+      alt={lake.name}
+      loading="lazy"
+      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+      data-testid={`img-lake-hero-${lake.id}`}
+    />
+  );
 }
 
 function StoryRingIcon() {
@@ -34,12 +72,7 @@ function LakeCard({
       className="group relative block w-full overflow-hidden rounded-[20px] border border-border/50 bg-card text-left shadow-sm transition-all active:scale-[0.98]"
     >
       <div className="relative h-32 w-full overflow-hidden">
-        <img
-          src={lakePhotoUrl(lake.slug)}
-          alt={lake.name}
-          loading="lazy"
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
+        <LakeCardMedia lake={lake} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         <div className="absolute left-3 top-3 flex gap-1.5">
           {isCurrent && (
