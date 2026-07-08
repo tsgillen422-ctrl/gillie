@@ -846,6 +846,52 @@ export interface LakeOverview {
   trendingScore: number;
 }
 
+export interface LakeUserPreview {
+  id: number;
+  username: string;
+  displayName: string;
+  /** @nullable */
+  avatarUrl?: string | null;
+}
+
+export type LakeDetailStories = {
+  /** Live (non-expired) stories the viewer may see */
+  count: number;
+  authors: LakeUserPreview[];
+};
+
+export type LakeDetailUpcomingEventsItem = {
+  id: number;
+  title: string;
+  /** @nullable */
+  eventDate?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+};
+
+export type LakeDetailTrendingPlacesItem = {
+  placeName: string;
+  storyCount: number;
+};
+
+export interface LakeDetail {
+  id: number;
+  name: string;
+  slug: string;
+  region: string;
+  lat: number;
+  lng: number;
+  /** People active this week (checked in now, or posted/storied in the last 7 days) */
+  activeUsers: number;
+  /** Recent viewer-visible photo URLs for the live carousel */
+  recentPhotos: string[];
+  stories: LakeDetailStories;
+  upcomingEvents: LakeDetailUpcomingEventsItem[];
+  trendingPlaces: LakeDetailTrendingPlacesItem[];
+  /** Viewer's friends with an active check-in on this lake (no coordinates) */
+  friendsHere: LakeUserPreview[];
+}
+
 export interface DockLabelInput {
   label: string;
   emoji?: string;

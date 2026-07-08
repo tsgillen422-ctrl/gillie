@@ -1,6 +1,7 @@
-import { useGetConditions } from "@workspace/api-client-react";
+import { useGetConditions, getGetConditionsQueryKey } from "@workspace/api-client-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLake } from "@/lib/lake-context";
+import { lakeById } from "@workspace/lake-config";
 import { Wind, Droplets, Waves, Gauge, Sunrise, Sunset, Fish, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
 
 const advisoryStyles: Record<string, { wrap: string; icon: typeof Info }> = {
@@ -45,10 +46,11 @@ function windDir(deg?: number | null): string {
   return dirs[Math.round(deg / 45) % 8];
 }
 
-export function ConditionsWidget() {
-  const { lakeId } = useLake();
+export function ConditionsWidget({ lakeId: lakeIdProp }: { lakeId?: number } = {}) {
+  const { lakeId: contextLakeId } = useLake();
+  const lakeId = lakeIdProp ?? contextLakeId;
   const { data, isLoading, isError } = useGetConditions({ lakeId }, {
-    query: { refetchInterval: 1000 * 60 * 10 },
+    query: { refetchInterval: 1000 * 60 * 10, queryKey: getGetConditionsQueryKey({ lakeId }) },
   });
 
   if (isLoading) {
@@ -72,7 +74,7 @@ export function ConditionsWidget() {
         <div className="flex items-center gap-2">
           <span className="text-2xl leading-none">{weatherEmoji(data.weatherCode, data.isDay)}</span>
           <div>
-            <div className="font-semibold text-sm">Dale Hollow Lake</div>
+            <div className="font-semibold text-sm">{lakeById(lakeId).name}</div>
             <div className="text-xs text-muted-foreground">{data.weatherLabel}</div>
           </div>
         </div>

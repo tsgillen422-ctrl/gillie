@@ -85,20 +85,19 @@ function LakeCard({
 
 /**
  * Explore Lakes: every Gillie community at a glance — photo, live activity,
- * and a trending rank. Picking a lake switches the whole app (map, feed,
- * stories, events, catches) into that lake's community.
+ * and a trending rank. Tapping a lake opens its Lake Overview page (a live
+ * preview) — switching communities happens from there.
  */
 export function LakesPage() {
-  const { lakeId, setLakeId } = useLake();
+  const { lakeId } = useLake();
   const [, navigate] = useLocation();
   const { data: lakes, isLoading } = useGetLakesOverview();
 
   // Server returns lakes ranked by trending score already.
   const topScore = lakes?.[0]?.trendingScore ?? 0;
 
-  const selectLake = (lake: LakeOverview) => {
-    setLakeId(lake.id);
-    navigate("/feed");
+  const openLake = (lake: LakeOverview) => {
+    navigate(`/lakes/${lake.id}`);
   };
 
   return (
@@ -118,8 +117,8 @@ export function LakesPage() {
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4 pb-24">
         <p className="text-sm text-muted-foreground">
-          Every lake is its own hometown community. Pick one to see its map, feed,
-          stories, and events — Gillie will remember where you left off.
+          Every lake is its own hometown community. Tap one to preview what's
+          happening there right now — photos, stories, conditions, and events.
         </p>
 
         {isLoading && (
@@ -137,7 +136,7 @@ export function LakesPage() {
               lake={lake}
               isCurrent={lake.id === lakeId}
               isTrending={i < 3 && lake.trendingScore > 0 && topScore > 0}
-              onSelect={() => selectLake(lake)}
+              onSelect={() => openLake(lake)}
             />
           ))}
         </div>

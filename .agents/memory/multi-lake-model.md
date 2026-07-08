@@ -16,3 +16,5 @@ description: How lake scoping works across API, frontend, and legacy iOS builds.
 - `LAKE_PLACES` (named-places catalog) and CWMS water-level feed are Dale Hollow-specific — gate to `lakeId === DEFAULT_LAKE_ID` on other lakes.
 - Map recenters via a prev-lakeId ref effect (`flyTo` lake.lat/lng/zoom); `BASE_ZOOM=12` stays as the marker-scaling reference, camera uses `lake.zoom`.
 - Home lake: onboarding picker step (before payoff; Skip bypasses it) and `/settings/home-lake` both PATCH `primaryLakeId` and call `setLakeId` to follow immediately.
+- Lake Overview discovery (July 2026): `/lakes` cards open `/lakes/:lakeId` (LakeOverviewPage) instead of switching; only its "Enter Lake Community" button calls `setLakeId`. Backing endpoint `GET /lakes/:lakeId/detail` is VIEWER-SCOPED (post/story audience + excluded authors + mature media stripped + friendsHere minimal DTO with no coords); `GET /lakes/overview` deliberately stays an anonymous all-audience aggregate — keep that split when touching either.
+- ConditionsWidget takes an optional `lakeId` prop (defaults to context) and titles itself via `lakeById(lakeId).name` — never hardcode a lake name in it.

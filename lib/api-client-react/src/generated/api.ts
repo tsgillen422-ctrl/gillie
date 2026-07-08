@@ -63,6 +63,7 @@ import type {
   HighlightInput,
   HighlightStory,
   Lake,
+  LakeDetail,
   LakeOverview,
   LakeStatusInput,
   LocationUpdate,
@@ -3674,6 +3675,83 @@ export function useGetLakesOverview<TData = Awaited<ReturnType<typeof getLakesOv
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
   const queryOptions = getGetLakesOverviewQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetLakeDetailUrl = (lakeId: number,) => {
+
+
+
+
+  return `/api/lakes/${lakeId}/detail`
+}
+
+/**
+ * @summary Rich viewer-scoped preview of one lake community for the Lake Overview page
+ */
+export const getLakeDetail = async (lakeId: number, options?: RequestInit): Promise<LakeDetail> => {
+
+  return customFetch<LakeDetail>(getGetLakeDetailUrl(lakeId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetLakeDetailQueryKey = (lakeId: number,) => {
+    return [
+    `/api/lakes/${lakeId}/detail`
+    ] as const;
+    }
+
+
+export const getGetLakeDetailQueryOptions = <TData = Awaited<ReturnType<typeof getLakeDetail>>, TError = ErrorType<void>>(lakeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLakeDetail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetLakeDetailQueryKey(lakeId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getLakeDetail>>> = ({ signal }) => getLakeDetail(lakeId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(lakeId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getLakeDetail>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetLakeDetailQueryResult = NonNullable<Awaited<ReturnType<typeof getLakeDetail>>>
+export type GetLakeDetailQueryError = ErrorType<void>
+
+
+/**
+ * @summary Rich viewer-scoped preview of one lake community for the Lake Overview page
+ */
+
+export function useGetLakeDetail<TData = Awaited<ReturnType<typeof getLakeDetail>>, TError = ErrorType<void>>(
+ lakeId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getLakeDetail>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetLakeDetailQueryOptions(lakeId,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

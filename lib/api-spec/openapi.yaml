@@ -913,6 +913,27 @@ paths:
                 items:
                   $ref: "#/components/schemas/LakeOverview"
 
+  /lakes/{lakeId}/detail:
+    get:
+      operationId: getLakeDetail
+      tags: [lakes]
+      summary: Rich viewer-scoped preview of one lake community for the Lake Overview page
+      parameters:
+        - name: lakeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Lake community preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LakeDetail"
+        "404":
+          description: Unknown lake id
+
   /stories:
     get:
       operationId: getStories
@@ -3521,6 +3542,84 @@ components:
         trendingScore:
           type: integer
           description: Weighted activity blend used to rank lakes
+
+    LakeUserPreview:
+      type: object
+      required: [id, username, displayName]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        displayName:
+          type: string
+        avatarUrl:
+          type: ["string", "null"]
+
+    LakeDetail:
+      type: object
+      required: [id, name, slug, region, lat, lng, activeUsers, recentPhotos, stories, upcomingEvents, trendingPlaces, friendsHere]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        slug:
+          type: string
+        region:
+          type: string
+        lat:
+          type: number
+        lng:
+          type: number
+        activeUsers:
+          type: integer
+          description: People active this week (checked in now, or posted/storied in the last 7 days)
+        recentPhotos:
+          type: array
+          description: Recent viewer-visible photo URLs for the live carousel
+          items:
+            type: string
+        stories:
+          type: object
+          required: [count, authors]
+          properties:
+            count:
+              type: integer
+              description: Live (non-expired) stories the viewer may see
+            authors:
+              type: array
+              items:
+                $ref: "#/components/schemas/LakeUserPreview"
+        upcomingEvents:
+          type: array
+          items:
+            type: object
+            required: [id, title]
+            properties:
+              id:
+                type: integer
+              title:
+                type: string
+              eventDate:
+                type: ["string", "null"]
+              imageUrl:
+                type: ["string", "null"]
+        trendingPlaces:
+          type: array
+          items:
+            type: object
+            required: [placeName, storyCount]
+            properties:
+              placeName:
+                type: string
+              storyCount:
+                type: integer
+        friendsHere:
+          type: array
+          description: Viewer's friends with an active check-in on this lake (no coordinates)
+          items:
+            $ref: "#/components/schemas/LakeUserPreview"
 
     DockLabelInput:
       type: object

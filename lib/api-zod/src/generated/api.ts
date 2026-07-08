@@ -3318,6 +3318,50 @@ export const GetLakesOverviewResponse = zod.array(GetLakesOverviewResponseItem)
 
 
 /**
+ * @summary Rich viewer-scoped preview of one lake community for the Lake Overview page
+ */
+export const GetLakeDetailParams = zod.object({
+  "lakeId": zod.coerce.number()
+})
+
+export const GetLakeDetailResponse = zod.object({
+  "id": zod.number(),
+  "name": zod.string(),
+  "slug": zod.string(),
+  "region": zod.string(),
+  "lat": zod.number(),
+  "lng": zod.number(),
+  "activeUsers": zod.number().describe('People active this week (checked in now, or posted\/storied in the last 7 days)'),
+  "recentPhotos": zod.array(zod.string()).describe('Recent viewer-visible photo URLs for the live carousel'),
+  "stories": zod.object({
+  "count": zod.number().describe('Live (non-expired) stories the viewer may see'),
+  "authors": zod.array(zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish()
+}))
+}),
+  "upcomingEvents": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "eventDate": zod.string().nullish(),
+  "imageUrl": zod.string().nullish()
+})),
+  "trendingPlaces": zod.array(zod.object({
+  "placeName": zod.string(),
+  "storyCount": zod.number()
+})),
+  "friendsHere": zod.array(zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish()
+})).describe('Viewer\'s friends with an active check-in on this lake (no coordinates)')
+})
+
+
+/**
  * @summary Get active stories grouped by author (privacy-filtered)
  */
 export const GetStoriesQueryParams = zod.object({

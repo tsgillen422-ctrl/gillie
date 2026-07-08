@@ -22,6 +22,7 @@ import { MapPage } from "@/pages/map";
 import { FeedPage } from "@/pages/feed";
 import { ExplorePage } from "@/pages/explore";
 import { LakesPage } from "@/pages/lakes";
+import { LakeOverviewPage } from "@/pages/lake-overview";
 import { MessagesPage } from "@/pages/messages";
 import { MessageThreadPage } from "@/pages/message-thread";
 import { MessageSettingsPage } from "@/pages/message-settings";
@@ -336,6 +337,7 @@ function AuthedApp() {
         <Route path="/feed" component={FeedPage} />
         <Route path="/explore" component={ExplorePage} />
         <Route path="/lakes" component={LakesPage} />
+        <Route path="/lakes/:lakeId" component={LakeOverviewPage} />
         <Route path="/messages" component={MessagesPage} />
         <Route path="/messages/:id/settings" component={MessageSettingsPage} />
         <Route path="/messages/:id" component={MessageThreadPage} />
