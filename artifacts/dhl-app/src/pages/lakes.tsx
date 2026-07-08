@@ -26,6 +26,8 @@ function LakeCardMedia({ lake }: { lake: LakeOverview }) {
           src={resolveImageSrc(hero.url)}
           muted
           playsInline
+          autoPlay
+          loop
           preload="metadata"
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           data-testid={`video-lake-hero-${lake.id}`}
