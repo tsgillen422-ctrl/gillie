@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useLocation } from "wouter";
 import { Check, ChevronDown, Search, Waves } from "lucide-react";
 import { LAKES, lakeById, type Lake } from "@workspace/lake-config";
 import { useLake } from "@/lib/lake-context";
@@ -72,6 +73,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
  */
 export function LakeSwitcher({ className }: { className?: string }) {
   const { lakeId, lake, setLakeId, primaryLakeId, recentLakeIds } = useLake();
+  const [, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -98,9 +100,13 @@ export function LakeSwitcher({ className }: { className?: string }) {
   }, [lakeId, lake, primaryLakeId, recentLakeIds]);
 
   const choose = (id: number) => {
+    const switched = id !== lakeId;
     setLakeId(id);
     setOpen(false);
     setQuery("");
+    // Switching to a different lake lands you on that lake's map, so picking
+    // a lake always "takes you there" no matter which screen you were on.
+    if (switched) navigate("/map");
   };
 
   return (
