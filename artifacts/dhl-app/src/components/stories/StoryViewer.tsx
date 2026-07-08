@@ -51,12 +51,16 @@ export function StoryViewer({
   initialGroupIndex,
   initialStoryIndex = 0,
   meId,
+  lakeId: lakeIdProp,
   onClose,
 }: {
   groups: StoryGroup[];
   initialGroupIndex: number;
   initialStoryIndex?: number;
   meId?: number;
+  /** Which lake these stories belong to; defaults to the current lake context
+   *  (pass explicitly when viewing another lake, e.g. from Lake Overview). */
+  lakeId?: number;
   onClose: () => void;
 }) {
   const [groupIdx, setGroupIdx] = useState(initialGroupIndex);
@@ -92,7 +96,8 @@ export function StoryViewer({
   const effectivePaused = paused || engaged;
 
   const hasLakeInfo = !!(story && (story.placeName || story.boatName || story.lat != null));
-  const { lakeId } = useLake();
+  const { lakeId: contextLakeId } = useLake();
+  const lakeId = lakeIdProp ?? contextLakeId;
   const { data: conditions } = useGetConditions({ lakeId }, {
     query: { enabled: infoOpen && hasLakeInfo, queryKey: getGetConditionsQueryKey({ lakeId }) },
   });

@@ -934,6 +934,32 @@ paths:
         "404":
           description: Unknown lake id
 
+  /lakes/{lakeId}/places/{placeName}:
+    get:
+      operationId: getLakePlaceDetail
+      tags: [lakes]
+      summary: Viewer-scoped detail for one named place on a lake (stories, photos, nearby events, location)
+      parameters:
+        - name: lakeId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: placeName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Place detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LakePlaceDetail"
+        "404":
+          description: Unknown lake, or no live stories the viewer may see at this place
+
   /stories:
     get:
       operationId: getStories
@@ -3575,6 +3601,19 @@ components:
         activeUsers:
           type: integer
           description: People active this week (checked in now, or posted/storied in the last 7 days)
+        heroPhoto:
+          type: ["object", "null"]
+          description: Best-liked real community photo from the last 48h (null when the lake has none)
+          required: [url, likeCount]
+          properties:
+            url:
+              type: string
+            likeCount:
+              type: integer
+            authorName:
+              type: ["string", "null"]
+            authorAvatarUrl:
+              type: ["string", "null"]
         recentPhotos:
           type: array
           description: Recent viewer-visible photo URLs for the live carousel
@@ -3609,17 +3648,80 @@ components:
           type: array
           items:
             type: object
-            required: [placeName, storyCount]
+            required: [placeName, storyCount, activeUsers]
             properties:
               placeName:
                 type: string
               storyCount:
                 type: integer
+              activeUsers:
+                type: integer
+              thumbnailUrl:
+                type: ["string", "null"]
+              lat:
+                type: ["number", "null"]
+              lng:
+                type: ["number", "null"]
         friendsHere:
           type: array
           description: Viewer's friends with an active check-in on this lake (no coordinates)
           items:
             $ref: "#/components/schemas/LakeUserPreview"
+
+    LakePlaceDetail:
+      type: object
+      required: [lakeId, lakeName, placeName, lat, lng, storyCount, activeUsers, authors, photos, nearbyEvents]
+      properties:
+        lakeId:
+          type: integer
+        lakeName:
+          type: string
+        placeName:
+          type: string
+        lat:
+          type: ["number", "null"]
+        lng:
+          type: ["number", "null"]
+        storyCount:
+          type: integer
+        activeUsers:
+          type: integer
+        authors:
+          type: array
+          items:
+            $ref: "#/components/schemas/LakeUserPreview"
+        photos:
+          type: array
+          description: Live story photos at this place (viewer-scoped)
+          items:
+            type: object
+            required: [storyId, url, authorId, createdAt]
+            properties:
+              storyId:
+                type: integer
+              url:
+                type: string
+              authorId:
+                type: integer
+              authorName:
+                type: ["string", "null"]
+              createdAt:
+                type: string
+        nearbyEvents:
+          type: array
+          description: Upcoming events pinned within ~3km of this place
+          items:
+            type: object
+            required: [id, title]
+            properties:
+              id:
+                type: integer
+              title:
+                type: string
+              eventDate:
+                type: ["string", "null"]
+              imageUrl:
+                type: ["string", "null"]
 
     DockLabelInput:
       type: object

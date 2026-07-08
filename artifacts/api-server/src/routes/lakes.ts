@@ -155,10 +155,11 @@ router.get("/:lakeId/detail", async (req, res) => {
 
   const now = new Date();
   const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
 
-  const [photoPosts, activeStories, weekPosts, eventPosts, checkedIn] = await Promise.all([
+  const [photoPosts, heroCandidates, activeStories, weekPosts, eventPosts, checkedIn] = await Promise.all([
     // Recent photo posts for the carousel (never mature-flagged media).
     db
       .select({ id: postsTable.id, imageUrl: postsTable.imageUrl, photos: postsTable.photos })
@@ -174,6 +175,29 @@ router.get("/:lakeId/detail", async (req, res) => {
       )
       .orderBy(desc(postsTable.createdAt))
       .limit(12),
+    // Hero candidates: real community photos from the last 48h, best-liked
+    // first. Only genuine user content — never the generated lake artwork.
+    db
+      .select({
+        id: postsTable.id,
+        userId: postsTable.userId,
+        imageUrl: postsTable.imageUrl,
+        photos: postsTable.photos,
+        likeCount: postsTable.likeCount,
+      })
+      .from(postsTable)
+      .where(
+        and(
+          eq(postsTable.lakeId, lake.id),
+          gte(postsTable.createdAt, twoDaysAgo),
+          postAudience,
+          eq(postsTable.isMature, false),
+          or(sql`${postsTable.imageUrl} is not null`, sql`cardinality(${postsTable.photos}) > 0`),
+          notExcludedPosts,
+        ),
+      )
+      .orderBy(desc(postsTable.likeCount), desc(postsTable.createdAt))
+      .limit(1),
     // Live stories the viewer may see: today's stories + trending places.
     db
       .select({
@@ -183,6 +207,9 @@ router.get("/:lakeId/detail", async (req, res) => {
         mediaUrl: storiesTable.mediaUrl,
         placeName: storiesTable.placeName,
         visibility: storiesTable.visibility,
+        lat: storiesTable.lat,
+        lng: storiesTable.lng,
+        createdAt: storiesTable.createdAt,
       })
       .from(storiesTable)
       .where(
@@ -278,13 +305,87 @@ router.get("/:lakeId/detail", async (req, res) => {
         .limit(8)
     : [];
 
-  // Trending places: most-storied named places right now.
-  const placeCounts = new Map<string, number>();
-  for (const s of activeStories) {
-    if (s.placeName) placeCounts.set(s.placeName, (placeCounts.get(s.placeName) ?? 0) + 1);
+  // Featured hero: the best-liked real community photo from the last 48h
+  // (falls back to the freshest live community story photo). Never generated
+  // or stock imagery — the client only uses its static artwork when this is
+  // null because the lake has no recent community photos at all.
+  let heroPhoto: {
+    url: string;
+    likeCount: number;
+    authorName: string | null;
+    authorAvatarUrl: string | null;
+  } | null = null;
+  const heroPost = heroCandidates[0];
+  const heroUrl = heroPost ? (heroPost.imageUrl ?? heroPost.photos?.[0] ?? null) : null;
+  if (heroPost && heroUrl) {
+    const [author] = await db
+      .select({ displayName: usersTable.displayName, username: usersTable.username, avatarUrl: usersTable.avatarUrl })
+      .from(usersTable)
+      .where(eq(usersTable.id, heroPost.userId))
+      .limit(1);
+    heroPhoto = {
+      url: heroUrl,
+      likeCount: heroPost.likeCount,
+      authorName: author ? author.displayName || author.username : null,
+      authorAvatarUrl: author?.avatarUrl ?? null,
+    };
+  } else {
+    const heroStory = activeStories.find(
+      (s) => s.mediaType === "photo" && s.mediaUrl && s.visibility === "community",
+    );
+    if (heroStory?.mediaUrl) {
+      const [author] = await db
+        .select({ displayName: usersTable.displayName, username: usersTable.username, avatarUrl: usersTable.avatarUrl })
+        .from(usersTable)
+        .where(eq(usersTable.id, heroStory.userId))
+        .limit(1);
+      heroPhoto = {
+        url: heroStory.mediaUrl,
+        likeCount: 0,
+        authorName: author ? author.displayName || author.username : null,
+        authorAvatarUrl: author?.avatarUrl ?? null,
+      };
+    }
   }
-  const trendingPlaces = [...placeCounts.entries()]
-    .map(([placeName, storyCount]) => ({ placeName, storyCount }))
+
+  // Trending places: most-storied named places right now, with a photo thumb
+  // and how many people are posting there. activeStories is already
+  // viewer-scoped, so thumbnails never leak anything the viewer can't see.
+  type PlaceAgg = {
+    placeName: string;
+    storyCount: number;
+    authorIds: Set<number>;
+    thumbnailUrl: string | null;
+    lat: number | null;
+    lng: number | null;
+  };
+  const placeAggs = new Map<string, PlaceAgg>();
+  for (const s of activeStories) {
+    if (!s.placeName) continue;
+    const key = s.placeName.toLowerCase();
+    let agg = placeAggs.get(key);
+    if (!agg) {
+      agg = { placeName: s.placeName, storyCount: 0, authorIds: new Set(), thumbnailUrl: null, lat: null, lng: null };
+      placeAggs.set(key, agg);
+    }
+    agg.storyCount += 1;
+    agg.authorIds.add(s.userId);
+    // Stories arrive newest-first, so the first photo becomes the thumbnail.
+    if (!agg.thumbnailUrl && s.mediaType === "photo" && s.mediaUrl) agg.thumbnailUrl = s.mediaUrl;
+    if (agg.lat == null && s.lat != null) {
+      agg.lat = s.lat;
+      agg.lng = s.lng;
+    }
+  }
+  const trendingPlaces = [...placeAggs.values()]
+    .map((p) => ({
+      placeName: p.placeName,
+      storyCount: p.storyCount,
+      activeUsers: p.authorIds.size,
+      thumbnailUrl: p.thumbnailUrl,
+      lat: p.lat,
+      lng: p.lng,
+    }))
     .sort((a, b) => b.storyCount - a.storyCount)
     .slice(0, 5);
 
@@ -313,6 +414,7 @@ router.get("/:lakeId/detail", async (req, res) => {
     lat: lake.lat,
     lng: lake.lng,
     activeUsers: activeUserIds.size,
+    heroPhoto,
     recentPhotos,
     stories: { count: activeStories.length, authors: storyAuthors },
     upcomingEvents: eventPosts.map((e) => ({
@@ -323,6 +425,159 @@ router.get("/:lakeId/detail", async (req, res) => {
     })),
     trendingPlaces,
     friendsHere,
+  });
+});
+
+/** Rough distance in km between two coordinates (haversine). */
+function distanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * Viewer-scoped detail for one named place on a lake: its live stories'
+ * photos, who's posting there, upcoming events pinned nearby, and where it
+ * sits on the map. 404s when the lake is invalid or the place has no live
+ * stories the viewer may see (places only exist through stories).
+ */
+router.get("/:lakeId/places/:placeName", async (req, res) => {
+  const uid = currentUserId(req);
+  const rawLakeId = Number(req.params.lakeId);
+  if (!isValidLakeId(rawLakeId)) {
+    return res.status(404).json({ message: "Lake not found" });
+  }
+  const lake = lakeById(rawLakeId);
+  const placeName = String(req.params.placeName ?? "").trim();
+  if (!placeName) return res.status(404).json({ message: "Place not found" });
+
+  const [friendIds, excluded] = await Promise.all([
+    getStoryFriendIds(uid),
+    getExcludedAuthorIds(uid),
+  ]);
+  const notExcludedStories = excluded.length ? notInArray(storiesTable.userId, excluded) : undefined;
+  const notExcludedPosts = excluded.length ? notInArray(postsTable.userId, excluded) : undefined;
+  const storyAudience = or(
+    eq(storiesTable.visibility, "community"),
+    inArray(storiesTable.userId, [uid, ...friendIds]),
+  );
+  const postAudience = or(
+    eq(postsTable.visibility, "community"),
+    inArray(postsTable.userId, [uid, ...friendIds]),
+  );
+
+  const stories = await db
+    .select({
+      id: storiesTable.id,
+      userId: storiesTable.userId,
+      mediaType: storiesTable.mediaType,
+      mediaUrl: storiesTable.mediaUrl,
+      placeName: storiesTable.placeName,
+      lat: storiesTable.lat,
+      lng: storiesTable.lng,
+      createdAt: storiesTable.createdAt,
+    })
+    .from(storiesTable)
+    .where(
+      and(
+        eq(storiesTable.lakeId, lake.id),
+        gt(storiesTable.expiresAt, sql`now()`),
+        sql`lower(${storiesTable.placeName}) = ${placeName.toLowerCase()}`,
+        storyAudience,
+        notExcludedStories,
+      ),
+    )
+    .orderBy(desc(storiesTable.createdAt));
+
+  if (!stories.length) {
+    return res.status(404).json({ message: "Place not found" });
+  }
+
+  // Canonical casing from the stories themselves; coords from the first
+  // story that has them.
+  const canonicalName = stories[0].placeName ?? placeName;
+  const located = stories.find((s) => s.lat != null && s.lng != null);
+  const lat = located?.lat ?? null;
+  const lng = located?.lng ?? null;
+
+  const authorIds = [...new Set(stories.map((s) => s.userId))];
+  const authors = await db
+    .select({
+      id: usersTable.id,
+      username: usersTable.username,
+      displayName: usersTable.displayName,
+      avatarUrl: usersTable.avatarUrl,
+    })
+    .from(usersTable)
+    .where(inArray(usersTable.id, authorIds))
+    .limit(12);
+  const authorById = new Map(authors.map((a) => [a.id, a]));
+
+  // Photo wall: live story photos at this place (viewer-scoped already).
+  const photos = stories
+    .filter((s) => s.mediaType === "photo" && s.mediaUrl)
+    .slice(0, 24)
+    .map((s) => ({
+      storyId: s.id,
+      url: s.mediaUrl!,
+      authorId: s.userId,
+      authorName: authorById.get(s.userId)?.displayName ?? null,
+      createdAt: s.createdAt.toISOString(),
+    }));
+
+  // Upcoming events pinned near this place (within ~3km), viewer-scoped.
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  let nearbyEvents: { id: number; title: string | null; eventDate: string | null; imageUrl: string | null }[] = [];
+  if (lat != null && lng != null) {
+    const events = await db
+      .select({
+        id: postsTable.id,
+        title: postsTable.title,
+        eventDate: postsTable.eventDate,
+        imageUrl: postsTable.imageUrl,
+        isMature: postsTable.isMature,
+        pinLat: postsTable.pinLat,
+        pinLng: postsTable.pinLng,
+      })
+      .from(postsTable)
+      .where(
+        and(
+          eq(postsTable.lakeId, lake.id),
+          eq(postsTable.postType, "event"),
+          gte(postsTable.eventDate, todayStart),
+          sql`${postsTable.pinLat} is not null`,
+          postAudience,
+          notExcludedPosts,
+        ),
+      )
+      .orderBy(postsTable.eventDate);
+    nearbyEvents = events
+      .filter((e) => e.pinLat != null && e.pinLng != null && distanceKm(lat, lng, e.pinLat, e.pinLng) <= 3)
+      .slice(0, 5)
+      .map((e) => ({
+        id: e.id,
+        title: e.title,
+        eventDate: e.eventDate ? e.eventDate.toISOString() : null,
+        imageUrl: e.isMature ? null : e.imageUrl,
+      }));
+  }
+
+  return res.json({
+    lakeId: lake.id,
+    lakeName: lake.name,
+    placeName: canonicalName,
+    lat,
+    lng,
+    storyCount: stories.length,
+    activeUsers: authorIds.length,
+    authors,
+    photos,
+    nearbyEvents,
   });
 });
 

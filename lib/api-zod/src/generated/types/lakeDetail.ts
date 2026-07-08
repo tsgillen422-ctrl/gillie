@@ -5,6 +5,7 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { LakeDetailHeroPhoto } from './lakeDetailHeroPhoto';
 import type { LakeDetailStories } from './lakeDetailStories';
 import type { LakeDetailTrendingPlacesItem } from './lakeDetailTrendingPlacesItem';
 import type { LakeDetailUpcomingEventsItem } from './lakeDetailUpcomingEventsItem';
@@ -19,6 +20,11 @@ export interface LakeDetail {
   lng: number;
   /** People active this week (checked in now, or posted/storied in the last 7 days) */
   activeUsers: number;
+  /**
+     * Best-liked real community photo from the last 48h (null when the lake has none)
+     * @nullable
+     */
+  heroPhoto?: LakeDetailHeroPhoto;
   /** Recent viewer-visible photo URLs for the live carousel */
   recentPhotos: string[];
   stories: LakeDetailStories;

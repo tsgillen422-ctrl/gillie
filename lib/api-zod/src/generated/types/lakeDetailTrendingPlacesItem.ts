@@ -9,4 +9,11 @@
 export type LakeDetailTrendingPlacesItem = {
   placeName: string;
   storyCount: number;
+  activeUsers: number;
+  /** @nullable */
+  thumbnailUrl?: string | null;
+  /** @nullable */
+  lat?: number | null;
+  /** @nullable */
+  lng?: number | null;
 };

@@ -854,6 +854,19 @@ export interface LakeUserPreview {
   avatarUrl?: string | null;
 }
 
+/**
+ * Best-liked real community photo from the last 48h (null when the lake has none)
+ * @nullable
+ */
+export type LakeDetailHeroPhoto = {
+  url: string;
+  likeCount: number;
+  /** @nullable */
+  authorName?: string | null;
+  /** @nullable */
+  authorAvatarUrl?: string | null;
+} | null;
+
 export type LakeDetailStories = {
   /** Live (non-expired) stories the viewer may see */
   count: number;
@@ -872,6 +885,13 @@ export type LakeDetailUpcomingEventsItem = {
 export type LakeDetailTrendingPlacesItem = {
   placeName: string;
   storyCount: number;
+  activeUsers: number;
+  /** @nullable */
+  thumbnailUrl?: string | null;
+  /** @nullable */
+  lat?: number | null;
+  /** @nullable */
+  lng?: number | null;
 };
 
 export interface LakeDetail {
@@ -883,6 +903,11 @@ export interface LakeDetail {
   lng: number;
   /** People active this week (checked in now, or posted/storied in the last 7 days) */
   activeUsers: number;
+  /**
+     * Best-liked real community photo from the last 48h (null when the lake has none)
+     * @nullable
+     */
+  heroPhoto?: LakeDetailHeroPhoto;
   /** Recent viewer-visible photo URLs for the live carousel */
   recentPhotos: string[];
   stories: LakeDetailStories;
@@ -890,6 +915,41 @@ export interface LakeDetail {
   trendingPlaces: LakeDetailTrendingPlacesItem[];
   /** Viewer's friends with an active check-in on this lake (no coordinates) */
   friendsHere: LakeUserPreview[];
+}
+
+export type LakePlaceDetailPhotosItem = {
+  storyId: number;
+  url: string;
+  authorId: number;
+  /** @nullable */
+  authorName?: string | null;
+  createdAt: string;
+};
+
+export type LakePlaceDetailNearbyEventsItem = {
+  id: number;
+  title: string;
+  /** @nullable */
+  eventDate?: string | null;
+  /** @nullable */
+  imageUrl?: string | null;
+};
+
+export interface LakePlaceDetail {
+  lakeId: number;
+  lakeName: string;
+  placeName: string;
+  /** @nullable */
+  lat: number | null;
+  /** @nullable */
+  lng: number | null;
+  storyCount: number;
+  activeUsers: number;
+  authors: LakeUserPreview[];
+  /** Live story photos at this place (viewer-scoped) */
+  photos: LakePlaceDetailPhotosItem[];
+  /** Upcoming events pinned within ~3km of this place */
+  nearbyEvents: LakePlaceDetailNearbyEventsItem[];
 }
 
 export interface DockLabelInput {

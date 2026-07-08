@@ -3332,6 +3332,12 @@ export const GetLakeDetailResponse = zod.object({
   "lat": zod.number(),
   "lng": zod.number(),
   "activeUsers": zod.number().describe('People active this week (checked in now, or posted\/storied in the last 7 days)'),
+  "heroPhoto": zod.object({
+  "url": zod.string(),
+  "likeCount": zod.number(),
+  "authorName": zod.string().nullish(),
+  "authorAvatarUrl": zod.string().nullish()
+}).nullish().describe('Best-liked real community photo from the last 48h (null when the lake has none)'),
   "recentPhotos": zod.array(zod.string()).describe('Recent viewer-visible photo URLs for the live carousel'),
   "stories": zod.object({
   "count": zod.number().describe('Live (non-expired) stories the viewer may see'),
@@ -3350,7 +3356,11 @@ export const GetLakeDetailResponse = zod.object({
 })),
   "trendingPlaces": zod.array(zod.object({
   "placeName": zod.string(),
-  "storyCount": zod.number()
+  "storyCount": zod.number(),
+  "activeUsers": zod.number(),
+  "thumbnailUrl": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish()
 })),
   "friendsHere": zod.array(zod.object({
   "id": zod.number(),
@@ -3358,6 +3368,44 @@ export const GetLakeDetailResponse = zod.object({
   "displayName": zod.string(),
   "avatarUrl": zod.string().nullish()
 })).describe('Viewer\'s friends with an active check-in on this lake (no coordinates)')
+})
+
+
+/**
+ * @summary Viewer-scoped detail for one named place on a lake (stories, photos, nearby events, location)
+ */
+export const GetLakePlaceDetailParams = zod.object({
+  "lakeId": zod.coerce.number(),
+  "placeName": zod.coerce.string()
+})
+
+export const GetLakePlaceDetailResponse = zod.object({
+  "lakeId": zod.number(),
+  "lakeName": zod.string(),
+  "placeName": zod.string(),
+  "lat": zod.number().nullable(),
+  "lng": zod.number().nullable(),
+  "storyCount": zod.number(),
+  "activeUsers": zod.number(),
+  "authors": zod.array(zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish()
+})),
+  "photos": zod.array(zod.object({
+  "storyId": zod.number(),
+  "url": zod.string(),
+  "authorId": zod.number(),
+  "authorName": zod.string().nullish(),
+  "createdAt": zod.string()
+})).describe('Live story photos at this place (viewer-scoped)'),
+  "nearbyEvents": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "eventDate": zod.string().nullish(),
+  "imageUrl": zod.string().nullish()
+})).describe('Upcoming events pinned within ~3km of this place')
 })
 
 

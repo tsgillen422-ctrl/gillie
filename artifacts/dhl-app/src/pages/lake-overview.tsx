@@ -9,12 +9,20 @@ import {
   ArrowRight,
   CircleCheck,
 } from "lucide-react";
-import { useGetLakeDetail, getGetLakeDetailQueryKey } from "@workspace/api-client-react";
+import {
+  useGetLakeDetail,
+  getGetLakeDetailQueryKey,
+  useGetStories,
+  getGetStoriesQueryKey,
+  useGetMe,
+} from "@workspace/api-client-react";
 import { isValidLakeId } from "@workspace/lake-config";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ConditionsWidget } from "@/components/ConditionsWidget";
+import { StoryViewer } from "@/components/stories/StoryViewer";
+import { resolveImageSrc } from "@/lib/assets";
 import { useLake } from "@/lib/lake-context";
 
 /** Photo generated for each lake, shipped with the app in public/lakes/. */
@@ -34,7 +42,18 @@ function formatEventDate(iso: string | null | undefined): string {
 }
 
 /** Auto-advancing, swipeable photo carousel for the lake hero. */
-function HeroCarousel({ photos, name, region }: { photos: string[]; name: string; region: string }) {
+function HeroCarousel({
+  photos,
+  name,
+  region,
+  credit,
+}: {
+  photos: string[];
+  name: string;
+  region: string;
+  /** Shown over the first slide only (the featured community photo). */
+  credit?: React.ReactNode;
+}) {
   const [index, setIndex] = useState(0);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const pausedRef = useRef(false);
@@ -76,6 +95,9 @@ function HeroCarousel({ photos, name, region }: { photos: string[]; name: string
         ))}
       </div>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />
+      {credit && index === 0 && (
+        <div className="pointer-events-none absolute right-3 top-3 z-10">{credit}</div>
+      )}
       <div className="pointer-events-none absolute bottom-3 left-4 right-4">
         <h1 className="font-display text-2xl font-bold tracking-tight text-white drop-shadow-sm">
           {name}
@@ -125,9 +147,35 @@ export function LakeOverviewPage() {
     },
   });
 
+  const { data: me } = useGetMe();
+
+  // Full-screen story viewer for this lake's stories; fetched lazily on tap.
+  const [storiesOpen, setStoriesOpen] = useState(false);
+  const { data: storyGroups, isLoading: storiesLoading } = useGetStories(
+    { lakeId: validId ?? 0 },
+    {
+      query: {
+        enabled: storiesOpen && validId !== undefined,
+        queryKey: getGetStoriesQueryKey({ lakeId: validId ?? 0 }),
+      },
+    },
+  );
+  // If the stories all expired between page load and tap, close gracefully.
+  useEffect(() => {
+    if (storiesOpen && !storiesLoading && storyGroups && storyGroups.length === 0) {
+      setStoriesOpen(false);
+    }
+  }, [storiesOpen, storiesLoading, storyGroups]);
+
+  // Real community photos lead; the generated lake artwork only appears when
+  // the community hasn't shared any photos yet (never mixed with real ones).
   const photos = useMemo(() => {
     if (!lake) return [];
-    return [lakePhotoUrl(lake.slug), ...lake.recentPhotos];
+    const community = [
+      ...(lake.heroPhoto ? [lake.heroPhoto.url] : []),
+      ...lake.recentPhotos.filter((u) => u !== lake.heroPhoto?.url),
+    ].map(resolveImageSrc);
+    return community.length ? [...new Set(community)] : [lakePhotoUrl(lake.slug)];
   }, [lake]);
 
   if (validId === undefined) {
@@ -173,7 +221,26 @@ export function LakeOverviewPage() {
           </div>
         ) : (
           <>
-            <HeroCarousel photos={photos} name={lake.name} region={lake.region} />
+            <HeroCarousel
+              photos={photos}
+              name={lake.name}
+              region={lake.region}
+              credit={
+                lake.heroPhoto ? (
+                  <span
+                    className="flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm"
+                    data-testid="hero-photo-credit"
+                  >
+                    <span aria-hidden>⭐</span>
+                    Top photo
+                    {lake.heroPhoto.authorName ? ` · ${lake.heroPhoto.authorName}` : ""}
+                    {lake.heroPhoto.likeCount > 0 && (
+                      <span className="text-white/80">❤️ {lake.heroPhoto.likeCount}</span>
+                    )}
+                  </span>
+                ) : undefined
+              }
+            />
 
             <div className="space-y-5 p-4">
               {/* Stat strip */}
@@ -227,13 +294,18 @@ export function LakeOverviewPage() {
                 </section>
               )}
 
-              {/* Today's stories */}
+              {/* Today's stories — tap to watch them full-screen */}
               {lake.stories.count > 0 && lake.stories.authors.length > 0 && (
                 <section className="space-y-2.5">
                   <SectionTitle>
-                    <span aria-hidden>📸</span> Today's stories
+                    <span aria-hidden>📸</span> Watch Today's Stories ({lake.stories.count})
                   </SectionTitle>
-                  <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-card p-3">
+                  <button
+                    type="button"
+                    onClick={() => setStoriesOpen(true)}
+                    className="flex w-full items-center gap-3 rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:bg-accent/40 active:scale-[0.99]"
+                    data-testid="button-watch-stories"
+                  >
                     <div className="flex -space-x-2">
                       {lake.stories.authors.slice(0, 6).map((a) => (
                         <div
@@ -249,11 +321,13 @@ export function LakeOverviewPage() {
                         </div>
                       ))}
                     </div>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="flex-1 text-xs text-muted-foreground">
                       <span className="font-bold text-foreground">{lake.stories.count}</span>{" "}
-                      {lake.stories.count === 1 ? "story" : "stories"} shared today — jump in to watch
+                      {lake.stories.count === 1 ? "story" : "stories"} shared today —{" "}
+                      {storiesOpen && storiesLoading ? "loading…" : "tap to watch"}
                     </p>
-                  </div>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  </button>
                 </section>
               )}
 
@@ -280,7 +354,7 @@ export function LakeOverviewPage() {
                       >
                         {e.imageUrl ? (
                           <img
-                            src={e.imageUrl}
+                            src={resolveImageSrc(e.imageUrl)}
                             alt=""
                             className="h-12 w-12 shrink-0 rounded-lg object-cover"
                             loading="lazy"
@@ -306,16 +380,37 @@ export function LakeOverviewPage() {
                   <SectionTitle>
                     <Flame className="h-4 w-4 text-orange-500" /> Trending places
                   </SectionTitle>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
                     {lake.trendingPlaces.map((p) => (
-                      <span
+                      <button
                         key={p.placeName}
-                        className="flex items-center gap-1.5 rounded-full border border-border/50 bg-card px-3 py-1.5 text-xs font-semibold text-foreground"
+                        type="button"
+                        onClick={() =>
+                          navigate(`/lakes/${validId}/places/${encodeURIComponent(p.placeName)}`)
+                        }
+                        className="w-36 shrink-0 overflow-hidden rounded-xl border border-border/50 bg-card text-left transition-all hover:bg-accent/40 active:scale-[0.98]"
+                        data-testid={`card-place-${p.placeName}`}
                       >
-                        <MapPin className="h-3.5 w-3.5 text-primary" />
-                        {p.placeName}
-                        <span className="text-muted-foreground">· {p.storyCount}</span>
-                      </span>
+                        {p.thumbnailUrl ? (
+                          <img
+                            src={resolveImageSrc(p.thumbnailUrl)}
+                            alt=""
+                            className="h-20 w-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex h-20 w-full items-center justify-center bg-gradient-to-br from-teal-500/15 to-sky-500/15">
+                            <MapPin className="h-6 w-6 text-primary/60" />
+                          </div>
+                        )}
+                        <div className="space-y-0.5 p-2.5">
+                          <p className="truncate text-xs font-bold text-foreground">{p.placeName}</p>
+                          <p className="text-[10px] font-medium text-muted-foreground">
+                            {p.storyCount} {p.storyCount === 1 ? "story" : "stories"} ·{" "}
+                            {p.activeUsers} {p.activeUsers === 1 ? "person" : "people"}
+                          </p>
+                        </div>
+                      </button>
                     ))}
                   </div>
                 </section>
@@ -331,6 +426,17 @@ export function LakeOverviewPage() {
           </>
         )}
       </div>
+
+      {/* Full-screen Snapchat-style viewer for this lake's stories */}
+      {storiesOpen && storyGroups && storyGroups.length > 0 && (
+        <StoryViewer
+          groups={storyGroups}
+          initialGroupIndex={0}
+          meId={me?.id}
+          lakeId={validId}
+          onClose={() => setStoriesOpen(false)}
+        />
+      )}
 
       {/* Enter button pinned above the bottom nav */}
       <div className="pointer-events-none absolute inset-x-0 bottom-4 z-30 px-4">
