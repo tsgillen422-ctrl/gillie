@@ -31,6 +31,11 @@ export interface FriendLocation {
   /** The lake this friend last checked in at */
   lakeId?: number;
   isSharingLocation?: boolean;
+  /**
+     * True when the position was reported recently (app open); false means the marker is a stale "last seen" position within the active sharing window
+     * @nullable
+     */
+  isLive?: boolean | null;
   /** @nullable */
   isBusiness?: boolean | null;
   isOnline?: boolean;

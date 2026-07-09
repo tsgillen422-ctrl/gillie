@@ -195,7 +195,7 @@ const TOGGLE_CONFIGS: Record<string, ToggleConfig> = {
     pageTitle: "See My Location",
     icon: Map,
     label: "See My Location",
-    description: "When you check in, show your boat on the map to followers you don't follow back",
+    description: "When you're sharing your location, show your boat on the map to followers you don't follow back",
     footer: FOLLOWER_CONTEXT,
     onToast: { title: "Location Shared with Followers", description: "Followers you don't follow back can see you on the map." },
     offToast: { title: "Location Hidden from Followers", description: "Only people you follow back can see you on the map." },
@@ -223,15 +223,17 @@ const TOGGLE_CONFIGS: Record<string, ToggleConfig> = {
   },
 };
 
-/* --------------------------- Location Check-In --------------------------- */
+/* --------------------------- Location Sharing ---------------------------- */
 
 function LocationCheckInPage() {
   return (
-    <SettingsShell title="Location Check-In">
+    <SettingsShell title="Location Sharing">
       <div className="rounded-2xl bg-card border border-border p-5">
         <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-          Check in to share your location with approved friends. You're only on
-          the map when you choose to check in.
+          Share your location with approved friends. Your position updates while
+          the app is open; friends see your last spot with a "last seen" time,
+          and you disappear automatically after 24 hours away. Go Ghost anytime
+          to hide instantly.
         </p>
         <CheckInControl variant="card" />
       </div>

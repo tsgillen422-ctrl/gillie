@@ -706,7 +706,7 @@ export function VesselDetailsPage() {
               </div>
             );
           })}
-          <p className="text-[11px] text-muted-foreground px-1">Your Primary Boat is what friends see on your profile and on the map. When you check in, you can pick which one you're taking out.</p>
+          <p className="text-[11px] text-muted-foreground px-1">Your Primary Boat is what friends see on your profile and on the map. When you share your location, you can pick which one you're taking out.</p>
         </div>
       )}
 

@@ -93,7 +93,7 @@ export function SettingsPage() {
 
         {/* Privacy */}
         <SettingsGroup title="Privacy">
-          <SettingsLinkRow href="/settings/location-checkin" icon={MapPin} label="Location Check-In" />
+          <SettingsLinkRow href="/settings/location-checkin" icon={MapPin} label="Location Sharing" />
           <SettingsLinkRow href="/settings/profile-visibility" icon={Eye} label="Profile Visibility" />
           <SettingsLinkRow href="/settings/followers" icon={Users} label="Followers & Following" />
           <SettingsLinkRow href="/settings/friends-visibility" icon={UserCheck} label="Friend List Visibility" />

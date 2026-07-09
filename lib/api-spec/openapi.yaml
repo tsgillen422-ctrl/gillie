@@ -3043,7 +3043,7 @@ components:
           type: boolean
         durationHours:
           type: number
-          description: How long the check-in stays active (clamped 1-8h, default 6h)
+          description: How long the sharing window stays active before auto-ghosting (clamped 1-24h, default 6h). Location reports while the app is open slide the window forward.
         boatId:
           type: ["integer", "null"]
           description: Which boat from the user's fleet is out today; its look is used on the map
@@ -3084,6 +3084,9 @@ components:
           description: The lake this friend last checked in at
         isSharingLocation:
           type: boolean
+        isLive:
+          type: ["boolean", "null"]
+          description: True when the position was reported recently (app open); false means the marker is a stale "last seen" position within the active sharing window
         isBusiness:
           type: ["boolean", "null"]
         isOnline:

@@ -316,14 +316,17 @@ export function isLocationLive(u: typeof usersTable.$inferSelect): boolean {
   return isActivelySharing(u) && fresh;
 }
 
-// When `hideLiveLocation` is set, live coordinates are withheld regardless of the
-// user's own check-in state — used to enforce audience rules when serializing
-// another user's profile for a viewer who isn't authorized to see their location.
+// Apple 5.1.2 — location is DENY BY DEFAULT. Coordinates (and the sharing
+// window) are only serialized when the caller explicitly passes
+// `includeLiveLocation: true`, which is limited to (a) self endpoints (/me and
+// its mutations) and (b) the profile route after its viewer audience check
+// (canSeeLive). Every other surface (search, admin lists, moderation actions)
+// gets nulls so a non-friend can never read someone's position.
 // When `redactHiddenBoat` is set and the user has showBoat=false, the boat
 // showcase details (model/year/photo/marina) are withheld from other viewers.
 // boatName/color/type stay visible because the map's boat markers depend on them.
-function formatUser(u: typeof usersTable.$inferSelect, opts: { hideLiveLocation?: boolean; redactHiddenBoat?: boolean } = {}) {
-  const sharing = opts.hideLiveLocation ? false : isActivelySharing(u);
+function formatUser(u: typeof usersTable.$inferSelect, opts: { includeLiveLocation?: boolean; redactHiddenBoat?: boolean } = {}) {
+  const sharing = opts.includeLiveLocation ? isActivelySharing(u) : false;
   const hideBoat = !!opts.redactHiddenBoat && u.showBoat === false;
   return {
     id: u.id,
@@ -361,7 +364,7 @@ function formatUser(u: typeof usersTable.$inferSelect, opts: { hideLiveLocation?
     interests: u.interests ?? [],
     favoriteThings: u.favoriteThings ?? [],
     shareLocation: u.shareLocation,
-    locationSharingExpiresAt: u.locationSharingExpiresAt ? u.locationSharingExpiresAt.toISOString() : null,
+    locationSharingExpiresAt: opts.includeLiveLocation && u.locationSharingExpiresAt ? u.locationSharingExpiresAt.toISOString() : null,
     isSharingLocation: sharing,
     requireFollowApproval: u.requireFollowApproval,
     showFollowers: u.showFollowers,
@@ -423,7 +426,7 @@ router.get("/me", async (req, res) => {
   if (!user) return res.status(401).json({ error: "Not logged in" });
   const meBadges = await computeBadges(user.id);
   const fleet = (await getFleet(user.id)).map(formatBoat);
-  res.json({ ...formatUser(user), fleet, ...(await getFollowCounts(user.id)), badges: meBadges, rank: computeRank(meBadges) });
+  res.json({ ...formatUser(user, { includeLiveLocation: true }), fleet, ...(await getFollowCounts(user.id)), badges: meBadges, rank: computeRank(meBadges) });
 });
 
 router.post("/me/sos", async (req, res) => {
@@ -641,7 +644,7 @@ router.patch("/me", async (req, res) => {
     updates.showMatureContent = req.body.showMatureContent;
   }
   const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, uid)).returning();
-  res.json(formatUser(updated));
+  res.json(formatUser(updated, { includeLiveLocation: true }));
 });
 
 router.post("/me/waiver", async (req, res) => {
@@ -662,7 +665,7 @@ router.post("/me/waiver", async (req, res) => {
     return row;
   });
   if (!updated) return res.status(401).json({ error: "Not logged in" });
-  res.json(formatUser(updated));
+  res.json(formatUser(updated, { includeLiveLocation: true }));
 });
 
 // App Store / EULA: record acceptance of the Terms of Service, Privacy Policy,
@@ -686,30 +689,49 @@ router.post("/me/terms", async (req, res) => {
     return row;
   });
   if (!updated) return res.status(401).json({ error: "Not logged in" });
-  res.json(formatUser(updated));
+  res.json(formatUser(updated, { includeLiveLocation: true }));
 });
 
-// Default check-in length and the max a client may request (Apple 5.1.2: an
-// auto-expiring window so a check-in can never become permanent sharing).
+// Passive sharing model (Snapchat-style, still 5.1.2-safe): sharing starts with
+// an explicit opt-in (POST /me/checkin from the consent dialog) and each location
+// report while the app is OPEN slides the expiry forward, so sharing continues
+// seamlessly across sessions for active users. If the user simply stops opening
+// the app, the window lapses and they auto-ghost — sharing can never become
+// permanent without continued app use. Ghost Mode (POST /me/checkout) stops it
+// instantly. Old app builds that request short manual check-ins keep working.
 const CHECKIN_DEFAULT_HOURS = 6;
-const CHECKIN_MAX_HOURS = 8;
+const CHECKIN_MAX_HOURS = 24;
+const PASSIVE_WINDOW_HOURS = 24;
 
 router.patch("/me/location", async (req, res) => {
   const uid = currentUserId(req);
   const { lat, lng, onWater } = req.body;
-  // Only refresh coordinates while the user is actively checked in. iOS location
+  // Only refresh coordinates while the user is actively sharing. iOS location
   // permission alone (or a stale client) must never publish a position.
   const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, uid) });
   if (!me) return res.status(401).json({ error: "Not logged in" });
   if (!isActivelySharing(me)) {
-    return res.json(formatUser(me));
+    return res.json(formatUser(me, { includeLiveLocation: true }));
   }
+  // Slide the auto-ghost window: using the app while sharing keeps sharing
+  // alive; not opening the app lets it lapse within PASSIVE_WINDOW_HOURS.
+  const slidTo = new Date(Date.now() + PASSIVE_WINDOW_HOURS * 60 * 60 * 1000);
   const [updated] = await db
     .update(usersTable)
-    .set({ currentLat: lat, currentLng: lng, isOnline: true, isOnWater: onWater === true, lastSeen: new Date() })
+    .set({
+      currentLat: lat,
+      currentLng: lng,
+      isOnline: true,
+      // Only the map client can tell water from land; a report that omits
+      // onWater (e.g. the app-level keep-alive heartbeat) must not clobber the
+      // last known determination.
+      ...(onWater === undefined ? {} : { isOnWater: onWater === true }),
+      lastSeen: new Date(),
+      locationSharingExpiresAt: slidTo,
+    })
     .where(eq(usersTable.id, uid))
     .returning();
-  res.json(formatUser(updated));
+  res.json(formatUser(updated, { includeLiveLocation: true }));
 });
 
 // Apple 5.1.2: explicit manual check-in. Starts publishing the user's location
@@ -748,7 +770,9 @@ router.post("/me/checkin", async (req, res) => {
       currentLat: lat,
       currentLng: lng,
       isOnline: true,
-      isOnWater: onWater === true,
+      // Preserve the last water/land determination when the client doesn't
+      // supply one (e.g. the silent auto-resume on app launch).
+      ...(onWater === undefined ? {} : { isOnWater: onWater === true }),
       shareLocation: true,
       locationSharingExpiresAt: expiresAt,
       lastSeen: new Date(),
@@ -758,7 +782,7 @@ router.post("/me/checkin", async (req, res) => {
     })
     .where(eq(usersTable.id, uid))
     .returning();
-  res.json(formatUser(updated));
+  res.json(formatUser(updated, { includeLiveLocation: true }));
 });
 
 // Apple 5.1.2: stop sharing. Clears the check-in so the user immediately drops
@@ -778,7 +802,7 @@ router.post("/me/checkout", async (req, res) => {
     .where(eq(usersTable.id, uid))
     .returning();
   if (!updated) return res.status(401).json({ error: "Not logged in" });
-  res.json(formatUser(updated));
+  res.json(formatUser(updated, { includeLiveLocation: true }));
 });
 
 // Richer live status ("Out on the Water", "At Sunset Marina", ...). Null or an
@@ -796,7 +820,7 @@ router.put("/me/lake-status", async (req, res) => {
     .where(eq(usersTable.id, uid))
     .returning();
   if (!updated) return res.status(401).json({ error: "Not logged in" });
-  res.json(formatUser(updated));
+  res.json(formatUser(updated, { includeLiveLocation: true }));
 });
 
 router.get("/search", async (req, res) => {
@@ -1033,12 +1057,13 @@ router.get("/:userId", async (req, res) => {
     }
   }
 
-  // Apple 5.1.2 + follower privacy: expose another user's live location only when
-  // they are live+fresh, I follow them, and either they follow me back (mutual) or
-  // they let followers see their location. Mirrors GET /friends/locations so a
-  // non-follower can't read a checked-in user's coordinates from their profile.
+  // Apple 5.1.2 + follower privacy: expose another user's location only while
+  // their sharing window is active, I follow them, and either they follow me back
+  // (mutual) or they let followers see their location. Mirrors GET
+  // /friends/locations so a non-follower can't read a sharing user's coordinates
+  // from their profile. Stale-but-active positions stay visible ("last seen").
   let canSeeLive = friendStatus === "self";
-  if (!canSeeLive && friendStatus !== "blocked" && friendStatus !== "blocked_by" && isLocationLive(user)) {
+  if (!canSeeLive && friendStatus !== "blocked" && friendStatus !== "blocked_by" && isActivelySharing(user)) {
     const [iFollow, followsMe] = await Promise.all([
       db.query.friendRequestsTable.findFirst({
         where: and(
@@ -1064,7 +1089,7 @@ router.get("/:userId", async (req, res) => {
   // viewers when showBoat=false.
   const hideFleet = friendStatus !== "self" && user.showBoat === false;
   const fleet = hideFleet ? [] : (await getFleet(user.id)).map(formatBoat);
-  res.json({ ...formatUser(user, { hideLiveLocation: !canSeeLive, redactHiddenBoat: friendStatus !== "self" }), fleet, ...counts, badges: userBadges, rank: computeRank(userBadges), friendStatus });
+  res.json({ ...formatUser(user, { includeLiveLocation: canSeeLive, redactHiddenBoat: friendStatus !== "self" }), fleet, ...counts, badges: userBadges, rank: computeRank(userBadges), friendStatus });
 });
 
 export default router;

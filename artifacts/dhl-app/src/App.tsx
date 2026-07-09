@@ -13,7 +13,7 @@ import { Onboarding } from "@/components/Onboarding";
 import { WaiverGate } from "@/components/WaiverGate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useGetMe, useCheckOutLocation, getGetMeQueryKey } from "@workspace/api-client-react";
+import { useGetMe, useCheckInLocation, useUpdateMyLocation, getGetMeQueryKey, getGetFriendLocationsQueryKey } from "@workspace/api-client-react";
 import { WAIVER_VERSION } from "@/lib/waiver";
 import { LakeProvider } from "@/lib/lake-context";
 
@@ -269,35 +269,82 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+// Passive location sharing keep-alive. Once a user has opted in ("Show me on
+// the map", shareLocation=true), sharing continues automatically while they use
+// the app: on launch and whenever the app returns to the foreground we silently
+// report a fresh position. A report while the window is active slides the auto-
+// ghost deadline forward; if the window lapsed (24h+ away) we re-open it — the
+// opt-in persists until the user turns on Ghost Mode. Geolocation is always
+// called with a timeout and error handler so a denied/hung permission can never
+// wedge the app; failures are silent (the marker just goes stale/ghosts).
+const SHARE_HEARTBEAT_MS = 4 * 60 * 1000;
+const SHARE_WINDOW_HOURS = 24;
+
+function useLocationSharingKeepAlive(
+  me: { shareLocation?: boolean | null; isSharingLocation?: boolean | null } | undefined
+) {
+  const qc = useQueryClient();
+  const checkIn = useCheckInLocation();
+  const updateLocation = useUpdateMyLocation();
+  const lastBeatRef = useRef(0);
+  const optedIn = !!me?.shareLocation;
+  const windowActive = !!me?.isSharingLocation;
+
+  useEffect(() => {
+    if (!optedIn) return;
+    if (!navigator.geolocation) return;
+
+    const beat = () => {
+      if (document.visibilityState !== "visible") return;
+      const now = Date.now();
+      if (now - lastBeatRef.current < 60 * 1000) return;
+      lastBeatRef.current = now;
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          if (windowActive) {
+            // Window still open: a plain location report slides it forward.
+            // onWater is intentionally omitted so the map's water/land
+            // determination isn't clobbered.
+            updateLocation.mutate({ data: coords });
+          } else {
+            // Window lapsed while away: silently resume the opted-in sharing.
+            checkIn.mutate(
+              { data: { ...coords, durationHours: SHARE_WINDOW_HOURS } },
+              {
+                onSuccess: () => {
+                  qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
+                  qc.invalidateQueries({ queryKey: getGetFriendLocationsQueryKey() });
+                },
+              }
+            );
+          }
+        },
+        (err) => console.warn("location keep-alive skipped:", err.code, err.message),
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 120000 }
+      );
+    };
+
+    beat();
+    const onVis = () => {
+      if (document.visibilityState === "visible") beat();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    const iv = setInterval(beat, SHARE_HEARTBEAT_MS);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      clearInterval(iv);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [optedIn, windowActive]);
+}
+
 function AuthedApp() {
   const { data: me, isLoading, isError, refetch } = useGetMe();
-  const qc = useQueryClient();
-  const checkOut = useCheckOutLocation();
 
-  // Apple 5.1.2: location sharing must not persist across a cold launch. If the
-  // account is still flagged as sharing when the app first loads, end that
-  // check-in once so the user starts each session "Not sharing".
-  const coldLaunchCheckedRef = useRef(false);
-  useEffect(() => {
-    if (coldLaunchCheckedRef.current) return;
-    if (!me) return;
-    // Nothing to clear — mark done so we don't keep checking.
-    if (!me.isSharingLocation) {
-      coldLaunchCheckedRef.current = true;
-      return;
-    }
-    if (checkOut.isPending) return;
-    // Fail safe: only mark the one-shot guard once checkout actually succeeds.
-    // If it fails, leave the flag unset so a later /me refresh retries rather
-    // than leaving the user silently "sharing" for the whole session.
-    checkOut.mutate(undefined, {
-      onSuccess: () => {
-        coldLaunchCheckedRef.current = true;
-        qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
-      },
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me]);
+  // Snapchat-style sharing: opted-in users stay on the map across sessions;
+  // opening the app refreshes their position (and their auto-ghost window).
+  useLocationSharingKeepAlive(me);
 
   if (isLoading) {
     return <div className="flex min-h-[100dvh] items-center justify-center bg-background text-muted-foreground">Loading…</div>;

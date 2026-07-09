@@ -1595,6 +1595,7 @@ export const GetFriendLocationsResponseItem = zod.object({
   "lng": zod.number().nullish(),
   "lakeId": zod.number().optional().describe('The lake this friend last checked in at'),
   "isSharingLocation": zod.boolean().optional(),
+  "isLive": zod.boolean().nullish().describe('True when the position was reported recently (app open); false means the marker is a stale \"last seen\" position within the active sharing window'),
   "isBusiness": zod.boolean().nullish(),
   "isOnline": zod.boolean().optional(),
   "isOnWater": zod.boolean().nullish(),

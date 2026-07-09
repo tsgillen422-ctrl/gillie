@@ -1,43 +1,62 @@
 ---
-name: Location check-in model (Apple 5.1.2)
-description: Location sharing is a manual, expiring check-in — not a persistent boolean. How to gate every coordinate-exposing surface.
+name: Location sharing model (Apple 5.1.2, Snapchat-style)
+description: Location sharing is a one-time opt-in with a sliding 24h auto-ghost window; coords are DENY-BY-DEFAULT in serializers. How to gate every coordinate surface.
 ---
 
-# Manual check-in location model
+# Snapchat-style location sharing model
 
-Apple Guideline 5.1.2 forbade automatic/persistent location sharing. The app now
-uses a **manual, per-session, auto-expiring check-in**, not a standing toggle.
+Replaced the old manual expiring check-in (1–8h, cold-launch auto-checkout) with
+a **one-time opt-in + sliding 24h auto-ghost window** (user accepted the 5.1.2
+risk and chose this deliberately; consent dialog + privacy policy + TERMS_VERSION
+bump carry the disclosure).
 
 ## Source of truth
-- `users.locationSharingExpiresAt` (timestamp, nullable) is the ONLY truth for
-  "am I sharing." Active iff `expiresAt != null && expiresAt > now()`.
-- `shareLocation` (boolean) is legacy/kept-in-sync only. **Never** gate coordinate
-  exposure on `shareLocation` alone — it does NOT mean actively sharing.
-- Server helper `isActivelySharing(u)` (api-server users.ts) is the canonical check.
-- formatUser exposes `isSharingLocation` (boolean) + `locationSharingExpiresAt`
-  and only includes currentLat/Lng when actively sharing.
+- `users.locationSharingExpiresAt` is still the ONLY truth for "sharing window
+  active": `isActivelySharing(u)` / friends' `isSharingActive(u)` = expiry > now.
+- `shareLocation` (boolean) = the user's standing opt-in intent; the web client's
+  keep-alive uses it to resume the window, but **never** gate coordinate exposure
+  on it alone.
+- Two tiers: `isSharingActive` (window active → coords visible, avatar stays,
+  Snapchat-style) vs `isLocationLive` (window active AND lastSeen <10min →
+  client shows live; otherwise "Last seen Xm/h/d ago"). `/friends/locations`
+  returns `isLive` per friend.
 
-**Why:** iOS location permission being granted must NOT cause publishing; only an
-explicit in-app check-in may. Any surface that leaks coords while not actively
-checked in is a 5.1.2 regression.
+## Deny-by-default serialization (the 5.1.2 rule)
+Both `formatUser` serializers (api-server users.ts and friends.ts) emit NULL
+coords + null expiry unless the route passes `includeLiveLocation: true`.
+Opt-in is limited to: self endpoints (/me + its mutations), the profile route
+after its `canSeeLive` audience check, and GET /friends with a PER-USER gate
+(`mutual || followerSeeLocation` — same rule as /friends/locations; "people I
+follow" is one-way and NOT automatically the sharer's audience). Search, admin
+lists, other users' followers/following/friends lists, requests, and mutes must
+stay null.
 
-**How to apply:** EVERY surface that returns another user's coordinates (friends
-`/locations`, formatUser, posts on-water summary, any future map/presence feed)
-must gate on the active-expiry check, and the client must gate "me" rendering on
-`me.isSharingLocation` (the map watch effect, me-marker, crew-marker self-include).
+**Why:** a previous pass leaked active coords through /users/search and
+/friends/requests to strangers — audience gating only on the map endpoint is not
+enough; the serializer itself must fail closed.
+
+**How to apply:** any NEW route returning user objects gets no coords for free.
+Only add `includeLiveLocation` after proving the viewer is the sharer's audience.
+Beware point-free `.map(formatUserWithCounts)` — the array index lands in the
+opts param; always wrap in an arrow.
 
 ## Lifecycle
-- `POST /users/me/checkin {lat,lng,onWater,durationHours?}` sets expiry = now +
-  clamped hours (default 6, max 8). `POST /users/me/checkout` clears expiry +
-  shareLocation + isOnline + isOnWater.
-- `PATCH /users/me/location` is a NO-OP unless actively sharing.
-- `PATCH /users/me` no longer honors `shareLocation`.
-- Cold-launch: App root (AuthedApp) fires checkout ONCE on first `/me` load if
-  still `isSharingLocation`, so sharing never persists across an app relaunch.
-- Demo seed users get a far-future `locationSharingExpiresAt` so demo boats still
-  appear under the new model.
+- Opt-in: consent dialog (CheckInControl.tsx) → `POST /me/checkin` (durationHours
+  clamped 1–24, default 24; requires fresh coords).
+- Keep-alive: `useLocationSharingKeepAlive` in App.tsx — if `me.shareLocation`,
+  heartbeat on launch/visibilitychange/4-min interval; active window → `PATCH
+  /me/location` (slides expiry +24h), lapsed window → silent re-checkin 24h.
+  NO cold-launch auto-checkout anymore.
+- Ghost Mode: `POST /me/checkout` clears expiry + shareLocation instantly.
+- `PATCH /me/location` is a no-op unless the window is active (iOS permission
+  alone must never publish). It preserves `isOnWater` when `onWater` is omitted.
+- Geolocation UI: the spec `timeout` doesn't tick while a permission prompt is
+  unanswered — every getCurrentPosition flow needs a hard failsafe timer or the
+  UI hangs on "Locating…" forever.
 
-## UI
-- `components/CheckInControl.tsx` (variant "card" for Settings, "compact" for the
-  map overlay) is the single confirm-dialog + status + Check In/Stop control. It
-  grabs a GPS fix via `getCurrentPosition` before calling checkin.
+## Map client
+- Stale friends (isLive === false) render dimmed with a "Last seen …" chip;
+  the boat-group `sig` must include the stale flag or markers won't rebuild on
+  the live↔stale flip.
+- Demo seed users have far-future expiry → visible but isLive false ("last
+  seen" label) — acceptable/intended.

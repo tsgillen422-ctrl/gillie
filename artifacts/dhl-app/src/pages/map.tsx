@@ -270,6 +270,33 @@ const el = (tag: string, className?: string) => {
   return node;
 };
 
+// Snapchat-style "last seen": a friend whose sharing window is still active but
+// whose position hasn't been reported recently (app closed) keeps a frozen
+// marker on the map. Their status line says when they were last seen instead of
+// pretending they're live.
+function lastSeenAgo(lastSeen: string | null | undefined): string | null {
+  if (!lastSeen) return null;
+  const ms = Date.now() - new Date(lastSeen).getTime();
+  if (ms < 60_000) return "just now";
+  const mins = Math.floor(ms / 60_000);
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function friendStatusLabel(f: any): string {
+  // isLive === false means the server flagged this as a stale (last-seen)
+  // position; me/self objects don't carry isLive and fall through to live copy.
+  if (f?.isLive === false) {
+    const ago = lastSeenAgo(f.lastSeen);
+    if (ago) return `Last seen ${ago}`;
+  }
+  if (f?.lakeStatus) return f.lakeStatus;
+  if (f?.boatName) return `🚤 ${f.boatName}`;
+  return f?.isOnline ? "Online now" : "On the lake";
+}
+
 // --- Friend (Snap Map style) marker element: profile pic floating above a boat ---
 function buildFriendEl(opts: {
   color: string;
@@ -282,8 +309,10 @@ function buildFriendEl(opts: {
   boatFlag?: boolean | null;
   boatAccent?: string | null;
   live?: boolean;
+  stale?: boolean;
+  staleLabel?: string | null;
 }): { root: HTMLDivElement; scale: HTMLDivElement } {
-  const { color, name, avatarUrl, online, boatType, boatNeon, boatFlag, boatAccent, live } = opts;
+  const { color, name, avatarUrl, online, boatType, boatNeon, boatFlag, boatAccent, live, stale, staleLabel } = opts;
   // accent color drives the flag + neon glow; falls back to the boat color
   const accent = boatAccent || color;
   const root = el("div", "snap-marker") as HTMLDivElement;
@@ -355,6 +384,17 @@ function buildFriendEl(opts: {
     const liveBadge = el("div", "snap-live");
     liveBadge.textContent = "LIVE";
     bob.appendChild(liveBadge);
+  }
+
+  // Stale (Snapchat-style "last seen") position: dim the boat and pin a small
+  // chip so a frozen last-known position can't be mistaken for a live one.
+  if (stale) {
+    scale.classList.add("snap-stale");
+    if (staleLabel) {
+      const seen = el("div", "snap-lastseen");
+      seen.textContent = `Last seen ${staleLabel}`;
+      bob.appendChild(seen);
+    }
   }
 
   scale.appendChild(ring1);
@@ -1146,6 +1186,8 @@ export function MapPage() {
             boatFlag: lead.boatFlag,
             boatAccent: lead.boatAccent,
             live: !!lead.hasActiveStory,
+            stale: lead.isLive === false,
+            staleLabel: lead.isLive === false ? lastSeenAgo(lead.lastSeen) : null,
           });
           root = built.root;
           scale = built.scale;
@@ -1221,8 +1263,9 @@ export function MapPage() {
         lng,
         lat,
         isCrew: members.length > 1,
-        // include LIVE state so a marker rebuilds when a captain starts/stops a story
-        sig: sorted.map((m) => `${m.userId}${m.hasActiveStory ? "L" : ""}`).join("-"),
+        // include LIVE + stale state so a marker rebuilds when a captain
+        // starts/stops a story or goes stale/live (last-seen chip appears/clears)
+        sig: sorted.map((m) => `${m.userId}${m.hasActiveStory ? "L" : ""}${m.isLive === false ? "S" : ""}`).join("-"),
       };
     });
   }, [friends, me]);
@@ -2315,7 +2358,7 @@ export function MapPage() {
                         <UserAvatar name={f.displayName} username={f.username} avatarUrl={f.avatarUrl} online={f.isOnline} className="w-11 h-11" />
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-semibold truncate">{f.displayName}</p>
-                          <p className="text-xs text-muted-foreground truncate">{f.lakeStatus ? f.lakeStatus : f.boatName ? `🚤 ${f.boatName}` : f.isOnline ? "Online now" : "On the lake"}</p>
+                          <p className="text-xs text-muted-foreground truncate">{friendStatusLabel(f)}</p>
                         </div>
                         {f.isOnline && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />}
                       </button>
@@ -2655,7 +2698,7 @@ function DetailCard({
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold truncate">{f.displayName || f.username || "Friend"}</p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {f.lakeStatus ? f.lakeStatus : f.boatName ? `🚤 ${f.boatName}` : f.isOnline ? "Online now" : "On the lake"}
+                  {friendStatusLabel(f)}
                 </p>
               </div>
               {f.isOnline && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />}
@@ -2699,7 +2742,7 @@ function DetailCard({
                   {m.isMe && <span className="text-muted-foreground font-normal"> (You)</span>}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {m.lakeStatus ? m.lakeStatus : m.boatName ? `🚤 ${m.boatName}` : m.isOnline ? "Online now" : "On the lake"}
+                  {friendStatusLabel(m)}
                 </p>
               </div>
               {m.isOnline && <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />}
@@ -3001,7 +3044,7 @@ function DetailCard({
             {isMe ? "You are here" : u.displayName}
           </h3>
           <p className="text-xs text-muted-foreground truncate">
-            {u.lakeStatus ? u.lakeStatus : u.boatName ? `🚤 ${u.boatName}` : u.isOnline ? "Online now" : "On the lake"}
+            {friendStatusLabel(u)}
           </p>
         </div>
         <Button size="icon" variant="ghost" className="h-8 w-8 -mr-1" onClick={onClose}>
@@ -3280,6 +3323,29 @@ const MAP_CSS = `
   @keyframes snapLivePulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.55); }
     50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+  }
+  /* Stale (last-seen) boats: sharing window still active but the app is closed,
+     so the marker is a frozen last-known position. Dim it and pin a small
+     "Last seen" chip so it can't be mistaken for a live boat. */
+  .snap-stale .snap-boat,
+  .snap-stale .snap-photo,
+  .snap-stale .snap-wake { opacity: 0.55; filter: saturate(0.55); }
+  .snap-stale .snap-ring { display: none; }
+  .snap-lastseen {
+    position: absolute;
+    left: 50%;
+    bottom: 62px;
+    transform: translateX(-50%);
+    z-index: 5;
+    background: rgba(51,65,85,0.92);
+    color: #fff;
+    font-size: 8px;
+    font-weight: 700;
+    white-space: nowrap;
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1.5px solid #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
   }
   /* "Today on the Lake" story rings on places with active stories.
      Compact map-marker sizing: small thumbnail circle, thin gradient ring,

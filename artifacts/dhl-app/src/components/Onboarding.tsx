@@ -26,7 +26,7 @@ const SLIDES = [
     icon: Users,
     emoji: "🛥️",
     title: "See who's on the lake",
-    body: "Check in to let friends see you on the map, and see who else has checked in. You're only shared when you choose to check in — never automatically.",
+    body: "Share your location to let approved friends see you on the map, and see who else is out. Sharing is off until you turn it on — never automatic — and you can Go Ghost anytime.",
   },
   {
     icon: Newspaper,

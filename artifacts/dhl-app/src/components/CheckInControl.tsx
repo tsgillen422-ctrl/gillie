@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -18,15 +18,15 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { MapPin, MapPinOff, Loader2, Clock, Users, ShieldCheck, X, Ship } from "lucide-react";
+import { MapPin, Loader2, Clock, Users, ShieldCheck, Ghost, Ship, Eye } from "lucide-react";
 import { useLake } from "@/lib/lake-context";
 
-// How long a check-in lasts. Mirrors the server default (CHECKIN_DEFAULT_HOURS)
-// so the confirmation copy matches reality.
-const CHECKIN_HOURS = 6;
+// How long the sharing window lasts without any app activity before the user
+// auto-ghosts. Mirrors the server (PASSIVE_WINDOW_HOURS); using the app slides
+// the window forward, so sharing continues seamlessly for active users.
+const SHARE_WINDOW_HOURS = 24;
 
-// Quick live-status options shown during check-in. Friends see this next to
-// your boat on the map. Cleared automatically at check-out.
+// Quick live-status options. Friends see this next to your boat on the map.
 const LAKE_STATUSES = [
   "Out on the Water",
   "Fishing 🎣",
@@ -36,23 +36,13 @@ const LAKE_STATUSES = [
   "Sunset Ride 🌅",
 ];
 
-function remainingLabel(expiresAt: string | null | undefined): string | null {
-  if (!expiresAt) return null;
-  const ms = new Date(expiresAt).getTime() - Date.now();
-  if (ms <= 0) return null;
-  const mins = Math.round(ms / 60000);
-  if (mins >= 60) {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return m > 0 ? `${h}h ${m}m left` : `${h}h left`;
-  }
-  return `${Math.max(1, mins)}m left`;
-}
-
 /**
- * Apple 5.1.2 manual location sharing control. The user must explicitly confirm
- * a check-in before their location is published, can stop at any time, and the
- * check-in auto-expires. Shared by the map (compact) and Settings (card).
+ * Apple 5.1.2 location sharing control (Snapchat-style passive sharing).
+ * Sharing starts only after the user reads and confirms an explicit consent
+ * dialog. Once on, their position updates while they use the app, their marker
+ * stays visible with a "last seen" time when the app is closed, and they
+ * auto-ghost after 24 hours away. Ghost Mode hides them instantly, anytime.
+ * Shared by the map (compact) and Settings (card).
  */
 export function CheckInControl({ variant = "card" }: { variant?: "card" | "compact" }) {
   const { data: me } = useGetMe();
@@ -65,8 +55,6 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
   const [locating, setLocating] = useState(false);
   const [selectedBoatId, setSelectedBoatId] = useState<number | null>(null);
   const [lakeStatus, setLakeStatus] = useState<string | null>(null);
-  // Re-render every 30s so the "time left" label stays current.
-  const [, setTick] = useState(0);
 
   const fleet: any[] = (me as any)?.fleet ?? [];
   // A previously selected boat may have been deleted in Settings — only honor
@@ -75,34 +63,50 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
   const validSelectedId = fleet.some((b) => b.id === selectedBoatId) ? selectedBoatId : null;
   const defaultBoatId = fleet.length > 0 ? (fleet.find((b) => b.isPrimary) ?? fleet[0]).id : null;
   const effectiveBoatId = validSelectedId ?? defaultBoatId;
-  const isSharing = !!me?.isSharingLocation;
-  const remaining = remainingLabel(me?.locationSharingExpiresAt);
-
-  useEffect(() => {
-    if (!isSharing) return;
-    const id = setInterval(() => setTick((t) => t + 1), 30000);
-    return () => clearInterval(id);
-  }, [isSharing]);
+  // The opt-in is what the user controls; the sharing window renews itself
+  // whenever they use the app, so "opted in" is the state we present.
+  const isSharing = !!me?.shareLocation || !!me?.isSharingLocation;
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: getGetMeQueryKey() });
     qc.invalidateQueries({ queryKey: getGetFriendLocationsQueryKey() });
   };
 
-  const performCheckIn = () => {
+  const performOptIn = () => {
     if (!navigator.geolocation) {
       toast.error("Location isn't available on this device.");
       return;
     }
     setLocating(true);
     const boatId = effectiveBoatId ?? undefined;
+    // The geolocation `timeout` option doesn't tick while a permission prompt
+    // is unanswered, so an ignored prompt would leave the dialog stuck on
+    // "Locating…" forever. This hard timer guarantees the UI recovers.
+    let settled = false;
+    const failsafe = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      setLocating(false);
+      toast.error("Couldn't get your location. Check location permissions and try again.");
+    }, 20000);
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(failsafe);
         checkIn.mutate(
-          { data: { lat: pos.coords.latitude, lng: pos.coords.longitude, lakeId, ...(boatId ? { boatId } : {}) } },
+          {
+            data: {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              durationHours: SHARE_WINDOW_HOURS,
+              lakeId,
+              ...(boatId ? { boatId } : {}),
+            },
+          },
           {
             onSuccess: () => {
-              // Best-effort: publish the chosen live status alongside the check-in.
+              // Best-effort: publish the chosen live status alongside the opt-in.
               if (lakeStatus) {
                 setLakeStatusMutation.mutate(
                   { data: { lakeStatus } },
@@ -110,9 +114,9 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
                 );
               }
               invalidate();
-              toast.success("Checked in — approved friends can see you on the map.");
+              toast.success("You're on the map — approved friends can see you.");
             },
-            onError: () => toast.error("Couldn't check in. Please try again."),
+            onError: () => toast.error("Couldn't turn on sharing. Please try again."),
             onSettled: () => {
               setLocating(false);
               setConfirmOpen(false);
@@ -121,21 +125,24 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
         );
       },
       () => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(failsafe);
         setLocating(false);
         setConfirmOpen(false);
-        toast.error("Location permission is needed to check in.");
+        toast.error("Location permission is needed to appear on the map.");
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }
     );
   };
 
-  const performCheckOut = () => {
+  const performGhost = () => {
     checkOut.mutate(undefined, {
       onSuccess: () => {
         invalidate();
-        toast.success("You've stopped sharing your location.");
+        toast.success("Ghost Mode is on — you're hidden from the map.");
       },
-      onError: () => toast.error("Couldn't stop sharing. Please try again."),
+      onError: () => toast.error("Couldn't turn on Ghost Mode. Please try again."),
     });
   };
 
@@ -144,24 +151,28 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5 text-primary" /> Check In
+            <MapPin className="h-5 w-5 text-primary" /> Share your location?
           </DialogTitle>
           <DialogDescription>
-            Before you check in, here's what happens:
+            Here's exactly how location sharing works:
           </DialogDescription>
         </DialogHeader>
         <ul className="space-y-3 text-sm text-foreground">
           <li className="flex gap-2.5">
             <Users className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-            <span>Your current location will be shared with approved friends on the map.</span>
+            <span>Only friends you've approved can see your boat on the lake map. It's never public.</span>
+          </li>
+          <li className="flex gap-2.5">
+            <Eye className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+            <span>Your position updates only while the app is open. When you close it, friends see your last location with a "last seen" time.</span>
           </li>
           <li className="flex gap-2.5">
             <Clock className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-            <span>Sharing automatically ends after {CHECKIN_HOURS} hours, or when you close the app.</span>
+            <span>If you don't open the app for {SHARE_WINDOW_HOURS} hours, you disappear from the map automatically.</span>
           </li>
           <li className="flex gap-2.5">
             <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-            <span>Sharing is optional. You can stop at any time, and you'll need to check in again each time you want to share.</span>
+            <span>You can turn on Ghost Mode anytime to hide instantly. Sharing stays off until you choose to share again.</span>
           </li>
         </ul>
         {fleet.length > 1 && (
@@ -210,16 +221,16 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
           </div>
         </div>
         <DialogFooter className="gap-2 sm:gap-2">
-          <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={locating}>
-            Cancel
+          <Button variant="outline" onClick={() => setConfirmOpen(false)} disabled={locating} data-testid="button-share-cancel">
+            Not Now
           </Button>
-          <Button onClick={performCheckIn} disabled={locating}>
+          <Button onClick={performOptIn} disabled={locating} data-testid="button-share-confirm">
             {locating ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Locating…
               </>
             ) : (
-              "Check In"
+              "Share My Location"
             )}
           </Button>
         </DialogFooter>
@@ -237,16 +248,17 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
               </span>
-              Sharing{remaining ? ` · ${remaining}` : ""}
+              On the map
             </span>
             <Button
               size="sm"
-              variant="destructive"
+              variant="secondary"
               className="h-7 rounded-full px-3 text-xs"
-              onClick={performCheckOut}
+              onClick={performGhost}
               disabled={checkOut.isPending}
+              data-testid="button-ghost-mode"
             >
-              <X className="h-3.5 w-3.5 mr-1" /> Stop
+              <Ghost className="h-3.5 w-3.5 mr-1" /> Go Ghost
             </Button>
           </div>
         ) : (
@@ -254,8 +266,9 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
             size="sm"
             className="rounded-full shadow-lg h-9 px-4"
             onClick={() => setConfirmOpen(true)}
+            data-testid="button-share-location"
           >
-            <MapPin className="h-4 w-4 mr-1.5" /> Check In
+            <MapPin className="h-4 w-4 mr-1.5" /> Share My Location
           </Button>
         )}
         {confirmDialog}
@@ -273,17 +286,15 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
               isSharing ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"
             }`}
           >
-            {isSharing ? <MapPin className="w-5 h-5" /> : <MapPinOff className="w-5 h-5" />}
+            {isSharing ? <MapPin className="w-5 h-5" /> : <Ghost className="w-5 h-5" />}
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-foreground leading-tight">
-              {isSharing ? "Checked in — sharing location" : "Not sharing location"}
+              {isSharing ? "You're on the map" : "Ghost Mode — you're hidden"}
             </p>
             <p className="text-sm text-muted-foreground leading-tight">
               {isSharing
-                ? remaining
-                  ? `Visible to approved friends · ${remaining}`
-                  : "Visible to approved friends"
+                ? "Visible to approved friends · updates while you use the app"
                 : "Your boat is hidden from the map"}
             </p>
           </div>
@@ -291,28 +302,30 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
 
         {isSharing ? (
           <Button
-            variant="destructive"
+            variant="secondary"
             className="w-full"
-            onClick={performCheckOut}
+            onClick={performGhost}
             disabled={checkOut.isPending}
+            data-testid="button-ghost-mode"
           >
             {checkOut.isPending ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
-              <MapPinOff className="h-4 w-4 mr-2" />
+              <Ghost className="h-4 w-4 mr-2" />
             )}
-            Stop Sharing Location
+            Turn On Ghost Mode
           </Button>
         ) : (
-          <Button className="w-full" onClick={() => setConfirmOpen(true)}>
-            <MapPin className="h-4 w-4 mr-2" /> Check In
+          <Button className="w-full" onClick={() => setConfirmOpen(true)} data-testid="button-share-location">
+            <MapPin className="h-4 w-4 mr-2" /> Share My Location
           </Button>
         )}
 
         <p className="text-xs text-muted-foreground">
-          Your location is only shared when you check in. It's never shared automatically, and
-          you'll need to check in again each time. Sharing ends automatically after {CHECKIN_HOURS}{" "}
-          hours or when you close the app.
+          Sharing is optional and only visible to friends you've approved. Your position updates
+          while the app is open; after you close it, friends see your last spot with a "last seen"
+          time. If you don't open the app for {SHARE_WINDOW_HOURS} hours, you drop off the map
+          automatically — or hide instantly anytime with Ghost Mode.
         </p>
       </div>
       {confirmDialog}

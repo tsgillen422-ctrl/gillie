@@ -32,20 +32,20 @@ function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): nu
   return 2 * R * Math.asin(Math.sqrt(a));
 }
 
-// Apple 5.1.2: a user's live position is shown to OTHERS only while their manual
-// check-in is active (non-expired) AND their position was refreshed recently.
-// When someone closes or leaves the app their client stops reporting, so a stale
-// fix drops off other people's maps within this window instead of lingering as a
-// "ghost boat" until the check-in expires (up to 6h). This makes "sharing ends
-// when you close the app" true. Self-state (/me, served by users.ts formatUser)
-// is intentionally NOT freshness-gated, so a returning user resumes reporting and
-// reappears for the remainder of their check-in.
+// Passive sharing model (Snapchat-style): a user's position is shown to OTHERS
+// while their opt-in sharing window is active — even after they close the app,
+// the marker stays put ("last seen") until the window lapses (auto-ghost) or
+// they turn on Ghost Mode. LIVE_LOCATION_FRESH_MS only distinguishes a fresh,
+// currently-reporting position (isLive) from a stale one for labeling.
 const LIVE_LOCATION_FRESH_MS = 10 * 60 * 1000;
+// Sharing window still open (opt-in, auto-ghosts when it lapses).
+function isSharingActive(u: typeof usersTable.$inferSelect): boolean {
+  return !!u.locationSharingExpiresAt && u.locationSharingExpiresAt.getTime() > Date.now();
+}
+// Position was reported recently (app currently/just open) — "live" vs "last seen".
 function isLocationLive(u: typeof usersTable.$inferSelect): boolean {
-  const active =
-    !!u.locationSharingExpiresAt && u.locationSharingExpiresAt.getTime() > Date.now();
   const fresh = !!u.lastSeen && Date.now() - u.lastSeen.getTime() < LIVE_LOCATION_FRESH_MS;
-  return active && fresh;
+  return isSharingActive(u) && fresh;
 }
 
 // One-way follow model: an accepted row means followerId follows followeeId in
@@ -70,11 +70,17 @@ async function getFollowCounts(userId: number): Promise<{ followerCount: number;
   return { followerCount: followers.length, followingCount: following.length };
 }
 
-function formatUser(u: typeof usersTable.$inferSelect) {
-  // Apple 5.1.2: coordinates are only exposed while a manual check-in is active
-  // (non-expired) AND the position is fresh (see isLocationLive). shareLocation
-  // alone is NOT sufficient, and a stale fix from a closed app is not published.
-  const sharing = isLocationLive(u);
+function formatUser(u: typeof usersTable.$inferSelect, opts: { includeLiveLocation?: boolean } = {}) {
+  // Apple 5.1.2 — location is DENY BY DEFAULT. This serializer feeds many list
+  // surfaces (someone else's followers/following/friends, pending requests,
+  // mutes) where the VIEWER is not the sharer's approved audience, so it emits
+  // null coordinates unless the route explicitly opts in. Only GET /friends
+  // (the viewer's own mutual friends — the approved audience) passes
+  // includeLiveLocation. Even then coordinates require an active opt-in sharing
+  // window (isSharingActive; auto-ghosts after inactivity) — shareLocation
+  // alone is NOT sufficient. The map itself uses GET /friends/locations, which
+  // has its own follower-privacy gating.
+  const sharing = opts.includeLiveLocation ? isSharingActive(u) : false;
   return {
     id: u.id,
     username: u.username,
@@ -107,8 +113,8 @@ function formatUser(u: typeof usersTable.$inferSelect) {
   };
 }
 
-async function formatUserWithCounts(u: typeof usersTable.$inferSelect) {
-  return { ...formatUser(u), ...(await getFollowCounts(u.id)) };
+async function formatUserWithCounts(u: typeof usersTable.$inferSelect, opts: { includeLiveLocation?: boolean } = {}) {
+  return { ...formatUser(u, opts), ...(await getFollowCounts(u.id)) };
 }
 
 function serializeRequest(r: typeof friendRequestsTable.$inferSelect) {
@@ -141,16 +147,33 @@ async function getDirectionalIds(
 router.get("/", async (req, res) => {
   const me = currentUserId(req);
   const hidden = await getHiddenDemoUserIds(me);
-  const friendIds = (await getDirectionalIds(await getFollowingIds(me), me)).filter(
-    (id) => !hidden.includes(id)
-  );
+  const [followingIdsRaw, myFollowerIds] = await Promise.all([
+    getDirectionalIds(await getFollowingIds(me), me),
+    getFollowerIds(me),
+  ]);
+  const friendIds = followingIdsRaw.filter((id) => !hidden.includes(id));
   if (!friendIds.length) return res.json([]);
   const friends = await Promise.all(
     friendIds.map((id) =>
       db.query.usersTable.findFirst({ where: eq(usersTable.id, id) })
     )
   );
-  res.json(await Promise.all(friends.filter(Boolean).map((u) => formatUserWithCounts(u!))));
+  // This list is "people I follow", which is NOT automatically the sharer's
+  // approved audience: a one-way followee can hide their location from
+  // followers they don't follow back (followerSeeLocation). Apply the exact
+  // same per-user audience gate as GET /locations before emitting coords.
+  const mutualSet = new Set(myFollowerIds);
+  res.json(
+    await Promise.all(
+      friends
+        .filter(Boolean)
+        .map((u) =>
+          formatUserWithCounts(u!, {
+            includeLiveLocation: mutualSet.has(u!.id) || !!u!.followerSeeLocation,
+          })
+        )
+    )
+  );
 });
 
 router.get("/locations", async (req, res) => {
@@ -182,10 +205,12 @@ router.get("/locations", async (req, res) => {
   const activeStoryIds = await getActiveStoryAuthorIds(visibleFriends.map((u) => u!.id));
   const locations = visibleFriends
     .map((u) => {
-      // Apple 5.1.2: only publish coordinates while the friend is actively
-      // checked in (non-expired manual check-in) AND their position is fresh, so
-      // a closed/left app drops off the map instead of lingering as a ghost boat.
-      const sharing = isLocationLive(u!);
+      // Apple 5.1.2: only publish coordinates while the friend's opt-in sharing
+      // window is active. While active, the marker stays visible even if the
+      // position is stale (app closed) — the client shows "last seen"; isLive
+      // distinguishes a fresh, currently-reporting position.
+      const sharing = isSharingActive(u!);
+      const live = isLocationLive(u!);
       return {
         userId: u!.id,
         displayName: u!.displayName,
@@ -201,6 +226,7 @@ router.get("/locations", async (req, res) => {
         lng: sharing ? u!.currentLng : null,
         lakeId: u!.currentLakeId ?? DEFAULT_LAKE_ID,
         isSharingLocation: sharing,
+        isLive: live,
         isBusiness: u!.isBusiness,
         isOnline: u!.isOnline,
         isOnWater: u!.isOnWater,
@@ -446,7 +472,7 @@ router.get("/:userId/followers", async (req, res) => {
   );
   if (!ids.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, ids) });
-  res.json(await Promise.all(users.map(formatUserWithCounts)));
+  res.json(await Promise.all(users.map((u) => formatUserWithCounts(u))));
 });
 
 router.get("/:userId/friends", async (req, res) => {
@@ -482,7 +508,7 @@ router.get("/:userId/friends", async (req, res) => {
   ).filter((id) => !hidden.includes(id));
   if (!friendIds.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, friendIds) });
-  res.json(await Promise.all(users.map(formatUserWithCounts)));
+  res.json(await Promise.all(users.map((u) => formatUserWithCounts(u))));
 });
 
 router.get("/:userId/mutual", async (req, res) => {
@@ -515,7 +541,7 @@ router.get("/:userId/mutual", async (req, res) => {
   );
   if (!mutualIds.length) return res.json({ count: 0, users: [] });
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, mutualIds) });
-  const preview = await Promise.all(users.slice(0, 6).map(formatUserWithCounts));
+  const preview = await Promise.all(users.slice(0, 6).map((u) => formatUserWithCounts(u)));
   res.json({ count: mutualIds.length, users: preview });
 });
 
@@ -542,7 +568,7 @@ router.get("/:userId/following", async (req, res) => {
   );
   if (!ids.length) return res.json([]);
   const users = await db.query.usersTable.findMany({ where: inArray(usersTable.id, ids) });
-  res.json(await Promise.all(users.map(formatUserWithCounts)));
+  res.json(await Promise.all(users.map((u) => formatUserWithCounts(u))));
 });
 
 router.post("/:userId/follow", async (req, res) => {

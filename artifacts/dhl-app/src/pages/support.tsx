@@ -78,15 +78,17 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     ),
   },
   {
-    q: "How do I check in and share my location?",
+    q: "How does location sharing work?",
     a: (
       <>
-        Your location is <strong>never shared automatically</strong>. To appear
-        on the map, tap <strong>Check In</strong> and confirm — your location is
-        then shared for that session only. Check-ins expire on their own (within
-        a few hours), and you can tap <strong>Stop</strong> to end sharing
-        instantly. Sharing also clears whenever you close the app or log out. You
-        can manage all of this from the map or in <strong>Settings</strong>.
+        Your location is <strong>never shared automatically</strong> — sharing is
+        off until you turn it on. Tap <strong>Share My Location</strong> on the
+        map and confirm to appear to approved friends. Your position updates
+        while the app is open; when you close the app, friends see your last
+        spot with a <strong>"last seen"</strong> time. If you don't open the app
+        for 24 hours, you disappear from the map automatically. You can also tap{" "}
+        <strong>Go Ghost</strong> at any time to hide instantly. Manage all of
+        this from the map or in <strong>Settings</strong>.
       </>
     ),
   },
