@@ -1813,6 +1813,13 @@ export type GetFriendLocationsParams = {
 lakeId?: number;
 };
 
+export type GetFriendSuggestionsParams = {
+/**
+ * Scope suggestions to members of this lake community
+ */
+lakeId?: number;
+};
+
 export type GetConditionsParams = {
 /**
  * Which lake to fetch conditions for (defaults to Dale Hollow Lake)

@@ -101,7 +101,8 @@ function SuggestionCard({ user }: { user: SuggestedUser }) {
 
 /** The list of suggestions on its own — used inside the Friends page tab. */
 export function SuggestedFriendsList() {
-  const { data, isLoading } = useGetFriendSuggestions();
+  const { lake } = useLake();
+  const { data, isLoading } = useGetFriendSuggestions({ lakeId: lake.id });
 
   if (isLoading) {
     return (
@@ -142,8 +143,8 @@ export function SuggestedFriendsList() {
  * the list stays reachable from the Friends page "Suggested" tab.
  */
 export function SuggestedFriendsDrawer() {
-  const { data } = useGetFriendSuggestions();
   const { lake } = useLake();
+  const { data } = useGetFriendSuggestions({ lakeId: lake.id });
   const [open, setOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -200,8 +201,8 @@ export function SuggestedFriendsDrawer() {
  * so users can get back to suggestions after dismissing the auto-popup.
  */
 export function SuggestedFriendsButton() {
-  const { data } = useGetFriendSuggestions();
   const { lake } = useLake();
+  const { data } = useGetFriendSuggestions({ lakeId: lake.id });
   if (!data || data.length === 0) return null;
 
   return (

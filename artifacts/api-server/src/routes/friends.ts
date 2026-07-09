@@ -17,7 +17,7 @@ import { currentUserId } from "../middlewares/auth";
 import { createNotification } from "../lib/notify";
 import { getHiddenDemoUserIds } from "../lib/demoData";
 import { getActiveStoryAuthorIds } from "./stories";
-import { isValidLakeId, DEFAULT_LAKE_ID } from "@workspace/lake-config";
+import { isValidLakeId, DEFAULT_LAKE_ID, lakeById } from "@workspace/lake-config";
 
 const router = Router();
 
@@ -246,6 +246,11 @@ router.get("/requests", async (req, res) => {
 router.get("/suggestions", async (req, res) => {
   const me = currentUserId(req);
   const meUser = await db.query.usersTable.findFirst({ where: eq(usersTable.id, me) });
+  // Optional lake scoping: suggestions default to people from the client's
+  // currently selected lake community. Search stays global for cross-lake adds.
+  const rawLakeId = req.query.lakeId != null ? Number(req.query.lakeId) : undefined;
+  const filterLakeId =
+    rawLakeId !== undefined ? (isValidLakeId(rawLakeId) ? rawLakeId : DEFAULT_LAKE_ID) : undefined;
 
   // Existing relationships we must never suggest.
   const myRequests = await db.query.friendRequestsTable.findMany({
@@ -365,9 +370,13 @@ router.get("/suggestions", async (req, res) => {
   if (scores.size < 10) {
     const recent = await db.query.usersTable.findMany({
       orderBy: [desc(usersTable.createdAt)],
-      limit: 30,
+      limit: 60,
     });
-    for (const u of recent) addSignal(u.id, 0.5, "New to Dale Hollow");
+    const fallbackLabel = `New to ${lakeById(filterLakeId ?? DEFAULT_LAKE_ID).name}`;
+    for (const u of recent) {
+      if (filterLakeId !== undefined && (u.currentLakeId ?? DEFAULT_LAKE_ID) !== filterLakeId) continue;
+      addSignal(u.id, 0.5, fallbackLabel);
+    }
   }
 
   const rankedIds = [...scores.keys()].sort((a, b) => {
@@ -384,6 +393,8 @@ router.get("/suggestions", async (req, res) => {
   const formatted = rankedIds
     .map((id) => byId.get(id))
     .filter((u): u is typeof usersTable.$inferSelect => !!u && !u.isSuspended)
+    // Lake scoping: only suggest members of the requested lake community.
+    .filter((u) => filterLakeId === undefined || (u.currentLakeId ?? DEFAULT_LAKE_ID) === filterLakeId)
     .slice(0, 20)
     .map((u) => ({
       id: u.id,

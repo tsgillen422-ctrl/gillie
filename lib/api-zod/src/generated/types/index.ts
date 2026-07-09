@@ -45,6 +45,7 @@ export * from './getCatchesParams';
 export * from './getConditionsParams';
 export * from './getDockLabelsParams';
 export * from './getFriendLocationsParams';
+export * from './getFriendSuggestionsParams';
 export * from './getGalleryParams';
 export * from './getPinsParams';
 export * from './getPinsType';

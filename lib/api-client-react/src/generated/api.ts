@@ -48,6 +48,7 @@ import type {
   GetConditionsParams,
   GetDockLabelsParams,
   GetFriendLocationsParams,
+  GetFriendSuggestionsParams,
   GetGalleryParams,
   GetPinsParams,
   GetPlaceStoriesParams,
@@ -2060,20 +2061,27 @@ export function useGetFriendRequests<TData = Awaited<ReturnType<typeof getFriend
 
 
 
-export const getGetFriendSuggestionsUrl = () => {
+export const getGetFriendSuggestionsUrl = (params?: GetFriendSuggestionsParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/friends/suggestions`
+  return stringifiedParams.length > 0 ? `/api/friends/suggestions?${stringifiedParams}` : `/api/friends/suggestions`
 }
 
 /**
  * @summary Get recommended people to connect with
  */
-export const getFriendSuggestions = async ( options?: RequestInit): Promise<SuggestedUser[]> => {
+export const getFriendSuggestions = async (params?: GetFriendSuggestionsParams, options?: RequestInit): Promise<SuggestedUser[]> => {
 
-  return customFetch<SuggestedUser[]>(getGetFriendSuggestionsUrl(),
+  return customFetch<SuggestedUser[]>(getGetFriendSuggestionsUrl(params),
   {
     ...options,
     method: 'GET'
@@ -2086,23 +2094,23 @@ export const getFriendSuggestions = async ( options?: RequestInit): Promise<Sugg
 
 
 
-export const getGetFriendSuggestionsQueryKey = () => {
+export const getGetFriendSuggestionsQueryKey = (params?: GetFriendSuggestionsParams,) => {
     return [
-    `/api/friends/suggestions`
+    `/api/friends/suggestions`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGetFriendSuggestionsQueryOptions = <TData = Awaited<ReturnType<typeof getFriendSuggestions>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFriendSuggestions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+export const getGetFriendSuggestionsQueryOptions = <TData = Awaited<ReturnType<typeof getFriendSuggestions>>, TError = ErrorType<unknown>>(params?: GetFriendSuggestionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFriendSuggestions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 ) => {
 
 const {query: queryOptions, request: requestOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGetFriendSuggestionsQueryKey();
+  const queryKey =  queryOptions?.queryKey ?? getGetFriendSuggestionsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFriendSuggestions>>> = ({ signal }) => getFriendSuggestions({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getFriendSuggestions>>> = ({ signal }) => getFriendSuggestions(params, { signal, ...requestOptions });
 
 
 
@@ -2120,11 +2128,11 @@ export type GetFriendSuggestionsQueryError = ErrorType<unknown>
  */
 
 export function useGetFriendSuggestions<TData = Awaited<ReturnType<typeof getFriendSuggestions>>, TError = ErrorType<unknown>>(
-  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFriendSuggestions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+ params?: GetFriendSuggestionsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getFriendSuggestions>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
 
  ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
 
-  const queryOptions = getGetFriendSuggestionsQueryOptions(options)
+  const queryOptions = getGetFriendSuggestionsQueryOptions(params,options)
 
   const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
 

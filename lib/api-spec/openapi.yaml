@@ -522,6 +522,13 @@ paths:
       operationId: getFriendSuggestions
       tags: [friends]
       summary: Get recommended people to connect with
+      parameters:
+        - name: lakeId
+          in: query
+          required: false
+          description: Scope suggestions to members of this lake community
+          schema:
+            type: integer
       responses:
         "200":
           description: Ranked friend suggestions

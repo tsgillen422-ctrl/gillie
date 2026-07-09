@@ -1823,6 +1823,10 @@ export const GetFriendRequestsResponse = zod.array(GetFriendRequestsResponseItem
 /**
  * @summary Get recommended people to connect with
  */
+export const GetFriendSuggestionsQueryParams = zod.object({
+  "lakeId": zod.coerce.number().optional().describe('Scope suggestions to members of this lake community')
+})
+
 export const GetFriendSuggestionsResponseItem = zod.object({
   "id": zod.number(),
   "username": zod.string(),
