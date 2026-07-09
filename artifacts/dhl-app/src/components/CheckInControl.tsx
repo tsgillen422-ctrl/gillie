@@ -41,13 +41,13 @@ function GhostBoatIcon({ className }: { className?: string }) {
       className={className}
       aria-hidden="true"
     >
-      <path d="M6 15.5V8.8a3.2 3.2 0 0 1 6.4 0v6.7l-1.6-1.3-1.6 1.3-1.6-1.3-1.6 1.3z" />
-      <circle cx="8.1" cy="8.9" r="0.6" fill="currentColor" stroke="none" />
-      <circle cx="10.3" cy="8.9" r="0.6" fill="currentColor" stroke="none" />
-      <circle cx="17.2" cy="11.9" r="2.5" />
-      <path d="M17.2 9.4v5M14.7 11.9h5" />
-      <path d="M17.2 14.4v2.1" />
-      <path d="M2.5 16.5h19l-1.5 2.3a2 2 0 0 1-1.68.95H5.68a2 2 0 0 1-1.68-.95L2.5 16.5z" />
+      <path d="M4.6 16.5V7.9a3.9 3.9 0 0 1 7.8 0v8.6l-1.95-1.5-1.95 1.5-1.95-1.5-1.95 1.5z" />
+      <circle cx="7.1" cy="8.1" r="0.7" fill="currentColor" stroke="none" />
+      <circle cx="9.8" cy="8.1" r="0.7" fill="currentColor" stroke="none" />
+      <circle cx="17.6" cy="13.6" r="2.4" />
+      <path d="M17.6 11.2v4.8M15.2 13.6h4.8" />
+      <path d="M17.6 16v1.5" />
+      <path d="M1.5 17.5h21l-1.8 2.8a2.2 2.2 0 0 1-1.84 1H5.14a2.2 2.2 0 0 1-1.84-1L1.5 17.5z" />
     </svg>
   );
 }
