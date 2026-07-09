@@ -2286,6 +2286,131 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /catches/{catchId}/react:
+    post:
+      operationId: reactToCatch
+      tags: [catches]
+      summary: React to a catch (same reaction again removes it)
+      parameters:
+        - name: catchId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReactionInput"
+      responses:
+        "200":
+          description: Reacted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Catch"
+
+  /catches/{catchId}/comments:
+    get:
+      operationId: getCatchComments
+      tags: [catches]
+      summary: Get comments on a catch
+      parameters:
+        - name: catchId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of comments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CatchComment"
+    post:
+      operationId: createCatchComment
+      tags: [catches]
+      summary: Add a comment to a catch
+      parameters:
+        - name: catchId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CatchCommentInput"
+      responses:
+        "201":
+          description: Comment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatchComment"
+
+  /catches/{catchId}/comments/{commentId}:
+    delete:
+      operationId: deleteCatchComment
+      tags: [catches]
+      summary: Delete a catch comment (author or catch owner)
+      parameters:
+        - name: catchId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: commentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+  /catches/{catchId}/save:
+    post:
+      operationId: saveCatch
+      tags: [catches]
+      summary: Save (bookmark) a catch
+      parameters:
+        - name: catchId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Catch"
+    delete:
+      operationId: unsaveCatch
+      tags: [catches]
+      summary: Remove a catch from saved
+      parameters:
+        - name: catchId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unsaved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Catch"
+
   /gallery:
     get:
       operationId: getGallery
@@ -4217,7 +4342,7 @@ components:
 
     Catch:
       type: object
-      required: [id, userId, species, isPrivate, caughtAt, createdAt]
+      required: [id, userId, species, isPrivate, caughtAt, createdAt, likeCount, commentCount, savedByMe, reactionCounts]
       properties:
         id:
           type: integer
@@ -4235,6 +4360,10 @@ components:
           type: ["number", "null"]
         notes:
           type: ["string", "null"]
+        bait:
+          type: ["string", "null"]
+        locationName:
+          type: ["string", "null"]
         imageUrl:
           type: ["string", "null"]
         lat:
@@ -4244,6 +4373,17 @@ components:
         isPrivate:
           type: boolean
         isMature:
+          type: boolean
+        likeCount:
+          type: integer
+        reactionCounts:
+          $ref: "#/components/schemas/ReactionCounts"
+        myReaction:
+          type: ["string", "null"]
+          enum: [thumbsup, thumbsdown, heart, laugh, sad, angry, fire, heart_eyes, wow, null]
+        commentCount:
+          type: integer
+        savedByMe:
           type: boolean
         caughtAt:
           type: string
@@ -4262,6 +4402,10 @@ components:
           type: number
         notes:
           type: string
+        bait:
+          type: string
+        locationName:
+          type: string
         imageUrl:
           type: string
         lat:
@@ -4275,6 +4419,35 @@ components:
         lakeId:
           type: ["integer", "null"]
           description: Which lake the catch belongs to (defaults to Dale Hollow Lake)
+
+    CatchComment:
+      type: object
+      required: [id, catchId, userId, content, createdAt]
+      properties:
+        id:
+          type: integer
+        catchId:
+          type: integer
+        userId:
+          type: integer
+        user:
+          $ref: "#/components/schemas/User"
+        content:
+          type: string
+        imageUrl:
+          type: ["string", "null"]
+        isMature:
+          type: boolean
+        createdAt:
+          type: string
+
+    CatchCommentInput:
+      type: object
+      properties:
+        content:
+          type: string
+        imageUrl:
+          type: string
 
     GalleryItem:
       type: object

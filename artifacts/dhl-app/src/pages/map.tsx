@@ -2018,6 +2018,18 @@ export function MapPage() {
     }
   };
 
+  // The global "+" menu deep-links here with ?pin=1 to open the pin composer.
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    if (params.get("pin") === "1") {
+      handleFabClick();
+      params.delete("pin");
+      const qs = params.toString();
+      window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
   const closePinDialog = () => {
     setPinDialog({ open: false });
     setPinMode("pin");

@@ -5,6 +5,8 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { CatchMyReaction } from './catchMyReaction';
+import type { ReactionCounts } from './reactionCounts';
 import type { User } from './user';
 
 export interface Catch {
@@ -20,6 +22,10 @@ export interface Catch {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
+  bait?: string | null;
+  /** @nullable */
+  locationName?: string | null;
+  /** @nullable */
   imageUrl?: string | null;
   /** @nullable */
   lat?: number | null;
@@ -27,6 +33,12 @@ export interface Catch {
   lng?: number | null;
   isPrivate: boolean;
   isMature?: boolean;
+  likeCount: number;
+  reactionCounts: ReactionCounts;
+  /** @nullable */
+  myReaction?: CatchMyReaction;
+  commentCount: number;
+  savedByMe: boolean;
   caughtAt: string;
   createdAt: string;
 }

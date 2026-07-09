@@ -24,6 +24,8 @@ import type {
   BoatInput,
   BoatUpdate,
   Catch,
+  CatchComment,
+  CatchCommentInput,
   CatchInput,
   CheckInInput,
   Comment,
@@ -8549,6 +8551,439 @@ export const useDeleteCatch = <TError = ErrorType<ErrorEnvelope>,
         TContext
       > => {
       return useMutation(getDeleteCatchMutationOptions(options));
+    }
+
+export const getReactToCatchUrl = (catchId: number,) => {
+
+
+
+
+  return `/api/catches/${catchId}/react`
+}
+
+/**
+ * @summary React to a catch (same reaction again removes it)
+ */
+export const reactToCatch = async (catchId: number,
+    reactionInput: ReactionInput, options?: RequestInit): Promise<Catch> => {
+
+  return customFetch<Catch>(getReactToCatchUrl(catchId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      reactionInput,)
+  }
+);}
+
+
+
+
+export const getReactToCatchMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactToCatch>>, TError,{catchId: number;data: BodyType<ReactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof reactToCatch>>, TError,{catchId: number;data: BodyType<ReactionInput>}, TContext> => {
+
+const mutationKey = ['reactToCatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reactToCatch>>, {catchId: number;data: BodyType<ReactionInput>}> = (props) => {
+          const {catchId,data} = props ?? {};
+
+          return  reactToCatch(catchId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReactToCatchMutationResult = NonNullable<Awaited<ReturnType<typeof reactToCatch>>>
+    export type ReactToCatchMutationBody = BodyType<ReactionInput>
+    export type ReactToCatchMutationError = ErrorType<unknown>
+
+    /**
+ * @summary React to a catch (same reaction again removes it)
+ */
+export const useReactToCatch = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reactToCatch>>, TError,{catchId: number;data: BodyType<ReactionInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof reactToCatch>>,
+        TError,
+        {catchId: number;data: BodyType<ReactionInput>},
+        TContext
+      > => {
+      return useMutation(getReactToCatchMutationOptions(options));
+    }
+
+export const getGetCatchCommentsUrl = (catchId: number,) => {
+
+
+
+
+  return `/api/catches/${catchId}/comments`
+}
+
+/**
+ * @summary Get comments on a catch
+ */
+export const getCatchComments = async (catchId: number, options?: RequestInit): Promise<CatchComment[]> => {
+
+  return customFetch<CatchComment[]>(getGetCatchCommentsUrl(catchId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetCatchCommentsQueryKey = (catchId: number,) => {
+    return [
+    `/api/catches/${catchId}/comments`
+    ] as const;
+    }
+
+
+export const getGetCatchCommentsQueryOptions = <TData = Awaited<ReturnType<typeof getCatchComments>>, TError = ErrorType<unknown>>(catchId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCatchComments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetCatchCommentsQueryKey(catchId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getCatchComments>>> = ({ signal }) => getCatchComments(catchId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(catchId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getCatchComments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetCatchCommentsQueryResult = NonNullable<Awaited<ReturnType<typeof getCatchComments>>>
+export type GetCatchCommentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Get comments on a catch
+ */
+
+export function useGetCatchComments<TData = Awaited<ReturnType<typeof getCatchComments>>, TError = ErrorType<unknown>>(
+ catchId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getCatchComments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetCatchCommentsQueryOptions(catchId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateCatchCommentUrl = (catchId: number,) => {
+
+
+
+
+  return `/api/catches/${catchId}/comments`
+}
+
+/**
+ * @summary Add a comment to a catch
+ */
+export const createCatchComment = async (catchId: number,
+    catchCommentInput: CatchCommentInput, options?: RequestInit): Promise<CatchComment> => {
+
+  return customFetch<CatchComment>(getCreateCatchCommentUrl(catchId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      catchCommentInput,)
+  }
+);}
+
+
+
+
+export const getCreateCatchCommentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCatchComment>>, TError,{catchId: number;data: BodyType<CatchCommentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCatchComment>>, TError,{catchId: number;data: BodyType<CatchCommentInput>}, TContext> => {
+
+const mutationKey = ['createCatchComment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCatchComment>>, {catchId: number;data: BodyType<CatchCommentInput>}> = (props) => {
+          const {catchId,data} = props ?? {};
+
+          return  createCatchComment(catchId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCatchCommentMutationResult = NonNullable<Awaited<ReturnType<typeof createCatchComment>>>
+    export type CreateCatchCommentMutationBody = BodyType<CatchCommentInput>
+    export type CreateCatchCommentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Add a comment to a catch
+ */
+export const useCreateCatchComment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCatchComment>>, TError,{catchId: number;data: BodyType<CatchCommentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createCatchComment>>,
+        TError,
+        {catchId: number;data: BodyType<CatchCommentInput>},
+        TContext
+      > => {
+      return useMutation(getCreateCatchCommentMutationOptions(options));
+    }
+
+export const getDeleteCatchCommentUrl = (catchId: number,
+    commentId: number,) => {
+
+
+
+
+  return `/api/catches/${catchId}/comments/${commentId}`
+}
+
+/**
+ * @summary Delete a catch comment (author or catch owner)
+ */
+export const deleteCatchComment = async (catchId: number,
+    commentId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteCatchCommentUrl(catchId,commentId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteCatchCommentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCatchComment>>, TError,{catchId: number;commentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteCatchComment>>, TError,{catchId: number;commentId: number}, TContext> => {
+
+const mutationKey = ['deleteCatchComment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteCatchComment>>, {catchId: number;commentId: number}> = (props) => {
+          const {catchId,commentId} = props ?? {};
+
+          return  deleteCatchComment(catchId,commentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteCatchCommentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteCatchComment>>>
+
+    export type DeleteCatchCommentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a catch comment (author or catch owner)
+ */
+export const useDeleteCatchComment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteCatchComment>>, TError,{catchId: number;commentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteCatchComment>>,
+        TError,
+        {catchId: number;commentId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteCatchCommentMutationOptions(options));
+    }
+
+export const getSaveCatchUrl = (catchId: number,) => {
+
+
+
+
+  return `/api/catches/${catchId}/save`
+}
+
+/**
+ * @summary Save (bookmark) a catch
+ */
+export const saveCatch = async (catchId: number, options?: RequestInit): Promise<Catch> => {
+
+  return customFetch<Catch>(getSaveCatchUrl(catchId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+export const getSaveCatchMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveCatch>>, TError,{catchId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof saveCatch>>, TError,{catchId: number}, TContext> => {
+
+const mutationKey = ['saveCatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof saveCatch>>, {catchId: number}> = (props) => {
+          const {catchId} = props ?? {};
+
+          return  saveCatch(catchId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SaveCatchMutationResult = NonNullable<Awaited<ReturnType<typeof saveCatch>>>
+
+    export type SaveCatchMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Save (bookmark) a catch
+ */
+export const useSaveCatch = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saveCatch>>, TError,{catchId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof saveCatch>>,
+        TError,
+        {catchId: number},
+        TContext
+      > => {
+      return useMutation(getSaveCatchMutationOptions(options));
+    }
+
+export const getUnsaveCatchUrl = (catchId: number,) => {
+
+
+
+
+  return `/api/catches/${catchId}/save`
+}
+
+/**
+ * @summary Remove a catch from saved
+ */
+export const unsaveCatch = async (catchId: number, options?: RequestInit): Promise<Catch> => {
+
+  return customFetch<Catch>(getUnsaveCatchUrl(catchId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getUnsaveCatchMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unsaveCatch>>, TError,{catchId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof unsaveCatch>>, TError,{catchId: number}, TContext> => {
+
+const mutationKey = ['unsaveCatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof unsaveCatch>>, {catchId: number}> = (props) => {
+          const {catchId} = props ?? {};
+
+          return  unsaveCatch(catchId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UnsaveCatchMutationResult = NonNullable<Awaited<ReturnType<typeof unsaveCatch>>>
+
+    export type UnsaveCatchMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Remove a catch from saved
+ */
+export const useUnsaveCatch = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof unsaveCatch>>, TError,{catchId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof unsaveCatch>>,
+        TError,
+        {catchId: number},
+        TContext
+      > => {
+      return useMutation(getUnsaveCatchMutationOptions(options));
     }
 
 export const getGetGalleryUrl = (params?: GetGalleryParams,) => {

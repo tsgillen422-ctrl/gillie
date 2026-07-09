@@ -6,17 +6,14 @@ import {
   useGetMe,
   getGetCatchesQueryKey,
 } from "@workspace/api-client-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { ClickableImage } from "@/components/ClickableImage";
-import { MatureGate } from "@/components/MatureGate";
 import { Button } from "@/components/ui/button";
+import { CatchCard } from "@/components/feed/CatchCard";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { UserAvatar } from "@/components/UserAvatar";
-import { Link, useSearch } from "wouter";
+import { useSearch } from "wouter";
 import {
   Dialog,
   DialogContent,
@@ -25,24 +22,11 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Fish, Plus, ImagePlus, X, Trash2, Lock } from "lucide-react";
+import { Fish, ImagePlus, X } from "lucide-react";
 import { useUpload } from "@workspace/object-storage-web";
 import { compressImage } from "@/lib/compress";
-import { resolveImageSrc } from "@/lib/assets";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
 import { useLake } from "@/lib/lake-context";
 
 export function CatchesPage() {
@@ -56,6 +40,19 @@ export function CatchesPage() {
   const imageInputRef = React.useRef<HTMLInputElement>(null);
 
   const search = useSearch();
+
+  // The global "+" menu deep-links here with ?compose=1 to open the catch form.
+  React.useEffect(() => {
+    const params = new URLSearchParams(search);
+    if (params.get("compose") === "1") {
+      setOpen(true);
+      params.delete("compose");
+      const qs = params.toString();
+      window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
   React.useEffect(() => {
     const targetId = new URLSearchParams(search).get("catch");
     if (!targetId || !catches?.length) return;
@@ -71,6 +68,8 @@ export function CatchesPage() {
   const [species, setSpecies] = React.useState("");
   const [weight, setWeight] = React.useState("");
   const [length, setLength] = React.useState("");
+  const [bait, setBait] = React.useState("");
+  const [locationName, setLocationName] = React.useState("");
   const [notes, setNotes] = React.useState("");
   const [isPrivate, setIsPrivate] = React.useState(false);
   const [imageUrl, setImageUrl] = React.useState<string | null>(null);
@@ -81,6 +80,8 @@ export function CatchesPage() {
     setSpecies("");
     setWeight("");
     setLength("");
+    setBait("");
+    setLocationName("");
     setNotes("");
     setIsPrivate(false);
     setImageUrl(null);
@@ -115,6 +116,8 @@ export function CatchesPage() {
           species: species.trim(),
           weight: weight ? parseFloat(weight) : undefined,
           length: length ? parseFloat(length) : undefined,
+          bait: bait.trim() || undefined,
+          locationName: locationName.trim() || undefined,
           notes: notes.trim() || undefined,
           isPrivate,
           imageUrl: imageUrl ? `/api/storage${imageUrl}` : undefined,
@@ -153,56 +156,13 @@ export function CatchesPage() {
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
         ) : catches?.length ? (
           catches.map((c) => (
-            <Card key={c.id} id={`catch-${c.id}`} className="border-border/50 overflow-hidden">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-2">
-                  <Link href={`/profile/${c.userId}`} className="shrink-0">
-                    <UserAvatar name={c.user?.displayName || "User"} username={c.user?.username || ""} avatarUrl={c.user?.avatarUrl} className="w-9 h-9 cursor-pointer" />
-                  </Link>
-                  <div className="flex-1 min-w-0">
-                    <Link href={`/profile/${c.userId}`}>
-                      <h3 className="font-semibold text-sm truncate hover:underline cursor-pointer">{c.user?.displayName || "Angler"}</h3>
-                    </Link>
-                    <p className="text-[10px] text-muted-foreground">{formatDistanceToNow(new Date(c.caughtAt), { addSuffix: true })}</p>
-                  </div>
-                  {c.isPrivate && <Lock className="w-3.5 h-3.5 text-muted-foreground" />}
-                  {me && c.userId === me.id && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete this catch?</AlertDialogTitle>
-                          <AlertDialogDescription>This can't be undone.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(c.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </div>
-                <MatureGate isMature={c.isMature} rounded="rounded-xl" label="Sensitive catch">
-                  {c.imageUrl && (
-                    <div className="rounded-xl overflow-hidden bg-muted aspect-video mb-2">
-                      <ClickableImage src={resolveImageSrc(c.imageUrl)} alt={c.species} className="object-cover w-full h-full" />
-                    </div>
-                  )}
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="font-bold text-lg">{c.species}</span>
-                    {c.weight != null && <span className="text-sm text-muted-foreground">{c.weight} lb</span>}
-                    {c.length != null && <span className="text-sm text-muted-foreground">{c.length} in</span>}
-                  </div>
-                  {c.notes && <p className="text-sm mt-1 whitespace-pre-wrap">{c.notes}</p>}
-                </MatureGate>
-              </CardContent>
-            </Card>
+            <CatchCard
+              key={c.id}
+              anchorId={`catch-${c.id}`}
+              catchData={c}
+              meId={me?.id}
+              onDelete={handleDelete}
+            />
           ))
         ) : (
           <div className="text-center py-16 px-6 flex flex-col items-center">
@@ -214,19 +174,6 @@ export function CatchesPage() {
           </div>
         )}
       </div>
-
-      {me && (
-        <div className="absolute bottom-6 right-6 z-20">
-          <Button
-            onClick={() => setOpen(true)}
-            size="icon"
-            className="h-14 w-14 rounded-full shadow-lg"
-            aria-label="Log a catch"
-          >
-            <Plus className="w-6 h-6" />
-          </Button>
-        </div>
-      )}
 
       <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
         <DialogContent className="max-w-md">
@@ -250,9 +197,19 @@ export function CatchesPage() {
                 <Input type="number" inputMode="decimal" value={length} onChange={(e) => setLength(e.target.value)} placeholder="18" />
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Bait / lure</Label>
+                <Input value={bait} onChange={(e) => setBait(e.target.value)} placeholder="Green pumpkin jig" data-testid="input-catch-bait" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Location</Label>
+                <Input value={locationName} onChange={(e) => setLocationName(e.target.value)} placeholder="Mitchell Creek" data-testid="input-catch-location" />
+              </div>
+            </div>
             <div className="space-y-1.5">
-              <Label>Notes</Label>
-              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Where, what bait, the story..." rows={3} />
+              <Label>Caption</Label>
+              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Tell the story behind the catch..." rows={3} data-testid="input-catch-caption" />
             </div>
             <div className="space-y-1.5">
               <Label>Photo</Label>

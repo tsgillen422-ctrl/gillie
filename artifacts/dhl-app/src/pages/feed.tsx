@@ -601,7 +601,12 @@ export function FeedPage() {
     const params = new URLSearchParams(search);
     if (params.get("compose") === "1") {
       setComposerOpen(true);
+      const type = params.get("type");
+      if (type === "event" || type === "tie_up" || type === "boat_showcase" || type === "business") {
+        setNewType(type);
+      }
       params.delete("compose");
+      params.delete("type");
       const qs = params.toString();
       window.history.replaceState(null, "", `${import.meta.env.BASE_URL.replace(/\/$/, "")}/feed${qs ? `?${qs}` : ""}`);
     }

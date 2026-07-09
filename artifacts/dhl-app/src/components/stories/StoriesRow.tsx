@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearch } from "wouter";
 import { Plus, Flame } from "lucide-react";
 import {
   useGetStories,
@@ -25,6 +26,18 @@ export function StoriesRow() {
 
   const trending = useMemo(() => (places ?? []).slice(0, 3), [places]);
   const hasStories = (groups?.length ?? 0) > 0;
+
+  // The global "+" menu deep-links to /feed?story=1 to open the story composer.
+  const search = useSearch();
+  useEffect(() => {
+    const params = new URLSearchParams(search);
+    if (params.get("story") === "1") {
+      setAddOpen(true);
+      params.delete("story");
+      const qs = params.toString();
+      window.history.replaceState(null, "", `${window.location.pathname}${qs ? `?${qs}` : ""}`);
+    }
+  }, [search]);
 
   return (
     <div className="space-y-3 pb-2 pt-1 border-b border-border/40">

@@ -11,6 +11,8 @@ export interface CatchInput {
   weight?: number;
   length?: number;
   notes?: string;
+  bait?: string;
+  locationName?: string;
   imageUrl?: string;
   lat?: number;
   lng?: number;

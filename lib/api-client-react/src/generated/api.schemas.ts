@@ -1387,6 +1387,24 @@ export interface Conditions {
   updatedAt: string;
 }
 
+/**
+ * @nullable
+ */
+export type CatchMyReaction = typeof CatchMyReaction[keyof typeof CatchMyReaction] | null;
+
+
+export const CatchMyReaction = {
+  thumbsup: 'thumbsup',
+  thumbsdown: 'thumbsdown',
+  heart: 'heart',
+  laugh: 'laugh',
+  sad: 'sad',
+  angry: 'angry',
+  fire: 'fire',
+  heart_eyes: 'heart_eyes',
+  wow: 'wow',
+} as const;
+
 export interface Catch {
   id: number;
   userId: number;
@@ -1400,6 +1418,10 @@ export interface Catch {
   /** @nullable */
   notes?: string | null;
   /** @nullable */
+  bait?: string | null;
+  /** @nullable */
+  locationName?: string | null;
+  /** @nullable */
   imageUrl?: string | null;
   /** @nullable */
   lat?: number | null;
@@ -1407,6 +1429,12 @@ export interface Catch {
   lng?: number | null;
   isPrivate: boolean;
   isMature?: boolean;
+  likeCount: number;
+  reactionCounts: ReactionCounts;
+  /** @nullable */
+  myReaction?: CatchMyReaction;
+  commentCount: number;
+  savedByMe: boolean;
   caughtAt: string;
   createdAt: string;
 }
@@ -1416,6 +1444,8 @@ export interface CatchInput {
   weight?: number;
   length?: number;
   notes?: string;
+  bait?: string;
+  locationName?: string;
   imageUrl?: string;
   lat?: number;
   lng?: number;
@@ -1426,6 +1456,23 @@ export interface CatchInput {
      * @nullable
      */
   lakeId?: number | null;
+}
+
+export interface CatchComment {
+  id: number;
+  catchId: number;
+  userId: number;
+  user?: User;
+  content: string;
+  /** @nullable */
+  imageUrl?: string | null;
+  isMature?: boolean;
+  createdAt: string;
+}
+
+export interface CatchCommentInput {
+  content?: string;
+  imageUrl?: string;
 }
 
 export type GalleryItemMediaType = typeof GalleryItemMediaType[keyof typeof GalleryItemMediaType];
