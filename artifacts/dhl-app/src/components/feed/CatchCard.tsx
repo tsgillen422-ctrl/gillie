@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { resolveImageSrc } from "@/lib/assets";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,11 +7,33 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { Scale, Fish, Anchor } from "lucide-react";
 import { ClickableImage } from "@/components/ClickableImage";
 
-export function CatchCard({ catchData }: { catchData: any }) {
+export function CatchCard({ catchData, href }: { catchData: any; href?: string }) {
+  const [, navigate] = useLocation();
   if (!catchData) return null;
 
+  // Tapping the card (outside the zoomable photo, which stops propagation)
+  // deep-links to the catch on the Catches page.
+  const clickable = Boolean(href);
+
   return (
-    <Card className="mb-4 overflow-hidden rounded-2xl border-none shadow-soft transition-all hover:shadow-soft-lg bg-card">
+    <Card
+      onClick={clickable ? () => navigate(href!) : undefined}
+      onKeyDown={
+        clickable
+          ? (e: React.KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                navigate(href!);
+              }
+            }
+          : undefined
+      }
+      role={clickable ? "link" : undefined}
+      aria-label={clickable ? `View ${catchData.species || "catch"} by ${catchData.user?.displayName || "angler"}` : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      data-testid={clickable ? `card-catch-${catchData.id}` : undefined}
+      className={`mb-4 overflow-hidden rounded-2xl border-none shadow-soft transition-all hover:shadow-soft-lg bg-card ${clickable ? "cursor-pointer active:scale-[0.99]" : ""}`}
+    >
       <div className="flex flex-col">
         {/* Media Full Bleed */}
         {catchData.imageUrl ? (

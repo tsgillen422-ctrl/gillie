@@ -747,7 +747,7 @@ export function FeedPage() {
           catches?.length ? (
             <div className="space-y-5 mt-2">
               {catches.map(catchData => (
-                <CatchCard key={catchData.id} catchData={catchData} />
+                <CatchCard key={catchData.id} catchData={catchData} href={`/catches?catch=${catchData.id}`} />
               ))}
             </div>
           ) : (
