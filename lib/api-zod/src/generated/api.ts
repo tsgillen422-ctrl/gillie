@@ -387,7 +387,7 @@ export const CheckInLocationBody = zod.object({
   "lat": zod.number(),
   "lng": zod.number(),
   "onWater": zod.boolean().optional(),
-  "durationHours": zod.number().optional().describe('How long the check-in stays active (clamped 1-8h, default 6h)'),
+  "durationHours": zod.number().optional().describe('How long the sharing window stays active before auto-ghosting (clamped 1-24h, default 6h). Location reports while the app is open slide the window forward.'),
   "boatId": zod.number().nullish().describe('Which boat from the user\'s fleet is out today; its look is used on the map'),
   "lakeId": zod.number().nullish().describe('Which lake the user is checking in at (defaults to their current lake)')
 })
@@ -4898,7 +4898,7 @@ export const GetDockLabelsResponse = zod.array(GetDockLabelsResponseItem)
 
 
 /**
- * @summary Place a dock label (admin only)
+ * @summary Place a dock label (admins and approved businesses only)
  */
 export const CreateDockLabelBody = zod.object({
   "label": zod.string(),
@@ -4910,10 +4910,224 @@ export const CreateDockLabelBody = zod.object({
 
 
 /**
- * @summary Remove a dock label (admin only)
+ * @summary Remove a dock label (placer or admin only)
  */
 export const DeleteDockLabelParams = zod.object({
   "labelId": zod.coerce.number()
+})
+
+
+/**
+ * @summary List approved businesses (search by name, type, description, service area)
+ */
+export const GetBusinessesQueryParams = zod.object({
+  "q": zod.coerce.string().optional(),
+  "lakeId": zod.coerce.number().optional()
+})
+
+export const GetBusinessesResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "lakeId": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "description": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "phone": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "serviceArea": zod.string().nullish(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "owner": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
+}).nullish()
+})
+export const GetBusinessesResponse = zod.array(GetBusinessesResponseItem)
+
+
+/**
+ * @summary Business type autocomplete suggestions
+ */
+export const GetBusinessTypesResponseItem = zod.string()
+export const GetBusinessTypesResponse = zod.array(GetBusinessTypesResponseItem)
+
+
+/**
+ * @summary Get the caller's own business profile (any status)
+ */
+export const GetMyBusinessResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "lakeId": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "description": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "phone": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "serviceArea": zod.string().nullish(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "owner": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
+}).nullish()
+})
+
+
+/**
+ * @summary Create or update the caller's business profile (resets status to pending)
+ */
+export const UpsertMyBusinessBody = zod.object({
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "description": zod.string().nullish(),
+  "photos": zod.array(zod.string()).optional(),
+  "phone": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "serviceArea": zod.string().nullish(),
+  "lakeId": zod.number().optional()
+})
+
+export const UpsertMyBusinessResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "lakeId": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "description": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "phone": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "serviceArea": zod.string().nullish(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "owner": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
+}).nullish()
+})
+
+
+/**
+ * @summary Admin - list business profiles awaiting review
+ */
+export const GetPendingBusinessesResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "lakeId": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "description": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "phone": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "serviceArea": zod.string().nullish(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "owner": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
+}).nullish()
+})
+export const GetPendingBusinessesResponse = zod.array(GetPendingBusinessesResponseItem)
+
+
+/**
+ * @summary Get a business profile (approved, or own/admin for pending)
+ */
+export const GetBusinessParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const GetBusinessResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "lakeId": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "description": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "phone": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "serviceArea": zod.string().nullish(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "owner": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
+}).nullish()
+})
+
+
+/**
+ * @summary Admin - approve or reject a business profile
+ */
+export const SetBusinessStatusParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const SetBusinessStatusBody = zod.object({
+  "status": zod.enum(['approved', 'rejected'])
+})
+
+export const SetBusinessStatusResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "lakeId": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "description": zod.string().nullish(),
+  "photos": zod.array(zod.string()),
+  "phone": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "serviceArea": zod.string().nullish(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "owner": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
+}).nullish()
 })
 
 
@@ -8443,7 +8657,7 @@ export const AcceptTermsResponse = zod.object({
  * @summary Submit a report about a post, user, or pin
  */
 export const CreateReportBody = zod.object({
-  "targetType": zod.enum(['post', 'user', 'pin', 'catch']),
+  "targetType": zod.enum(['post', 'user', 'pin', 'catch', 'business']),
   "targetId": zod.number(),
   "reason": zod.string(),
   "details": zod.string().optional()
@@ -8460,7 +8674,7 @@ export const GetReportsQueryParams = zod.object({
 export const GetReportsResponseItem = zod.object({
   "id": zod.number(),
   "reporterId": zod.number(),
-  "targetType": zod.enum(['post', 'user', 'pin', 'catch']),
+  "targetType": zod.enum(['post', 'user', 'pin', 'catch', 'business']),
   "targetId": zod.number(),
   "reason": zod.string(),
   "details": zod.string().nullish(),
@@ -8505,7 +8719,7 @@ export const ResolveReportBody = zod.object({
 export const ResolveReportResponse = zod.object({
   "id": zod.number(),
   "reporterId": zod.number(),
-  "targetType": zod.enum(['post', 'user', 'pin', 'catch']),
+  "targetType": zod.enum(['post', 'user', 'pin', 'catch', 'business']),
   "targetId": zod.number(),
   "reason": zod.string(),
   "details": zod.string().nullish(),

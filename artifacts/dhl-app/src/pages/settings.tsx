@@ -13,6 +13,7 @@ import {
   Moon,
   Sun,
   Monitor,
+  Store,
   User,
   Ship,
   Trash2,
@@ -88,6 +89,7 @@ export function SettingsPage() {
           <SettingsLinkRow href="/settings/profile" icon={User} label="Captain Profile" />
           <SettingsLinkRow href="/settings/home-lake" icon={Waves} label="Home Lake" />
           <SettingsLinkRow href="/settings/vessel" icon={Ship} label="My Fleet" />
+          <SettingsLinkRow href="/businesses/me/edit" icon={Store} label="Business Profile" />
           <SettingsLinkRow href="/settings/delete-account" icon={Trash2} label="Delete Account" danger />
         </SettingsGroup>
 

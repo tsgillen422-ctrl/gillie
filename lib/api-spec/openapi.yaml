@@ -18,7 +18,9 @@ tags:
   - name: pins
     description: Map pin operations
   - name: dockLabels
-    description: User-placed dock/shoreline labels (removable by placer or admin)
+    description: Dock/shoreline labels placed by admins or approved businesses (removable by placer or admin)
+  - name: businesses
+    description: User-managed business profiles (admin-approved before public)
   - name: posts
     description: Post and event operations
   - name: notifications
@@ -1468,7 +1470,7 @@ paths:
     post:
       operationId: createDockLabel
       tags: [dockLabels]
-      summary: Place a dock label (any signed-in user)
+      summary: Place a dock label (admins and approved businesses only)
       requestBody:
         required: true
         content:
@@ -1511,6 +1513,191 @@ paths:
                 $ref: "#/components/schemas/ErrorEnvelope"
         "404":
           description: Dock label not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /businesses:
+    get:
+      operationId: getBusinesses
+      tags: [businesses]
+      summary: List approved businesses (search by name, type, description, service area)
+      parameters:
+        - name: q
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: lakeId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Approved businesses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Business"
+
+  /businesses/types:
+    get:
+      operationId: getBusinessTypes
+      tags: [businesses]
+      summary: Business type autocomplete suggestions
+      responses:
+        "200":
+          description: Suggested business types
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /businesses/me:
+    get:
+      operationId: getMyBusiness
+      tags: [businesses]
+      summary: Get the caller's own business profile (any status)
+      responses:
+        "200":
+          description: Own business profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "404":
+          description: No business profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    put:
+      operationId: upsertMyBusiness
+      tags: [businesses]
+      summary: Create or update the caller's business profile (resets status to pending)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessInput"
+      responses:
+        "200":
+          description: Business profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "201":
+          description: Business profile created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    delete:
+      operationId: deleteMyBusiness
+      tags: [businesses]
+      summary: Delete the caller's business profile
+      responses:
+        "200":
+          description: Deleted
+        "404":
+          description: No business profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /businesses/pending:
+    get:
+      operationId: getPendingBusinesses
+      tags: [businesses]
+      summary: Admin - list business profiles awaiting review
+      responses:
+        "200":
+          description: Pending businesses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Business"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /businesses/{businessId}:
+    get:
+      operationId: getBusiness
+      tags: [businesses]
+      summary: Get a business profile (approved, or own/admin for pending)
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Business profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /businesses/{businessId}/status:
+    patch:
+      operationId: setBusinessStatus
+      tags: [businesses]
+      summary: Admin - approve or reject a business profile
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessStatusInput"
+      responses:
+        "200":
+          description: Updated business
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Not found
           content:
             application/json:
               schema:
@@ -3646,6 +3833,115 @@ components:
           type: ["integer", "null"]
           description: Which lake the pin belongs to (defaults to the default lake community)
 
+    BusinessOwner:
+      type: object
+      required: [id, username]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        displayName:
+          type: string
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+
+    Business:
+      type: object
+      required: [id, userId, lakeId, businessName, businessType, photos, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        lakeId:
+          type: integer
+        businessName:
+          type: string
+        businessType:
+          type: string
+        description:
+          type: string
+          nullable: true
+        photos:
+          type: array
+          items:
+            type: string
+        phone:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        hours:
+          type: string
+          nullable: true
+        lat:
+          type: number
+          nullable: true
+        lng:
+          type: number
+          nullable: true
+        serviceArea:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        owner:
+          $ref: "#/components/schemas/BusinessOwner"
+          nullable: true
+
+    BusinessStatusInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [approved, rejected]
+
+    BusinessInput:
+      type: object
+      required: [businessName, businessType]
+      properties:
+        businessName:
+          type: string
+        businessType:
+          type: string
+        description:
+          type: string
+          nullable: true
+        photos:
+          type: array
+          items:
+            type: string
+        phone:
+          type: string
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        hours:
+          type: string
+          nullable: true
+        lat:
+          type: number
+          nullable: true
+        lng:
+          type: number
+          nullable: true
+        serviceArea:
+          type: string
+          nullable: true
+        lakeId:
+          type: integer
+
     DockLabel:
       type: object
       required: [id, userId, label, lat, lng, createdAt]
@@ -4802,7 +5098,7 @@ components:
       properties:
         targetType:
           type: string
-          enum: [post, user, pin, catch]
+          enum: [post, user, pin, catch, business]
         targetId:
           type: integer
         reason:
@@ -4842,7 +5138,7 @@ components:
           type: integer
         targetType:
           type: string
-          enum: [post, user, pin, catch]
+          enum: [post, user, pin, catch, business]
         targetId:
           type: integer
         reason:

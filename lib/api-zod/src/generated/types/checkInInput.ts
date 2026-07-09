@@ -10,7 +10,7 @@ export interface CheckInInput {
   lat: number;
   lng: number;
   onWater?: boolean;
-  /** How long the check-in stays active (clamped 1-8h, default 6h) */
+  /** How long the sharing window stays active before auto-ghosting (clamped 1-24h, default 6h). Location reports while the app is open slide the window forward. */
   durationHours?: number;
   /**
      * Which boat from the user's fleet is out today; its look is used on the map

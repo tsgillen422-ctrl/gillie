@@ -19,3 +19,4 @@ to one bubble at zoom 12 and split into individuals by zoom ~14–16. Run such a
 script from inside `artifacts/dhl-app/` so the workspace `supercluster` resolves
 (it won't resolve from `.local/`). Reason about touch/long-press (550ms timer in
 `map.tsx`, cleared on touchmove/drag/zoom/mouseup) by code, not the harness.
+- WebGL-less harnesses can now exercise pages embedding maplibre IF the Map constructor is wrapped in try/catch with a non-map fallback UI (done for the business-edit LocationPicker). Full map page (map.tsx) still cannot be visually e2e tested.

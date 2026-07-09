@@ -265,7 +265,7 @@ export interface CheckInInput {
   lat: number;
   lng: number;
   onWater?: boolean;
-  /** How long the check-in stays active (clamped 1-8h, default 6h) */
+  /** How long the sharing window stays active before auto-ghosting (clamped 1-24h, default 6h). Location reports while the app is open slide the window forward. */
   durationHours?: number;
   /**
      * Which boat from the user's fleet is out today; its look is used on the map
@@ -813,6 +813,68 @@ export interface PinInput {
      * @nullable
      */
   lakeId?: number | null;
+}
+
+export interface BusinessOwner {
+  id: number;
+  username: string;
+  displayName?: string | null;
+  avatarUrl?: string | null;
+}
+
+export type BusinessStatus = typeof BusinessStatus[keyof typeof BusinessStatus];
+
+
+export const BusinessStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface Business {
+  id: number;
+  userId: number;
+  lakeId: number;
+  businessName: string;
+  businessType: string;
+  description?: string | null;
+  photos: string[];
+  phone?: string | null;
+  website?: string | null;
+  hours?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  serviceArea?: string | null;
+  status: BusinessStatus;
+  createdAt: string;
+  updatedAt: string;
+  owner?: BusinessOwner | null;
+}
+
+export type BusinessStatusInputStatus = typeof BusinessStatusInputStatus[keyof typeof BusinessStatusInputStatus];
+
+
+export const BusinessStatusInputStatus = {
+  approved: 'approved',
+  rejected: 'rejected',
+} as const;
+
+export interface BusinessStatusInput {
+  status: BusinessStatusInputStatus;
+}
+
+export interface BusinessInput {
+  businessName: string;
+  businessType: string;
+  description?: string | null;
+  photos?: string[];
+  phone?: string | null;
+  website?: string | null;
+  hours?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  serviceArea?: string | null;
+  lakeId?: number;
 }
 
 export interface DockLabel {
@@ -1710,6 +1772,7 @@ export const ReportInputTargetType = {
   user: 'user',
   pin: 'pin',
   catch: 'catch',
+  business: 'business',
 } as const;
 
 export interface ReportInput {
@@ -1749,6 +1812,7 @@ export const ReportTargetType = {
   user: 'user',
   pin: 'pin',
   catch: 'catch',
+  business: 'business',
 } as const;
 
 export type ReportStatus = typeof ReportStatus[keyof typeof ReportStatus];
@@ -1889,6 +1953,11 @@ export type GetDockLabelsParams = {
 /**
  * Only include dock labels on this lake
  */
+lakeId?: number;
+};
+
+export type GetBusinessesParams = {
+q?: string;
 lakeId?: number;
 };
 

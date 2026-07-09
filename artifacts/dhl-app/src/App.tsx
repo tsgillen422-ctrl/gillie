@@ -43,6 +43,9 @@ import { TermsGate } from "@/components/TermsGate";
 import { SuspendedGate } from "@/components/SuspendedGate";
 import { TERMS_VERSION } from "@/lib/legal";
 import { SupportPage } from "@/pages/support";
+import BusinessesPage from "@/pages/businesses";
+import BusinessDetailPage from "@/pages/business-detail";
+import BusinessEditPage from "@/pages/business-edit";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -396,6 +399,9 @@ function AuthedApp() {
         <Route path="/tie-ups" component={TieUpsPage} />
         <Route path="/boats" component={BoatsPage} />
         <Route path="/search" component={SearchPage} />
+        <Route path="/businesses" component={BusinessesPage} />
+        <Route path="/businesses/me/edit" component={BusinessEditPage} />
+        <Route path="/businesses/:businessId" component={BusinessDetailPage} />
         <Route path="/notifications" component={NotificationsPage} />
         <Route path="/settings/:section" component={SettingsDetailPage} />
         <Route path="/settings" component={SettingsPage} />

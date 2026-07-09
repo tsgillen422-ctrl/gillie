@@ -15,6 +15,7 @@ import {
   catchLikesTable,
   catchCommentsTable,
   savedCatchesTable,
+  businessProfilesTable,
 } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
 import type { Request } from "express";
@@ -27,12 +28,14 @@ const POST_REASONS = ["spam", "harassment", "inappropriate", "false_information"
 const USER_REASONS = ["spam", "harassment", "inappropriate", "impersonation", "other"];
 const PIN_REASONS = ["incorrect_location", "duplicate", "unsafe_information", "inappropriate"];
 const CATCH_REASONS = ["spam", "harassment", "inappropriate", "false_information", "illegal", "other"];
+const BUSINESS_REASONS = ["fake_listing", "incorrect_information", "inappropriate", "spam", "other"];
 
 function reasonsFor(targetType: string): string[] | null {
   if (targetType === "post") return POST_REASONS;
   if (targetType === "user") return USER_REASONS;
   if (targetType === "pin") return PIN_REASONS;
   if (targetType === "catch") return CATCH_REASONS;
+  if (targetType === "business") return BUSINESS_REASONS;
   return null;
 }
 
@@ -83,6 +86,10 @@ async function resolveTargetOwner(targetType: string, targetId: number): Promise
     const c = await db.query.catchesTable.findFirst({ where: eq(catchesTable.id, targetId) });
     return c?.userId ?? null;
   }
+  if (targetType === "business") {
+    const b = await db.query.businessProfilesTable.findFirst({ where: eq(businessProfilesTable.id, targetId) });
+    return b?.userId ?? null;
+  }
   return null;
 }
 
@@ -109,6 +116,9 @@ router.post("/", async (req, res) => {
   } else if (targetType === "catch") {
     const target = await db.query.catchesTable.findFirst({ where: eq(catchesTable.id, targetId) });
     if (!target) return res.status(404).json({ error: "Catch not found" });
+  } else if (targetType === "business") {
+    const target = await db.query.businessProfilesTable.findFirst({ where: eq(businessProfilesTable.id, targetId) });
+    if (!target) return res.status(404).json({ error: "Business not found" });
   }
   const [report] = await db
     .insert(reportsTable)
@@ -193,6 +203,11 @@ router.patch("/:id", async (req, res) => {
       await db.delete(catchCommentsTable).where(eq(catchCommentsTable.catchId, report.targetId));
       await db.delete(savedCatchesTable).where(eq(savedCatchesTable.catchId, report.targetId));
       await db.delete(catchesTable).where(eq(catchesTable.id, report.targetId));
+    } else if (report.targetType === "business") {
+      await db.delete(businessProfilesTable).where(eq(businessProfilesTable.id, report.targetId));
+      if (ownerId) {
+        await db.update(usersTable).set({ isBusiness: false }).where(eq(usersTable.id, ownerId));
+      }
     } else if (report.targetType === "user" && ownerId) {
       // Removing a reported user = suspend their account.
       await db.update(usersTable).set({ isSuspended: true }).where(eq(usersTable.id, ownerId));

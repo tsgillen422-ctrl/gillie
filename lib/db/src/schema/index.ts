@@ -15,3 +15,4 @@ export * from "./reports";
 export * from "./stories";
 export * from "./pushSubscriptions";
 export * from "./nativePushTokens";
+export * from "./businessProfiles";

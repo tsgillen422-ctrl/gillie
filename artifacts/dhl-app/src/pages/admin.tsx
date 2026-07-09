@@ -17,6 +17,10 @@ import {
   useSeedDemoData,
   useClearDemoData,
   getGetDemoDataStatusQueryKey,
+  useGetPendingBusinesses,
+  useSetBusinessStatus,
+  getGetPendingBusinessesQueryKey,
+  getGetBusinessesQueryKey,
 } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,7 +49,7 @@ const REASON_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-const TARGET_LABELS: Record<string, string> = { post: "Post", user: "User", pin: "Pin", catch: "Catch" };
+const TARGET_LABELS: Record<string, string> = { post: "Post", user: "User", pin: "Pin", catch: "Catch", business: "Business" };
 
 function StatusBadge({ status, action }: { status: string; action?: string | null }) {
   if (status === "pending") return <Badge variant="secondary">Pending</Badge>;
@@ -476,9 +480,106 @@ function DemoDataManager({ enabled }: { enabled: boolean }) {
   );
 }
 
+function BusinessApprovalManager({ enabled }: { enabled: boolean }) {
+  const queryClient = useQueryClient();
+  const { data: pending = [], isLoading } = useGetPendingBusinesses({
+    query: { enabled, queryKey: getGetPendingBusinessesQueryKey() },
+  });
+  const setStatus = useSetBusinessStatus();
+
+  const act = (businessId: number, status: "approved" | "rejected") => {
+    setStatus.mutate(
+      { businessId, data: { status } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetPendingBusinessesQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetBusinessesQueryKey() });
+          toast.success(status === "approved" ? "Business approved." : "Business rejected.");
+        },
+        onError: () => toast.error("Couldn't update that business."),
+      },
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[0, 1].map((i) => <Skeleton key={i} className="h-32 w-full rounded-lg" />)}
+      </div>
+    );
+  }
+
+  if (pending.length === 0) {
+    return (
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon"><Check /></EmptyMedia>
+          <EmptyTitle>No businesses waiting</EmptyTitle>
+          <EmptyDescription>New business listings will show up here for approval.</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {pending.map((b: any) => (
+        <Card key={b.id} className="border-border/60" data-testid={`card-pending-business-${b.id}`}>
+          <CardHeader className="p-4 pb-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 className="font-semibold text-sm truncate">{b.businessName}</h3>
+                <p className="text-xs text-muted-foreground">{b.businessType}</p>
+                {b.owner && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    by{" "}
+                    <Link href={`/profile/${b.owner.id}`} className="hover:underline font-medium">
+                      {b.owner.displayName}
+                    </Link>{" "}
+                    (@{b.owner.username})
+                  </p>
+                )}
+              </div>
+              <Badge variant="secondary" className="shrink-0">Pending</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 pt-1 space-y-3">
+            {b.description && <p className="text-sm whitespace-pre-wrap line-clamp-4">{b.description}</p>}
+            {b.photos?.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto">
+                {b.photos.map((p: string, i: number) => (
+                  <img key={i} src={p} alt="" className="h-20 w-20 rounded-lg object-cover shrink-0" />
+                ))}
+              </div>
+            )}
+            <div className="text-xs text-muted-foreground space-y-0.5">
+              {b.phone && <p>Phone: {b.phone}</p>}
+              {b.website && <p>Website: {b.website}</p>}
+              {b.hours && <p>Hours: {b.hours}</p>}
+              {b.serviceArea && <p>Service area: {b.serviceArea}</p>}
+              {b.lat != null && b.lng != null && <p>Pin: {Number(b.lat).toFixed(4)}, {Number(b.lng).toFixed(4)}</p>}
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => act(b.id, "approved")} disabled={setStatus.isPending} data-testid={`button-approve-business-${b.id}`}>
+                <Check className="w-4 h-4 mr-1.5" /> Approve
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => act(b.id, "rejected")} disabled={setStatus.isPending} data-testid={`button-reject-business-${b.id}`}>
+                <Ban className="w-4 h-4 mr-1.5" /> Reject
+              </Button>
+              <Button size="sm" variant="ghost" asChild>
+                <Link href={`/businesses/${b.id}`}>View</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export function AdminPage() {
   const { data: me, isLoading: meLoading } = useGetMe();
-  const [view, setView] = React.useState<"reports" | "members" | "waivers" | "demo">("reports");
+  const [view, setView] = React.useState<"reports" | "businesses" | "members" | "waivers" | "demo">("reports");
   const [tab, setTab] = React.useState<"pending" | "resolved" | "dismissed" | "all">("pending");
   const statusParam = tab === "all" ? undefined : tab;
   const { data: reports, isLoading } = useGetReports(
@@ -512,15 +613,18 @@ export function AdminPage() {
       </div>
 
       <Tabs value={view} onValueChange={(v) => setView(v as any)}>
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="businesses">Biz</TabsTrigger>
           <TabsTrigger value="members">Members</TabsTrigger>
           <TabsTrigger value="waivers">Waivers</TabsTrigger>
           <TabsTrigger value="demo">Demo</TabsTrigger>
         </TabsList>
       </Tabs>
 
-      {view === "members" ? (
+      {view === "businesses" ? (
+        <BusinessApprovalManager enabled={!!me?.isAdmin} />
+      ) : view === "members" ? (
         <div className="space-y-5">
           <MembersManager enabled={!!me?.isAdmin} myId={me?.id} />
           <SuspendedManager enabled={!!me?.isAdmin} />

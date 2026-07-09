@@ -18,7 +18,7 @@ import {
   bearingDegrees,
   compassPoint,
 } from "@/lib/clustering";
-import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey, useGetDockLabels, useCreateDockLabel, useDeleteDockLabel, getGetDockLabelsQueryKey, useGetHiddenPlaces, useHidePlace, getGetHiddenPlacesQueryKey, useGetStoryPlaces } from "@workspace/api-client-react";
+import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey, useGetDockLabels, useCreateDockLabel, useDeleteDockLabel, getGetDockLabelsQueryKey, useGetHiddenPlaces, useHidePlace, getGetHiddenPlacesQueryKey, useGetStoryPlaces, useGetBusinesses, useGetMyBusiness } from "@workspace/api-client-react";
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
 import { ClickableImage } from "@/components/ClickableImage";
@@ -262,6 +262,7 @@ type Selected =
   | { kind: "boatGroup"; data: { members: any[]; lng: number; lat: number } }
   | { kind: "pinCluster"; data: { pins: any[]; lng: number; lat: number; expansionZoom: number } }
   | { kind: "dockLabel"; data: any }
+  | { kind: "business"; data: any }
   | null;
 
 const el = (tag: string, className?: string) => {
@@ -617,6 +618,14 @@ export function MapPage() {
   const { data: friends } = useGetFriendLocations({ lakeId });
   const { data: pins } = useGetPins({ lakeId });
   const { data: dockLabels } = useGetDockLabels({ lakeId });
+  const { data: businesses } = useGetBusinesses(
+    { lakeId },
+    { query: { queryKey: ["businesses", lakeId] } },
+  );
+  const { data: myBusiness } = useGetMyBusiness({
+    query: { queryKey: ["my-business"], retry: false },
+  });
+  const canPlaceDockSign = !!me?.isAdmin || myBusiness?.status === "approved";
   const { data: hiddenPlaces } = useGetHiddenPlaces();
   const hiddenPlaceKeys = useMemo(
     () => new Set((hiddenPlaces ?? []).map((h) => h.placeKey)),
@@ -667,6 +676,8 @@ export function MapPage() {
   const pinMarkers = useRef<maplibregl.Marker[]>([]);
   // Admin dock-sign markers (rebuilt when the dock-label set changes).
   const dockLabelMarkers = useRef<maplibregl.Marker[]>([]);
+  // Approved business markers (rebuilt when the business set changes).
+  const businessMarkers = useRef<maplibregl.Marker[]>([]);
   const meMarker = useRef<maplibregl.Marker | null>(null);
   const placeMarker = useRef<maplibregl.Marker | null>(null);
   // Water fill layer ids, used to detect whether a marker sits on water or land.
@@ -699,6 +710,11 @@ export function MapPage() {
   const [pinDesc, setPinDesc] = useState("");
   const [pinType, setPinType] = useState<PinInputType>("fishing_spot");
   const [pinMode, setPinMode] = useState<"pin" | "landmark" | "dock">("pin");
+  // If dock-sign permission is revoked (or was never there), never leave the
+  // dialog stuck on the hidden dock tab.
+  useEffect(() => {
+    if (!canPlaceDockSign) setPinMode((m) => (m === "dock" ? "pin" : m));
+  }, [canPlaceDockSign]);
   const [dockEmoji, setDockEmoji] = useState<string>(DOCK_EMOJIS[0]);
   const [pinVisibility, setPinVisibility] = useState<"friends" | "public" | "community">("friends");
   const [pinStart, setPinStart] = useState("");
@@ -1692,6 +1708,39 @@ export function MapPage() {
     };
   }, [dockLabels, styleReady, updateDockLabels]);
 
+  // --- Approved business markers: (re)build whenever the business set changes ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+    businessMarkers.current.forEach((m) => m.remove());
+    businessMarkers.current = [];
+    (businesses ?? []).forEach((b: any) => {
+      if (b.lat == null || b.lng == null) return;
+      const root = el("div", "business-marker") as HTMLDivElement;
+      root.style.cssText = "display:flex;flex-direction:column;align-items:center;cursor:pointer;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;";
+      const bubble = el("div");
+      bubble.style.cssText = "width:34px;height:34px;border-radius:12px;background:#0d9488;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid #fff;";
+      bubble.textContent = "🏪";
+      const pill = el("div");
+      pill.style.cssText = "margin-top:2px;background:rgba(255,255,255,0.92);border-radius:8px;padding:1px 6px;font-size:10px;font-weight:600;color:#134e4a;box-shadow:0 1px 3px rgba(0,0,0,0.25);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+      pill.textContent = b.businessName;
+      root.appendChild(bubble);
+      root.appendChild(pill);
+      root.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setSelected({ kind: "business", data: b });
+      });
+      const marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
+        .setLngLat([b.lng, b.lat])
+        .addTo(map);
+      businessMarkers.current.push(marker);
+    });
+    return () => {
+      businessMarkers.current.forEach((m) => m.remove());
+      businessMarkers.current = [];
+    };
+  }, [businesses, styleReady]);
+
   // Re-evaluate dock-label tiers/scale/priority as the user zooms.
   useEffect(() => {
     const map = mapRef.current;
@@ -2407,7 +2456,7 @@ export function MapPage() {
           </DialogHeader>
 
           {/* Choose what you're adding */}
-          <div className="grid grid-cols-3 gap-2 rounded-xl bg-muted p-1">
+          <div className={`grid ${canPlaceDockSign ? "grid-cols-3" : "grid-cols-2"} gap-2 rounded-xl bg-muted p-1`}>
             <button
               type="button"
               onClick={() => setPinMode("pin")}
@@ -2426,15 +2475,17 @@ export function MapPage() {
             >
               📍 Landmark
             </button>
-            <button
-              type="button"
-              onClick={() => setPinMode("dock")}
-              className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
-                pinMode === "dock" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              🪧 Dock Sign
-            </button>
+            {canPlaceDockSign && (
+              <button
+                type="button"
+                onClick={() => setPinMode("dock")}
+                className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
+                  pinMode === "dock" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                🪧 Dock Sign
+              </button>
+            )}
           </div>
 
           <div className="grid gap-4 py-4">
@@ -2825,6 +2876,41 @@ function DetailCard({
             </Button>
           </div>
         )}
+      </div>
+    );
+  }
+
+  if (selected.kind === "business") {
+    const b = selected.data;
+    return (
+      <div className="mx-auto w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
+        <div className="flex items-center gap-3 p-4">
+          {b.photos?.length > 0 ? (
+            <img src={b.photos[0]} alt="" className="w-12 h-12 rounded-2xl object-cover shrink-0" />
+          ) : (
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl shrink-0">🏪</div>
+          )}
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-lg leading-tight truncate">{b.businessName}</h3>
+            <p className="text-xs text-muted-foreground truncate">{b.businessType}</p>
+          </div>
+          <Button size="icon" variant="ghost" className="h-8 w-8 -mr-1 -mt-1" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        {b.description && (
+          <p className="px-4 -mt-1 text-sm text-muted-foreground line-clamp-2">{b.description}</p>
+        )}
+        <div className="flex items-center gap-2 p-4 pt-3">
+          {b.phone && (
+            <Button variant="outline" className="flex-1" asChild>
+              <a href={`tel:${b.phone}`}>Call</a>
+            </Button>
+          )}
+          <Button className="flex-1" asChild>
+            <Link href={`/businesses/${b.id}`}>View details</Link>
+          </Button>
+        </div>
       </div>
     );
   }

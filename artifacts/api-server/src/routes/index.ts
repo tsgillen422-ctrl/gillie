@@ -20,6 +20,7 @@ import pushRouter from "./push";
 import gifsRouter from "./gifs";
 import storiesRouter from "./stories";
 import highlightsRouter from "./highlights";
+import businessesRouter from "./businesses";
 import adminRouter from "./admin";
 import reviewerRouter from "./reviewer";
 import appleNativeRouter from "./appleNative";
@@ -59,6 +60,7 @@ router.use("/push", pushRouter);
 router.use("/gifs", gifsRouter);
 router.use("/stories", storiesRouter);
 router.use("/highlights", highlightsRouter);
+router.use("/businesses", businessesRouter);
 router.use("/admin", adminRouter);
 
 export default router;

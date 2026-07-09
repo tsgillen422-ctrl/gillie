@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, dockLabelsTable } from "@workspace/db";
+import { usersTable, dockLabelsTable, businessProfilesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { isValidLakeId, DEFAULT_LAKE_ID } from "@workspace/lake-config";
@@ -37,10 +37,18 @@ router.get("/", async (req, res) => {
   res.json(rows.map(formatDockLabel));
 });
 
-// Any signed-in user can place a dock label; the placer is recorded so only
-// they (or an admin) can remove it later.
+// Only admins and owners of an admin-approved business profile can place a
+// dock label. The placer is recorded so only they (or an admin) can remove it.
 router.post("/", async (req, res) => {
   const uid = currentUserId(req);
+  if (!(await isAdmin(uid))) {
+    const biz = await db.query.businessProfilesTable.findFirst({
+      where: eq(businessProfilesTable.userId, uid),
+    });
+    if (!biz || biz.status !== "approved") {
+      return res.status(403).json({ error: "Only admins and approved businesses can place dock signs" });
+    }
+  }
   const { label, emoji, lat, lng, lakeId } = req.body ?? {};
   if (typeof label !== "string" || !label.trim() || typeof lat !== "number" || typeof lng !== "number") {
     return res.status(400).json({ error: "label, lat and lng are required" });
