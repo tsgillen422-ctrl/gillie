@@ -93,6 +93,10 @@ function pinWindow(startTime?: string | null, endTime?: string | null) {
 
 const CARD = "rounded-3xl border border-card-border bg-card shadow-soft";
 
+// Pill-style trigger for the profile detail tab bar (horizontal scroll row).
+const PROFILE_TAB =
+  "shrink-0 inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-card-border bg-card px-4 py-2 text-sm font-semibold text-muted-foreground shadow-soft data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-soft";
+
 /** Lake-inspired wave divider between sections. */
 function WaveDivider({ className = "" }: { className?: string }) {
   return (
@@ -1021,7 +1025,7 @@ export function ProfilePage() {
   const galleryPreview = (gallery ?? []).slice(0, 6);
 
   return (
-    <div className="flex flex-col h-full bg-background overflow-y-auto">
+    <div className="flex flex-col h-full w-full max-w-full bg-background overflow-y-auto overflow-x-hidden">
       {loadingUser ? (
         <div className="p-6 space-y-6">
           <Skeleton className="w-full h-52 rounded-3xl" />
@@ -1445,17 +1449,29 @@ export function ProfilePage() {
             {/* Detailed tabs */}
             <div ref={tabsRef} className="pt-1">
               <Tabs value={tab} onValueChange={setTab} className="w-full">
-                <TabsList className="w-full mb-4 rounded-2xl">
-                  <TabsTrigger value="posts" className="flex-1 rounded-xl">📰 Posts</TabsTrigger>
-                  <TabsTrigger value="pins" className="flex-1 rounded-xl">📍 Check-ins</TabsTrigger>
-                  <TabsTrigger value="gallery" className="flex-1 rounded-xl">📸 Photos</TabsTrigger>
-                  {profileStoryGroup && (
-                    <TabsTrigger value="stories" className="flex-1 rounded-xl" data-testid="tab-stories">🌊 Stories</TabsTrigger>
-                  )}
-                  {(user as any).showBoat !== false && ((user as any).fleet?.length ?? 0) > 0 && (
-                    <TabsTrigger value="boats" className="flex-1 rounded-xl">🚤 Boats</TabsTrigger>
-                  )}
-                </TabsList>
+                <div className="-mx-4 mb-4 overflow-x-auto no-scrollbar">
+                  <TabsList className="flex h-auto w-max min-w-full items-center justify-start gap-2 bg-transparent p-0 px-4">
+                    <TabsTrigger value="posts" className={PROFILE_TAB}>
+                      <span aria-hidden="true">📰</span> Posts
+                    </TabsTrigger>
+                    <TabsTrigger value="pins" className={PROFILE_TAB}>
+                      <span aria-hidden="true">📍</span> Check-ins
+                    </TabsTrigger>
+                    <TabsTrigger value="gallery" className={PROFILE_TAB}>
+                      <span aria-hidden="true">📸</span> Photos
+                    </TabsTrigger>
+                    {profileStoryGroup && (
+                      <TabsTrigger value="stories" className={PROFILE_TAB} data-testid="tab-stories">
+                        <span aria-hidden="true">🌊</span> Stories
+                      </TabsTrigger>
+                    )}
+                    {(user as any).showBoat !== false && ((user as any).fleet?.length ?? 0) > 0 && (
+                      <TabsTrigger value="boats" className={PROFILE_TAB}>
+                        <span aria-hidden="true">🚤</span> Boats
+                      </TabsTrigger>
+                    )}
+                  </TabsList>
+                </div>
 
                 <TabsContent value="stories" className="space-y-4">
                   {profileStoryGroup ? (
