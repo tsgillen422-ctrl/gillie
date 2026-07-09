@@ -14,7 +14,7 @@ export function PrivacyPolicyBody() {
       <p className="text-muted-foreground">Last updated: {PRIVACY_POLICY_UPDATED}</p>
 
       <p className="text-base">
-        Gillie ("we", "us") is a community app for visitors of Dale Hollow Lake.
+        Gillie ("we", "us") is a community app for lake visitors.
         This policy explains what information we collect, how we use it, and the
         choices you have.
       </p>
@@ -102,7 +102,7 @@ export function CommunityGuidelinesBody() {
       <p className="text-muted-foreground">Last updated: {COMMUNITY_GUIDELINES_UPDATED}</p>
 
       <p className="text-base">
-        Gillie is built for the Dale Hollow Lake community. To keep it welcoming
+        Gillie is built for lake communities. To keep it welcoming
         and safe for everyone, we ask all members to follow these guidelines.
         Content or behavior that violates them may be removed, and accounts may be
         suspended or banned.

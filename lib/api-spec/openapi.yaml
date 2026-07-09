@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: Api
   version: 0.1.0
-  description: DHL - Dale Hollow Lake API
+  description: Gillie - Lake Community API
 servers:
   - url: /api
     description: Base API path
@@ -879,7 +879,7 @@ paths:
         - name: lakeId
           in: query
           required: false
-          description: Which lake to fetch conditions for (defaults to Dale Hollow Lake)
+          description: Which lake to fetch conditions for (defaults to the default lake community)
           schema:
             type: integer
       responses:
@@ -3635,7 +3635,7 @@ components:
           type: ["string", "null"]
         lakeId:
           type: ["integer", "null"]
-          description: Which lake the pin belongs to (defaults to Dale Hollow Lake)
+          description: Which lake the pin belongs to (defaults to the default lake community)
 
     DockLabel:
       type: object
@@ -3892,7 +3892,7 @@ components:
           type: number
         lakeId:
           type: ["integer", "null"]
-          description: Which lake the dock label belongs to (defaults to Dale Hollow Lake)
+          description: Which lake the dock label belongs to (defaults to the default lake community)
 
     HiddenPlace:
       type: object
@@ -4117,7 +4117,7 @@ components:
           description: 2-10 poll choices. When present, the post includes a poll.
         lakeId:
           type: ["integer", "null"]
-          description: Which lake community the post belongs to (defaults to Dale Hollow Lake)
+          description: Which lake community the post belongs to (defaults to the default lake community)
 
     PostUpdateInput:
       type: object
@@ -4285,7 +4285,7 @@ components:
           description: Estimated surface water temperature in Fahrenheit.
         waterLevel:
           type: ["number", "null"]
-          description: Lake pool elevation in feet (USACE Dale Hollow gauge).
+          description: Lake pool elevation in feet (USACE gauge for the lake).
         windSpeed:
           type: number
           description: Wind speed in mph.
@@ -4432,7 +4432,7 @@ components:
           type: string
         lakeId:
           type: ["integer", "null"]
-          description: Which lake the catch belongs to (defaults to Dale Hollow Lake)
+          description: Which lake the catch belongs to (defaults to the default lake community)
 
     CatchComment:
       type: object

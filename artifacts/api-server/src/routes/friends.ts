@@ -242,7 +242,7 @@ router.get("/requests", async (req, res) => {
 // Recommend people to connect with, scored across community-relevant signals:
 // mutual friends, frequent interactions, shared favorite spots, common marinas,
 // nearby boaters, and same-event attendees. Falls back to recent joiners so new
-// members of the Dale Hollow community always surface.
+// members of the selected lake community always surface.
 router.get("/suggestions", async (req, res) => {
   const me = currentUserId(req);
   const meUser = await db.query.usersTable.findFirst({ where: eq(usersTable.id, me) });

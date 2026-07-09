@@ -41,7 +41,7 @@ export function Scene1() {
           transition={{ duration: 0.8, ease: "easeOut" }}
           className="bg-primary/20 text-primary border border-primary/30 px-6 py-2 rounded-full font-semibold tracking-wider uppercase text-sm mb-8"
         >
-          Dale Hollow Lake
+          Your Lake Community
         </motion.div>
 
         <motion.h1 

@@ -1,7 +1,7 @@
 {
   "name": "Gillie",
   "short_name": "Gillie",
-  "description": "The social map for Dale Hollow Lake.",
+  "description": "The social map for your lake community.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

@@ -255,7 +255,7 @@ async function computeBadges(userId: number): Promise<BadgeOut[]> {
   const hasBoat = !!user?.boatName;
 
   return [
-    { key: "explorer", label: "Lake Explorer", description: "Welcome to the Dale Hollow Lake community.", earned: true },
+    { key: "explorer", label: "Lake Explorer", description: "Welcome to the Gillie community.", earned: true },
     { key: "first_post", label: "First Post", description: "Share your first post.", earned: posts >= 1 },
     { key: "frequent_poster", label: "Frequent Poster", description: "Share 10 posts.", earned: posts >= 10 },
     { key: "first_catch", label: "First Catch", description: "Log your first catch.", earned: catches >= 1 },
@@ -267,7 +267,7 @@ async function computeBadges(userId: number): Promise<BadgeOut[]> {
     { key: "camper", label: "Camper", description: "Pin a campsite.", earned: campsitePins >= 1 },
     { key: "boater", label: "Boater", description: "Add your boat to your profile.", earned: hasBoat },
     { key: "local_guide", label: "Local Guide", description: "Share 3 public pins or run a verified business.", earned: isBusiness || publicPins >= 3 },
-    { key: "verified_business", label: "Verified Business", description: "A verified Dale Hollow Lake business.", earned: isBusiness },
+    { key: "verified_business", label: "Verified Business", description: "A verified local lake business.", earned: isBusiness },
   ];
 }
 
@@ -275,7 +275,7 @@ const RANK_TIERS = [
   { key: "newcomer", title: "Newcomer", min: 1 },
   { key: "explorer", title: "Lake Explorer", min: 3 },
   { key: "weekender", title: "Weekend Warrior", min: 5 },
-  { key: "adventurer", title: "Dale Hollow Adventurer", min: 8 },
+  { key: "adventurer", title: "Lake Adventurer", min: 8 },
   { key: "legend", title: "Lake Legend", min: 11 },
 ];
 

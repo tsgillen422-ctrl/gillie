@@ -20,7 +20,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
         Open Gillie and tap <strong>Sign Up</strong> on the welcome screen. Enter
         your email address, name, and a password, then confirm your email with
         the verification code we send you. Once verified, you can set up your
-        profile and join the Dale Hollow Lake community.
+        profile and join your lake community.
       </>
     ),
   },
@@ -110,7 +110,7 @@ export function SupportPage() {
               Gillie Support
             </h1>
             <p className="text-sm text-muted-foreground">
-              Help for the Dale Hollow Lake community app
+              Help for the Gillie lake community app
             </p>
           </div>
         </div>
@@ -245,7 +245,7 @@ export function SupportPage() {
 
         <footer className="border-t border-border pt-6 text-center text-sm text-muted-foreground">
           <p>
-            Gillie — a community app for visitors of Dale Hollow Lake.
+            Gillie — a community app for lake visitors.
           </p>
           <Link
             href="/"

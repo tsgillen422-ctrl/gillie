@@ -336,7 +336,7 @@ export default function SettingsScreen() {
   }[] = [
     { label: "Display Name", value: displayName, setter: setDisplayName, placeholder: "Your name" },
     { label: "Bio", value: bio, setter: setBio, multiline: true, placeholder: "Tell the lake about you" },
-    { label: "Location", value: location, setter: setLocation, placeholder: "Dale Hollow Lake" },
+    { label: "Location", value: location, setter: setLocation, placeholder: "Your home lake" },
     { label: "Hometown", value: hometown, setter: setHometown, placeholder: "Where you're from" },
     { label: "Work", value: work, setter: setWork, placeholder: "What you do" },
   ];

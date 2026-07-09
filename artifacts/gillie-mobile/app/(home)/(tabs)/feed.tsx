@@ -36,6 +36,9 @@ import SoftCard from "@/components/ui/SoftCard";
 import { fonts } from "@/constants/fonts";
 import { useColors } from "@/hooks/useColors";
 import { formatDate, resolveAssetUrl, timeAgo } from "@/lib/format";
+import { DEFAULT_LAKE_ID, lakeById } from "@workspace/lake-config";
+
+const DEFAULT_LAKE_NAME = lakeById(DEFAULT_LAKE_ID).name;
 
 const TABS = [
   { id: "all", label: "All" },
@@ -384,7 +387,7 @@ export default function FeedScreen() {
                 </Text>
                 <View style={{ flexShrink: 1 }}>
                   <Text style={[styles.condLake, { color: colors.foreground }]}>
-                    Dale Hollow Lake
+                    {DEFAULT_LAKE_NAME}
                   </Text>
                   <Text style={[styles.condWeatherLabel, { color: colors.mutedForeground }]}>
                     {conditions.weatherLabel}

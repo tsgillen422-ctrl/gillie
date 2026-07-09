@@ -64,6 +64,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "dependencies": {
-    "@workspace/boat-config": "workspace:*"
+    "@workspace/boat-config": "workspace:*",
+    "@workspace/lake-config": "workspace:*"
   }
 }

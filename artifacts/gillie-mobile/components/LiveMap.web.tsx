@@ -2,10 +2,13 @@ import React from "react";
 import { View, StyleSheet, Text, ScrollView, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useGetFriendLocations, useGetPins, useGetActiveHazards } from "@workspace/api-client-react";
+import { DEFAULT_LAKE_ID, lakeById } from "@workspace/lake-config";
 import { useColors } from "@/hooks/useColors";
 import { fonts } from "@/constants/fonts";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+
+const DEFAULT_LAKE_NAME = lakeById(DEFAULT_LAKE_ID).name;
 
 export default function LiveMapWeb() {
   const colors = useColors();
@@ -24,7 +27,7 @@ export default function LiveMapWeb() {
         contentContainerStyle={{ padding: 20, paddingTop: insets.top + 20, paddingBottom: 120, gap: 20 }}
       >
         <View style={{ gap: 4 }}>
-          <Text style={[styles.title, { color: colors.foreground }]}>Dale Hollow</Text>
+          <Text style={[styles.title, { color: colors.foreground }]}>{DEFAULT_LAKE_NAME}</Text>
           <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
             The live map runs in the Gillie app. Here's what's happening on the water right now.
           </Text>
