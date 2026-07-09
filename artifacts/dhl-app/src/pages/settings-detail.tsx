@@ -230,10 +230,10 @@ function LocationCheckInPage() {
     <SettingsShell title="Location Sharing">
       <div className="rounded-2xl bg-card border border-border p-5">
         <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-          Share your location with approved friends. Your position updates while
-          the app is open; friends see your last spot with a "last seen" time,
-          and you disappear automatically after 24 hours away. Go Ghost anytime
-          to hide instantly.
+          Your live location is shared only while you're actively using Gillie.
+          If you stop opening the app, your pin changes to "Last seen" and
+          automatically disappears after 24 hours. Only approved friends can see
+          you, and you can Go Ghost anytime to hide instantly.
         </p>
         <CheckInControl variant="card" />
       </div>

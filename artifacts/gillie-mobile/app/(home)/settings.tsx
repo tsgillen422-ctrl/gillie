@@ -357,7 +357,7 @@ export default function SettingsScreen() {
     {
       icon: "map-outline",
       title: "Location Sharing",
-      sub: "Show your boat on the map to friends",
+      sub: "Shared only while you use Gillie — \"Last seen\" pin auto-hides after 24 hours",
       value: shareLocation,
       onChange: (v) => togglePrivacy("shareLocation", v, setShareLocation),
     },
