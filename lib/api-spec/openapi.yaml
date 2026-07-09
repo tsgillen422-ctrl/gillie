@@ -18,7 +18,7 @@ tags:
   - name: pins
     description: Map pin operations
   - name: dockLabels
-    description: Admin-placed dock/shoreline labels
+    description: User-placed dock/shoreline labels (removable by placer or admin)
   - name: posts
     description: Post and event operations
   - name: notifications
@@ -1468,7 +1468,7 @@ paths:
     post:
       operationId: createDockLabel
       tags: [dockLabels]
-      summary: Place a dock label (admin only)
+      summary: Place a dock label (any signed-in user)
       requestBody:
         required: true
         content:
@@ -1482,8 +1482,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DockLabel"
-        "403":
-          description: Not an admin
+        "400":
+          description: Invalid input
           content:
             application/json:
               schema:
@@ -1493,7 +1493,7 @@ paths:
     delete:
       operationId: deleteDockLabel
       tags: [dockLabels]
-      summary: Remove a dock label (admin only)
+      summary: Remove a dock label (placer or admin only)
       parameters:
         - name: labelId
           in: path
@@ -1504,7 +1504,13 @@ paths:
         "200":
           description: Deleted
         "403":
-          description: Not an admin
+          description: Not the placer or an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Dock label not found
           content:
             application/json:
               schema:

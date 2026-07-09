@@ -2407,7 +2407,7 @@ export function MapPage() {
           </DialogHeader>
 
           {/* Choose what you're adding */}
-          <div className={`grid ${me?.isAdmin ? "grid-cols-3" : "grid-cols-2"} gap-2 rounded-xl bg-muted p-1`}>
+          <div className="grid grid-cols-3 gap-2 rounded-xl bg-muted p-1">
             <button
               type="button"
               onClick={() => setPinMode("pin")}
@@ -2426,17 +2426,15 @@ export function MapPage() {
             >
               📍 Landmark
             </button>
-            {me?.isAdmin && (
-              <button
-                type="button"
-                onClick={() => setPinMode("dock")}
-                className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
-                  pinMode === "dock" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                🪧 Dock Sign
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => setPinMode("dock")}
+              className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
+                pinMode === "dock" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              🪧 Dock Sign
+            </button>
           </div>
 
           <div className="grid gap-4 py-4">
@@ -2804,7 +2802,7 @@ function DetailCard({
             <X className="w-4 h-4" />
           </Button>
         </div>
-        {me?.isAdmin && (
+        {me != null && (d.userId === me.id || me.isAdmin) && (
           <div className="p-4 pt-0">
             <Button
               variant="destructive"

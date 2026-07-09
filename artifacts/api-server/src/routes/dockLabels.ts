@@ -37,12 +37,10 @@ router.get("/", async (req, res) => {
   res.json(rows.map(formatDockLabel));
 });
 
-// Only an admin can place a dock label.
+// Any signed-in user can place a dock label; the placer is recorded so only
+// they (or an admin) can remove it later.
 router.post("/", async (req, res) => {
   const uid = currentUserId(req);
-  if (!(await isAdmin(uid))) {
-    return res.status(403).json({ error: "Only an admin can place dock labels" });
-  }
   const { label, emoji, lat, lng, lakeId } = req.body ?? {};
   if (typeof label !== "string" || !label.trim() || typeof lat !== "number" || typeof lng !== "number") {
     return res.status(400).json({ error: "label, lat and lng are required" });
@@ -62,15 +60,19 @@ router.post("/", async (req, res) => {
   res.status(201).json(formatDockLabel(row));
 });
 
-// Only an admin can remove a dock label.
+// Only the user who placed a dock label (or an admin) can remove it.
 router.delete("/:labelId", async (req, res) => {
   const uid = currentUserId(req);
-  if (!(await isAdmin(uid))) {
-    return res.status(403).json({ error: "Only an admin can remove dock labels" });
-  }
   const id = parseInt(req.params.labelId, 10);
   if (!Number.isFinite(id)) {
     return res.status(400).json({ error: "Invalid dock label id" });
+  }
+  const row = await db.query.dockLabelsTable.findFirst({ where: eq(dockLabelsTable.id, id) });
+  if (!row) {
+    return res.status(404).json({ error: "Dock label not found" });
+  }
+  if (row.userId !== uid && !(await isAdmin(uid))) {
+    return res.status(403).json({ error: "Only the user who placed this dock sign or an admin can remove it" });
   }
   await db.delete(dockLabelsTable).where(eq(dockLabelsTable.id, id));
   res.json({ ok: true });
