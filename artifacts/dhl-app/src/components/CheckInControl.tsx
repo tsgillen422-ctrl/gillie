@@ -42,9 +42,11 @@ const LAKE_STATUSES = [
  * dialog. Once on, their position updates while they use the app, their marker
  * stays visible with a "last seen" time when the app is closed, and they
  * auto-ghost after 24 hours away. Ghost Mode hides them instantly, anytime.
- * Shared by the map (compact) and Settings (card).
+ * Variants: "card" (Settings — full opt-in/consent flow + Ghost Mode) and
+ * "map-ghost" (map controls — a small one-tap Go Ghost icon shown only while
+ * sharing is active; opting IN always happens via Settings' consent screen).
  */
-export function CheckInControl({ variant = "card" }: { variant?: "card" | "compact" }) {
+export function CheckInControl({ variant = "card" }: { variant?: "card" | "map-ghost" }) {
   const { data: me } = useGetMe();
   const { lakeId } = useLake();
   const qc = useQueryClient();
@@ -238,41 +240,30 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "compa
     </Dialog>
   );
 
-  if (variant === "compact") {
+  if (variant === "map-ghost") {
+    // Quick privacy control for the map: visible only while sharing is
+    // active, one tap goes Ghost instantly. Turning sharing back ON is done
+    // from Settings (behind the consent screen), keeping the map clean.
+    if (!isSharing) return null;
     return (
-      <>
-        {isSharing ? (
-          <div className="flex items-center gap-2 rounded-full bg-card/95 backdrop-blur shadow-lg border border-border pl-3 pr-1.5 py-1.5">
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-              </span>
-              On the map
-            </span>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="h-7 rounded-full px-3 text-xs"
-              onClick={performGhost}
-              disabled={checkOut.isPending}
-              data-testid="button-ghost-mode"
-            >
-              <Ghost className="h-3.5 w-3.5 mr-1" /> Go Ghost
-            </Button>
-          </div>
+      <Button
+        size="icon"
+        className="h-10 w-10 rounded-full shadow-md bg-card text-foreground border border-border hover:bg-muted relative"
+        onClick={performGhost}
+        disabled={checkOut.isPending}
+        aria-label="Go Ghost — hide my location"
+        data-testid="button-ghost-mode"
+      >
+        {checkOut.isPending ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
         ) : (
-          <Button
-            size="sm"
-            className="rounded-full shadow-lg h-9 px-4"
-            onClick={() => setConfirmOpen(true)}
-            data-testid="button-share-location"
-          >
-            <MapPin className="h-4 w-4 mr-1.5" /> Share My Location
-          </Button>
+          <Ghost className="h-5 w-5" />
         )}
-        {confirmDialog}
-      </>
+        <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+          <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 border border-card" />
+        </span>
+      </Button>
     );
   }
 

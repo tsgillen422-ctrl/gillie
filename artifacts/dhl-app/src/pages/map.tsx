@@ -2215,15 +2215,12 @@ export function MapPage() {
         </div>
       )}
 
-      {/* Manual location check-in (Apple 5.1.2) */}
-      {!pinDialog.open && (
-        <div className="pointer-events-auto absolute bottom-4 left-1/2 -translate-x-1/2 z-[450]">
-          <CheckInControl variant="compact" />
-        </div>
-      )}
-
       {/* Floating map controls */}
       <div className="pointer-events-auto absolute top-[80px] right-4 z-[450] flex flex-col items-center gap-3">
+        {/* One-tap Go Ghost (visible only while sharing; opt-in lives in
+            Settings behind the consent screen — Apple 5.1.2) */}
+        <CheckInControl variant="map-ghost" />
+
         {/* Who's on the lake */}
         <Button
           size="icon"
