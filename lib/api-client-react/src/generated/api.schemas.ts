@@ -154,6 +154,7 @@ export interface User {
   followerSeeLocation?: boolean;
   followerSeePosts?: boolean;
   followerSendMessages?: boolean;
+  allowReposts?: boolean;
   showMatureContent?: boolean;
   isAdmin?: boolean;
   demoMode?: boolean;
@@ -250,6 +251,7 @@ export interface UserUpdate {
   followerSeeLocation?: boolean;
   followerSeePosts?: boolean;
   followerSendMessages?: boolean;
+  allowReposts?: boolean;
   showMatureContent?: boolean;
 }
 
@@ -1122,8 +1124,17 @@ export interface GifResult {
   previewUrl: string;
 }
 
+export type ShareInputVisibility = typeof ShareInputVisibility[keyof typeof ShareInputVisibility];
+
+
+export const ShareInputVisibility = {
+  community: 'community',
+  friends: 'friends',
+} as const;
+
 export interface ShareInput {
   content?: string;
+  visibility?: ShareInputVisibility;
 }
 
 export type ReactionType = typeof ReactionType[keyof typeof ReactionType];
@@ -1693,6 +1704,7 @@ export const ReportInputTargetType = {
   post: 'post',
   user: 'user',
   pin: 'pin',
+  catch: 'catch',
 } as const;
 
 export interface ReportInput {
@@ -1731,6 +1743,7 @@ export const ReportTargetType = {
   post: 'post',
   user: 'user',
   pin: 'pin',
+  catch: 'catch',
 } as const;
 
 export type ReportStatus = typeof ReportStatus[keyof typeof ReportStatus];

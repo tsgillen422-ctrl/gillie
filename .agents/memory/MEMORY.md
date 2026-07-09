@@ -61,6 +61,7 @@
 - [Public support & legal pages](public-support-legal-pages.md) — /support /privacy-policy /community-guidelines must be in the TOP-LEVEL Switch (before GatedRoutes) to be no-auth; auth-aware back targets or signed-out dead-ends.
 - [Suspension enforcement](suspension-enforcement.md) — `suspend` was cosmetic; now requireAuth 403s suspended users (except GET/DELETE /users/me) + App.tsx SuspendedGate; reversible via PATCH /users/:id/suspension.
 - [Boat type catalog](boat-type-catalog.md) — boat types live in @workspace/boat-config; stored values speedboat/fishing keep old names (labels renamed); always use boatLabelFor.
+- [Feed audience tabs](feed-audience-tabs.md) — friends tab must include self (own friends-only shares vanish otherwise); community tab excludes self+friends by design.
 - [wouter param decoding](wouter-param-decoding.md) — wouter v3 params come pre-decoded (never decodeURIComponent again); maplibre Map() throws w/o WebGL, wrap in try/catch + fallback.
 - [Multi-lake model](multi-lake-model.md) — lakeId OPTIONAL everywhere (old iOS builds), default lake 1; gate Dale Hollow-only data (LAKE_PLACES/CWMS) on lakeId===1; invalidate with no-arg query keys.
 - [Lake community scoping](lake-community-scoping.md) — each lake is its own community; ONLY Friends/Saved cross lakes (w/ 📍 badge); no lake picker in composer.

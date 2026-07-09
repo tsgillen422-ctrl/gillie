@@ -13,4 +13,5 @@ export const ReportTargetType = {
   post: 'post',
   user: 'user',
   pin: 'pin',
+  catch: 'catch',
 } as const;

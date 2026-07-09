@@ -45,7 +45,7 @@ const REASON_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-const TARGET_LABELS: Record<string, string> = { post: "Post", user: "User", pin: "Pin" };
+const TARGET_LABELS: Record<string, string> = { post: "Post", user: "User", pin: "Pin", catch: "Catch" };
 
 function StatusBadge({ status, action }: { status: string; action?: string | null }) {
   if (status === "pending") return <Badge variant="secondary">Pending</Badge>;

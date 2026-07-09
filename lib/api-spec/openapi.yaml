@@ -2846,6 +2846,8 @@ components:
           type: boolean
         followerSendMessages:
           type: boolean
+        allowReposts:
+          type: boolean
         showMatureContent:
           type: boolean
         isAdmin:
@@ -2996,6 +2998,8 @@ components:
         followerSeePosts:
           type: boolean
         followerSendMessages:
+          type: boolean
+        allowReposts:
           type: boolean
         showMatureContent:
           type: boolean
@@ -4026,6 +4030,9 @@ components:
       properties:
         content:
           type: string
+        visibility:
+          type: string
+          enum: [community, friends]
 
     ReactionType:
       type: string
@@ -4779,7 +4786,7 @@ components:
       properties:
         targetType:
           type: string
-          enum: [post, user, pin]
+          enum: [post, user, pin, catch]
         targetId:
           type: integer
         reason:
@@ -4819,7 +4826,7 @@ components:
           type: integer
         targetType:
           type: string
-          enum: [post, user, pin]
+          enum: [post, user, pin, catch]
         targetId:
           type: integer
         reason:

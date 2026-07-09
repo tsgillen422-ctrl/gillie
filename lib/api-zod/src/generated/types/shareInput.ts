@@ -5,7 +5,9 @@
  * DHL - Dale Hollow Lake API
  * OpenAPI spec version: 0.1.0
  */
+import type { ShareInputVisibility } from './shareInputVisibility';
 
 export interface ShareInput {
   content?: string;
+  visibility?: ShareInputVisibility;
 }

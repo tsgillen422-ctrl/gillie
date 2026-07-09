@@ -50,6 +50,7 @@ import { formatDistanceToNow } from "date-fns";
 import { PostCard } from "@/components/feed/PostCard";
 import { CatchCard } from "@/components/feed/CatchCard";
 import { useLake } from "@/lib/lake-context";
+import { lakeById } from "@workspace/lake-config";
 import { LakeSwitcher } from "@/components/LakeSwitcher";
 
 const FEELINGS: { emoji: string; label: string }[] = [
@@ -281,6 +282,9 @@ export function FeedPage() {
   const [editTitle, setEditTitle] = React.useState("");
   const [editContent, setEditContent] = React.useState("");
   const [editVisibility, setEditVisibility] = React.useState<"community" | "friends">("community");
+  // The lake the post being edited belongs to — its community label should
+  // name that lake, not the one currently being browsed.
+  const [editLakeId, setEditLakeId] = React.useState<number | null>(null);
   const [editEventDate, setEditEventDate] = React.useState("");
   const [editEngineSetup, setEditEngineSetup] = React.useState("");
   const [editHorsepower, setEditHorsepower] = React.useState("");
@@ -301,6 +305,7 @@ export function FeedPage() {
     setEditTitle(post.title || "");
     setEditContent(post.content || "");
     setEditVisibility(post.visibility === "friends" ? "friends" : "community");
+    setEditLakeId(post.lakeId ?? null);
     setEditEventDate(toDatetimeLocal(post.eventDate));
     setEditEngineSetup(post.engineSetup || "");
     setEditHorsepower(post.horsepower != null ? String(post.horsepower) : "");
@@ -785,7 +790,7 @@ export function FeedPage() {
                   onToggleRsvp={(postId: number) => toggleRsvp.mutate({ postId }, { onSuccess: refreshPosts })}
                   onSave={(postId: number) => savePost.mutate({ postId }, { onSuccess: refreshPosts })}
                   onUnsave={(postId: number) => unsavePost.mutate({ postId }, { onSuccess: refreshPosts })}
-                  onShareToProfile={(postId: number) => shareToProfile.mutate({ postId }, { onSuccess: refreshPosts })}
+                  onShareToProfile={(postId: number, visibility: "community" | "friends" = "community") => shareToProfile.mutate({ postId, data: { visibility } }, { onSuccess: refreshPosts, onError: () => toast.error("Couldn't share that post. The poster's privacy settings don't allow sharing.") })}
                   onMuteUser={(userId: number) => muteUser.mutate({ userId }, { onSuccess: refreshPosts })}
                   onBlockUser={(userId: number) => blockUser.mutate({ userId }, { onSuccess: refreshPosts })}
                 />
@@ -833,7 +838,7 @@ export function FeedPage() {
               onToggleRsvp={(postId: number) => toggleRsvp.mutate({ postId }, { onSuccess: refreshPosts })}
               onSave={(postId: number) => savePost.mutate({ postId }, { onSuccess: refreshPosts })}
               onUnsave={(postId: number) => unsavePost.mutate({ postId }, { onSuccess: refreshPosts })}
-              onShareToProfile={(postId: number) => shareToProfile.mutate({ postId }, { onSuccess: refreshPosts })}
+              onShareToProfile={(postId: number, visibility: "community" | "friends" = "community") => shareToProfile.mutate({ postId, data: { visibility } }, { onSuccess: refreshPosts, onError: () => toast.error("Couldn't share that post. The poster's privacy settings don't allow sharing.") })}
               onMuteUser={(userId: number) => muteUser.mutate({ userId }, { onSuccess: refreshPosts })}
               onBlockUser={(userId: number) => blockUser.mutate({ userId }, { onSuccess: refreshPosts })}
             />
@@ -891,7 +896,7 @@ export function FeedPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="community">Community</SelectItem>
+                  <SelectItem value="community">{lakeById(editLakeId ?? lakeId).name} Community</SelectItem>
                   <SelectItem value="friends">Friends</SelectItem>
                 </SelectContent>
               </Select>

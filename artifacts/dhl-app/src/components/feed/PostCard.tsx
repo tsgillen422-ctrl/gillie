@@ -11,7 +11,7 @@ import { VideoPlayer } from "./VideoPlayer";
 import { REACTIONS, REACTION_MAP, DEFAULT_REACTION, type ReactionKey } from "@/lib/reactions";
 import {
   MapPin, Heart, MessageCircle, Share2, MoreHorizontal, Flag, Trash2, Sailboat, ImagePlus, Video, X, Send, Check,
-  Bookmark, BookmarkCheck, Link2, Repeat2, Pencil, EyeOff, Ban
+  Bookmark, BookmarkCheck, Link2, Repeat2, Pencil, EyeOff, Ban, Users
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -291,6 +291,14 @@ export function PostCard({
     );
   };
 
+  // Sharing is allowed only for community posts, and only when the original
+  // poster allows reposts (their own posts are always shareable by them).
+  // For reposts, the privacy of the ORIGINAL post/poster is what matters.
+  const shareSource = post.sharedPost ?? post;
+  const canShare =
+    shareSource.visibility !== "friends" &&
+    (shareSource.userId === currentUserId || shareSource.user?.allowReposts !== false);
+
   const handleShareExternal = async () => {
     const url = `${window.location.origin}${import.meta.env.BASE_URL}feed?post=${post.id}`;
     const title = post.title || post.user?.displayName || "Gillie post";
@@ -433,12 +441,19 @@ export function PostCard({
                 <Bookmark className="mr-2 h-4 w-4" /> Save post
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem className="font-medium cursor-pointer" onClick={handleShareExternal}>
-              <Link2 className="mr-2 h-4 w-4" /> Share link
-            </DropdownMenuItem>
-            <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => onShareToProfile?.(post.id)}>
-              <Repeat2 className="mr-2 h-4 w-4" /> Repost to my profile
-            </DropdownMenuItem>
+            {canShare && (
+              <>
+                <DropdownMenuItem className="font-medium cursor-pointer" onClick={handleShareExternal}>
+                  <Link2 className="mr-2 h-4 w-4" /> Share link
+                </DropdownMenuItem>
+                <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => onShareToProfile?.(post.id, "community")}>
+                  <Repeat2 className="mr-2 h-4 w-4" /> Repost to my profile
+                </DropdownMenuItem>
+                <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => onShareToProfile?.(post.id, "friends")}>
+                  <Users className="mr-2 h-4 w-4" /> Share with friends
+                </DropdownMenuItem>
+              </>
+            )}
             {currentUserId === post.userId && (
               <DropdownMenuItem className="font-medium cursor-pointer" onClick={() => onUpdatePost?.(post)}>
                 <Pencil className="mr-2 h-4 w-4" /> Edit post

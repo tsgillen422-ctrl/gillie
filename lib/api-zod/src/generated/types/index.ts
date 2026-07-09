@@ -143,6 +143,7 @@ export * from './searchUsersParams';
 export * from './setAdminInput';
 export * from './setSuspensionInput';
 export * from './shareInput';
+export * from './shareInputVisibility';
 export * from './sosInput';
 export * from './sosResult';
 export * from './story';

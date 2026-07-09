@@ -61,6 +61,9 @@ export const usersTable = pgTable("users", {
   followerSeeLocation: boolean("follower_see_location").notNull().default(true),
   followerSeePosts: boolean("follower_see_posts").notNull().default(true),
   followerSendMessages: boolean("follower_send_messages").notNull().default(true),
+  // When false, other users can't repost/share this user's posts inside the
+  // app (external link sharing of public posts is still possible).
+  allowReposts: boolean("allow_reposts").notNull().default(true),
   showMatureContent: boolean("show_mature_content").notNull().default(false),
   isDemo: boolean("is_demo").notNull().default(false),
   demoMode: boolean("demo_mode").notNull().default(false),

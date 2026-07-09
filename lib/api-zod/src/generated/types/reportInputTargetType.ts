@@ -13,4 +13,5 @@ export const ReportInputTargetType = {
   post: 'post',
   user: 'user',
   pin: 'pin',
+  catch: 'catch',
 } as const;

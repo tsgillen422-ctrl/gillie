@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 
-export type ReportTargetType = "post" | "user" | "pin";
+export type ReportTargetType = "post" | "user" | "pin" | "catch";
 
 const REASONS: Record<ReportTargetType, { value: string; label: string }[]> = {
   post: [
@@ -38,12 +38,21 @@ const REASONS: Record<ReportTargetType, { value: string; label: string }[]> = {
     { value: "unsafe_information", label: "Unsafe information" },
     { value: "inappropriate", label: "Inappropriate content" },
   ],
+  catch: [
+    { value: "spam", label: "Spam" },
+    { value: "harassment", label: "Harassment" },
+    { value: "inappropriate", label: "Inappropriate content" },
+    { value: "false_information", label: "False information" },
+    { value: "illegal", label: "Illegal activity" },
+    { value: "other", label: "Other" },
+  ],
 };
 
 const TITLES: Record<ReportTargetType, string> = {
   post: "Report Post",
   user: "Report User",
   pin: "Report Pin",
+  catch: "Report Catch",
 };
 
 export function ReportDialog({

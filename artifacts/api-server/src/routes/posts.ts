@@ -28,6 +28,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
     boatName: u.boatName,
     boatColor: u.boatColor,
     shareLocation: u.shareLocation,
+    allowReposts: u.allowReposts,
     followerCount: 0,
     followingCount: 0,
     createdAt: u.createdAt.toISOString(),
@@ -190,7 +191,8 @@ router.get("/", async (req, res) => {
   }
   if (type) conditions.push(eq(postsTable.postType, type));
   if (audience === "friends") {
-    conditions.push(friendIds.length ? inArray(postsTable.userId, friendIds) : sql`false`);
+    // Include the viewer's own posts so their friends-visibility shares show up too.
+    conditions.push(inArray(postsTable.userId, [...friendIds, uid]));
   } else if (audience === "community") {
     conditions.push(notInArray(postsTable.userId, [uid, ...friendIds]));
   }
@@ -264,12 +266,29 @@ router.post("/:postId/share", async (req, res) => {
   if (!original) return res.status(404).json({ error: "Post not found" });
   if (!(await canViewPost(uid, original))) return res.status(404).json({ error: "Post not found" });
   const sourceId = original.sharedPostId ?? original.id;
+  let source = original;
   if (sourceId !== original.id) {
-    const source = await db.query.postsTable.findFirst({ where: eq(postsTable.id, sourceId) });
-    if (!source) return res.status(404).json({ error: "Original post is no longer available" });
-    if (!(await canViewPost(uid, source))) return res.status(404).json({ error: "Original post is no longer available" });
+    const found = await db.query.postsTable.findFirst({ where: eq(postsTable.id, sourceId) });
+    if (!found) return res.status(404).json({ error: "Original post is no longer available" });
+    if (!(await canViewPost(uid, found))) return res.status(404).json({ error: "Original post is no longer available" });
+    source = found;
+  }
+  // Only community posts can be reposted — friends-only posts stay private to
+  // the audience the poster chose.
+  if (source.visibility === "friends") {
+    return res.status(403).json({ error: "Friends-only posts can't be shared" });
+  }
+  // The original poster can turn off reposting of their posts entirely.
+  if (source.userId !== uid) {
+    const author = await db.query.usersTable.findFirst({ where: eq(usersTable.id, source.userId) });
+    if (!author || author.allowReposts === false) {
+      return res.status(403).json({ error: "This member doesn't allow their posts to be shared" });
+    }
   }
   const content = typeof req.body?.content === "string" ? req.body.content : "";
+  // A repost can go to the sharer's profile/lake feed (community) or to just
+  // their friends. It never crosses into another lake's community.
+  const visibility = req.body?.visibility === "friends" ? "friends" : "community";
   const isMature = await moderateContent({ texts: [content] });
   const [post] = await db
     .insert(postsTable)
@@ -280,6 +299,7 @@ router.post("/:postId/share", async (req, res) => {
       title: "",
       content,
       postType: "post",
+      visibility,
       sharedPostId: sourceId,
       isMature,
     })

@@ -7,7 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/UserAvatar";
 import { MatureGate } from "@/components/MatureGate";
-import { Scale, Fish, MapPin, Lock, MessageCircle, Share2, Bookmark, BookmarkCheck, Send, Trash2 } from "lucide-react";
+import { Scale, Fish, MapPin, Lock, MessageCircle, Share2, Bookmark, BookmarkCheck, Send, Trash2, MoreHorizontal, Flag, Ban } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ReportDialog } from "@/components/ReportDialog";
 import { ClickableImage } from "@/components/ClickableImage";
 import { ReactionButton } from "./ReactionButton";
 import { toast } from "sonner";
@@ -19,8 +26,10 @@ import {
   useGetCatchComments,
   useCreateCatchComment,
   useDeleteCatchComment,
+  useBlockUser,
   getGetCatchCommentsQueryKey,
   getGetCatchesQueryKey,
+  getGetBlockedUsersQueryKey,
 } from "@workspace/api-client-react";
 import {
   AlertDialog,
@@ -50,7 +59,10 @@ export function CatchCard({
   const [, navigate] = useLocation();
   const [showComments, setShowComments] = React.useState(false);
   const [commentText, setCommentText] = React.useState("");
+  const [reportOpen, setReportOpen] = React.useState(false);
+  const [blockConfirmOpen, setBlockConfirmOpen] = React.useState(false);
   const queryClient = useQueryClient();
+  const blockUser = useBlockUser();
 
   const reactToCatch = useReactToCatch();
   const saveCatch = useSaveCatch();
@@ -121,6 +133,20 @@ export function CatchCard({
     );
   };
 
+  const handleBlock = () => {
+    blockUser.mutate(
+      { userId: catchData.userId },
+      {
+        onSuccess: () => {
+          toast.success(`${catchData.user?.displayName || "User"} blocked.`);
+          refreshCatches();
+          queryClient.invalidateQueries({ queryKey: getGetBlockedUsersQueryKey() });
+        },
+        onError: () => toast.error("Couldn't block that user."),
+      }
+    );
+  };
+
   // Tapping the card body (outside the zoomable photo and the action row,
   // which stop propagation) deep-links to the catch on the Catches page.
   const clickable = Boolean(href);
@@ -174,6 +200,37 @@ export function CatchCard({
             </span>
           </div>
           {catchData.isPrivate && <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
+          {!isOwner && meId != null && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground shrink-0 hover:bg-muted/50 rounded-full"
+                  aria-label="Catch options"
+                  data-testid={`button-catch-menu-${catchData.id}`}
+                >
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44 rounded-xl shadow-lg border-border/50" onClick={stop}>
+                <DropdownMenuItem
+                  className="text-destructive font-medium cursor-pointer"
+                  onClick={() => setBlockConfirmOpen(true)}
+                  data-testid={`menu-block-user-${catchData.id}`}
+                >
+                  <Ban className="mr-2 h-4 w-4" /> Block user
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive font-medium cursor-pointer"
+                  onClick={() => setReportOpen(true)}
+                  data-testid={`menu-report-catch-${catchData.id}`}
+                >
+                  <Flag className="mr-2 h-4 w-4" /> Report catch
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           {isOwner && onDelete && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -384,6 +441,34 @@ export function CatchCard({
           )}
         </CardContent>
       </div>
+
+      <ReportDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        targetType="catch"
+        targetId={catchData.id}
+      />
+
+      <AlertDialog open={blockConfirmOpen} onOpenChange={setBlockConfirmOpen}>
+        <AlertDialogContent onClick={stop}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Block {catchData.user?.displayName || "this angler"}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You won't see each other's posts, catches, or messages, and they won't be able to reach you.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBlock}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              data-testid={`button-confirm-block-${catchData.id}`}
+            >
+              Block
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

@@ -369,6 +369,7 @@ function formatUser(u: typeof usersTable.$inferSelect, opts: { hideLiveLocation?
     followerSeeLocation: u.followerSeeLocation,
     followerSeePosts: u.followerSeePosts,
     followerSendMessages: u.followerSendMessages,
+    allowReposts: u.allowReposts,
     showMatureContent: u.showMatureContent,
     isAdmin: u.isAdmin,
     demoMode: u.demoMode,
@@ -626,6 +627,12 @@ router.patch("/me", async (req, res) => {
       return res.status(400).json({ error: "followerSendMessages must be a boolean" });
     }
     updates.followerSendMessages = req.body.followerSendMessages;
+  }
+  if (req.body.allowReposts !== undefined) {
+    if (typeof req.body.allowReposts !== "boolean") {
+      return res.status(400).json({ error: "allowReposts must be a boolean" });
+    }
+    updates.allowReposts = req.body.allowReposts;
   }
   if (req.body.showMatureContent !== undefined) {
     if (typeof req.body.showMatureContent !== "boolean") {

@@ -32,6 +32,7 @@ import {
   MessageSquare,
   Trash2,
   Loader2,
+  Repeat2,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -69,6 +70,7 @@ type BoolField =
   | "followerSeeLocation"
   | "followerSeePosts"
   | "followerSendMessages"
+  | "allowReposts"
   | "showMatureContent";
 
 type ToggleConfig = {
@@ -197,6 +199,16 @@ const TOGGLE_CONFIGS: Record<string, ToggleConfig> = {
     footer: FOLLOWER_CONTEXT,
     onToast: { title: "Location Shared with Followers", description: "Followers you don't follow back can see you on the map." },
     offToast: { title: "Location Hidden from Followers", description: "Only people you follow back can see you on the map." },
+    defaultValue: true,
+  },
+  "reposts": {
+    field: "allowReposts",
+    pageTitle: "Sharing My Posts",
+    icon: Repeat2,
+    label: "Allow Reposts",
+    description: "Let others repost your community posts to their profile or share them with their friends",
+    onToast: { title: "Reposts Allowed", description: "Others can share your community posts again." },
+    offToast: { title: "Reposts Off", description: "Others can no longer repost or share your posts." },
     defaultValue: true,
   },
   "sensitive-content": {

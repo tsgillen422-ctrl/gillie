@@ -22,6 +22,7 @@ import {
   UserCheck,
   MessageSquare,
   ScrollText,
+  Repeat2,
   Map as MapIcon,
   ShieldAlert,
   Ban,
@@ -98,6 +99,7 @@ export function SettingsPage() {
           <SettingsLinkRow href="/settings/friends-visibility" icon={UserCheck} label="Friend List Visibility" />
           <SettingsLinkRow href="/settings/messages" icon={MessageSquare} label="Who Can Message Me" />
           <SettingsLinkRow href="/settings/posts-visibility" icon={ScrollText} label="Who Can See My Posts" />
+          <SettingsLinkRow href="/settings/reposts" icon={Repeat2} label="Sharing My Posts" />
           <SettingsLinkRow href="/settings/location-visibility" icon={MapIcon} label="See My Location" />
           <SettingsLinkRow href="/settings/sensitive-content" icon={ShieldAlert} label="Sensitive Content" />
           <SettingsLinkRow href="/settings/blocked" icon={Ban} label="Blocked Users" />
