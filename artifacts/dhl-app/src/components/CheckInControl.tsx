@@ -26,6 +26,32 @@ import { useLake } from "@/lib/lake-context";
 // the window forward, so sharing continues seamlessly for active users.
 const SHARE_WINDOW_HOURS = 24;
 
+// Custom icon for the map's quick Ghost control: a ghost driving a boat
+// (ghost with wavy bottom at a helm wheel, on a hull). Drawn lucide-style so
+// it matches the other map control icons.
+function GhostBoatIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M6 15.5V8.8a3.2 3.2 0 0 1 6.4 0v6.7l-1.6-1.3-1.6 1.3-1.6-1.3-1.6 1.3z" />
+      <circle cx="8.1" cy="8.9" r="0.6" fill="currentColor" stroke="none" />
+      <circle cx="10.3" cy="8.9" r="0.6" fill="currentColor" stroke="none" />
+      <circle cx="17.2" cy="11.9" r="2.5" />
+      <path d="M17.2 9.4v5M14.7 11.9h5" />
+      <path d="M17.2 14.4v2.1" />
+      <path d="M2.5 16.5h19l-1.5 2.3a2 2 0 0 1-1.68.95H5.68a2 2 0 0 1-1.68-.95L2.5 16.5z" />
+    </svg>
+  );
+}
+
 // Quick live-status options. Friends see this next to your boat on the map.
 const LAKE_STATUSES = [
   "Out on the Water",
@@ -257,7 +283,7 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "map-g
         {checkOut.isPending ? (
           <Loader2 className="h-5 w-5 animate-spin" />
         ) : (
-          <Ghost className="h-5 w-5" />
+          <GhostBoatIcon className="!h-6 !w-6" />
         )}
         <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
