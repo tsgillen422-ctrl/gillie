@@ -186,7 +186,7 @@ function visibilityCondition(uid: number, friendIds: number[]) {
 }
 
 // True when the viewer is allowed to see/interact with a post given its audience.
-async function canViewPost(uid: number, post: { userId: number; visibility: string }): Promise<boolean> {
+export async function canViewPost(uid: number, post: { userId: number; visibility: string }): Promise<boolean> {
   if (post.visibility !== "friends" || post.userId === uid) return true;
   const friendIds = await getFriendIds(uid);
   return friendIds.includes(post.userId);

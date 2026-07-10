@@ -65,6 +65,12 @@ export const usersTable = pgTable("users", {
   // app (external link sharing of public posts is still possible).
   allowReposts: boolean("allow_reposts").notNull().default(true),
   showMatureContent: boolean("show_mature_content").notNull().default(false),
+  // Tagging & mentions privacy: who may tag/mention me — everyone | friends | none.
+  tagPrivacy: text("tag_privacy").notNull().default("everyone"),
+  mentionPrivacy: text("mention_privacy").notNull().default("everyone"),
+  // When true, new tags start as 'pending' and need my approval before they
+  // appear on my profile's Tagged tab.
+  tagApprovalRequired: boolean("tag_approval_required").notNull().default(false),
   isDemo: boolean("is_demo").notNull().default(false),
   demoMode: boolean("demo_mode").notNull().default(false),
   followerCount: serial("follower_count"),

@@ -11,6 +11,8 @@ export * from "./notifications";
 export * from "./catches";
 export * from "./boats";
 export * from "./gallery";
+export * from "./albums";
+export * from "./postTags";
 export * from "./reports";
 export * from "./stories";
 export * from "./pushSubscriptions";
