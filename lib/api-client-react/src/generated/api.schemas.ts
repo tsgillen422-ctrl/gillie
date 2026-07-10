@@ -1222,6 +1222,23 @@ export const PostVisibility = {
   friends: 'friends',
 } as const;
 
+export type PostMediaItemType = typeof PostMediaItemType[keyof typeof PostMediaItemType];
+
+
+export const PostMediaItemType = {
+  image: 'image',
+  video: 'video',
+} as const;
+
+export interface PostMediaItem {
+  type: PostMediaItemType;
+  url: string;
+  /** Video trim start offset in seconds (videos only). */
+  trimStart?: number;
+  /** Video trim end offset in seconds (videos only). */
+  trimEnd?: number;
+}
+
 export interface ReactionCounts {
   thumbsup?: number;
   thumbsdown?: number;
@@ -1269,6 +1286,11 @@ export interface Post {
      * @nullable
      */
   photos?: string[] | null;
+  /**
+     * Ordered mixed media (images and videos). Preferred over imageUrl/videoUrl/photos when present.
+     * @nullable
+     */
+  media?: PostMediaItem[] | null;
   /**
      * Engine setup description (boat showcase).
      * @nullable
@@ -1388,6 +1410,11 @@ export interface PostInput {
   imageUrl?: string;
   videoUrl?: string;
   photos?: string[];
+  /**
+     * Ordered mixed media (images and videos) for the post, up to 10 items.
+     * @maxItems 10
+     */
+  media?: PostMediaItem[];
   engineSetup?: string;
   horsepower?: number;
   topSpeed?: number;

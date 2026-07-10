@@ -4,12 +4,16 @@ import { VolumeX, Volume2 } from "lucide-react";
 interface VideoPlayerProps {
   src: string;
   className?: string;
+  /** Optional trim window (seconds). Playback loops within [trimStart, trimEnd]. */
+  trimStart?: number;
+  trimEnd?: number;
 }
 
-export function VideoPlayer({ src, className = "" }: VideoPlayerProps) {
+export function VideoPlayer({ src, className = "", trimStart, trimEnd }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isMuted, setIsMuted] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
+  const start = trimStart && trimStart > 0 ? trimStart : 0;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -19,6 +23,7 @@ export function VideoPlayer({ src, className = "" }: VideoPlayerProps) {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
+            if (start > 0 && video.currentTime < start) video.currentTime = start;
             video.play().catch(() => {});
             setIsPlaying(true);
           } else {
@@ -32,7 +37,25 @@ export function VideoPlayer({ src, className = "" }: VideoPlayerProps) {
 
     observer.observe(video);
     return () => observer.disconnect();
-  }, []);
+  }, [start]);
+
+  const handleLoadedMetadata = () => {
+    const video = videoRef.current;
+    if (video && start > 0) video.currentTime = start;
+  };
+
+  // Enforce the trim window: loop back to trimStart when reaching trimEnd.
+  const handleTimeUpdate = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    const end = trimEnd && trimEnd > start ? trimEnd : null;
+    if (end != null && video.currentTime >= end - 0.05) {
+      video.currentTime = start;
+      if (!video.paused) video.play().catch(() => {});
+    } else if (start > 0 && video.currentTime < start - 0.25) {
+      video.currentTime = start;
+    }
+  };
 
   const handleToggleMute = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -50,6 +73,8 @@ export function VideoPlayer({ src, className = "" }: VideoPlayerProps) {
         muted={isMuted}
         loop
         onClick={handleToggleMute}
+        onLoadedMetadata={handleLoadedMetadata}
+        onTimeUpdate={handleTimeUpdate}
       />
       <div className="absolute bottom-3 right-3 z-10">
         <button

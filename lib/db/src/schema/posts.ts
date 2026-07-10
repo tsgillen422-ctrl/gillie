@@ -1,7 +1,14 @@
-import { pgTable, serial, integer, text, real, boolean, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, real, boolean, timestamp, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
+
+export type PostMediaItem = {
+  type: "image" | "video";
+  url: string;
+  trimStart?: number;
+  trimEnd?: number;
+};
 
 export const postsTable = pgTable("posts", {
   id: serial("id").primaryKey(),
@@ -15,6 +22,9 @@ export const postsTable = pgTable("posts", {
   imageUrl: text("image_url"),
   videoUrl: text("video_url"),
   photos: text("photos").array(),
+  // Ordered mixed media: [{ type: "image"|"video", url, trimStart?, trimEnd? }].
+  // Legacy imageUrl/videoUrl/photos stay populated for old clients.
+  media: jsonb("media").$type<PostMediaItem[] | null>(),
   engineSetup: text("engine_setup"),
   horsepower: integer("horsepower"),
   topSpeed: real("top_speed"),

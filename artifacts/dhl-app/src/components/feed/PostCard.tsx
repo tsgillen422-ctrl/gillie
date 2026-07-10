@@ -125,19 +125,34 @@ function CommentReactionButton({ comment, onReact }: { comment: any; onReact: (r
   );
 }
 
-function PhotoCarousel({ photos, alt }: { photos: string[]; alt: string }) {
+type CarouselItem = { type: "image" | "video"; url: string; trimStart?: number; trimEnd?: number };
+
+// Mixed photo/video swipe carousel (Instagram style). Single items render
+// full-width without dots; multiples snap-scroll with a counter + dots.
+function MediaCarousel({ items, alt }: { items: CarouselItem[]; alt: string }) {
   const trackRef = React.useRef<HTMLDivElement>(null);
   const [idx, setIdx] = React.useState(0);
   const onScroll = () => {
     const el = trackRef.current;
     if (!el || el.clientWidth === 0) return;
-    setIdx(Math.min(photos.length - 1, Math.max(0, Math.round(el.scrollLeft / el.clientWidth))));
+    setIdx(Math.min(items.length - 1, Math.max(0, Math.round(el.scrollLeft / el.clientWidth))));
   };
-  if (photos.length === 0) return null;
-  if (photos.length === 1) {
+  if (items.length === 0) return null;
+  if (items.length === 1) {
+    const item = items[0];
+    if (item.type === "video") {
+      return (
+        <VideoPlayer
+          src={resolveImageSrc(item.url)}
+          trimStart={item.trimStart}
+          trimEnd={item.trimEnd}
+          className="w-full aspect-[4/5] max-h-[640px]"
+        />
+      );
+    }
     return (
       <div className="relative w-full overflow-hidden bg-muted">
-        <ClickableImage src={resolveImageSrc(photos[0])} alt={alt} className="w-full max-h-[640px] min-h-[360px] object-cover" />
+        <ClickableImage src={resolveImageSrc(item.url)} alt={alt} className="w-full max-h-[640px] min-h-[360px] object-cover" />
       </div>
     );
   }
@@ -148,17 +163,26 @@ function PhotoCarousel({ photos, alt }: { photos: string[]; alt: string }) {
         onScroll={onScroll}
         className="flex overflow-x-auto snap-x snap-mandatory no-scrollbar scroll-smooth"
       >
-        {photos.map((url, i) => (
-          <div key={`${url}-${i}`} className="w-full shrink-0 snap-center bg-muted aspect-[4/5] overflow-hidden">
-            <ClickableImage src={resolveImageSrc(url)} alt={`${alt} ${i + 1}`} className="w-full h-full object-cover" />
+        {items.map((item, i) => (
+          <div key={`${item.url}-${i}`} className="w-full shrink-0 snap-center bg-muted aspect-[4/5] overflow-hidden">
+            {item.type === "video" ? (
+              <VideoPlayer
+                src={resolveImageSrc(item.url)}
+                trimStart={item.trimStart}
+                trimEnd={item.trimEnd}
+                className="h-full w-full"
+              />
+            ) : (
+              <ClickableImage src={resolveImageSrc(item.url)} alt={`${alt} ${i + 1}`} className="w-full h-full object-cover" />
+            )}
           </div>
         ))}
       </div>
       <div className="absolute top-3 right-3 rounded-full bg-black/50 px-2 py-0.5 text-[11px] font-bold text-white backdrop-blur-sm pointer-events-none">
-        {idx + 1}/{photos.length}
+        {idx + 1}/{items.length}
       </div>
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 pointer-events-none">
-        {photos.map((_, i) => (
+        {items.map((_, i) => (
           <span
             key={i}
             className={`h-1.5 rounded-full transition-all duration-300 shadow-sm ${i === idx ? "w-4 bg-white" : "w-1.5 bg-white/60"}`}
@@ -259,12 +283,18 @@ export function PostCard({
   const likeTotal = post.likeCount || 0;
   const isBoat = post.postType === "boat_showcase";
   const isEvent = post.postType === "event" || post.postType === "tie_up";
-  const mediaPhotos: string[] =
-    Array.isArray(post.photos) && post.photos.length
-      ? post.photos
-      : post.imageUrl
-        ? [post.imageUrl]
-        : [];
+  // Prefer the new mixed media array; fall back to legacy photos/imageUrl/videoUrl.
+  const carouselItems: CarouselItem[] =
+    !isBoat && Array.isArray(post.media) && post.media.length
+      ? post.media.filter((m: any) => m && typeof m.url === "string" && (m.type === "image" || m.type === "video"))
+      : [
+          ...((Array.isArray(post.photos) && post.photos.length
+            ? post.photos
+            : post.imageUrl
+              ? [post.imageUrl]
+              : []) as string[]).map((url) => ({ type: "image" as const, url })),
+          ...(post.videoUrl ? [{ type: "video" as const, url: post.videoUrl }] : []),
+        ];
   const boatSpecs: { label: string; value: string }[] = [];
   if (isBoat) {
     if (post.engineSetup) boatSpecs.push({ label: "Engine", value: String(post.engineSetup) });
@@ -593,12 +623,9 @@ export function PostCard({
             )
           ) : (
             <>
-              {mediaPhotos.length > 0 ? (
-                <PhotoCarousel photos={mediaPhotos} alt={isBoat ? "Boat" : "Post photo"} />
+              {carouselItems.length > 0 ? (
+                <MediaCarousel items={carouselItems} alt={isBoat ? "Boat" : "Post photo"} />
               ) : null}
-              {post.videoUrl && (
-                <VideoPlayer src={resolveImageSrc(post.videoUrl)} className="w-full aspect-[4/5] max-h-[640px]" />
-              )}
             </>
           )}
         </MatureGate>

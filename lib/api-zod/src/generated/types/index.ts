@@ -128,6 +128,8 @@ export * from './postInput';
 export * from './postInputPostType';
 export * from './postInputVisibility';
 export * from './postLikeUser';
+export * from './postMediaItem';
+export * from './postMediaItemType';
 export * from './postMyReaction';
 export * from './postPostType';
 export * from './postsSummary';

@@ -7,6 +7,7 @@
  */
 import type { PostInputPostType } from './postInputPostType';
 import type { PostInputVisibility } from './postInputVisibility';
+import type { PostMediaItem } from './postMediaItem';
 
 export interface PostInput {
   title: string;
@@ -16,6 +17,11 @@ export interface PostInput {
   imageUrl?: string;
   videoUrl?: string;
   photos?: string[];
+  /**
+     * Ordered mixed media (images and videos) for the post, up to 10 items.
+     * @maxItems 10
+     */
+  media?: PostMediaItem[];
   engineSetup?: string;
   horsepower?: number;
   topSpeed?: number;

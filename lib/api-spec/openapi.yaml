@@ -4805,6 +4805,11 @@ components:
           items:
             type: string
           description: Gallery photo URLs (used by boat showcases).
+        media:
+          type: ["array", "null"]
+          items:
+            $ref: "#/components/schemas/PostMediaItem"
+          description: Ordered mixed media (images and videos). Preferred over imageUrl/videoUrl/photos when present.
         engineSetup:
           type: ["string", "null"]
           description: Engine setup description (boat showcase).
@@ -4947,6 +4952,22 @@ components:
         wow:
           type: integer
 
+    PostMediaItem:
+      type: object
+      required: [type, url]
+      properties:
+        type:
+          type: string
+          enum: [image, video]
+        url:
+          type: string
+        trimStart:
+          type: number
+          description: Video trim start offset in seconds (videos only).
+        trimEnd:
+          type: number
+          description: Video trim end offset in seconds (videos only).
+
     PostInput:
       type: object
       required: [title, content, postType]
@@ -4968,6 +4989,12 @@ components:
           type: array
           items:
             type: string
+        media:
+          type: array
+          maxItems: 10
+          items:
+            $ref: "#/components/schemas/PostMediaItem"
+          description: Ordered mixed media (images and videos) for the post, up to 10 items.
         engineSetup:
           type: string
         horsepower:

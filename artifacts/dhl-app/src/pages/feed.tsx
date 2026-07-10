@@ -39,6 +39,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUpload } from "@workspace/object-storage-web";
 import { compressImage } from "@/lib/compress";
+import { MediaStrip } from "@/components/composer/MediaStrip";
+import { MediaEditor, type ComposerMediaItem } from "@/components/composer/MediaEditor";
 import { resolveImageSrc } from "@/lib/assets";
 import { ClickableImage } from "@/components/ClickableImage";
 import { MatureGate } from "@/components/MatureGate";
@@ -355,8 +357,8 @@ export function FeedPage() {
   const [newContent, setNewContent] = React.useState("");
   const [newType, setNewType] = React.useState<"post" | "event" | "business" | "tie_up" | "boat_showcase" | "announcement" | "biz_event" | "deal" | "new_arrival" | "check_in">("post");
   const [newEventDate, setNewEventDate] = React.useState("");
-  const [newImageUrl, setNewImageUrl] = React.useState<string | null>(null);
-  const [newVideoUrl, setNewVideoUrl] = React.useState<string | null>(null);
+  const [newMedia, setNewMedia] = React.useState<ComposerMediaItem[]>([]);
+  const [editingMediaIdx, setEditingMediaIdx] = React.useState<number | null>(null);
   const [newPhotos, setNewPhotos] = React.useState<string[]>([]);
   const [newEngineSetup, setNewEngineSetup] = React.useState("");
   const [newHorsepower, setNewHorsepower] = React.useState("");
@@ -420,8 +422,8 @@ export function FeedPage() {
     setNewContent("");
     setNewType("post");
     setNewEventDate("");
-    setNewImageUrl(null);
-    setNewVideoUrl(null);
+    setNewMedia([]);
+    setEditingMediaIdx(null);
     setNewPhotos([]);
     setNewEngineSetup("");
     setNewHorsepower("");
@@ -467,49 +469,43 @@ export function FeedPage() {
     }
   };
 
-  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please choose an image file.");
+  // Shared multi-select handler for photos and videos: uploads each file and
+  // appends to the mixed media list (max 10 items per post, Instagram-style).
+  const handleMediaSelect = async (e: React.ChangeEvent<HTMLInputElement>, kind: "image" | "video") => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (!files.length) return;
+    const wanted = files.filter((f) => f.type.startsWith(kind === "image" ? "image/" : "video/"));
+    if (!wanted.length) {
+      toast.error(kind === "image" ? "Please choose image files." : "Please choose video files.");
       return;
     }
+    const remaining = 10 - newMedia.length;
+    if (remaining <= 0) {
+      toast.error("You can add up to 10 photos and videos.");
+      return;
+    }
+    const toUpload = wanted.slice(0, remaining);
+    if (wanted.length > remaining) toast.error("You can add up to 10 photos and videos.");
     try {
-      const res = await uploadFile(await compressImage(file));
-      if (res?.objectPath) {
-        setNewImageUrl(res.objectPath);
-        setNewVideoUrl(null);
+      const uploaded: ComposerMediaItem[] = [];
+      for (const file of toUpload) {
+        const res = await uploadFile(kind === "image" ? await compressImage(file) : file);
+        if (res?.objectPath) uploaded.push({ type: kind, url: `/api/storage${res.objectPath}` });
+      }
+      if (uploaded.length) {
+        setNewMedia((prev) => [...prev, ...uploaded].slice(0, 10));
         setNewGifUrl(null);
-        if (videoInputRef.current) videoInputRef.current.value = "";
       } else {
-        toast.error("Couldn't upload that photo.");
+        toast.error(kind === "image" ? "Couldn't upload those photos." : "Couldn't upload that video.");
       }
     } catch {
-      toast.error("Couldn't upload that photo.");
+      toast.error(kind === "image" ? "Couldn't upload those photos." : "Couldn't upload that video.");
     }
   };
 
-  const handleVideoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("video/")) {
-      toast.error("Please choose a video file.");
-      return;
-    }
-    try {
-      const res = await uploadFile(file);
-      if (res?.objectPath) {
-        setNewVideoUrl(res.objectPath);
-        setNewImageUrl(null);
-        setNewGifUrl(null);
-        if (fileInputRef.current) fileInputRef.current.value = "";
-      } else {
-        toast.error("Couldn't upload that video.");
-      }
-    } catch {
-      toast.error("Couldn't upload that video.");
-    }
-  };
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => handleMediaSelect(e, "image");
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => handleMediaSelect(e, "video");
 
   const addTopic = () => {
     const t = topicDraft.trim().replace(/^#+/, "").replace(/[^\w]/g, "");
@@ -520,8 +516,7 @@ export function FeedPage() {
 
   const handleSelectGif = (url: string) => {
     setNewGifUrl(url);
-    setNewImageUrl(null);
-    setNewVideoUrl(null);
+    setNewMedia([]);
     if (fileInputRef.current) fileInputRef.current.value = "";
     if (videoInputRef.current) videoInputRef.current.value = "";
     setGifOpen(false);
@@ -530,7 +525,7 @@ export function FeedPage() {
   const handleCreatePost = () => {
     const isBoat = newType === "boat_showcase";
     const validPollOptions = pollOptions.map((o) => o.trim()).filter((o) => o.length > 0);
-    const hasExtras = !!(newGifUrl || newImageUrl || newVideoUrl || newFeeling || newLocation.trim() || newTopics.length || validPollOptions.length >= 2);
+    const hasExtras = !!(newGifUrl || newMedia.length || newFeeling || newLocation.trim() || newTopics.length || validPollOptions.length >= 2);
     if (!isBoat && !newContent.trim() && !hasExtras) {
       toast.error("Add something to your post.");
       return;
@@ -565,8 +560,8 @@ export function FeedPage() {
           asBusiness: isBizType ? true : undefined,
           businessId: isBizType && activeBusiness ? activeBusiness.id : undefined,
           eventDate: (newType === "event" || newType === "biz_event" || newType === "tie_up") && newEventDate ? new Date(newEventDate).toISOString() : undefined,
-          imageUrl: newGifUrl ?? (newImageUrl ? `/api/storage${newImageUrl}` : undefined),
-          videoUrl: newVideoUrl ? `/api/storage${newVideoUrl}` : undefined,
+          imageUrl: newGifUrl ?? undefined,
+          media: !isBoat && newMedia.length ? newMedia : undefined,
           photos: isBoat && newPhotos.length ? newPhotos : undefined,
           engineSetup: isBoat && newEngineSetup.trim() ? newEngineSetup.trim() : undefined,
           horsepower: isBoat && !Number.isNaN(hp) ? hp : undefined,
@@ -1023,8 +1018,8 @@ export function FeedPage() {
 
             {newType !== "boat_showcase" && (
               <>
-                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoSelect} />
-                <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoSelect} />
+                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoSelect} />
+                <input ref={videoInputRef} type="file" accept="video/*" multiple className="hidden" onChange={handleVideoSelect} />
                 {newGifUrl ? (
                   <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
                     <img src={newGifUrl} alt="Selected GIF" className="h-full w-full object-contain" />
@@ -1039,31 +1034,17 @@ export function FeedPage() {
                       <X className="h-4 w-4" />
                     </Button>
                   </div>
-                ) : newImageUrl ? (
-                  <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
-                    <img src={`/api/storage${newImageUrl}`} alt="Selected" className="h-full w-full object-cover" />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon"
-                      className="absolute right-2 top-2 h-7 w-7"
-                      onClick={() => { setNewImageUrl(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : newVideoUrl ? (
-                  <div className="relative aspect-video overflow-hidden rounded-xl bg-black">
-                    <video src={`/api/storage${newVideoUrl}`} controls className="h-full w-full" />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon"
-                      className="absolute right-2 top-2 h-7 w-7"
-                      onClick={() => { setNewVideoUrl(null); if (videoInputRef.current) videoInputRef.current.value = ""; }}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                ) : newMedia.length > 0 ? (
+                  <div className="space-y-1">
+                    <MediaStrip
+                      items={newMedia}
+                      onReorder={setNewMedia}
+                      onRemove={(i) => setNewMedia((prev) => prev.filter((_, idx) => idx !== i))}
+                      onEdit={(i) => setEditingMediaIdx(i)}
+                    />
+                    <p className="text-[11px] text-muted-foreground">
+                      {newMedia.length}/10 · drag the handle to reorder · tap ✏️ to edit
+                    </p>
                   </div>
                 ) : null}
 
@@ -1347,6 +1328,17 @@ export function FeedPage() {
       </Dialog>
 
       <GifPickerDialog open={gifOpen} onOpenChange={setGifOpen} onSelect={handleSelectGif} />
+
+      {editingMediaIdx != null && newMedia[editingMediaIdx] && (
+        <MediaEditor
+          item={newMedia[editingMediaIdx]}
+          onClose={() => setEditingMediaIdx(null)}
+          onSave={(next) => {
+            setNewMedia((prev) => prev.map((m, i) => (i === editingMediaIdx ? next : m)));
+            setEditingMediaIdx(null);
+          }}
+        />
+      )}
     </div>
   );
 }

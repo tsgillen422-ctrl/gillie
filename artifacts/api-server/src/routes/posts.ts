@@ -125,6 +125,7 @@ export async function formatPost(post: typeof postsTable.$inferSelect, viewerId:
     imageUrl: post.imageUrl,
     videoUrl: post.videoUrl,
     photos: post.photos ?? null,
+    media: post.media ?? null,
     engineSetup: post.engineSetup ?? null,
     horsepower: post.horsepower ?? null,
     topSpeed: post.topSpeed ?? null,
@@ -275,7 +276,7 @@ const VALID_POST_TYPES = new Set(["post", "event", "business", "tie_up", "boat_s
 
 router.post("/", async (req, res) => {
   const uid = currentUserId(req);
-  const { title, content, postType, eventDate, imageUrl, videoUrl, photos, engineSetup, horsepower, topSpeed, mods, pinLat, pinLng, visibility, pollOptions, lakeId, asBusiness, businessId: requestedBusinessId } = req.body;
+  const { title, content, postType, eventDate, imageUrl, videoUrl, photos, media, engineSetup, horsepower, topSpeed, mods, pinLat, pinLng, visibility, pollOptions, lakeId, asBusiness, businessId: requestedBusinessId } = req.body;
   const type = typeof postType === "string" && VALID_POST_TYPES.has(postType) ? postType : "post";
   // Business posting: business-only types imply asBusiness; both require an
   // approved business owned by the poster. Users can own multiple businesses,
@@ -302,12 +303,41 @@ router.post("/", async (req, res) => {
     businessId = biz.id;
   }
   const photoList = Array.isArray(photos) ? photos.filter((p: unknown) => typeof p === "string") : null;
+  // Ordered mixed media (images + videos). Sanitize each entry and cap at 10.
+  const MAX_MEDIA = 10;
+  const mediaList: { type: "image" | "video"; url: string; trimStart?: number; trimEnd?: number }[] | null =
+    Array.isArray(media)
+      ? media
+          .filter(
+            (m: any) =>
+              m &&
+              (m.type === "image" || m.type === "video") &&
+              typeof m.url === "string" &&
+              m.url.trim().length > 0,
+          )
+          .slice(0, MAX_MEDIA)
+          .map((m: any) => {
+            const item: { type: "image" | "video"; url: string; trimStart?: number; trimEnd?: number } = {
+              type: m.type,
+              url: m.url.trim(),
+            };
+            if (m.type === "video") {
+              const start = Number(m.trimStart);
+              const end = Number(m.trimEnd);
+              if (Number.isFinite(start) && start >= 0) item.trimStart = start;
+              if (Number.isFinite(end) && end > (item.trimStart ?? 0)) item.trimEnd = end;
+            }
+            return item;
+          })
+      : null;
+  const mediaImages = mediaList ? mediaList.filter((m) => m.type === "image").map((m) => m.url) : [];
+  const mediaVideos = mediaList ? mediaList.filter((m) => m.type === "video").map((m) => m.url) : [];
   const pollChoices = Array.isArray(pollOptions)
     ? pollOptions.map((p: unknown) => (typeof p === "string" ? p.trim() : "")).filter((p) => p.length > 0).slice(0, 10)
     : [];
   const isMature = await moderateContent({
     texts: [title, content, ...pollChoices],
-    imagePaths: [imageUrl, ...(photoList ?? [])],
+    imagePaths: [imageUrl, ...(photoList ?? []), ...mediaImages],
   });
   const [post] = await db
     .insert(postsTable)
@@ -318,9 +348,15 @@ router.post("/", async (req, res) => {
       content,
       postType: type,
       eventDate: eventDate ? new Date(eventDate) : null,
-      imageUrl: imageUrl ?? (photoList && photoList.length ? photoList[0] : null),
-      videoUrl,
-      photos: photoList && photoList.length ? photoList : null,
+      imageUrl: imageUrl ?? (photoList && photoList.length ? photoList[0] : null) ?? (mediaImages.length ? mediaImages[0] : null),
+      videoUrl: videoUrl ?? (mediaVideos.length ? mediaVideos[0] : null),
+      photos:
+        photoList && photoList.length
+          ? photoList
+          : mediaImages.length
+            ? mediaImages
+            : null,
+      media: mediaList && mediaList.length ? mediaList : null,
       engineSetup: typeof engineSetup === "string" ? engineSetup : null,
       horsepower: Number.isInteger(horsepower) ? horsepower : null,
       topSpeed: typeof topSpeed === "number" && Number.isFinite(topSpeed) ? topSpeed : null,

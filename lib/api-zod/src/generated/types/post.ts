@@ -7,6 +7,7 @@
  */
 import type { Poll } from './poll';
 import type { PostBusiness } from './postBusiness';
+import type { PostMediaItem } from './postMediaItem';
 import type { PostMyReaction } from './postMyReaction';
 import type { PostPostType } from './postPostType';
 import type { PostVisibility } from './postVisibility';
@@ -32,6 +33,11 @@ export interface Post {
      * @nullable
      */
   photos?: string[] | null;
+  /**
+     * Ordered mixed media (images and videos). Preferred over imageUrl/videoUrl/photos when present.
+     * @nullable
+     */
+  media?: PostMediaItem[] | null;
   /**
      * Engine setup description (boat showcase).
      * @nullable

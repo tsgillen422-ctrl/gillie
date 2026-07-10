@@ -5923,6 +5923,12 @@ export const GetBusinessPostsResponseItem = zod.object({
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
   "photos": zod.array(zod.string()).nullish().describe('Gallery photo URLs (used by boat showcases).'),
+  "media": zod.array(zod.object({
+  "type": zod.enum(['image', 'video']),
+  "url": zod.string(),
+  "trimStart": zod.number().optional().describe('Video trim start offset in seconds (videos only).'),
+  "trimEnd": zod.number().optional().describe('Video trim end offset in seconds (videos only).')
+})).nullish().describe('Ordered mixed media (images and videos). Preferred over imageUrl\/videoUrl\/photos when present.'),
   "engineSetup": zod.string().nullish().describe('Engine setup description (boat showcase).'),
   "horsepower": zod.number().nullish().describe('Engine horsepower (boat showcase).'),
   "topSpeed": zod.number().nullish().describe('Top speed in mph (boat showcase).'),
@@ -6211,6 +6217,12 @@ export const GetPostsResponseItem = zod.object({
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
   "photos": zod.array(zod.string()).nullish().describe('Gallery photo URLs (used by boat showcases).'),
+  "media": zod.array(zod.object({
+  "type": zod.enum(['image', 'video']),
+  "url": zod.string(),
+  "trimStart": zod.number().optional().describe('Video trim start offset in seconds (videos only).'),
+  "trimEnd": zod.number().optional().describe('Video trim end offset in seconds (videos only).')
+})).nullish().describe('Ordered mixed media (images and videos). Preferred over imageUrl\/videoUrl\/photos when present.'),
   "engineSetup": zod.string().nullish().describe('Engine setup description (boat showcase).'),
   "horsepower": zod.number().nullish().describe('Engine horsepower (boat showcase).'),
   "topSpeed": zod.number().nullish().describe('Top speed in mph (boat showcase).'),
@@ -6263,6 +6275,10 @@ export const GetPostsResponse = zod.array(GetPostsResponseItem)
 /**
  * @summary Create a post or event
  */
+export const createPostBodyMediaMax = 10;
+
+
+
 export const CreatePostBody = zod.object({
   "title": zod.string(),
   "content": zod.string(),
@@ -6271,6 +6287,12 @@ export const CreatePostBody = zod.object({
   "imageUrl": zod.string().optional(),
   "videoUrl": zod.string().optional(),
   "photos": zod.array(zod.string()).optional(),
+  "media": zod.array(zod.object({
+  "type": zod.enum(['image', 'video']),
+  "url": zod.string(),
+  "trimStart": zod.number().optional().describe('Video trim start offset in seconds (videos only).'),
+  "trimEnd": zod.number().optional().describe('Video trim end offset in seconds (videos only).')
+})).max(createPostBodyMediaMax).optional().describe('Ordered mixed media (images and videos) for the post, up to 10 items.'),
   "engineSetup": zod.string().optional(),
   "horsepower": zod.number().optional(),
   "topSpeed": zod.number().optional(),
@@ -6417,6 +6439,12 @@ export const GetPostResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
   "photos": zod.array(zod.string()).nullish().describe('Gallery photo URLs (used by boat showcases).'),
+  "media": zod.array(zod.object({
+  "type": zod.enum(['image', 'video']),
+  "url": zod.string(),
+  "trimStart": zod.number().optional().describe('Video trim start offset in seconds (videos only).'),
+  "trimEnd": zod.number().optional().describe('Video trim end offset in seconds (videos only).')
+})).nullish().describe('Ordered mixed media (images and videos). Preferred over imageUrl\/videoUrl\/photos when present.'),
   "engineSetup": zod.string().nullish().describe('Engine setup description (boat showcase).'),
   "horsepower": zod.number().nullish().describe('Engine horsepower (boat showcase).'),
   "topSpeed": zod.number().nullish().describe('Top speed in mph (boat showcase).'),
@@ -6595,6 +6623,12 @@ export const UpdatePostResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
   "photos": zod.array(zod.string()).nullish().describe('Gallery photo URLs (used by boat showcases).'),
+  "media": zod.array(zod.object({
+  "type": zod.enum(['image', 'video']),
+  "url": zod.string(),
+  "trimStart": zod.number().optional().describe('Video trim start offset in seconds (videos only).'),
+  "trimEnd": zod.number().optional().describe('Video trim end offset in seconds (videos only).')
+})).nullish().describe('Ordered mixed media (images and videos). Preferred over imageUrl\/videoUrl\/photos when present.'),
   "engineSetup": zod.string().nullish().describe('Engine setup description (boat showcase).'),
   "horsepower": zod.number().nullish().describe('Engine horsepower (boat showcase).'),
   "topSpeed": zod.number().nullish().describe('Top speed in mph (boat showcase).'),
@@ -6774,6 +6808,12 @@ export const ReactToPostResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
   "photos": zod.array(zod.string()).nullish().describe('Gallery photo URLs (used by boat showcases).'),
+  "media": zod.array(zod.object({
+  "type": zod.enum(['image', 'video']),
+  "url": zod.string(),
+  "trimStart": zod.number().optional().describe('Video trim start offset in seconds (videos only).'),
+  "trimEnd": zod.number().optional().describe('Video trim end offset in seconds (videos only).')
+})).nullish().describe('Ordered mixed media (images and videos). Preferred over imageUrl\/videoUrl\/photos when present.'),
   "engineSetup": zod.string().nullish().describe('Engine setup description (boat showcase).'),
   "horsepower": zod.number().nullish().describe('Engine horsepower (boat showcase).'),
   "topSpeed": zod.number().nullish().describe('Top speed in mph (boat showcase).'),
@@ -6945,6 +6985,12 @@ export const VotePollResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
   "photos": zod.array(zod.string()).nullish().describe('Gallery photo URLs (used by boat showcases).'),
+  "media": zod.array(zod.object({
+  "type": zod.enum(['image', 'video']),
+  "url": zod.string(),
+  "trimStart": zod.number().optional().describe('Video trim start offset in seconds (videos only).'),
+  "trimEnd": zod.number().optional().describe('Video trim end offset in seconds (videos only).')
+})).nullish().describe('Ordered mixed media (images and videos). Preferred over imageUrl\/videoUrl\/photos when present.'),
   "engineSetup": zod.string().nullish().describe('Engine setup description (boat showcase).'),
   "horsepower": zod.number().nullish().describe('Engine horsepower (boat showcase).'),
   "topSpeed": zod.number().nullish().describe('Top speed in mph (boat showcase).'),
@@ -7546,6 +7592,12 @@ export const GetPostsSummaryResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
   "photos": zod.array(zod.string()).nullish().describe('Gallery photo URLs (used by boat showcases).'),
+  "media": zod.array(zod.object({
+  "type": zod.enum(['image', 'video']),
+  "url": zod.string(),
+  "trimStart": zod.number().optional().describe('Video trim start offset in seconds (videos only).'),
+  "trimEnd": zod.number().optional().describe('Video trim end offset in seconds (videos only).')
+})).nullish().describe('Ordered mixed media (images and videos). Preferred over imageUrl\/videoUrl\/photos when present.'),
   "engineSetup": zod.string().nullish().describe('Engine setup description (boat showcase).'),
   "horsepower": zod.number().nullish().describe('Engine horsepower (boat showcase).'),
   "topSpeed": zod.number().nullish().describe('Top speed in mph (boat showcase).'),
@@ -8241,6 +8293,12 @@ export const ToggleRsvpResponse = zod.object({
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
   "photos": zod.array(zod.string()).nullish().describe('Gallery photo URLs (used by boat showcases).'),
+  "media": zod.array(zod.object({
+  "type": zod.enum(['image', 'video']),
+  "url": zod.string(),
+  "trimStart": zod.number().optional().describe('Video trim start offset in seconds (videos only).'),
+  "trimEnd": zod.number().optional().describe('Video trim end offset in seconds (videos only).')
+})).nullish().describe('Ordered mixed media (images and videos). Preferred over imageUrl\/videoUrl\/photos when present.'),
   "engineSetup": zod.string().nullish().describe('Engine setup description (boat showcase).'),
   "horsepower": zod.number().nullish().describe('Engine horsepower (boat showcase).'),
   "topSpeed": zod.number().nullish().describe('Top speed in mph (boat showcase).'),
@@ -9853,6 +9911,12 @@ export const GetSavedPostsResponseItem = zod.object({
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
   "photos": zod.array(zod.string()).nullish().describe('Gallery photo URLs (used by boat showcases).'),
+  "media": zod.array(zod.object({
+  "type": zod.enum(['image', 'video']),
+  "url": zod.string(),
+  "trimStart": zod.number().optional().describe('Video trim start offset in seconds (videos only).'),
+  "trimEnd": zod.number().optional().describe('Video trim end offset in seconds (videos only).')
+})).nullish().describe('Ordered mixed media (images and videos). Preferred over imageUrl\/videoUrl\/photos when present.'),
   "engineSetup": zod.string().nullish().describe('Engine setup description (boat showcase).'),
   "horsepower": zod.number().nullish().describe('Engine horsepower (boat showcase).'),
   "topSpeed": zod.number().nullish().describe('Top speed in mph (boat showcase).'),
