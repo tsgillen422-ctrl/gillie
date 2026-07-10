@@ -40,6 +40,9 @@ export const LAKES: Lake[] = [
   { id: 18, name: "Lake George", slug: "lake-george", region: "New York", lat: 43.6, lng: -73.55, zoom: 11 },
   { id: 19, name: "Lake Winnipesaukee", slug: "lake-winnipesaukee", region: "New Hampshire", lat: 43.63, lng: -71.33, zoom: 11 },
   { id: 20, name: "Shasta Lake", slug: "shasta", region: "California", lat: 40.75, lng: -122.32, zoom: 11 },
+  { id: 21, name: "Caesar Creek Lake", slug: "caesar-creek", region: "Ohio", lat: 39.5, lng: -84.06, zoom: 12 },
+  { id: 22, name: "Brookville Lake", slug: "brookville", region: "Indiana", lat: 39.48, lng: -84.99, zoom: 11 },
+  { id: 23, name: "Cowan Lake", slug: "cowan", region: "Ohio", lat: 39.38, lng: -83.89, zoom: 13 },
 ];
 
 export const DEFAULT_LAKE_ID = 1;
