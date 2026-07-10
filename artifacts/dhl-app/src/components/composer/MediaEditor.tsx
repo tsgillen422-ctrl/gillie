@@ -642,7 +642,7 @@ export function MediaEditor({
                     {gifsLoading ? (
                       <Loader2 className="m-auto h-5 w-5 animate-spin text-white/60" />
                     ) : (
-                      ((gifResults as any)?.gifs ?? []).slice(0, 12).map((g: any, i: number) => (
+                      (gifResults ?? []).slice(0, 12).map((g, i) => (
                         <button key={i} type="button" onClick={() => addSticker({ type: "giphy", data: { url: g.url } })} className="h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-white/5">
                           <img src={g.previewUrl ?? g.url} alt="" className="h-full w-full object-contain" />
                         </button>

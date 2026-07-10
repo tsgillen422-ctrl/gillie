@@ -939,7 +939,15 @@ export function FeedPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={composerOpen} onOpenChange={(open) => { setComposerOpen(open); if (!open) resetComposer(); }}>
+      <Dialog
+        open={composerOpen}
+        onOpenChange={(open) => { setComposerOpen(open); if (!open) resetComposer(); }}
+        // While the full-screen media editor (portaled to <body>) is open, the
+        // composer must drop out of modal mode: Radix's focus trap otherwise
+        // steals focus from the editor's inputs (text tool can't type) and its
+        // scroll lock blocks touch scrolling in the editor (filters row).
+        modal={editingMediaIdx == null}
+      >
         <DialogContent
           className="max-w-md gap-0 overflow-hidden p-0 [&>button]:hidden"
           // While the full-screen media editor (portaled to <body>) is open,
