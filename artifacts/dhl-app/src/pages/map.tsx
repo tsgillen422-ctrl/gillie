@@ -18,7 +18,7 @@ import {
   bearingDegrees,
   compassPoint,
 } from "@/lib/clustering";
-import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey, useGetDockLabels, useCreateDockLabel, useDeleteDockLabel, getGetDockLabelsQueryKey, useGetHiddenPlaces, useHidePlace, getGetHiddenPlacesQueryKey, useGetStoryPlaces, useGetBusinesses, useGetMyBusiness } from "@workspace/api-client-react";
+import { useGetMe, useGetFriendLocations, useGetPins, useUpdateMyLocation, useCreatePin, useLikePin, useToggleFavoritePin, useDeletePin, getGetPinsQueryKey, getGetFavoritePinsQueryKey, useGetDockLabels, useCreateDockLabel, useDeleteDockLabel, getGetDockLabelsQueryKey, useGetHiddenPlaces, useHidePlace, getGetHiddenPlacesQueryKey, useGetStoryPlaces, useGetBusinesses, useGetMyBusinesses } from "@workspace/api-client-react";
 import { PinInputType } from "@workspace/api-client-react/src/generated/api.schemas";
 import { Button } from "@/components/ui/button";
 import { ClickableImage } from "@/components/ClickableImage";
@@ -622,10 +622,10 @@ export function MapPage() {
     { lakeId },
     { query: { queryKey: ["businesses", lakeId] } },
   );
-  const { data: myBusiness } = useGetMyBusiness({
-    query: { queryKey: ["my-business"], retry: false },
+  const { data: myBusinesses } = useGetMyBusinesses({
+    query: { queryKey: ["my-businesses"], retry: false },
   });
-  const canPlaceDockSign = !!me?.isAdmin || myBusiness?.status === "approved";
+  const canPlaceDockSign = !!me?.isAdmin || (myBusinesses ?? []).some((b) => b.status === "approved");
   const { data: hiddenPlaces } = useGetHiddenPlaces();
   const hiddenPlaceKeys = useMemo(
     () => new Set((hiddenPlaces ?? []).map((h) => h.placeKey)),

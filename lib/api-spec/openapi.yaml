@@ -1543,6 +1543,44 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Business"
+    post:
+      operationId: createBusiness
+      tags: [businesses]
+      summary: Create a new business owned by the caller (starts as pending)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessInput"
+      responses:
+        "201":
+          description: Business created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "400":
+          description: Invalid input or business limit reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /businesses/mine:
+    get:
+      operationId: getMyBusinesses
+      tags: [businesses]
+      summary: List all businesses owned by the caller (any status)
+      responses:
+        "200":
+          description: Owned businesses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Business"
 
   /businesses/types:
     get:
@@ -1661,6 +1699,60 @@ paths:
                 $ref: "#/components/schemas/Business"
         "404":
           description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    put:
+      operationId: updateBusiness
+      tags: [businesses]
+      summary: Update a business you own (resets status to pending)
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessInput"
+      responses:
+        "200":
+          description: Business updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Business not found or not yours
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    delete:
+      operationId: deleteBusiness
+      tags: [businesses]
+      summary: Delete a business you own
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+        "404":
+          description: Business not found or not yours
           content:
             application/json:
               schema:
@@ -4708,6 +4800,9 @@ components:
         asBusiness:
           type: boolean
           description: Post as your approved business. Business-only post types (announcement, deal, new_arrival, check_in) imply this.
+        businessId:
+          type: ["integer", "null"]
+          description: Which of your approved businesses to post as. Defaults to your first approved business when omitted.
 
     PostUpdateInput:
       type: object

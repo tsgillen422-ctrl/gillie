@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetPosts, useGetSavedPosts, useReactToPost, useGetMe, useDeletePost, useCreatePost, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useBlockUser, useShareToProfile, useVotePoll, useUpdatePost, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetBlockedUsersQueryKey, useGetConditions, getGetConditionsQueryKey, useGetCatches, getGetCatchesQueryKey, useGetMyBusiness, getGetMyBusinessQueryKey } from "@workspace/api-client-react";
+import { useGetPosts, useGetSavedPosts, useReactToPost, useGetMe, useDeletePost, useCreatePost, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useBlockUser, useShareToProfile, useVotePoll, useUpdatePost, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetBlockedUsersQueryKey, useGetConditions, getGetConditionsQueryKey, useGetCatches, getGetCatchesQueryKey, useGetMyBusinesses, getGetMyBusinessesQueryKey } from "@workspace/api-client-react";
 import { PostInputPostType, PostInputVisibility } from "@workspace/api-client-react/src/generated/api.schemas";
 import { GifPickerDialog } from "@/components/GifPickerDialog";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -381,11 +381,19 @@ export function FeedPage() {
   const { uploadFile, isUploading } = useUpload();
 
   // Business owners post through this same composer with extra business-only
-  // post types; those posts carry the business identity automatically.
-  const { data: myBusiness } = useGetMyBusiness({
-    query: { queryKey: getGetMyBusinessQueryKey(), retry: false },
+  // post types; those posts carry the business identity automatically. Users
+  // can own several businesses — a "Posting as" picker chooses which one.
+  const { data: myBusinesses = [] } = useGetMyBusinesses({
+    query: { queryKey: getGetMyBusinessesQueryKey(), retry: false },
   });
-  const hasApprovedBusiness = myBusiness?.status === "approved";
+  const approvedBusinesses = React.useMemo(
+    () => myBusinesses.filter((b) => b.status === "approved").sort((a, b) => a.id - b.id),
+    [myBusinesses],
+  );
+  const hasApprovedBusiness = approvedBusinesses.length > 0;
+  const [postAsBusinessId, setPostAsBusinessId] = React.useState<number | null>(null);
+  const activeBusiness =
+    approvedBusinesses.find((b) => b.id === postAsBusinessId) ?? approvedBusinesses[0];
   const BIZ_TYPES = ["announcement", "biz_event", "deal", "new_arrival", "check_in"] as const;
   const isBizType = (BIZ_TYPES as readonly string[]).includes(newType);
 
@@ -555,6 +563,7 @@ export function FeedPage() {
           content: composedContent || (isBoat ? "Check out this boat!" : ""),
           postType: (newType === "biz_event" ? "event" : newType) as PostInputPostType,
           asBusiness: isBizType ? true : undefined,
+          businessId: isBizType && activeBusiness ? activeBusiness.id : undefined,
           eventDate: (newType === "event" || newType === "biz_event" || newType === "tie_up") && newEventDate ? new Date(newEventDate).toISOString() : undefined,
           imageUrl: newGifUrl ?? (newImageUrl ? `/api/storage${newImageUrl}` : undefined),
           videoUrl: newVideoUrl ? `/api/storage${newVideoUrl}` : undefined,
@@ -620,8 +629,13 @@ export function FeedPage() {
       if (type === "event" || type === "tie_up" || type === "boat_showcase" || type === "business" || type === "announcement" || type === "biz_event" || type === "deal" || type === "new_arrival" || type === "check_in") {
         setNewType(type);
       }
+      const bizId = Number(params.get("businessId"));
+      if (Number.isFinite(bizId) && bizId > 0) {
+        setPostAsBusinessId(bizId);
+      }
       params.delete("compose");
       params.delete("type");
+      params.delete("businessId");
       const qs = params.toString();
       window.history.replaceState(null, "", `${import.meta.env.BASE_URL.replace(/\/$/, "")}/feed${qs ? `?${qs}` : ""}`);
     }
@@ -972,6 +986,32 @@ export function FeedPage() {
                 </Select>
               </div>
             </div>
+
+            {isBizType && approvedBusinesses.length > 1 && (
+              <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 px-3 py-2">
+                <span className="text-xs font-medium text-muted-foreground shrink-0">Posting as</span>
+                <Select
+                  value={String(activeBusiness?.id ?? "")}
+                  onValueChange={(v) => setPostAsBusinessId(Number(v))}
+                >
+                  <SelectTrigger className="h-8 flex-1 rounded-full border-border bg-background text-xs font-semibold" data-testid="select-posting-as-business">
+                    <SelectValue placeholder="Choose business" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {approvedBusinesses.map((b) => (
+                      <SelectItem key={b.id} value={String(b.id)} data-testid={`option-posting-as-${b.id}`}>
+                        🏪 {b.businessName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {isBizType && approvedBusinesses.length === 1 && activeBusiness && (
+              <div className="rounded-xl border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                Posting as <span className="font-semibold text-foreground">🏪 {activeBusiness.businessName}</span>
+              </div>
+            )}
 
             <Textarea
               value={newContent}

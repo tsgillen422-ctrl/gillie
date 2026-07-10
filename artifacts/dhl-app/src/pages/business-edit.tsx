@@ -1,15 +1,17 @@
 import React, { useEffect, useRef } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { ArrowLeft, ArrowRight, Camera, X, MapPin, Trash2, LocateFixed, Store, ImagePlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-  useGetMyBusiness,
-  useUpsertMyBusiness,
-  useDeleteMyBusiness,
+  useGetMyBusinesses,
+  useCreateBusiness,
+  useUpdateBusiness,
+  useDeleteBusiness,
   useGetBusinessTypes,
   getGetMyBusinessQueryKey,
+  getGetMyBusinessesQueryKey,
   getGetBusinessesQueryKey,
 } from "@workspace/api-client-react";
 import { useUpload } from "@workspace/object-storage-web";
@@ -114,14 +116,27 @@ export default function BusinessEditPage() {
   const qc = useQueryClient();
   const { lakeId, lake } = useLake();
 
-  const { data: existing, isLoading } = useGetMyBusiness({
-    query: { queryKey: ["my-business"], retry: false },
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const isNew = params.get("new") === "1";
+  const paramId = Number(params.get("id"));
+
+  const { data: myBusinesses = [], isLoading } = useGetMyBusinesses({
+    query: { queryKey: ["my-businesses"], retry: false },
   });
+  // Which business is being edited: ?new=1 always starts a blank one,
+  // ?id=N edits that specific business, otherwise fall back to the oldest.
+  const existing = isNew
+    ? undefined
+    : Number.isFinite(paramId) && paramId > 0
+      ? myBusinesses.find((b) => b.id === paramId)
+      : [...myBusinesses].sort((a, b) => a.id - b.id)[0];
   const { data: typeSuggestions = [] } = useGetBusinessTypes({
     query: { queryKey: ["business-types"] },
   });
-  const upsert = useUpsertMyBusiness();
-  const deleteBusiness = useDeleteMyBusiness();
+  const createBiz = useCreateBusiness();
+  const updateBiz = useUpdateBusiness();
+  const deleteBiz = useDeleteBusiness();
   const { uploadFile, isUploading } = useUpload();
   const photoInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
@@ -142,10 +157,28 @@ export default function BusinessEditPage() {
   const [lat, setLat] = React.useState<number | null>(null);
   const [lng, setLng] = React.useState<number | null>(null);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
-  const [loaded, setLoaded] = React.useState(false);
+  // Which edit target the form is currently loaded for ("new" or a business
+  // id). Re-populates (or blanks) the form whenever ?id / ?new changes while
+  // this page stays mounted, so we never save against the wrong business.
+  const [loadedFor, setLoadedFor] = React.useState<string | null>(null);
+  const target = isNew ? "new" : existing ? String(existing.id) : null;
 
   useEffect(() => {
-    if (existing && !loaded) {
+    if (target == null || loadedFor === target) return;
+    if (isNew || !existing) {
+      setBusinessName("");
+      setBusinessType("");
+      setDescription("");
+      setPhone("");
+      setWebsite("");
+      setHours("");
+      setServiceArea("");
+      setPhotos([]);
+      setLogoUrl(null);
+      setCoverUrl(null);
+      setLat(null);
+      setLng(null);
+    } else {
       setBusinessName(existing.businessName);
       setBusinessType(existing.businessType);
       setDescription(existing.description ?? "");
@@ -158,9 +191,10 @@ export default function BusinessEditPage() {
       setCoverUrl(existing.coverUrl ?? null);
       setLat(existing.lat ?? null);
       setLng(existing.lng ?? null);
-      setLoaded(true);
     }
-  }, [existing, loaded]);
+    setStep(0);
+    setLoadedFor(target);
+  }, [target, loadedFor, isNew, existing]);
 
   const centerLat = (lake as any)?.centerLat ?? (lake as any)?.lat ?? 34.2;
   const centerLng = (lake as any)?.centerLng ?? (lake as any)?.lng ?? -84.05;
@@ -230,49 +264,62 @@ export default function BusinessEditPage() {
       toast({ title: "Missing info", description: "Business name and type are required.", variant: "destructive" });
       return;
     }
-    upsert.mutate(
-      {
-        data: {
-          businessName: businessName.trim(),
-          businessType: businessType.trim(),
-          description: description.trim() || null,
-          logoUrl: logoUrl,
-          coverUrl: coverUrl,
-          phone: phone.trim() || null,
-          website: website.trim() || null,
-          hours: hours.trim() || null,
-          serviceArea: serviceArea.trim() || null,
-          photos,
-          lat,
-          lng,
-          lakeId,
-        } as any,
+    const data = {
+      businessName: businessName.trim(),
+      businessType: businessType.trim(),
+      description: description.trim() || null,
+      logoUrl: logoUrl,
+      coverUrl: coverUrl,
+      phone: phone.trim() || null,
+      website: website.trim() || null,
+      hours: hours.trim() || null,
+      serviceArea: serviceArea.trim() || null,
+      photos,
+      lat,
+      lng,
+      lakeId,
+    } as any;
+    const invalidateAll = () => {
+      qc.invalidateQueries({ queryKey: getGetMyBusinessesQueryKey() });
+      qc.invalidateQueries({ queryKey: ["my-businesses"] });
+      qc.invalidateQueries({ queryKey: getGetMyBusinessQueryKey() });
+      qc.invalidateQueries({ queryKey: ["my-business"] });
+      qc.invalidateQueries({ queryKey: getGetBusinessesQueryKey() });
+      qc.invalidateQueries({ queryKey: ["businesses"] });
+    };
+    const callbacks = {
+      onSuccess: (saved: any) => {
+        invalidateAll();
+        toast({
+          title: existing ? "Business updated" : "Business submitted",
+          description: "Your profile is pending review. It will go public once an admin approves it.",
+        });
+        navigate(saved?.id ? `/businesses/${saved.id}` : "/businesses");
       },
-      {
-        onSuccess: (saved: any) => {
-          qc.invalidateQueries({ queryKey: getGetMyBusinessQueryKey() });
-          qc.invalidateQueries({ queryKey: ["my-business"] });
-          qc.invalidateQueries({ queryKey: getGetBusinessesQueryKey() });
-          qc.invalidateQueries({ queryKey: ["businesses"] });
-          toast({
-            title: existing ? "Business updated" : "Business submitted",
-            description: "Your profile is pending review. It will go public once an admin approves it.",
-          });
-          navigate(saved?.id ? `/businesses/${saved.id}` : "/businesses");
-        },
-        onError: () => toast({ title: "Could not save", variant: "destructive" }),
-      },
-    );
+      onError: (err: any) =>
+        toast({
+          title: "Could not save",
+          description: err?.data?.error ?? err?.message ?? undefined,
+          variant: "destructive",
+        }),
+    };
+    if (existing) {
+      updateBiz.mutate({ businessId: existing.id, data }, callbacks);
+    } else {
+      createBiz.mutate({ data }, callbacks);
+    }
   };
 
   const handleDelete = () => {
-    deleteBusiness.mutate(undefined as any, {
+    if (!existing) return;
+    deleteBiz.mutate({ businessId: existing.id }, {
       onSuccess: () => {
+        qc.invalidateQueries({ queryKey: getGetMyBusinessesQueryKey() });
+        qc.invalidateQueries({ queryKey: ["my-businesses"] });
         qc.invalidateQueries({ queryKey: getGetMyBusinessQueryKey() });
         qc.invalidateQueries({ queryKey: ["my-business"] });
         qc.invalidateQueries({ queryKey: getGetBusinessesQueryKey() });
         qc.invalidateQueries({ queryKey: ["businesses"] });
-        qc.removeQueries({ queryKey: ["my-business"] });
         toast({ title: "Business profile removed" });
         navigate("/businesses");
       },
@@ -544,10 +591,10 @@ export default function BusinessEditPage() {
                 className="w-full"
                 size="lg"
                 onClick={handleSave}
-                disabled={upsert.isPending || isUploading}
+                disabled={createBiz.isPending || updateBiz.isPending || isUploading}
                 data-testid="button-save-business"
               >
-                {upsert.isPending ? "Saving…" : existing ? "Save & resubmit for review" : "Submit for review"}
+                {createBiz.isPending || updateBiz.isPending ? "Saving…" : existing ? "Save & resubmit for review" : "Submit for review"}
               </Button>
 
               {existing && (

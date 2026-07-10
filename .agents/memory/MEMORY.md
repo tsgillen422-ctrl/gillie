@@ -61,6 +61,7 @@
 - [Public support & legal pages](public-support-legal-pages.md) — /support /privacy-policy /community-guidelines must be in the TOP-LEVEL Switch (before GatedRoutes) to be no-auth; auth-aware back targets or signed-out dead-ends.
 - [Suspension enforcement](suspension-enforcement.md) — `suspend` was cosmetic; now requireAuth 403s suspended users (except GET/DELETE /users/me) + App.tsx SuspendedGate; reversible via PATCH /users/:id/suspension.
 - [Boat type catalog](boat-type-catalog.md) — boat types live in @workspace/boat-config; stored values speedboat/fishing keep old names (labels renamed); always use boatLabelFor.
+- [Multi-business ownership](multi-business-ownership.md) — one account owns many businesses; legacy /businesses/me = OLDEST; posts businessId must be owned+approved server-side.
 - [Business posting model](business-posting-model.md) — businesses post via the shared feed composer (asBusiness); server forces community visibility; Local tab = postType business OR businessId set.
 - [Dale Hollow keeps](dale-hollow-keeps.md) — post-rebrand: never rename bundle id/prod domain/dhl-app internals; lake-1 domain data stays; only user-facing copy is genericized.
 - [Feed audience tabs](feed-audience-tabs.md) — friends tab must include self (own friends-only shares vanish otherwise); community tab excludes self+friends by design.

@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "wouter";
 import { Search, Store, ChevronRight, Plus, BadgeCheck, Users, Star } from "lucide-react";
-import { useGetBusinesses, useGetMyBusiness } from "@workspace/api-client-react";
+import { useGetBusinesses, useGetMyBusinesses } from "@workspace/api-client-react";
 import type { Business } from "@workspace/api-client-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,9 +21,11 @@ export default function BusinessesPage() {
     { lakeId },
     { query: { queryKey: ["businesses", lakeId] } },
   );
-  const { data: myBusiness } = useGetMyBusiness({
-    query: { queryKey: ["my-business"], retry: false },
+  const { data: myBusinesses = [] } = useGetMyBusinesses({
+    query: { queryKey: ["my-businesses"], retry: false },
   });
+  const ownsAny = myBusinesses.length > 0;
+  const notApproved = myBusinesses.filter((b: Business) => b.status !== "approved");
 
   const q = query.trim().toLowerCase();
   const filtered = q
@@ -41,27 +43,27 @@ export default function BusinessesPage() {
             <h1 className="text-xl font-bold font-display">Businesses</h1>
             <p className="text-sm text-muted-foreground">Marinas, guides, rentals & more on the lake</p>
           </div>
-          <Button asChild size="sm" variant={myBusiness ? "outline" : "default"} data-testid="button-my-business">
-            <Link href="/businesses/me/edit">
-              {myBusiness ? <Store className="w-4 h-4 mr-1.5" /> : <Plus className="w-4 h-4 mr-1.5" />}
-              {myBusiness ? "My Business" : "Add Yours"}
+          <Button asChild size="sm" variant={ownsAny ? "outline" : "default"} data-testid="button-my-business">
+            <Link href={ownsAny ? "/my-businesses" : "/businesses/me/edit?new=1"}>
+              {ownsAny ? <Store className="w-4 h-4 mr-1.5" /> : <Plus className="w-4 h-4 mr-1.5" />}
+              {ownsAny ? (myBusinesses.length > 1 ? "My Businesses" : "My Business") : "Add Yours"}
             </Link>
           </Button>
         </div>
 
-        {myBusiness && myBusiness.status !== "approved" && (
-          <Link href="/businesses/me/edit" className="block">
+        {notApproved.map((b: Business) => (
+          <Link key={b.id} href={`/businesses/me/edit?id=${b.id}`} className="block">
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 flex items-center justify-between gap-2">
               <span>
-                <span className="font-semibold">{myBusiness.businessName}</span>{" "}
-                {myBusiness.status === "pending"
+                <span className="font-semibold">{b.businessName}</span>{" "}
+                {b.status === "pending"
                   ? "is pending review. It will appear publicly once an admin approves it."
                   : "was not approved. Update your listing and resubmit."}
               </span>
               <ChevronRight className="w-4 h-4 shrink-0" />
             </div>
           </Link>
-        )}
+        ))}
 
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

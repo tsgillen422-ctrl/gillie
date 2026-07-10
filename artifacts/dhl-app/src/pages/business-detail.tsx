@@ -424,7 +424,7 @@ export default function BusinessDetailPage() {
           </div>
 
           {isOwner && business.status === "approved" && (
-            <Button className="w-full" onClick={() => navigate("/feed?compose=1&type=announcement")} data-testid="button-business-compose">
+            <Button className="w-full" onClick={() => navigate(`/feed?compose=1&type=announcement&businessId=${business.id}`)} data-testid="button-business-compose">
               <Plus className="w-4 h-4 mr-2" /> Post an update or event
             </Button>
           )}

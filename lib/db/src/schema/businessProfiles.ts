@@ -3,12 +3,13 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
 
-// A user-managed business listing. Users create/update their own profile;
-// it stays "pending" until an admin approves it, after which it appears
+// A user-managed business listing. Users create/update their own listings;
+// each stays "pending" until an admin approves it, after which it appears
 // publicly in the Businesses tab and on the map.
+// A user may own MULTIPLE businesses (e.g. marina + campground + rentals).
 export const businessProfilesTable = pgTable("business_profiles", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().unique().references(() => usersTable.id),
+  userId: integer("user_id").notNull().references(() => usersTable.id),
   // Multi-lake: which lake this business belongs to (@workspace/lake-config).
   lakeId: integer("lake_id").notNull().default(1),
   businessName: text("business_name").notNull(),

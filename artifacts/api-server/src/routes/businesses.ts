@@ -146,18 +146,73 @@ router.get("/types", async (_req, res) => {
   res.json(merged);
 });
 
-// GET /businesses/me — the caller's own business profile (any status).
+// A user may own multiple businesses, but keep a sane cap.
+const MAX_BUSINESSES_PER_USER = 10;
+
+// GET /businesses/mine — ALL businesses owned by the caller (any status).
+router.get("/mine", async (req, res) => {
+  const uid = currentUserId(req);
+  const rows = await db.query.businessProfilesTable.findMany({
+    where: eq(businessProfilesTable.userId, uid),
+    orderBy: businessProfilesTable.createdAt,
+  });
+  const stats = await businessSocialStats(rows.map((b) => b.id), uid);
+  res.json(rows.map((b) => formatBusiness(b, stats)));
+});
+
+// GET /businesses/me — legacy single-business endpoint (old clients).
+// Returns the caller's OLDEST business.
 router.get("/me", async (req, res) => {
   const uid = currentUserId(req);
   const row = await db.query.businessProfilesTable.findFirst({
     where: eq(businessProfilesTable.userId, uid),
+    orderBy: businessProfilesTable.createdAt,
   });
   if (!row) return res.status(404).json({ error: "No business profile" });
   const stats = await businessSocialStats([row.id], uid);
   res.json(formatBusiness(row, stats));
 });
 
-// PUT /businesses/me — create or update the caller's business profile.
+// POST /businesses — create an additional business owned by the caller.
+router.post("/", async (req, res) => {
+  const uid = currentUserId(req);
+  const input = sanitizeInput(req.body);
+  if (!input.businessName || !input.businessType) {
+    return res.status(400).json({ error: "businessName and businessType are required" });
+  }
+  const owned = await db.query.businessProfilesTable.findMany({
+    where: eq(businessProfilesTable.userId, uid),
+  });
+  if (owned.length >= MAX_BUSINESSES_PER_USER) {
+    return res.status(400).json({ error: `You can own at most ${MAX_BUSINESSES_PER_USER} businesses` });
+  }
+  const lakeId = isValidLakeId(req.body?.lakeId) ? req.body.lakeId : DEFAULT_LAKE_ID;
+  const [row] = await db
+    .insert(businessProfilesTable)
+    .values({
+      userId: uid,
+      lakeId,
+      businessName: input.businessName,
+      businessType: input.businessType,
+      description: input.description,
+      logoUrl: input.logoUrl,
+      coverUrl: input.coverUrl,
+      photos: input.photos,
+      phone: input.phone,
+      website: input.website,
+      hours: input.hours,
+      lat: input.lat,
+      lng: input.lng,
+      serviceArea: input.serviceArea,
+      status: "pending",
+    })
+    .returning();
+  await db.update(usersTable).set({ isBusiness: true }).where(eq(usersTable.id, uid));
+  res.status(201).json(formatBusiness(row));
+});
+
+// PUT /businesses/me — legacy create-or-update endpoint (old clients).
+// Updates the caller's OLDEST business, or creates one if they have none.
 // Any change puts the profile back into "pending" until an admin re-approves.
 router.put("/me", async (req, res) => {
   const uid = currentUserId(req);
@@ -168,6 +223,7 @@ router.put("/me", async (req, res) => {
   const lakeId = isValidLakeId(req.body?.lakeId) ? req.body.lakeId : DEFAULT_LAKE_ID;
   const existing = await db.query.businessProfilesTable.findFirst({
     where: eq(businessProfilesTable.userId, uid),
+    orderBy: businessProfilesTable.createdAt,
   });
   const values = {
     lakeId,
@@ -191,7 +247,7 @@ router.put("/me", async (req, res) => {
     [row] = await db
       .update(businessProfilesTable)
       .set(values)
-      .where(eq(businessProfilesTable.userId, uid))
+      .where(eq(businessProfilesTable.id, existing.id))
       .returning();
   } else {
     [row] = await db
@@ -203,20 +259,31 @@ router.put("/me", async (req, res) => {
   res.status(existing ? 200 : 201).json(formatBusiness(row));
 });
 
-// DELETE /businesses/me — remove the caller's business profile.
+// Shared removal: clear child rows, detach (not delete) business posts so
+// they survive as regular posts by the owner, then delete the business.
+// users.isBusiness is only cleared once the user owns no businesses at all.
+async function removeBusiness(biz: typeof businessProfilesTable.$inferSelect) {
+  await db.delete(businessFollowsTable).where(eq(businessFollowsTable.businessId, biz.id));
+  await db.delete(businessReviewsTable).where(eq(businessReviewsTable.businessId, biz.id));
+  await db.update(postsTable).set({ businessId: null }).where(eq(postsTable.businessId, biz.id));
+  await db.delete(businessProfilesTable).where(eq(businessProfilesTable.id, biz.id));
+  const remaining = await db.query.businessProfilesTable.findFirst({
+    where: eq(businessProfilesTable.userId, biz.userId),
+  });
+  if (!remaining) {
+    await db.update(usersTable).set({ isBusiness: false }).where(eq(usersTable.id, biz.userId));
+  }
+}
+
+// DELETE /businesses/me — legacy: remove the caller's OLDEST business.
 router.delete("/me", async (req, res) => {
   const uid = currentUserId(req);
   const existing = await db.query.businessProfilesTable.findFirst({
     where: eq(businessProfilesTable.userId, uid),
+    orderBy: businessProfilesTable.createdAt,
   });
   if (!existing) return res.status(404).json({ error: "No business profile" });
-  // No FK cascades — clear child rows, and detach (not delete) business posts
-  // so they survive as regular posts by the owner.
-  await db.delete(businessFollowsTable).where(eq(businessFollowsTable.businessId, existing.id));
-  await db.delete(businessReviewsTable).where(eq(businessReviewsTable.businessId, existing.id));
-  await db.update(postsTable).set({ businessId: null }).where(eq(postsTable.businessId, existing.id));
-  await db.delete(businessProfilesTable).where(eq(businessProfilesTable.userId, uid));
-  await db.update(usersTable).set({ isBusiness: false }).where(eq(usersTable.id, uid));
+  await removeBusiness(existing);
   res.json({ ok: true });
 });
 
@@ -293,6 +360,61 @@ router.get("/:businessId", async (req, res) => {
       ? { id: owner.id, username: owner.username, displayName: owner.displayName, avatarUrl: owner.avatarUrl }
       : null,
   });
+});
+
+// PUT /businesses/:businessId — update a business you own (resets to pending).
+router.put("/:businessId", async (req, res) => {
+  const uid = currentUserId(req);
+  const id = parseInt(req.params.businessId, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid business id" });
+  const existing = await db.query.businessProfilesTable.findFirst({
+    where: eq(businessProfilesTable.id, id),
+  });
+  if (!existing || existing.userId !== uid) {
+    return res.status(404).json({ error: "Business not found" });
+  }
+  const input = sanitizeInput(req.body);
+  if (!input.businessName || !input.businessType) {
+    return res.status(400).json({ error: "businessName and businessType are required" });
+  }
+  const lakeId = isValidLakeId(req.body?.lakeId) ? req.body.lakeId : DEFAULT_LAKE_ID;
+  const [row] = await db
+    .update(businessProfilesTable)
+    .set({
+      lakeId,
+      businessName: input.businessName,
+      businessType: input.businessType,
+      description: input.description,
+      logoUrl: input.logoUrl,
+      coverUrl: input.coverUrl,
+      photos: input.photos,
+      phone: input.phone,
+      website: input.website,
+      hours: input.hours,
+      lat: input.lat,
+      lng: input.lng,
+      serviceArea: input.serviceArea,
+      status: "pending",
+      updatedAt: new Date(),
+    })
+    .where(eq(businessProfilesTable.id, id))
+    .returning();
+  res.json(formatBusiness(row));
+});
+
+// DELETE /businesses/:businessId — delete a business you own.
+router.delete("/:businessId", async (req, res) => {
+  const uid = currentUserId(req);
+  const id = parseInt(req.params.businessId, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid business id" });
+  const existing = await db.query.businessProfilesTable.findFirst({
+    where: eq(businessProfilesTable.id, id),
+  });
+  if (!existing || existing.userId !== uid) {
+    return res.status(404).json({ error: "Business not found" });
+  }
+  await removeBusiness(existing);
+  res.json({ ok: true });
 });
 
 // POST /businesses/:businessId/follow — follow an approved business.
@@ -449,9 +571,17 @@ router.get("/:businessId/posts", async (req, res) => {
 // Business posts are community-visible and also surface in followers' feeds.
 router.post("/me/posts", async (req, res) => {
   const uid = currentUserId(req);
-  const biz = await db.query.businessProfilesTable.findFirst({
-    where: eq(businessProfilesTable.userId, uid),
-  });
+  // Legacy endpoint: posts as the caller's OLDEST business. An explicit
+  // businessId (owned by the caller) selects a specific business.
+  const requestedId = Number(req.body?.businessId);
+  const biz = Number.isFinite(requestedId)
+    ? await db.query.businessProfilesTable.findFirst({
+        where: and(eq(businessProfilesTable.id, requestedId), eq(businessProfilesTable.userId, uid)),
+      })
+    : await db.query.businessProfilesTable.findFirst({
+        where: eq(businessProfilesTable.userId, uid),
+        orderBy: businessProfilesTable.createdAt,
+      });
   if (!biz) return res.status(404).json({ error: "No business profile" });
   if (biz.status !== "approved") {
     return res.status(403).json({ error: "Your business must be approved before posting" });

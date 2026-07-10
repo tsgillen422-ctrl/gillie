@@ -46,6 +46,7 @@ import { SupportPage } from "@/pages/support";
 import BusinessesPage from "@/pages/businesses";
 import BusinessDetailPage from "@/pages/business-detail";
 import BusinessEditPage from "@/pages/business-edit";
+import MyBusinessesPage from "@/pages/my-businesses";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -400,6 +401,7 @@ function AuthedApp() {
         <Route path="/boats" component={BoatsPage} />
         <Route path="/search" component={SearchPage} />
         <Route path="/businesses" component={BusinessesPage} />
+        <Route path="/my-businesses" component={MyBusinessesPage} />
         <Route path="/businesses/me/edit" component={BusinessEditPage} />
         <Route path="/businesses/:businessId" component={BusinessDetailPage} />
         <Route path="/notifications" component={NotificationsPage} />

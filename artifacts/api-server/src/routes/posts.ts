@@ -275,16 +275,29 @@ const VALID_POST_TYPES = new Set(["post", "event", "business", "tie_up", "boat_s
 
 router.post("/", async (req, res) => {
   const uid = currentUserId(req);
-  const { title, content, postType, eventDate, imageUrl, videoUrl, photos, engineSetup, horsepower, topSpeed, mods, pinLat, pinLng, visibility, pollOptions, lakeId, asBusiness } = req.body;
+  const { title, content, postType, eventDate, imageUrl, videoUrl, photos, engineSetup, horsepower, topSpeed, mods, pinLat, pinLng, visibility, pollOptions, lakeId, asBusiness, businessId: requestedBusinessId } = req.body;
   const type = typeof postType === "string" && VALID_POST_TYPES.has(postType) ? postType : "post";
   // Business posting: business-only types imply asBusiness; both require an
-  // approved business owned by the poster. Business posts are always
-  // community-visible so followers and the Local tab can see them.
+  // approved business owned by the poster. Users can own multiple businesses,
+  // so an explicit businessId selects which one to post as (must be owned by
+  // the caller and approved); otherwise the oldest approved business is used.
+  // Business posts are always community-visible so followers and the Local
+  // tab can see them.
   let businessId: number | null = null;
   if (asBusiness === true || BUSINESS_ONLY_POST_TYPES.has(type)) {
-    const biz = await db.query.businessProfilesTable.findFirst({
-      where: and(eq(businessProfilesTable.userId, uid), eq(businessProfilesTable.status, "approved")),
-    });
+    const requested = Number(requestedBusinessId);
+    const biz = Number.isFinite(requested)
+      ? await db.query.businessProfilesTable.findFirst({
+          where: and(
+            eq(businessProfilesTable.id, requested),
+            eq(businessProfilesTable.userId, uid),
+            eq(businessProfilesTable.status, "approved"),
+          ),
+        })
+      : await db.query.businessProfilesTable.findFirst({
+          where: and(eq(businessProfilesTable.userId, uid), eq(businessProfilesTable.status, "approved")),
+          orderBy: businessProfilesTable.createdAt,
+        });
     if (!biz) return res.status(403).json({ error: "You need an approved business to post as a business" });
     businessId = biz.id;
   }

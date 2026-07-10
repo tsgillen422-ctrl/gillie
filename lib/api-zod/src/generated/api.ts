@@ -4960,6 +4960,63 @@ export const GetBusinessesResponse = zod.array(GetBusinessesResponseItem)
 
 
 /**
+ * @summary Create a new business owned by the caller (starts as pending)
+ */
+export const CreateBusinessBody = zod.object({
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "description": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "photos": zod.array(zod.string()).optional(),
+  "phone": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "serviceArea": zod.string().nullish(),
+  "lakeId": zod.number().optional()
+})
+
+
+/**
+ * @summary List all businesses owned by the caller (any status)
+ */
+export const GetMyBusinessesResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "lakeId": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "description": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "followerCount": zod.number().optional(),
+  "avgRating": zod.number().optional(),
+  "reviewCount": zod.number().optional(),
+  "followedByMe": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
+  "photos": zod.array(zod.string()),
+  "phone": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "serviceArea": zod.string().nullish(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "owner": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
+}).nullish()
+})
+export const GetMyBusinessesResponse = zod.array(GetMyBusinessesResponseItem)
+
+
+/**
  * @summary Business type autocomplete suggestions
  */
 export const GetBusinessTypesResponseItem = zod.string()
@@ -5128,6 +5185,70 @@ export const GetBusinessResponse = zod.object({
   "displayName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish()
 }).nullish()
+})
+
+
+/**
+ * @summary Update a business you own (resets status to pending)
+ */
+export const UpdateBusinessParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const UpdateBusinessBody = zod.object({
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "description": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "photos": zod.array(zod.string()).optional(),
+  "phone": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "serviceArea": zod.string().nullish(),
+  "lakeId": zod.number().optional()
+})
+
+export const UpdateBusinessResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "lakeId": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "description": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "followerCount": zod.number().optional(),
+  "avgRating": zod.number().optional(),
+  "reviewCount": zod.number().optional(),
+  "followedByMe": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
+  "photos": zod.array(zod.string()),
+  "phone": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "serviceArea": zod.string().nullish(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "owner": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
+}).nullish()
+})
+
+
+/**
+ * @summary Delete a business you own
+ */
+export const DeleteBusinessParams = zod.object({
+  "businessId": zod.coerce.number()
 })
 
 
@@ -5644,7 +5765,8 @@ export const CreatePostBody = zod.object({
   "visibility": zod.enum(['community', 'friends']).optional(),
   "pollOptions": zod.array(zod.string()).optional().describe('2-10 poll choices. When present, the post includes a poll.'),
   "lakeId": zod.number().nullish().describe('Which lake community the post belongs to (defaults to the default lake community)'),
-  "asBusiness": zod.boolean().optional().describe('Post as your approved business. Business-only post types (announcement, deal, new_arrival, check_in) imply this.')
+  "asBusiness": zod.boolean().optional().describe('Post as your approved business. Business-only post types (announcement, deal, new_arrival, check_in) imply this.'),
+  "businessId": zod.number().nullish().describe('Which of your approved businesses to post as. Defaults to your first approved business when omitted.')
 })
 
 
