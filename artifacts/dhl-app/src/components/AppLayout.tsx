@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { Home, Users, MessageCircle, MapPin, Bell, Settings, User, Search, Plus, Camera, Fish, CalendarDays, Sun, Store } from "lucide-react";
+import { Home, Users, MessageCircle, MapPin, Bell, Settings, User, Search, Plus, Camera, Fish, CalendarDays, Sun } from "lucide-react";
 import { SwipeBack } from "@/components/swipe-back";
 import { LakeSwitcher } from "@/components/LakeSwitcher";
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
@@ -20,15 +20,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { href: "/", icon: Home, label: "Map" },
     { href: "/feed", icon: Users, label: "Feed" },
-    { href: "/businesses", icon: Store, label: "Businesses" },
     { href: "/messages", icon: MessageCircle, label: "Messages" },
     { href: "/profile/me", icon: User, label: "Profile" },
   ];
 
   const isActive = (href: string) =>
-    location === href ||
-    (location === "/map" && href === "/") ||
-    (href === "/businesses" && location.startsWith("/businesses"));
+    location === href || (location === "/map" && href === "/");
 
   const hideHeader = location === "/feed";
 

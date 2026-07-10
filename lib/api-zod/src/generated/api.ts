@@ -4932,6 +4932,13 @@ export const GetBusinessesResponseItem = zod.object({
   "businessName": zod.string(),
   "businessType": zod.string(),
   "description": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "followerCount": zod.number().optional(),
+  "avgRating": zod.number().optional(),
+  "reviewCount": zod.number().optional(),
+  "followedByMe": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
   "photos": zod.array(zod.string()),
   "phone": zod.string().nullish(),
   "website": zod.string().nullish(),
@@ -4969,6 +4976,13 @@ export const GetMyBusinessResponse = zod.object({
   "businessName": zod.string(),
   "businessType": zod.string(),
   "description": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "followerCount": zod.number().optional(),
+  "avgRating": zod.number().optional(),
+  "reviewCount": zod.number().optional(),
+  "followedByMe": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
   "photos": zod.array(zod.string()),
   "phone": zod.string().nullish(),
   "website": zod.string().nullish(),
@@ -4995,6 +5009,8 @@ export const UpsertMyBusinessBody = zod.object({
   "businessName": zod.string(),
   "businessType": zod.string(),
   "description": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
   "photos": zod.array(zod.string()).optional(),
   "phone": zod.string().nullish(),
   "website": zod.string().nullish(),
@@ -5012,6 +5028,13 @@ export const UpsertMyBusinessResponse = zod.object({
   "businessName": zod.string(),
   "businessType": zod.string(),
   "description": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "followerCount": zod.number().optional(),
+  "avgRating": zod.number().optional(),
+  "reviewCount": zod.number().optional(),
+  "followedByMe": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
   "photos": zod.array(zod.string()),
   "phone": zod.string().nullish(),
   "website": zod.string().nullish(),
@@ -5041,6 +5064,13 @@ export const GetPendingBusinessesResponseItem = zod.object({
   "businessName": zod.string(),
   "businessType": zod.string(),
   "description": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "followerCount": zod.number().optional(),
+  "avgRating": zod.number().optional(),
+  "reviewCount": zod.number().optional(),
+  "followedByMe": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
   "photos": zod.array(zod.string()),
   "phone": zod.string().nullish(),
   "website": zod.string().nullish(),
@@ -5075,6 +5105,13 @@ export const GetBusinessResponse = zod.object({
   "businessName": zod.string(),
   "businessType": zod.string(),
   "description": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "followerCount": zod.number().optional(),
+  "avgRating": zod.number().optional(),
+  "reviewCount": zod.number().optional(),
+  "followedByMe": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
   "photos": zod.array(zod.string()),
   "phone": zod.string().nullish(),
   "website": zod.string().nullish(),
@@ -5091,6 +5128,268 @@ export const GetBusinessResponse = zod.object({
   "displayName": zod.string().nullish(),
   "avatarUrl": zod.string().nullish()
 }).nullish()
+})
+
+
+/**
+ * @summary Follow an approved business
+ */
+export const FollowBusinessParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Unfollow a business
+ */
+export const UnfollowBusinessParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+
+/**
+ * @summary List reviews for a business
+ */
+export const GetBusinessReviewsParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const GetBusinessReviewsResponseItem = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "userId": zod.number(),
+  "rating": zod.number(),
+  "content": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "user": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
+})]).optional()
+})
+export const GetBusinessReviewsResponse = zod.array(GetBusinessReviewsResponseItem)
+
+
+/**
+ * @summary Create or update the caller's review (one per business)
+ */
+export const UpsertBusinessReviewParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const upsertBusinessReviewBodyRatingMax = 5;
+
+
+
+export const UpsertBusinessReviewBody = zod.object({
+  "rating": zod.number().min(1).max(upsertBusinessReviewBodyRatingMax),
+  "content": zod.string().nullish()
+})
+
+export const UpsertBusinessReviewResponse = zod.object({
+  "id": zod.number(),
+  "businessId": zod.number(),
+  "userId": zod.number(),
+  "rating": zod.number(),
+  "content": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "user": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
+})]).optional()
+})
+
+
+/**
+ * @summary Delete the caller's review of a business
+ */
+export const DeleteBusinessReviewParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+
+/**
+ * @summary List a business's posts and events
+ */
+export const GetBusinessPostsParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const GetBusinessPostsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "relationshipStatus": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatBrand": zod.string().nullish(),
+  "boatModel": zod.string().nullish(),
+  "boatYear": zod.number().nullish(),
+  "boatPhotoUrl": zod.string().nullish(),
+  "homeMarina": zod.string().nullish(),
+  "showBoat": zod.boolean().optional(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "fleet": zod.array(zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "name": zod.string(),
+  "boatType": zod.string(),
+  "color": zod.string(),
+  "brand": zod.string().nullish(),
+  "model": zod.string().nullish(),
+  "year": zod.number().nullish(),
+  "photoUrl": zod.string().nullish(),
+  "neon": zod.boolean().optional(),
+  "flag": zod.boolean().optional(),
+  "accent": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "horsepower": zod.number().nullish(),
+  "engineInfo": zod.string().nullish(),
+  "lengthFt": zod.number().nullish(),
+  "favoriteMarina": zod.string().nullish(),
+  "favoriteCove": zod.string().nullish(),
+  "favoriteActivity": zod.string().nullish(),
+  "mods": zod.string().nullish(),
+  "isPrimary": zod.boolean(),
+  "createdAt": zod.string()
+})).optional().describe('The user\'s boats\/watercraft (redacted for other viewers when showBoat=false)'),
+  "interests": zod.array(zod.string()).optional(),
+  "favoriteThings": zod.array(zod.object({
+  "label": zod.string(),
+  "value": zod.string()
+})).optional().describe('Pinned favorites shown on the profile (label + value pairs)'),
+  "shareLocation": zod.boolean().optional(),
+  "locationSharingExpiresAt": zod.string().nullish(),
+  "isSharingLocation": zod.boolean().optional(),
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
+  "showFriends": zod.boolean().optional(),
+  "followerSeeLocation": zod.boolean().optional(),
+  "followerSeePosts": zod.boolean().optional(),
+  "followerSendMessages": zod.boolean().optional(),
+  "allowReposts": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
+  "isAdmin": zod.boolean().optional(),
+  "demoMode": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
+  "waiverAcceptedAt": zod.string().nullish(),
+  "waiverVersion": zod.string().nullish(),
+  "termsAcceptedAt": zod.string().nullish(),
+  "termsVersion": zod.string().nullish(),
+  "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
+  "createdAt": zod.string()
+}).optional(),
+  "lakeId": zod.number().optional(),
+  "title": zod.string(),
+  "content": zod.string(),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
+  "eventDate": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "videoUrl": zod.string().nullish(),
+  "photos": zod.array(zod.string()).nullish().describe('Gallery photo URLs (used by boat showcases).'),
+  "engineSetup": zod.string().nullish().describe('Engine setup description (boat showcase).'),
+  "horsepower": zod.number().nullish().describe('Engine horsepower (boat showcase).'),
+  "topSpeed": zod.number().nullish().describe('Top speed in mph (boat showcase).'),
+  "mods": zod.string().nullish().describe('Modifications list (boat showcase).'),
+  "pinLat": zod.number().nullish(),
+  "pinLng": zod.number().nullish(),
+  "likeCount": zod.number().optional(),
+  "likedByMe": zod.boolean().optional(),
+  "myReaction": zod.union([zod.literal('thumbsup'),zod.literal('thumbsdown'),zod.literal('heart'),zod.literal('laugh'),zod.literal('sad'),zod.literal('angry'),zod.literal('fire'),zod.literal('heart_eyes'),zod.literal('wow'),zod.literal(null)]).nullish(),
+  "reactionCounts": zod.object({
+  "thumbsup": zod.number().optional(),
+  "thumbsdown": zod.number().optional(),
+  "heart": zod.number().optional(),
+  "laugh": zod.number().optional(),
+  "sad": zod.number().optional(),
+  "angry": zod.number().optional(),
+  "fire": zod.number().optional(),
+  "heart_eyes": zod.number().optional(),
+  "wow": zod.number().optional()
+}).optional(),
+  "rsvpCount": zod.number().optional(),
+  "rsvpByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
+  "sharedPostId": zod.number().nullish(),
+  "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
+  "businessId": zod.number().nullish(),
+  "business": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
+  "visibility": zod.enum(['community', 'friends']).optional(),
+  "poll": zod.union([zod.null(),zod.object({
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+})),
+  "totalVotes": zod.number(),
+  "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
+})]).optional(),
+  "isMature": zod.boolean().optional(),
+  "createdAt": zod.string()
+})
+export const GetBusinessPostsResponse = zod.array(GetBusinessPostsResponseItem)
+
+
+/**
+ * @summary Publish an update or event as your approved business
+ */
+export const CreateBusinessPostBody = zod.object({
+  "title": zod.string().optional(),
+  "content": zod.string(),
+  "postType": zod.enum(['post', 'event']).optional(),
+  "eventDate": zod.string().nullish(),
+  "photos": zod.array(zod.string()).optional()
 })
 
 
@@ -5112,6 +5411,13 @@ export const SetBusinessStatusResponse = zod.object({
   "businessName": zod.string(),
   "businessType": zod.string(),
   "description": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "followerCount": zod.number().optional(),
+  "avgRating": zod.number().optional(),
+  "reviewCount": zod.number().optional(),
+  "followedByMe": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
   "photos": zod.array(zod.string()),
   "phone": zod.string().nullish(),
   "website": zod.string().nullish(),
@@ -5294,6 +5600,14 @@ export const GetPostsResponseItem = zod.object({
   "savedByMe": zod.boolean().optional(),
   "sharedPostId": zod.number().nullish(),
   "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
+  "businessId": zod.number().nullish(),
+  "business": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
   "visibility": zod.enum(['community', 'friends']).optional(),
   "poll": zod.union([zod.null(),zod.object({
   "options": zod.array(zod.object({
@@ -5490,6 +5804,14 @@ export const GetPostResponse = zod.object({
   "savedByMe": zod.boolean().optional(),
   "sharedPostId": zod.number().nullish(),
   "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
+  "businessId": zod.number().nullish(),
+  "business": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
   "visibility": zod.enum(['community', 'friends']).optional(),
   "poll": zod.union([zod.null(),zod.object({
   "options": zod.array(zod.object({
@@ -5660,6 +5982,14 @@ export const UpdatePostResponse = zod.object({
   "savedByMe": zod.boolean().optional(),
   "sharedPostId": zod.number().nullish(),
   "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
+  "businessId": zod.number().nullish(),
+  "business": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
   "visibility": zod.enum(['community', 'friends']).optional(),
   "poll": zod.union([zod.null(),zod.object({
   "options": zod.array(zod.object({
@@ -5831,6 +6161,14 @@ export const ReactToPostResponse = zod.object({
   "savedByMe": zod.boolean().optional(),
   "sharedPostId": zod.number().nullish(),
   "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
+  "businessId": zod.number().nullish(),
+  "business": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
   "visibility": zod.enum(['community', 'friends']).optional(),
   "poll": zod.union([zod.null(),zod.object({
   "options": zod.array(zod.object({
@@ -5994,6 +6332,14 @@ export const VotePollResponse = zod.object({
   "savedByMe": zod.boolean().optional(),
   "sharedPostId": zod.number().nullish(),
   "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
+  "businessId": zod.number().nullish(),
+  "business": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
   "visibility": zod.enum(['community', 'friends']).optional(),
   "poll": zod.union([zod.null(),zod.object({
   "options": zod.array(zod.object({
@@ -6587,6 +6933,14 @@ export const GetPostsSummaryResponse = zod.object({
   "savedByMe": zod.boolean().optional(),
   "sharedPostId": zod.number().nullish(),
   "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
+  "businessId": zod.number().nullish(),
+  "business": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
   "visibility": zod.enum(['community', 'friends']).optional(),
   "poll": zod.union([zod.null(),zod.object({
   "options": zod.array(zod.object({
@@ -7274,6 +7628,14 @@ export const ToggleRsvpResponse = zod.object({
   "savedByMe": zod.boolean().optional(),
   "sharedPostId": zod.number().nullish(),
   "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
+  "businessId": zod.number().nullish(),
+  "business": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
   "visibility": zod.enum(['community', 'friends']).optional(),
   "poll": zod.union([zod.null(),zod.object({
   "options": zod.array(zod.object({
@@ -8414,7 +8776,15 @@ export const SearchResponse = zod.object({
   "content": zod.string().optional(),
   "postType": zod.string(),
   "createdAt": zod.string()
-}))
+})),
+  "businesses": zod.array(zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish()
+})).optional()
 })
 
 
@@ -8870,6 +9240,14 @@ export const GetSavedPostsResponseItem = zod.object({
   "savedByMe": zod.boolean().optional(),
   "sharedPostId": zod.number().nullish(),
   "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
+  "businessId": zod.number().nullish(),
+  "business": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
   "visibility": zod.enum(['community', 'friends']).optional(),
   "poll": zod.union([zod.null(),zod.object({
   "options": zod.array(zod.object({

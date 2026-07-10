@@ -22,6 +22,8 @@ export const postsTable = pgTable("posts", {
   pinLat: real("pin_lat"),
   pinLng: real("pin_lng"),
   sharedPostId: integer("shared_post_id"),
+  // Set when the post was published as a business (author = business owner).
+  businessId: integer("business_id"),
   visibility: text("visibility").notNull().default("community"),
   likeCount: integer("like_count").notNull().default(0),
   isMature: boolean("is_mature").notNull().default(false),

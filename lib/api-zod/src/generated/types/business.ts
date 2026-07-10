@@ -15,6 +15,13 @@ export interface Business {
   businessName: string;
   businessType: string;
   description?: string | null;
+  logoUrl?: string | null;
+  coverUrl?: string | null;
+  followerCount?: number;
+  avgRating?: number;
+  reviewCount?: number;
+  followedByMe?: boolean;
+  verified?: boolean;
   photos: string[];
   phone?: string | null;
   website?: string | null;

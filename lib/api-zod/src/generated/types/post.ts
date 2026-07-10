@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { Poll } from './poll';
+import type { PostBusiness } from './postBusiness';
 import type { PostMyReaction } from './postMyReaction';
 import type { PostPostType } from './postPostType';
 import type { PostVisibility } from './postVisibility';
@@ -66,6 +67,9 @@ export interface Post {
   /** @nullable */
   sharedPostId?: number | null;
   sharedPost?: null | Post;
+  /** @nullable */
+  businessId?: number | null;
+  business?: null | PostBusiness;
   visibility?: PostVisibility;
   poll?: null | Poll;
   isMature?: boolean;

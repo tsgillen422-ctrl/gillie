@@ -339,6 +339,28 @@ export function LakeOverviewPage() {
                 <ConditionsWidget lakeId={lake.id} />
               </section>
 
+              {/* Local businesses */}
+              <section className="space-y-2.5">
+                <SectionTitle>
+                  <span aria-hidden>🏪</span> Local businesses
+                </SectionTitle>
+                <Link
+                  href="/businesses"
+                  className="flex w-full items-center gap-3 rounded-xl border border-border/50 bg-card p-3 text-left transition-all hover:bg-accent/40 active:scale-[0.99]"
+                  data-testid="link-lake-businesses"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xl">
+                    ⚓
+                  </div>
+                  <p className="flex-1 text-xs text-muted-foreground">
+                    <span className="font-bold text-foreground">Marinas, guides, rentals & more</span>
+                    <br />
+                    Browse and follow lake businesses
+                  </p>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </Link>
+              </section>
+
               {/* Upcoming events */}
               {lake.upcomingEvents.length > 0 && (
                 <section className="space-y-2.5">

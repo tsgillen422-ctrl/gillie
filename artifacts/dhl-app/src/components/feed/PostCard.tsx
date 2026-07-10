@@ -11,7 +11,7 @@ import { VideoPlayer } from "./VideoPlayer";
 import { REACTIONS, REACTION_MAP, DEFAULT_REACTION, type ReactionKey } from "@/lib/reactions";
 import {
   MapPin, Heart, MessageCircle, Share2, MoreHorizontal, Flag, Trash2, Sailboat, ImagePlus, Video, X, Send, Check,
-  Bookmark, BookmarkCheck, Link2, Repeat2, Pencil, EyeOff, Ban, Users
+  Bookmark, BookmarkCheck, Link2, Repeat2, Pencil, EyeOff, Ban, Users, Store, BadgeCheck
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -377,22 +377,46 @@ export function PostCard({
   return (
     <Card id={`post-${post.id}`} className="mb-5 overflow-hidden rounded-[20px] border-none shadow-soft transition-all hover:shadow-soft-lg bg-card animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both">
       <CardHeader className="flex flex-row items-start gap-3 p-4 pb-3">
-        <Link href={`/profile/${post.userId}`} className="shrink-0 block mt-1">
-          <UserAvatar
-            name={post.user?.displayName || "User"}
-            username={post.user?.username || ""}
-            avatarUrl={post.user?.avatarUrl}
-            className="h-11 w-11 shadow-sm"
-          />
-        </Link>
+        {post.business ? (
+          <Link href={`/businesses/${post.business.id}`} className="shrink-0 block mt-1">
+            {post.business.logoUrl ? (
+              <img src={post.business.logoUrl} alt="" className="h-11 w-11 rounded-full object-cover shadow-sm" />
+            ) : (
+              <div className="h-11 w-11 rounded-full bg-primary/10 flex items-center justify-center shadow-sm">
+                <Store className="h-5 w-5 text-primary" />
+              </div>
+            )}
+          </Link>
+        ) : (
+          <Link href={`/profile/${post.userId}`} className="shrink-0 block mt-1">
+            <UserAvatar
+              name={post.user?.displayName || "User"}
+              username={post.user?.username || ""}
+              avatarUrl={post.user?.avatarUrl}
+              className="h-11 w-11 shadow-sm"
+            />
+          </Link>
+        )}
         <div className="flex-1 min-w-0 flex flex-col justify-center h-11">
           <div className="flex items-center gap-1.5 flex-wrap leading-tight">
-            <Link href={`/profile/${post.userId}`}>
-              <span className="font-bold text-foreground text-[15px] truncate cursor-pointer hover:underline tracking-tight">
-                {post.user?.displayName}
-              </span>
-            </Link>
-            {post.user?.boatName && (
+            {post.business ? (
+              <Link href={`/businesses/${post.business.id}`}>
+                <span className="font-bold text-foreground text-[15px] truncate cursor-pointer hover:underline tracking-tight inline-flex items-center gap-1">
+                  {post.business.businessName}
+                  {post.business.verified && <BadgeCheck className="h-4 w-4 text-primary shrink-0" />}
+                </span>
+              </Link>
+            ) : (
+              <Link href={`/profile/${post.userId}`}>
+                <span className="font-bold text-foreground text-[15px] truncate cursor-pointer hover:underline tracking-tight">
+                  {post.user?.displayName}
+                </span>
+              </Link>
+            )}
+            {post.business && (
+              <span className="text-xs font-semibold text-muted-foreground">{post.business.businessType}</span>
+            )}
+            {!post.business && post.user?.boatName && (
               <>
                 <span className="text-muted-foreground/50 text-[10px]">•</span>
                 <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1">

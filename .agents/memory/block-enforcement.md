@@ -22,3 +22,4 @@ Blocks (blocksTable) are symmetric for enforcement: if EITHER user blocked the o
 **Confirmation dialog copy (Apple-reviewed, keep exact) on profile + feed post menu:** "Blocked users will no longer be able to view your location or interact with you. You can unblock them later from Settings."
 
 Verified end-to-end with a two-account test: messaging works pre-block, then post-block gives 403 on send/create/follow and removes the user from friends/locations/search both directions.
+- Business surfaces (profiles/follow/reviews/business posts tab + followed-business feed inclusion) are block-gated via isBlockedBetween in businesses.ts and a block filter in getFollowedBusinessOwnerIds; any NEW business-discovery surface must reuse these.

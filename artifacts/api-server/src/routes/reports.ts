@@ -16,6 +16,8 @@ import {
   catchCommentsTable,
   savedCatchesTable,
   businessProfilesTable,
+  businessFollowsTable,
+  businessReviewsTable,
 } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
 import type { Request } from "express";
@@ -204,6 +206,11 @@ router.patch("/:id", async (req, res) => {
       await db.delete(savedCatchesTable).where(eq(savedCatchesTable.catchId, report.targetId));
       await db.delete(catchesTable).where(eq(catchesTable.id, report.targetId));
     } else if (report.targetType === "business") {
+      // No FK cascades: clear child rows and detach business posts first,
+      // mirroring the DELETE /businesses/me cleanup sequence.
+      await db.delete(businessFollowsTable).where(eq(businessFollowsTable.businessId, report.targetId));
+      await db.delete(businessReviewsTable).where(eq(businessReviewsTable.businessId, report.targetId));
+      await db.update(postsTable).set({ businessId: null }).where(eq(postsTable.businessId, report.targetId));
       await db.delete(businessProfilesTable).where(eq(businessProfilesTable.id, report.targetId));
       if (ownerId) {
         await db.update(usersTable).set({ isBusiness: false }).where(eq(usersTable.id, ownerId));

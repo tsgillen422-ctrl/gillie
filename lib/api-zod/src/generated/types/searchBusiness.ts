@@ -6,18 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface BusinessInput {
+export interface SearchBusiness {
+  id: number;
   businessName: string;
   businessType: string;
-  description?: string | null;
+  /** @nullable */
   logoUrl?: string | null;
-  coverUrl?: string | null;
-  photos?: string[];
-  phone?: string | null;
-  website?: string | null;
-  hours?: string | null;
+  /** @nullable */
   lat?: number | null;
+  /** @nullable */
   lng?: number | null;
-  serviceArea?: string | null;
-  lakeId?: number;
 }

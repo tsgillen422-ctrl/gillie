@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/UserAvatar";
 import { useLake } from "@/lib/lake-context";
 import { LAKE_PLACES, placeEmoji } from "@/lib/lakePlaces";
-import { Search as SearchIcon, Navigation, FileText, Calendar, Anchor } from "lucide-react";
+import { Search as SearchIcon, Navigation, FileText, Calendar, Anchor, Store } from "lucide-react";
 
 function pinEmoji(type: string) {
   switch (type) {
@@ -63,7 +63,7 @@ export function SearchPage() {
   }, [enabled, dockLabels, q]);
 
   const hasResults =
-    (data && (data.users.length > 0 || data.pins.length > 0 || data.posts.length > 0)) ||
+    (data && (data.users.length > 0 || data.pins.length > 0 || data.posts.length > 0 || (data.businesses ?? []).length > 0)) ||
     places.length > 0 ||
     docks.length > 0;
 
@@ -131,6 +131,31 @@ export function SearchPage() {
                           <p className="text-xs text-muted-foreground truncate">Dock sign</p>
                         </div>
                         <Navigation className="w-4 h-4 text-primary shrink-0" />
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </section>
+            )}
+
+            {data && (data.businesses ?? []).length > 0 && (
+              <section className="space-y-2">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Businesses</h2>
+                {(data.businesses ?? []).map((b) => (
+                  <Link key={b.id} href={`/businesses/${b.id}`}>
+                    <Card className="hover-elevate border-border/50" data-testid={`search-business-${b.id}`}>
+                      <CardContent className="p-3 flex items-center gap-3">
+                        {b.logoUrl ? (
+                          <img src={b.logoUrl} alt="" className="w-10 h-10 rounded-full object-cover shrink-0" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <Store className="w-5 h-5 text-primary" />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-semibold text-sm truncate">{b.businessName}</h3>
+                          <p className="text-xs text-muted-foreground truncate">{b.businessType}</p>
+                        </div>
                       </CardContent>
                     </Card>
                   </Link>

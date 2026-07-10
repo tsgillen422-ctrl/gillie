@@ -5,6 +5,7 @@
  * Gillie - Lake Community API
  * OpenAPI spec version: 0.1.0
  */
+import type { SearchBusiness } from './searchBusiness';
 import type { SearchPin } from './searchPin';
 import type { SearchPost } from './searchPost';
 import type { User } from './user';
@@ -13,4 +14,5 @@ export interface SearchResults {
   users: User[];
   pins: SearchPin[];
   posts: SearchPost[];
+  businesses?: SearchBusiness[];
 }

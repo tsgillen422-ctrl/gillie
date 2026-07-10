@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, postsTable, postLikesTable, postCommentsTable, commentLikesTable, pinsTable, eventRsvpsTable, mutesTable, savedPostsTable, catchesTable, pollOptionsTable, pollVotesTable, friendRequestsTable, blocksTable } from "@workspace/db";
+import { usersTable, postsTable, postLikesTable, postCommentsTable, commentLikesTable, pinsTable, eventRsvpsTable, mutesTable, savedPostsTable, catchesTable, pollOptionsTable, pollVotesTable, friendRequestsTable, blocksTable, businessProfilesTable, businessFollowsTable } from "@workspace/db";
 import { eq, and, gte, gt, sql, desc, count, inArray, notInArray, or, asc } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { canViewPin, getFriendIds as getPinFriendIds } from "./pins";
@@ -35,7 +35,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
   };
 }
 
-async function formatPost(post: typeof postsTable.$inferSelect, viewerId: number, embedShared = true): Promise<any> {
+export async function formatPost(post: typeof postsTable.$inferSelect, viewerId: number, embedShared = true): Promise<any> {
   const user = await db.query.usersTable.findFirst({ where: eq(usersTable.id, post.userId) });
   const like = await db.query.postLikesTable.findFirst({
     where: and(eq(postLikesTable.postId, post.id), eq(postLikesTable.userId, viewerId)),
@@ -88,6 +88,22 @@ async function formatPost(post: typeof postsTable.$inferSelect, viewerId: number
     });
     poll = { options, totalVotes, myVote: myVoteRow?.optionId ?? null };
   }
+  // Business-authored posts carry the business identity for branded rendering.
+  let business = null;
+  if (post.businessId) {
+    const biz = await db.query.businessProfilesTable.findFirst({
+      where: eq(businessProfilesTable.id, post.businessId),
+    });
+    if (biz) {
+      business = {
+        id: biz.id,
+        businessName: biz.businessName,
+        businessType: biz.businessType,
+        logoUrl: biz.logoUrl ?? null,
+        verified: biz.status === "approved",
+      };
+    }
+  }
   let sharedPost = null;
   if (post.sharedPostId && embedShared) {
     const orig = await db.query.postsTable.findFirst({ where: eq(postsTable.id, post.sharedPostId) });
@@ -125,6 +141,8 @@ async function formatPost(post: typeof postsTable.$inferSelect, viewerId: number
     savedByMe: !!saved,
     sharedPostId: post.sharedPostId ?? null,
     sharedPost,
+    businessId: post.businessId ?? null,
+    business,
     visibility: post.visibility,
     lakeId: post.lakeId,
     poll,
@@ -173,6 +191,28 @@ async function canViewPost(uid: number, post: { userId: number; visibility: stri
   return friendIds.includes(post.userId);
 }
 
+// Owner userIds of approved businesses the viewer follows — their business
+// posts belong in the viewer's "friends/following" feed.
+async function getFollowedBusinessOwnerIds(userId: number): Promise<number[]> {
+  const follows = await db.query.businessFollowsTable.findMany({
+    where: eq(businessFollowsTable.userId, userId),
+  });
+  if (!follows.length) return [];
+  const bizRows = await db.query.businessProfilesTable.findMany({
+    where: and(
+      inArray(businessProfilesTable.id, follows.map((f) => f.businessId)),
+      eq(businessProfilesTable.status, "approved"),
+    ),
+  });
+  if (!bizRows.length) return [];
+  // Blocks are symmetric: never surface business posts from a blocked owner.
+  const blocks = await db.query.blocksTable.findMany({
+    where: or(eq(blocksTable.blockerId, userId), eq(blocksTable.blockedId, userId)),
+  });
+  const blockedIds = new Set(blocks.map((b) => (b.blockerId === userId ? b.blockedId : b.blockerId)));
+  return [...new Set(bizRows.map((b) => b.userId))].filter((id) => !blockedIds.has(id));
+}
+
 async function getMutedUserIds(userId: number): Promise<number[]> {
   const rows = await db.query.mutesTable.findMany({ where: eq(mutesTable.muterId, userId) });
   return rows.map((r) => r.mutedId);
@@ -185,14 +225,20 @@ router.get("/", async (req, res) => {
   const rawLakeId = req.query.lakeId != null ? Number(req.query.lakeId) : undefined;
   const mutedIds = await getMutedUserIds(uid);
   const friendIds = await getFriendIds(uid);
+  const followedBizOwnerIds = await getFollowedBusinessOwnerIds(uid);
   const conditions: any[] = [visibilityCondition(uid, friendIds)];
   if (rawLakeId !== undefined) {
     conditions.push(eq(postsTable.lakeId, isValidLakeId(rawLakeId) ? rawLakeId : DEFAULT_LAKE_ID));
   }
   if (type) conditions.push(eq(postsTable.postType, type));
   if (audience === "friends") {
-    // Include the viewer's own posts so their friends-visibility shares show up too.
-    conditions.push(inArray(postsTable.userId, [...friendIds, uid]));
+    // Include the viewer's own posts so their friends-visibility shares show up
+    // too, plus business posts from businesses the viewer follows.
+    const bizFollowed = followedBizOwnerIds.length
+      ? and(sql`${postsTable.businessId} is not null`, inArray(postsTable.userId, followedBizOwnerIds))
+      : undefined;
+    const base = inArray(postsTable.userId, [...friendIds, uid]);
+    conditions.push(bizFollowed ? or(base, bizFollowed) : base);
   } else if (audience === "community") {
     conditions.push(notInArray(postsTable.userId, [uid, ...friendIds]));
   }

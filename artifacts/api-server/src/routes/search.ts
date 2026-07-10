@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, pinsTable, postsTable } from "@workspace/db";
+import { usersTable, pinsTable, postsTable, businessProfilesTable } from "@workspace/db";
 import { eq, and, or, ilike, desc, notInArray } from "drizzle-orm";
 import { DEFAULT_LAKE_ID, isValidLakeId } from "@workspace/lake-config";
 import { currentUserId } from "../middlewares/auth";
@@ -25,7 +25,7 @@ function formatUser(u: typeof usersTable.$inferSelect) {
 router.get("/", async (req, res) => {
   const q = (req.query.q as string | undefined)?.trim() ?? "";
   if (q.length < 2) {
-    return res.json({ users: [], pins: [], posts: [] });
+    return res.json({ users: [], pins: [], posts: [], businesses: [] });
   }
   const term = `%${q}%`;
 
@@ -54,6 +54,23 @@ router.get("/", async (req, res) => {
         eq(pinsTable.lakeId, lakeId),
         or(ilike(pinsTable.title, term), ilike(pinsTable.description, term))
       )
+    )
+    .limit(10);
+
+  const businesses = await db
+    .select()
+    .from(businessProfilesTable)
+    .where(
+      and(
+        eq(businessProfilesTable.status, "approved"),
+        eq(businessProfilesTable.lakeId, lakeId),
+        or(
+          ilike(businessProfilesTable.businessName, term),
+          ilike(businessProfilesTable.businessType, term),
+          ilike(businessProfilesTable.description, term),
+          ilike(businessProfilesTable.serviceArea, term),
+        ),
+      ),
     )
     .limit(10);
 
@@ -86,6 +103,14 @@ router.get("/", async (req, res) => {
       content: p.content,
       postType: p.postType,
       createdAt: p.createdAt.toISOString(),
+    })),
+    businesses: businesses.map((b) => ({
+      id: b.id,
+      businessName: b.businessName,
+      businessType: b.businessType,
+      logoUrl: b.logoUrl ?? null,
+      lat: b.lat ?? null,
+      lng: b.lng ?? null,
     })),
   });
 });

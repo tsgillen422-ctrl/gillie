@@ -1666,6 +1666,191 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /businesses/{businessId}/follow:
+    post:
+      operationId: followBusiness
+      tags: [businesses]
+      summary: Follow an approved business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Now following
+        "400":
+          description: Cannot follow own business
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    delete:
+      operationId: unfollowBusiness
+      tags: [businesses]
+      summary: Unfollow a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Unfollowed
+
+  /businesses/{businessId}/reviews:
+    get:
+      operationId: getBusinessReviews
+      tags: [businesses]
+      summary: List reviews for a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BusinessReview"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    put:
+      operationId: upsertBusinessReview
+      tags: [businesses]
+      summary: Create or update the caller's review (one per business)
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessReviewInput"
+      responses:
+        "200":
+          description: Review updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessReview"
+        "201":
+          description: Review created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessReview"
+        "400":
+          description: Invalid rating or own business
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    delete:
+      operationId: deleteBusinessReview
+      tags: [businesses]
+      summary: Delete the caller's review of a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+
+  /businesses/{businessId}/posts:
+    get:
+      operationId: getBusinessPosts
+      tags: [businesses]
+      summary: List a business's posts and events
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Business posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Post"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /businesses/me/posts:
+    post:
+      operationId: createBusinessPost
+      tags: [businesses]
+      summary: Publish an update or event as your approved business
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessPostInput"
+      responses:
+        "201":
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Post"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "403":
+          description: Business not approved yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: No business profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /businesses/{businessId}/status:
     patch:
       operationId: setBusinessStatus
@@ -3865,6 +4050,22 @@ components:
         description:
           type: string
           nullable: true
+        logoUrl:
+          type: string
+          nullable: true
+        coverUrl:
+          type: string
+          nullable: true
+        followerCount:
+          type: integer
+        avgRating:
+          type: number
+        reviewCount:
+          type: integer
+        followedByMe:
+          type: boolean
+        verified:
+          type: boolean
         photos:
           type: array
           items:
@@ -3906,6 +4107,75 @@ components:
           type: string
           enum: [approved, rejected]
 
+    BusinessReview:
+      type: object
+      required: [id, businessId, userId, rating, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        businessId:
+          type: integer
+        userId:
+          type: integer
+        rating:
+          type: integer
+        content:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+        user:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/BusinessOwner"
+
+    BusinessReviewInput:
+      type: object
+      required: [rating]
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        content:
+          type: string
+          nullable: true
+
+    BusinessPostInput:
+      type: object
+      required: [content]
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        postType:
+          type: string
+          enum: [post, event]
+        eventDate:
+          type: string
+          nullable: true
+        photos:
+          type: array
+          items:
+            type: string
+
+    PostBusiness:
+      type: object
+      required: [id, businessName, businessType, verified]
+      properties:
+        id:
+          type: integer
+        businessName:
+          type: string
+        businessType:
+          type: string
+        logoUrl:
+          type: ["string", "null"]
+        verified:
+          type: boolean
+
     BusinessInput:
       type: object
       required: [businessName, businessType]
@@ -3915,6 +4185,12 @@ components:
         businessType:
           type: string
         description:
+          type: string
+          nullable: true
+        logoUrl:
+          type: string
+          nullable: true
+        coverUrl:
           type: string
           nullable: true
         photos:
@@ -4280,6 +4556,12 @@ components:
           oneOf:
             - type: "null"
             - $ref: "#/components/schemas/Post"
+        businessId:
+          type: ["integer", "null"]
+        business:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/PostBusiness"
         visibility:
           type: string
           enum: [community, friends]
@@ -4994,6 +5276,27 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/SearchPost"
+        businesses:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchBusiness"
+
+    SearchBusiness:
+      type: object
+      required: [id, businessName, businessType]
+      properties:
+        id:
+          type: integer
+        businessName:
+          type: string
+        businessType:
+          type: string
+        logoUrl:
+          type: ["string", "null"]
+        lat:
+          type: ["number", "null"]
+        lng:
+          type: ["number", "null"]
 
     SearchPin:
       type: object

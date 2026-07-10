@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "wouter";
-import { Search, Store, ChevronRight, Plus, MapPin, BadgeCheck } from "lucide-react";
+import { Search, Store, ChevronRight, Plus, BadgeCheck, Users, Star } from "lucide-react";
 import { useGetBusinesses, useGetMyBusiness } from "@workspace/api-client-react";
 import type { Business } from "@workspace/api-client-react";
 import { Input } from "@/components/ui/input";
@@ -89,7 +89,9 @@ export default function BusinessesPage() {
             {filtered.map((b: Business) => (
               <Link key={b.id} href={`/businesses/${b.id}`} className="block" data-testid={`card-business-${b.id}`}>
                 <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 hover:bg-muted/50 transition-colors">
-                  {b.photos.length > 0 ? (
+                  {b.logoUrl ? (
+                    <img src={b.logoUrl} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
+                  ) : b.photos.length > 0 ? (
                     <img src={b.photos[0]} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
                   ) : (
                     <div className="w-14 h-14 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -97,13 +99,22 @@ export default function BusinessesPage() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{b.businessName}</h3>
+                    <h3 className="font-semibold truncate flex items-center gap-1">
+                      <span className="truncate">{b.businessName}</span>
+                      {b.verified && <BadgeCheck className="w-4 h-4 text-primary shrink-0" />}
+                    </h3>
                     <p className="text-xs text-muted-foreground truncate">{b.businessType}</p>
-                    {b.serviceArea && (
-                      <p className="text-xs text-muted-foreground truncate flex items-center gap-1 mt-0.5">
-                        <MapPin className="w-3 h-3 shrink-0" /> {b.serviceArea}
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground truncate flex items-center gap-2 mt-0.5">
+                      <span className="flex items-center gap-0.5">
+                        <Users className="w-3 h-3 shrink-0" /> {b.followerCount ?? 0}
+                      </span>
+                      {(b.reviewCount ?? 0) > 0 && (
+                        <span className="flex items-center gap-0.5">
+                          <Star className="w-3 h-3 shrink-0 fill-amber-400 text-amber-400" /> {(b.avgRating ?? 0).toFixed(1)}
+                        </span>
+                      )}
+                      {b.serviceArea && <span className="truncate">{b.serviceArea}</span>}
+                    </p>
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                 </div>

@@ -838,6 +838,13 @@ export interface Business {
   businessName: string;
   businessType: string;
   description?: string | null;
+  logoUrl?: string | null;
+  coverUrl?: string | null;
+  followerCount?: number;
+  avgRating?: number;
+  reviewCount?: number;
+  followedByMe?: boolean;
+  verified?: boolean;
   photos: string[];
   phone?: string | null;
   website?: string | null;
@@ -863,10 +870,58 @@ export interface BusinessStatusInput {
   status: BusinessStatusInputStatus;
 }
 
+export interface BusinessReview {
+  id: number;
+  businessId: number;
+  userId: number;
+  rating: number;
+  /** @nullable */
+  content?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  user?: null | BusinessOwner;
+}
+
+export interface BusinessReviewInput {
+  /**
+     * @minimum 1
+     * @maximum 5
+     */
+  rating: number;
+  content?: string | null;
+}
+
+export type BusinessPostInputPostType = typeof BusinessPostInputPostType[keyof typeof BusinessPostInputPostType];
+
+
+export const BusinessPostInputPostType = {
+  post: 'post',
+  event: 'event',
+} as const;
+
+export interface BusinessPostInput {
+  title?: string;
+  content: string;
+  postType?: BusinessPostInputPostType;
+  eventDate?: string | null;
+  photos?: string[];
+}
+
+export interface PostBusiness {
+  id: number;
+  businessName: string;
+  businessType: string;
+  /** @nullable */
+  logoUrl?: string | null;
+  verified: boolean;
+}
+
 export interface BusinessInput {
   businessName: string;
   businessType: string;
   description?: string | null;
+  logoUrl?: string | null;
+  coverUrl?: string | null;
   photos?: string[];
   phone?: string | null;
   website?: string | null;
@@ -1173,6 +1228,9 @@ export interface Post {
   /** @nullable */
   sharedPostId?: number | null;
   sharedPost?: null | Post;
+  /** @nullable */
+  businessId?: number | null;
+  business?: null | PostBusiness;
   visibility?: PostVisibility;
   poll?: null | Poll;
   isMature?: boolean;
@@ -1705,10 +1763,23 @@ export interface SearchPost {
   createdAt: string;
 }
 
+export interface SearchBusiness {
+  id: number;
+  businessName: string;
+  businessType: string;
+  /** @nullable */
+  logoUrl?: string | null;
+  /** @nullable */
+  lat?: number | null;
+  /** @nullable */
+  lng?: number | null;
+}
+
 export interface SearchResults {
   users: User[];
   pins: SearchPin[];
   posts: SearchPost[];
+  businesses?: SearchBusiness[];
 }
 
 export type NotificationType = typeof NotificationType[keyof typeof NotificationType];
