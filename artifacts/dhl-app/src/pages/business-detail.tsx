@@ -144,6 +144,18 @@ const WEEK_DAYS = [
   { key: "sun", label: "Sunday" },
 ] as const;
 
+/** Great-circle distance in miles between two lat/lng points. */
+function distanceMiles(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const R = 3958.8;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
 /** "14:30" -> "2:30 PM" */
 function formatTime(t: string): string {
   const m = /^(\d{2}):(\d{2})$/.exec(t);
@@ -213,8 +225,13 @@ export default function BusinessDetailPage() {
   const [reviewText, setReviewText] = React.useState("");
 
   const [lightboxOpen, setLightboxOpen] = React.useState<{ src: string; alt: string } | null>(null);
+  const [activeTab, setActiveTab] = React.useState("updates");
 
   const isOwner = me != null && business != null && business.userId === me.id;
+  const distanceAway =
+    business?.lat != null && business?.lng != null && me?.currentLat != null && me?.currentLng != null
+      ? distanceMiles(me.currentLat, me.currentLng, business.lat, business.lng)
+      : null;
   const myReview = React.useMemo(
     () => (me ? reviews.find((r: BusinessReview) => r.userId === me.id) : undefined),
     [reviews, me],
@@ -551,10 +568,44 @@ export default function BusinessDetailPage() {
             </button>
           </div>
 
+          {/* Quick info chips */}
+          <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-1 no-scrollbar" data-testid="business-info-chips">
+            {distanceAway != null && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-xs font-medium shrink-0 shadow-sm" data-testid="chip-distance">
+                <Navigation className="w-3.5 h-3.5 text-primary" />
+                {distanceAway < 0.2 ? "Nearby" : `${distanceAway.toFixed(distanceAway < 10 ? 1 : 0)} mi away`}
+              </span>
+            )}
+            {(business.hoursStructured || business.hours) && (
+              <button
+                type="button"
+                onClick={() => setActiveTab("about")}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-xs font-medium shrink-0 shadow-sm hover:bg-muted/50 transition-colors"
+                data-testid="chip-hours"
+              >
+                <Clock className="w-3.5 h-3.5 text-primary" /> Hours
+              </button>
+            )}
+            {(business.amenities ?? []).map((k) => {
+              const Icon = getAmenityIcon(k);
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setActiveTab("amenities")}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card border border-border text-xs font-medium shrink-0 shadow-sm hover:bg-muted/50 transition-colors"
+                  data-testid={`chip-amenity-${k}`}
+                >
+                  <Icon className="w-3.5 h-3.5 text-primary" /> {getAmenityLabel(k)}
+                </button>
+              );
+            })}
+          </div>
+
           <WaveDivider className="my-6" />
 
           {/* Tabs */}
-          <Tabs defaultValue="updates">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="overflow-x-auto pb-4 -mx-4 px-4 no-scrollbar">
               <TabsList className="flex w-max gap-2 bg-transparent p-0">
                 <TabsTrigger value="updates" className={PROFILE_TAB}>Updates</TabsTrigger>
