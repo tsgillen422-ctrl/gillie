@@ -1,11 +1,19 @@
 import React from "react";
 import { useParams, Link, useLocation } from "wouter";
-import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useReactToPost, useDeletePost, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useDeleteUser, useGetFriends, useGetFollowers, useGetFollowing, useGetUserFriends, useGetCatches, useGetFavoritePins, useUpdateMe, useGetUserStories, getGetMeQueryKey, getGetUserQueryKey, getGetGalleryQueryKey, getGetPostsQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey, getGetUserFriendsQueryKey, getGetUserStoriesQueryKey, type StoryGroup } from "@workspace/api-client-react";
+import { useGetUser, useGetMe, useGetPosts, useGetPins, useGetGallery, useCreateGalleryItem, useDeleteGalleryItem, useUpdateGalleryItem, useReactToPost, useDeletePost, useFollowUser, useUnfollowUser, useBlockUser, useUnblockUser, useDeleteUser, useGetFriends, useGetFollowers, useGetFollowing, useGetUserFriends, useGetCatches, useGetFavoritePins, useUpdateMe, useGetUserStories, useGetAlbums, useCreateAlbum, useUpdateAlbum, useDeleteAlbum, useGetTaggedPosts, getGetMeQueryKey, getGetUserQueryKey, getGetGalleryQueryKey, getGetPostsQueryKey, getGetFriendsQueryKey, getGetBlockedUsersQueryKey, getGetFollowersQueryKey, getGetFollowingQueryKey, getGetUserFriendsQueryKey, getGetUserStoriesQueryKey, getGetAlbumsQueryKey, getGetTaggedPostsQueryKey, type StoryGroup, type Album } from "@workspace/api-client-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { MatureGate } from "@/components/MatureGate";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Fish, Tent, Anchor, Mountain, Waves, Camera, Image as ImageIcon, Bookmark, FileText, ChevronRight, Star, Trophy, Pencil, Sparkles, Gauge, Ruler, Cog, Wrench } from "lucide-react";
+import { MapPin, Ship, UserMinus, UserPlus, ArrowLeft, MessageSquare, BadgeCheck, Lock, Globe, Users, ImagePlus, Plus, Play, X, Clock, Ban, ShieldOff, Flag, Home, Briefcase, Cake, Heart, User2, Trash2, Fish, Tent, Anchor, Mountain, Waves, Camera, Image as ImageIcon, Bookmark, FileText, ChevronRight, Star, Trophy, Pencil, Sparkles, Gauge, Ruler, Cog, Wrench, FolderPlus, MoreVertical, ArrowLeftRight, Tag } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { INTEREST_MAP } from "@/lib/interests";
 import { ReportDialog } from "@/components/ReportDialog";
 import { BadgeRow, badgeMeta } from "@/components/Badges";
@@ -738,6 +746,362 @@ function FavoriteThingsCard({ user, isSelf }: { user: any; isSelf: boolean }) {
   );
 }
 
+/** Albums tab — grid of albums + full album detail management. */
+function AlbumsTab({
+  id,
+  isSelf,
+  gallery,
+  onViewMedia,
+  refreshGallery,
+}: {
+  id: number;
+  isSelf: boolean;
+  gallery?: any[];
+  onViewMedia: (item: any) => void;
+  refreshGallery: () => void;
+}) {
+  const qc = useQueryClient();
+  const albumsParams = React.useMemo(() => ({ profileUserId: id }), [id]);
+  const { data: albums, isLoading } = useGetAlbums(albumsParams, {
+    query: { queryKey: getGetAlbumsQueryKey(albumsParams), enabled: !!id },
+  });
+  const createAlbum = useCreateAlbum();
+  const updateAlbum = useUpdateAlbum();
+  const deleteAlbum = useDeleteAlbum();
+  const updateGalleryItem = useUpdateGalleryItem();
+  const createGalleryItem = useCreateGalleryItem();
+  const { uploadFile, isUploading } = useUpload();
+
+  const [newOpen, setNewOpen] = React.useState(false);
+  const [newName, setNewName] = React.useState("");
+  const [openAlbumId, setOpenAlbumId] = React.useState<number | null>(null);
+  const [renaming, setRenaming] = React.useState(false);
+  const [renameVal, setRenameVal] = React.useState("");
+  const addRef = React.useRef<HTMLInputElement>(null);
+
+  const myAlbums: Album[] = albums ?? [];
+  const openAlbum = openAlbumId != null ? myAlbums.find((a) => a.id === openAlbumId) ?? null : null;
+  const albumItems = openAlbum ? (gallery ?? []).filter((g: any) => g.albumId === openAlbum.id) : [];
+
+  const refreshAlbums = () => qc.invalidateQueries({ queryKey: getGetAlbumsQueryKey(albumsParams) });
+
+  const handleCreate = () => {
+    const name = newName.trim();
+    if (!name) return;
+    createAlbum.mutate(
+      { data: { name: name.slice(0, 60) } },
+      {
+        onSuccess: () => { toast.success("Album created"); setNewName(""); setNewOpen(false); refreshAlbums(); },
+        onError: () => toast.error("Couldn't create that album."),
+      }
+    );
+  };
+
+  const handleRename = () => {
+    if (!openAlbum) return;
+    const name = renameVal.trim();
+    if (!name) return;
+    updateAlbum.mutate(
+      { albumId: openAlbum.id, data: { name: name.slice(0, 60) } },
+      {
+        onSuccess: () => { toast.success("Album renamed"); setRenaming(false); refreshAlbums(); },
+        onError: () => toast.error("Couldn't rename album."),
+      }
+    );
+  };
+
+  const handleDeleteAlbum = () => {
+    if (!openAlbum) return;
+    deleteAlbum.mutate(
+      { albumId: openAlbum.id },
+      {
+        onSuccess: () => { toast.success("Album deleted"); setOpenAlbumId(null); refreshAlbums(); refreshGallery(); },
+        onError: () => toast.error("Couldn't delete album."),
+      }
+    );
+  };
+
+  const handleSetCover = (item: any) => {
+    if (!openAlbum) return;
+    updateAlbum.mutate(
+      { albumId: openAlbum.id, data: { coverUrl: item.mediaUrl } },
+      {
+        onSuccess: () => { toast.success("Cover updated"); refreshAlbums(); },
+        onError: () => toast.error("Couldn't set cover."),
+      }
+    );
+  };
+
+  const handleMove = (item: any, albumId: number | null) => {
+    updateGalleryItem.mutate(
+      { itemId: item.id, data: { albumId } },
+      {
+        onSuccess: () => { toast.success(albumId == null ? "Moved to gallery" : "Moved"); refreshAlbums(); refreshGallery(); },
+        onError: () => toast.error("Couldn't move that photo."),
+      }
+    );
+  };
+
+  const handleAddPhotos = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length || !openAlbum) return;
+    let ok = 0;
+    for (const file of files) {
+      const isVideo = file.type.startsWith("video/");
+      const isImage = file.type.startsWith("image/");
+      if (!isVideo && !isImage) continue;
+      try {
+        const toUpload = isImage ? await compressImage(file) : file;
+        const res = await uploadFile(toUpload);
+        if (res?.objectPath) {
+          await new Promise<void>((resolve) => {
+            createGalleryItem.mutate(
+              { data: { mediaUrl: `/api/storage${res.objectPath}`, mediaType: isVideo ? "video" : "image", albumId: openAlbum.id } },
+              { onSuccess: () => { ok++; resolve(); }, onError: () => resolve() }
+            );
+          });
+        }
+      } catch { /* skip failed file */ }
+    }
+    if (addRef.current) addRef.current.value = "";
+    if (ok > 0) { toast.success(`Added ${ok} item${ok === 1 ? "" : "s"}`); refreshAlbums(); refreshGallery(); }
+    else toast.error("Couldn't add those photos.");
+  };
+
+  return (
+    <>
+      {isSelf && (
+        <Button
+          variant="outline"
+          className="w-full rounded-2xl"
+          onClick={() => { setNewName(""); setNewOpen(true); }}
+          data-testid="button-new-album"
+        >
+          <FolderPlus className="w-4 h-4 mr-2" /> New album
+        </Button>
+      )}
+
+      {isLoading ? (
+        <div className="grid grid-cols-2 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="aspect-square w-full rounded-2xl" />)}
+        </div>
+      ) : myAlbums.length ? (
+        <div className="grid grid-cols-2 gap-3">
+          {myAlbums.map((album) => {
+            const cover = album.coverUrl;
+            return (
+              <button
+                key={album.id}
+                type="button"
+                onClick={() => setOpenAlbumId(album.id)}
+                className="text-left rounded-2xl border border-card-border bg-card shadow-soft overflow-hidden hover:border-primary/40 transition-colors"
+                data-testid={`button-album-${album.id}`}
+              >
+                <div className="relative aspect-square bg-muted">
+                  {cover ? (
+                    <img src={cover} alt={album.name} className="absolute inset-0 w-full h-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/50">
+                      <ImageIcon className="w-10 h-10" />
+                    </div>
+                  )}
+                </div>
+                <div className="p-2.5">
+                  <p className="text-sm font-bold truncate">{album.name}</p>
+                  <p className="text-[11px] text-muted-foreground">{album.itemCount} {album.itemCount === 1 ? "item" : "items"}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="text-center py-10 text-muted-foreground">
+          {isSelf ? "Create your first album to organize your lake memories." : "No albums yet."}
+        </div>
+      )}
+
+      {/* New album dialog */}
+      <Dialog open={newOpen} onOpenChange={setNewOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>New album</DialogTitle>
+            <DialogDescription>Give your album a name.</DialogDescription>
+          </DialogHeader>
+          <Input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value.slice(0, 60))}
+            placeholder="e.g. Summer 2024"
+            onKeyDown={(e) => { if (e.key === "Enter") handleCreate(); }}
+            data-testid="input-album-name"
+          />
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setNewOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreate} disabled={createAlbum.isPending || !newName.trim()} data-testid="button-create-album">
+              {createAlbum.isPending ? "Creating…" : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Album detail dialog */}
+      <Dialog open={openAlbum != null} onOpenChange={(o) => { if (!o) { setOpenAlbumId(null); setRenaming(false); } }}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          {openAlbum && (
+            <>
+              <DialogHeader>
+                {renaming && isSelf ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={renameVal}
+                      onChange={(e) => setRenameVal(e.target.value.slice(0, 60))}
+                      onKeyDown={(e) => { if (e.key === "Enter") handleRename(); }}
+                      data-testid="input-rename-album"
+                      autoFocus
+                    />
+                    <Button size="sm" onClick={handleRename} disabled={updateAlbum.isPending} data-testid="button-save-rename">Save</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setRenaming(false)}>Cancel</Button>
+                  </div>
+                ) : (
+                  <DialogTitle className="flex items-center gap-2">
+                    {openAlbum.name}
+                    {isSelf && (
+                      <button
+                        type="button"
+                        onClick={() => { setRenameVal(openAlbum.name); setRenaming(true); }}
+                        className="text-muted-foreground hover:text-primary"
+                        aria-label="Rename album"
+                        data-testid="button-rename-album"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </DialogTitle>
+                )}
+                <DialogDescription>{albumItems.length} {albumItems.length === 1 ? "item" : "items"}</DialogDescription>
+              </DialogHeader>
+
+              {isSelf && (
+                <>
+                  <input
+                    ref={addRef}
+                    type="file"
+                    multiple
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={handleAddPhotos}
+                  />
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-2xl"
+                    disabled={isUploading}
+                    onClick={() => addRef.current?.click()}
+                    data-testid="button-add-album-photos"
+                  >
+                    <ImagePlus className="w-4 h-4 mr-2" /> {isUploading ? "Uploading…" : "Add photos"}
+                  </Button>
+                </>
+              )}
+
+              {albumItems.length > 0 ? (
+                <div className="grid grid-cols-3 gap-1.5">
+                  {albumItems.map((item: any) => (
+                    <div key={item.id} className="relative aspect-square rounded-xl overflow-hidden bg-muted">
+                      <button
+                        type="button"
+                        className="w-full h-full cursor-zoom-in"
+                        onClick={() => onViewMedia(item)}
+                        aria-label={item.mediaType === "video" ? "View video" : "View photo"}
+                      >
+                        <MatureGate isMature={item.isMature} rounded="rounded-xl" className="w-full h-full">
+                          {item.mediaType === "video" ? (
+                            <>
+                              <video src={item.mediaUrl} className="w-full h-full object-cover" muted playsInline preload="metadata" />
+                              <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <span className="bg-black/40 rounded-full p-1.5">
+                                  <Play className="w-4 h-4 text-white fill-white" />
+                                </span>
+                              </span>
+                            </>
+                          ) : (
+                            <img src={item.mediaUrl} alt={item.caption ?? "Album item"} className="w-full h-full object-cover" />
+                          )}
+                        </MatureGate>
+                      </button>
+                      {isSelf && (
+                        <div className="absolute top-1 right-1">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className="grid place-items-center w-6 h-6 rounded-full bg-black/50 text-white hover:bg-black/70"
+                                aria-label="Photo options"
+                                data-testid={`button-album-item-menu-${item.id}`}
+                              >
+                                <MoreVertical className="w-3.5 h-3.5" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleSetCover(item)} data-testid={`menu-set-cover-${item.id}`}>
+                                <Star className="w-4 h-4 mr-2" /> Set as cover
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleMove(item, null)} data-testid={`menu-move-out-${item.id}`}>
+                                <ArrowLeftRight className="w-4 h-4 mr-2" /> Move to gallery
+                              </DropdownMenuItem>
+                              {myAlbums.filter((a) => a.id !== openAlbum.id).length > 0 && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuLabel>Move to album</DropdownMenuLabel>
+                                  {myAlbums.filter((a) => a.id !== openAlbum.id).map((a) => (
+                                    <DropdownMenuItem key={a.id} onClick={() => handleMove(item, a.id)} data-testid={`menu-move-to-${a.id}`}>
+                                      {a.name}
+                                    </DropdownMenuItem>
+                                  ))}
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground py-4 text-center">No photos in this album yet.</p>
+              )}
+
+              {isSelf && (
+                <div className="pt-2">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" data-testid="button-delete-album">
+                        <Trash2 className="w-4 h-4 mr-2" /> Delete album
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this album?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          The album will be removed, but its photos go back to your gallery.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteAlbum} disabled={deleteAlbum.isPending} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 export function ProfilePage() {
   const { userId } = useParams<{ userId: string }>();
   const { data: me } = useGetMe();
@@ -773,6 +1137,9 @@ export function ProfilePage() {
   const { data: favoritePins } = useGetFavoritePins({ query: { enabled: isSelf } });
   const { data: userStories } = useGetUserStories(id, {
     query: { queryKey: getGetUserStoriesQueryKey(id), enabled: !!id },
+  });
+  const { data: taggedPosts, isLoading: taggedLoading } = useGetTaggedPosts(id, {
+    query: { queryKey: getGetTaggedPostsQueryKey(id), enabled: !!id },
   });
   const followersQuery = useGetFollowers(id, { query: { enabled: !!id && canViewFollows } });
   const followingQuery = useGetFollowing(id, { query: { enabled: !!id && canViewFollows } });
@@ -816,12 +1183,14 @@ export function ProfilePage() {
   const mediaInputRef = React.useRef<HTMLInputElement>(null);
   const [galleryOpen, setGalleryOpen] = React.useState(false);
   const [caption, setCaption] = React.useState("");
-  const [mediaUrl, setMediaUrl] = React.useState<string | null>(null);
-  const [mediaType, setMediaType] = React.useState<"image" | "video">("image");
+  const [mediaItems, setMediaItems] = React.useState<{ url: string; type: "image" | "video" }[]>([]);
   const [boatTagId, setBoatTagId] = React.useState<number | null>(null);
+  const [galleryAlbumId, setGalleryAlbumId] = React.useState<number | null>(null);
+  const [gallerySaving, setGallerySaving] = React.useState(false);
   const [openBoat, setOpenBoat] = React.useState<any | null>(null);
 
-  const [tab, setTab] = React.useState("posts");
+  const [tab, setTab] = React.useState("all");
+  const [openTaggedPost, setOpenTaggedPost] = React.useState<any | null>(null);
   const tabsRef = React.useRef<HTMLDivElement>(null);
   const goToTab = (value: string) => {
     setTab(value);
@@ -833,60 +1202,75 @@ export function ProfilePage() {
 
   const resetGallery = () => {
     setCaption("");
-    setMediaUrl(null);
-    setMediaType("image");
+    setMediaItems([]);
     setBoatTagId(null);
+    setGalleryAlbumId(null);
     if (mediaInputRef.current) mediaInputRef.current.value = "";
   };
 
   const handleMedia = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const isVideo = file.type.startsWith("video/");
-    const isImage = file.type.startsWith("image/");
-    if (!isVideo && !isImage) {
-      toast.error("Please choose a photo or video file.");
+    const files = Array.from(e.target.files ?? []);
+    if (mediaInputRef.current) mediaInputRef.current.value = "";
+    if (!files.length) return;
+    const wanted = files.filter((f) => f.type.startsWith("image/") || f.type.startsWith("video/"));
+    if (!wanted.length) {
+      toast.error("Please choose photo or video files.");
+      return;
+    }
+    const remaining = 10 - mediaItems.length;
+    if (remaining <= 0) {
+      toast.error("You can add up to 10 photos and videos at a time.");
       return;
     }
     try {
-      const toUpload = isImage ? await compressImage(file) : file;
-      const res = await uploadFile(toUpload);
-      if (res?.objectPath) {
-        setMediaUrl(res.objectPath);
-        setMediaType(isVideo ? "video" : "image");
-      } else {
-        toast.error("Couldn't upload that file.");
+      const uploaded: { url: string; type: "image" | "video" }[] = [];
+      for (const file of wanted.slice(0, remaining)) {
+        const isVideo = file.type.startsWith("video/");
+        const res = await uploadFile(isVideo ? file : await compressImage(file));
+        if (res?.objectPath) uploaded.push({ url: res.objectPath, type: isVideo ? "video" : "image" });
       }
+      if (uploaded.length) setMediaItems((prev) => [...prev, ...uploaded].slice(0, 10));
+      else toast.error("Couldn't upload those files.");
     } catch {
-      toast.error("Couldn't upload that file.");
+      toast.error("Couldn't upload those files.");
     }
   };
 
-  const handleGallerySubmit = () => {
-    if (!mediaUrl) {
+  const handleGallerySubmit = async () => {
+    if (!mediaItems.length) {
       toast.error("Add a photo or video first.");
       return;
     }
-    createGalleryItem.mutate(
-      {
-        data: {
-          mediaUrl: `/api/storage${mediaUrl}`,
-          mediaType,
-          caption: caption.trim() || undefined,
-          boatId: boatTagId ?? undefined,
-        },
-      },
-      {
-        onSuccess: () => {
-          toast.success("Added to your gallery!");
-          setGalleryOpen(false);
-          resetGallery();
-          refreshGallery();
-        },
-        onError: () => toast.error("Couldn't add that to your gallery."),
+    setGallerySaving(true);
+    try {
+      for (const item of mediaItems) {
+        await createGalleryItem.mutateAsync({
+          data: {
+            mediaUrl: `/api/storage${item.url}`,
+            mediaType: item.type,
+            caption: caption.trim() || undefined,
+            boatId: boatTagId ?? undefined,
+            albumId: galleryAlbumId ?? undefined,
+          },
+        });
       }
-    );
+      toast.success(mediaItems.length > 1 ? `Added ${mediaItems.length} items to your gallery!` : "Added to your gallery!");
+      setGalleryOpen(false);
+      resetGallery();
+      refreshGallery();
+      queryClient.invalidateQueries({ queryKey: getGetAlbumsQueryKey({ profileUserId: id }) });
+    } catch {
+      toast.error("Couldn't add that to your gallery.");
+      refreshGallery();
+    } finally {
+      setGallerySaving(false);
+    }
   };
+
+  const myAlbumsParams = React.useMemo(() => ({ profileUserId: id }), [id]);
+  const { data: myAlbums } = useGetAlbums(myAlbumsParams, {
+    query: { queryKey: getGetAlbumsQueryKey(myAlbumsParams), enabled: isSelf && !!id },
+  });
 
   const [viewerItem, setViewerItem] = React.useState<{ id: number; mediaUrl: string; mediaType: string; caption?: string | null } | null>(null);
 
@@ -1277,6 +1661,46 @@ export function ProfilePage() {
 
           {/* Body */}
           <div className="px-4 pt-5 pb-24 space-y-5">
+            {/* Detailed tabs */}
+            <div ref={tabsRef} className="pt-1">
+              <Tabs value={tab} onValueChange={setTab} className="w-full">
+                <div className="-mx-4 mb-4 overflow-x-auto no-scrollbar">
+                  <TabsList className="flex h-auto w-max min-w-full items-center justify-start gap-2 bg-transparent p-0 px-4">
+                    <TabsTrigger value="all" className={PROFILE_TAB} data-testid="tab-all">
+                      <span aria-hidden="true">🌟</span> All
+                    </TabsTrigger>
+                    <TabsTrigger value="posts" className={PROFILE_TAB}>
+                      <span aria-hidden="true">📰</span> Posts
+                    </TabsTrigger>
+                    <TabsTrigger value="gallery" className={PROFILE_TAB}>
+                      <span aria-hidden="true">📸</span> Photos
+                    </TabsTrigger>
+                    <TabsTrigger value="albums" className={PROFILE_TAB} data-testid="tab-albums">
+                      <span aria-hidden="true">📚</span> Albums
+                    </TabsTrigger>
+                    <TabsTrigger value="tagged" className={PROFILE_TAB} data-testid="tab-tagged">
+                      <span aria-hidden="true">🏷️</span> Tagged
+                    </TabsTrigger>
+                    {profileStoryGroup && (
+                      <TabsTrigger value="stories" className={PROFILE_TAB} data-testid="tab-stories">
+                        <span aria-hidden="true">🌊</span> Stories
+                      </TabsTrigger>
+                    )}
+                    <TabsTrigger value="pins" className={PROFILE_TAB}>
+                      <span aria-hidden="true">📍</span> Check-ins
+                    </TabsTrigger>
+                    {(user as any).showBoat !== false && ((user as any).fleet?.length ?? 0) > 0 && (
+                      <TabsTrigger value="boats" className={PROFILE_TAB}>
+                        <span aria-hidden="true">🚤</span> Boats
+                      </TabsTrigger>
+                    )}
+                    <TabsTrigger value="about" className={PROFILE_TAB} data-testid="tab-about">
+                      <span aria-hidden="true">📖</span> About
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
+
+                <TabsContent value="all" className="space-y-5">
             {/* My Boat / My Fleet */}
             <MyBoatCard
               user={user}
@@ -1445,33 +1869,74 @@ export function ProfilePage() {
 
             {/* Story highlights */}
             <HighlightsRow userId={id} meId={me?.id} />
+                </TabsContent>
 
-            {/* Detailed tabs */}
-            <div ref={tabsRef} className="pt-1">
-              <Tabs value={tab} onValueChange={setTab} className="w-full">
-                <div className="-mx-4 mb-4 overflow-x-auto no-scrollbar">
-                  <TabsList className="flex h-auto w-max min-w-full items-center justify-start gap-2 bg-transparent p-0 px-4">
-                    <TabsTrigger value="posts" className={PROFILE_TAB}>
-                      <span aria-hidden="true">📰</span> Posts
-                    </TabsTrigger>
-                    <TabsTrigger value="pins" className={PROFILE_TAB}>
-                      <span aria-hidden="true">📍</span> Check-ins
-                    </TabsTrigger>
-                    <TabsTrigger value="gallery" className={PROFILE_TAB}>
-                      <span aria-hidden="true">📸</span> Photos
-                    </TabsTrigger>
-                    {profileStoryGroup && (
-                      <TabsTrigger value="stories" className={PROFILE_TAB} data-testid="tab-stories">
-                        <span aria-hidden="true">🌊</span> Stories
-                      </TabsTrigger>
-                    )}
-                    {(user as any).showBoat !== false && ((user as any).fleet?.length ?? 0) > 0 && (
-                      <TabsTrigger value="boats" className={PROFILE_TAB}>
-                        <span aria-hidden="true">🚤</span> Boats
-                      </TabsTrigger>
-                    )}
-                  </TabsList>
-                </div>
+                <TabsContent value="about" className="space-y-5">
+                  <AboutCard user={user} />
+                  {activeInterests.length > 0 && (
+                    <div className={`${CARD} p-4`}>
+                      <SectionTitle icon={Heart}>Interests</SectionTitle>
+                      <InterestChips selected={activeInterests} />
+                    </div>
+                  )}
+                  {achievements.length > 0 && (
+                    <div className={`${CARD} p-4`}>
+                      <SectionTitle icon={Trophy}>Badges</SectionTitle>
+                      <div className="space-y-5">
+                        {recentEarned.length > 0 && (
+                          <div>
+                            <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2.5">Earned</h4>
+                            <AchievementGrid items={recentEarned} />
+                          </div>
+                        )}
+                        {lockedBadges.length > 0 && (
+                          <div>
+                            <h4 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2.5">Locked</h4>
+                            <AchievementGrid items={lockedBadges} />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="albums" className="space-y-4">
+                  <AlbumsTab
+                    id={id}
+                    isSelf={isSelf}
+                    gallery={gallery as any[] | undefined}
+                    onViewMedia={setViewerItem}
+                    refreshGallery={refreshGallery}
+                  />
+                </TabsContent>
+
+                <TabsContent value="tagged" className="space-y-4">
+                  {taggedLoading ? (
+                    <Skeleton className="h-32 w-full rounded-3xl" />
+                  ) : taggedPosts?.length ? (
+                    taggedPosts.map((post) => (
+                      <Card
+                        key={post.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Open post${post.title ? `: ${post.title}` : ""}`}
+                        onClick={() => setOpenTaggedPost(post)}
+                        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenTaggedPost(post); } }}
+                        className="rounded-3xl border-card-border shadow-soft hover-elevate cursor-pointer"
+                        data-testid={`card-tagged-post-${post.id}`}
+                      >
+                        <CardContent className="p-4">
+                          {post.title && <h3 className="font-bold">{post.title}</h3>}
+                          {post.content && <p className="text-sm mt-1 line-clamp-3">{post.content}</p>}
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    <div className="text-center py-10 text-muted-foreground">
+                      {isSelf ? "Posts you're tagged in will show up here." : "No tagged posts yet."}
+                    </div>
+                  )}
+                </TabsContent>
 
                 <TabsContent value="stories" className="space-y-4">
                   {profileStoryGroup ? (
@@ -1633,6 +2098,7 @@ export function ProfilePage() {
                         ref={mediaInputRef}
                         type="file"
                         accept="image/*,video/*"
+                        multiple
                         className="hidden"
                         onChange={handleMedia}
                       />
@@ -1714,36 +2180,58 @@ export function ProfilePage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={!!openTaggedPost} onOpenChange={(o) => { if (!o) setOpenTaggedPost(null); }}>
+        <DialogContent className="max-w-md p-0 gap-0 max-h-[85vh] overflow-y-auto border-0 bg-transparent shadow-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>{openTaggedPost?.title || "Post"}</DialogTitle>
+            <DialogDescription>Post details and comments</DialogDescription>
+          </DialogHeader>
+          {openTaggedPost && (
+            <PostCard
+              post={openTaggedPost}
+              onReact={(reaction: any) => reactPost.mutate({ postId: openTaggedPost.id, data: { reaction } })}
+              currentUserId={me?.id}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={galleryOpen} onOpenChange={(o) => { setGalleryOpen(o); if (!o) resetGallery(); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Add to gallery</DialogTitle>
-            <DialogDescription>Share a photo or video on your profile.</DialogDescription>
+            <DialogDescription>Share photos and videos on your profile.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <Label>Photo or video</Label>
-              {mediaUrl ? (
-                <div className="relative rounded-lg overflow-hidden bg-muted aspect-video">
-                  {mediaType === "video" ? (
-                    <video src={`/api/storage${mediaUrl}`} className="object-cover w-full h-full" controls playsInline />
-                  ) : (
-                    <img src={`/api/storage${mediaUrl}`} alt="Preview" className="object-cover w-full h-full" />
-                  )}
-                  <div className="absolute top-2 right-2 z-10">
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => { setMediaUrl(null); if (mediaInputRef.current) mediaInputRef.current.value = ""; }}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
+              <Label>Photos and videos</Label>
+              {mediaItems.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {mediaItems.map((item, idx) => (
+                    <div key={item.url + idx} className="relative rounded-lg overflow-hidden bg-muted aspect-square">
+                      {item.type === "video" ? (
+                        <video src={`/api/storage${item.url}`} className="object-cover w-full h-full" playsInline muted />
+                      ) : (
+                        <img src={`/api/storage${item.url}`} alt="Preview" className="object-cover w-full h-full" />
+                      )}
+                      <div className="absolute top-1 right-1 z-10">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className="h-6 w-6"
+                          data-testid={`button-remove-media-${idx}`}
+                          onClick={() => setMediaItems((prev) => prev.filter((_, i) => i !== idx))}
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ) : (
+              )}
+              {mediaItems.length < 10 && (
                 <Button
                   type="button"
                   variant="outline"
@@ -1752,10 +2240,28 @@ export function ProfilePage() {
                   onClick={() => mediaInputRef.current?.click()}
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  {isUploading ? "Uploading..." : "Choose photo or video"}
+                  {isUploading ? "Uploading..." : mediaItems.length ? "Add more" : "Choose photos or videos"}
                 </Button>
               )}
             </div>
+            {isSelf && ((myAlbums as any[] | undefined)?.length ?? 0) > 0 && (
+              <div className="space-y-1.5">
+                <Label>Add to album <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {(myAlbums as any[]).map((a: any) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setGalleryAlbumId(galleryAlbumId === a.id ? null : a.id)}
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${galleryAlbumId === a.id ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/40'}`}
+                      data-testid={`button-pick-album-${a.id}`}
+                    >
+                      {a.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label>Caption</Label>
               <Input value={caption} onChange={(e) => setCaption(e.target.value)} placeholder="Add a caption (optional)" />
@@ -1784,8 +2290,8 @@ export function ProfilePage() {
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => { setGalleryOpen(false); resetGallery(); }}>Cancel</Button>
-            <Button onClick={handleGallerySubmit} disabled={createGalleryItem.isPending || isUploading || !mediaUrl}>
-              {createGalleryItem.isPending ? "Saving..." : "Add"}
+            <Button onClick={handleGallerySubmit} disabled={gallerySaving || isUploading || !mediaItems.length}>
+              {gallerySaving ? "Saving..." : mediaItems.length > 1 ? `Add ${mediaItems.length}` : "Add"}
             </Button>
           </DialogFooter>
         </DialogContent>

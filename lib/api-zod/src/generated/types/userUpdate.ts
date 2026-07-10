@@ -6,6 +6,8 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { FavoriteThing } from './favoriteThing';
+import type { UserUpdateMentionPrivacy } from './userUpdateMentionPrivacy';
+import type { UserUpdateTagPrivacy } from './userUpdateTagPrivacy';
 
 export interface UserUpdate {
   displayName?: string;
@@ -55,4 +57,7 @@ export interface UserUpdate {
   followerSendMessages?: boolean;
   allowReposts?: boolean;
   showMatureContent?: boolean;
+  tagPrivacy?: UserUpdateTagPrivacy;
+  mentionPrivacy?: UserUpdateMentionPrivacy;
+  tagApprovalRequired?: boolean;
 }

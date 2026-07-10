@@ -16,4 +16,9 @@ export interface GalleryItemInput {
      * @nullable
      */
   boatId?: number | null;
+  /**
+     * Optional album (must be owned by the uploader) to file this item into
+     * @nullable
+     */
+  albumId?: number | null;
 }

@@ -5,63 +5,15 @@ import {
   postsTable,
   usersTable,
   businessProfilesTable,
+  blocksTable,
 } from "@workspace/db";
-import { eq, and, desc, inArray } from "drizzle-orm";
+import { eq, and, or, desc, inArray } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { getHiddenDemoUserIds } from "../lib/demoData";
+import { formatTag } from "../lib/postTags";
 import { formatPost, canViewPost } from "./posts";
 
 const router = Router();
-
-export async function formatTag(t: typeof postTagsTable.$inferSelect) {
-  let taggedUser = null;
-  let taggedBusiness = null;
-  if (t.taggedUserId) {
-    const u = await db.query.usersTable.findFirst({ where: eq(usersTable.id, t.taggedUserId) });
-    if (u) {
-      taggedUser = {
-        id: u.id,
-        username: u.username,
-        displayName: u.displayName,
-        avatarUrl: u.avatarUrl,
-        isBusiness: u.isBusiness,
-      };
-    }
-  }
-  if (t.taggedBusinessId) {
-    const b = await db.query.businessProfilesTable.findFirst({
-      where: eq(businessProfilesTable.id, t.taggedBusinessId),
-    });
-    if (b) {
-      taggedBusiness = {
-        id: b.id,
-        businessName: b.businessName,
-        businessType: b.businessType,
-        logoUrl: b.logoUrl ?? null,
-        verified: b.status === "approved",
-      };
-    }
-  }
-  return {
-    id: t.id,
-    postId: t.postId,
-    taggedUserId: t.taggedUserId,
-    taggedBusinessId: t.taggedBusinessId,
-    taggedByUserId: t.taggedByUserId,
-    status: t.status,
-    taggedUser,
-    taggedBusiness,
-    createdAt: t.createdAt.toISOString(),
-  };
-}
-
-/** Tags shown on a post: approved + hidden (hidden only leaves the profile). */
-export async function getVisibleTagsForPost(postId: number) {
-  const rows = await db.query.postTagsTable.findMany({
-    where: and(eq(postTagsTable.postId, postId), inArray(postTagsTable.status, ["approved", "hidden"])),
-  });
-  return Promise.all(rows.map(formatTag));
-}
 
 // Posts where a user is tagged (approved only) — powers the profile Tagged tab.
 // Gated on post visibility, blocks (via canViewPost's friend logic), and the
@@ -85,11 +37,18 @@ router.get("/user/:userId", async (req, res) => {
   const byId = new Map(posts.map((p) => [p.id, p]));
   // Hide posts from demo authors the viewer can't see.
   const hiddenAuthors = new Set(await getHiddenDemoUserIds(uid));
+  // Blocks are symmetric: never surface posts from a blocked author here,
+  // even community posts (canViewPost only handles friends-audience gating).
+  const blocks = await db.query.blocksTable.findMany({
+    where: or(eq(blocksTable.blockerId, uid), eq(blocksTable.blockedId, uid)),
+  });
+  const blockedIds = new Set(blocks.map((b) => (b.blockerId === uid ? b.blockedId : b.blockerId)));
   const out: any[] = [];
   for (const t of tagRows) {
     const post = byId.get(t.postId);
     if (!post) continue;
     if (hiddenAuthors.has(post.userId)) continue;
+    if (blockedIds.has(post.userId)) continue;
     if (!(await canViewPost(uid, post))) continue;
     out.push(await formatPost(post, uid));
   }

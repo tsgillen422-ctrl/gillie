@@ -34,6 +34,7 @@ import {
   LifeBuoy,
   ShieldCheck,
   Waves,
+  AtSign,
 } from "lucide-react";
 import {
   SettingsGroup,
@@ -104,6 +105,7 @@ export function SettingsPage() {
           <SettingsLinkRow href="/settings/reposts" icon={Repeat2} label="Sharing My Posts" />
           <SettingsLinkRow href="/settings/location-visibility" icon={MapIcon} label="See My Location" />
           <SettingsLinkRow href="/settings/sensitive-content" icon={ShieldAlert} label="Sensitive Content" />
+          <SettingsLinkRow href="/settings/tagging" icon={AtSign} label="Tagging & Mentions" />
           <SettingsLinkRow href="/settings/blocked" icon={Ban} label="Blocked Users" />
           <SettingsLinkRow href="/settings/hidden-posts" icon={EyeOff} label="Hidden Posts" />
         </SettingsGroup>

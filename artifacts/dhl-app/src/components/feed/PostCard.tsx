@@ -40,6 +40,7 @@ import { useUpload } from "@workspace/object-storage-web";
 import { compressImage } from "@/lib/compress";
 import { lakeById } from "@workspace/lake-config";
 import { useLake } from "@/lib/lake-context";
+import { MentionText } from "@/lib/mentions";
 
 function CommentReactionButton({ comment, onReact }: { comment: any; onReact: (reaction: ReactionKey) => void }) {
   const [pickerOpen, setPickerOpen] = React.useState(false);
@@ -558,9 +559,37 @@ export function PostCard({
           )}
           {post.content && (
             <p className="text-foreground/90 whitespace-pre-wrap break-words text-sm leading-[1.6]">
-              {post.content}
+              <MentionText text={post.content} />
             </p>
           )}
+          {Array.isArray(post.tags) && post.tags.length > 0 && (() => {
+            const tagged = post.tags
+              .map((t: any) =>
+                t.taggedUser
+                  ? { key: `u-${t.id}`, href: `/profile/${t.taggedUser.id}`, label: t.taggedUser.displayName || t.taggedUser.username }
+                  : t.taggedBusiness
+                    ? { key: `b-${t.id}`, href: `/businesses/${t.taggedBusiness.id}`, label: t.taggedBusiness.businessName }
+                    : null,
+              )
+              .filter(Boolean) as { key: string; href: string; label: string }[];
+            if (!tagged.length) return null;
+            const shown = tagged.slice(0, 2);
+            const extra = tagged.length - shown.length;
+            return (
+              <p className="text-xs font-medium text-muted-foreground" data-testid={`post-tags-${post.id}`}>
+                with{" "}
+                {shown.map((t, i) => (
+                  <React.Fragment key={t.key}>
+                    {i > 0 && (i === shown.length - 1 && extra === 0 ? " and " : ", ")}
+                    <Link href={t.href} className="font-semibold text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
+                      {t.label}
+                    </Link>
+                  </React.Fragment>
+                ))}
+                {extra > 0 && ` and ${extra} other${extra === 1 ? "" : "s"}`}
+              </p>
+            );
+          })()}
         </div>
 
         {isEvent && post.eventDate && (
@@ -609,7 +638,7 @@ export function PostCard({
                       <span className="text-[10px] text-muted-foreground whitespace-nowrap">{formatDistanceToNow(new Date(post.sharedPost.createdAt), { addSuffix: true })}</span>
                     </div>
                     {post.sharedPost.title && <h4 className="font-bold text-sm mb-0.5">{post.sharedPost.title}</h4>}
-                    {post.sharedPost.content && <p className="text-sm whitespace-pre-wrap line-clamp-6">{post.sharedPost.content}</p>}
+                    {post.sharedPost.content && <p className="text-sm whitespace-pre-wrap line-clamp-6"><MentionText text={post.sharedPost.content} /></p>}
                   </div>
                   {post.sharedPost.imageUrl && (
                     <img src={resolveImageSrc(post.sharedPost.imageUrl)} alt="Shared post" className="w-full max-h-72 object-cover" />
@@ -690,7 +719,7 @@ export function PostCard({
                       <span className="text-[10px] text-muted-foreground font-medium">{formatDistanceToNow(new Date(c.createdAt), { addSuffix: true })}</span>
                     </div>
                     <MatureGate isMature={c.isMature} label="Sensitive comment">
-                      {c.content && <p className="text-sm whitespace-pre-wrap break-words text-foreground/90">{c.content}</p>}
+                      {c.content && <p className="text-sm whitespace-pre-wrap break-words text-foreground/90"><MentionText text={c.content} /></p>}
                       {c.imageUrl && (
                         <div className="mt-2 rounded-xl overflow-hidden bg-muted relative aspect-video shadow-sm">
                           <ClickableImage src={resolveImageSrc(c.imageUrl)} alt="Comment attachment" className="w-full h-full object-cover" />

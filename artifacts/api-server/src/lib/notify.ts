@@ -32,6 +32,9 @@ const PUSH_TITLES: Record<string, string> = {
   post_like: "New reaction",
   pin_like: "New reaction",
   event: "Event update",
+  tag: "You were tagged",
+  mention: "You were mentioned",
+  comment_mention: "You were mentioned",
 };
 
 function pushPayloadFor(n: NotificationInput): PushPayload {
@@ -52,6 +55,14 @@ function pushPayloadFor(n: NotificationInput): PushPayload {
       break;
     case "warning":
       url = "/settings";
+      break;
+    case "tag":
+      // relatedId is the tag row id — actions live on the notifications page.
+      url = "/notifications";
+      break;
+    case "mention":
+    case "comment_mention":
+      url = n.relatedId != null ? `/posts/${n.relatedId}` : "/feed";
       break;
     default:
       url = "/notifications";

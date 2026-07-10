@@ -10,6 +10,7 @@ import type { PostBusiness } from './postBusiness';
 import type { PostMediaItem } from './postMediaItem';
 import type { PostMyReaction } from './postMyReaction';
 import type { PostPostType } from './postPostType';
+import type { PostTag } from './postTag';
 import type { PostVisibility } from './postVisibility';
 import type { ReactionCounts } from './reactionCounts';
 import type { User } from './user';
@@ -78,6 +79,8 @@ export interface Post {
   business?: null | PostBusiness;
   visibility?: PostVisibility;
   poll?: null | Poll;
+  /** People/businesses tagged in this post (approved + hidden; pending tags are never shown). */
+  tags?: PostTag[];
   isMature?: boolean;
   createdAt: string;
 }

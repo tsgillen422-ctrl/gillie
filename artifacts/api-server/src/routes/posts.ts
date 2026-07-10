@@ -7,6 +7,10 @@ import { canViewPin, getFriendIds as getPinFriendIds } from "./pins";
 import { moderateContent } from "../lib/moderation";
 import { isValidLakeId, DEFAULT_LAKE_ID } from "@workspace/lake-config";
 import { getHiddenDemoUserIds } from "../lib/demoData";
+import { postTagsTable } from "@workspace/db";
+import { getVisibleTagsForPost } from "../lib/postTags";
+import { notifyMentions, passesAudiencePrivacy } from "../lib/mentions";
+import { createNotification } from "../lib/notify";
 
 const router = Router();
 // New primary set (heart/fire/laugh/heart_eyes/wow/thumbsup) plus legacy keys
@@ -147,6 +151,7 @@ export async function formatPost(post: typeof postsTable.$inferSelect, viewerId:
     visibility: post.visibility,
     lakeId: post.lakeId,
     poll,
+    tags: await getVisibleTagsForPost(post.id, viewerId),
     createdAt: post.createdAt.toISOString(),
   };
 }
@@ -372,6 +377,62 @@ router.post("/", async (req, res) => {
     await db.insert(pollOptionsTable).values(
       pollChoices.map((text, i) => ({ postId: post.id, text, position: i }))
     );
+  }
+  // Tags ("with @someone"): validate against each target's tag privacy and
+  // approval preference. Failures never break the post itself.
+  const { taggedUserIds, taggedBusinessIds } = req.body;
+  try {
+    const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, uid) });
+    const myName = me?.displayName || me?.username || "Someone";
+    const userIdList: number[] = Array.isArray(taggedUserIds)
+      ? [...new Set(taggedUserIds.filter((n: unknown) => Number.isInteger(n) && n !== uid))].slice(0, 20) as number[]
+      : [];
+    for (const targetId of userIdList) {
+      const target = await db.query.usersTable.findFirst({ where: eq(usersTable.id, targetId) });
+      if (!target) continue;
+      if (!(await passesAudiencePrivacy(uid, target, target.tagPrivacy))) continue;
+      const status = target.tagApprovalRequired ? "pending" : "approved";
+      const [tag] = await db
+        .insert(postTagsTable)
+        .values({ postId: post.id, taggedUserId: targetId, taggedByUserId: uid, status })
+        .onConflictDoNothing()
+        .returning();
+      if (!tag) continue;
+      await createNotification({
+        userId: targetId,
+        type: "tag",
+        message:
+          status === "pending"
+            ? `${myName} tagged you in a post — approve it to show on your profile`
+            : `${myName} tagged you in a post`,
+        relatedId: tag.id,
+      });
+    }
+    const bizIdList: number[] = Array.isArray(taggedBusinessIds)
+      ? [...new Set(taggedBusinessIds.filter((n: unknown) => Number.isInteger(n)))].slice(0, 20) as number[]
+      : [];
+    for (const bizId of bizIdList) {
+      const biz = await db.query.businessProfilesTable.findFirst({
+        where: and(eq(businessProfilesTable.id, bizId), eq(businessProfilesTable.status, "approved")),
+      });
+      if (!biz) continue;
+      const [tag] = await db
+        .insert(postTagsTable)
+        .values({ postId: post.id, taggedBusinessId: bizId, taggedByUserId: uid, status: "approved" })
+        .returning();
+      if (tag && biz.userId !== uid) {
+        await createNotification({
+          userId: biz.userId,
+          type: "tag",
+          message: `${myName} tagged ${biz.businessName} in a post`,
+          relatedId: tag.id,
+        });
+      }
+    }
+    // @mentions in the caption notify (but never appear on a profile).
+    await notifyMentions({ actorId: uid, actorName: myName, text: content, type: "mention", relatedId: post.id });
+  } catch (err) {
+    // Post creation must succeed even if tagging/mention side effects fail.
   }
   res.status(201).json(await formatPost(post, uid));
 });
@@ -817,6 +878,19 @@ router.post("/:postId/comments", async (req, res) => {
     .insert(postCommentsTable)
     .values({ postId, userId: uid, content: trimmedContent, imageUrl: trimmedImageUrl || null, videoUrl: trimmedVideoUrl || null, isMature })
     .returning();
+  // Comment @mentions are notification-only — they never touch a profile.
+  try {
+    const me = await db.query.usersTable.findFirst({ where: eq(usersTable.id, uid) });
+    await notifyMentions({
+      actorId: uid,
+      actorName: me?.displayName || me?.username || "Someone",
+      text: trimmedContent,
+      type: "comment_mention",
+      relatedId: postId,
+    });
+  } catch (err) {
+    // Never let mention side effects break commenting.
+  }
   res.status(201).json(await formatComment(comment, uid));
 });
 

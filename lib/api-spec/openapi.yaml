@@ -3020,6 +3020,35 @@ paths:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
   /gallery/{itemId}:
+    patch:
+      operationId: updateGalleryItem
+      tags: [gallery]
+      summary: Update a gallery item (move between albums, edit caption)
+      parameters:
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GalleryItemUpdateInput"
+      responses:
+        "200":
+          description: Updated gallery item
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GalleryItem"
+        "403":
+          description: Not the owner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
     delete:
       operationId: deleteGalleryItem
       tags: [gallery]
@@ -3035,6 +3064,187 @@ paths:
           description: Deleted
         "403":
           description: Not the owner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /albums:
+    get:
+      operationId: getAlbums
+      tags: [albums]
+      summary: List a user's photo albums
+      parameters:
+        - name: profileUserId
+          in: query
+          required: false
+          description: When set, returns the given user's albums. Defaults to the current user.
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of albums
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Album"
+    post:
+      operationId: createAlbum
+      tags: [albums]
+      summary: Create a new album
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlbumInput"
+      responses:
+        "201":
+          description: Album created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Album"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /albums/{albumId}:
+    patch:
+      operationId: updateAlbum
+      tags: [albums]
+      summary: Rename an album or change its cover
+      parameters:
+        - name: albumId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AlbumUpdateInput"
+      responses:
+        "200":
+          description: Updated album
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Album"
+        "403":
+          description: Not the owner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    delete:
+      operationId: deleteAlbum
+      tags: [albums]
+      summary: Delete an album (its photos return to the general gallery)
+      parameters:
+        - name: albumId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+        "403":
+          description: Not the owner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /tags/user/{userId}:
+    get:
+      operationId: getTaggedPosts
+      tags: [postTags]
+      summary: Posts where a user is tagged (approved tags only)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Posts the user is tagged in, filtered by the viewer's visibility.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Post"
+
+  /tags/pending:
+    get:
+      operationId: getPendingTags
+      tags: [postTags]
+      summary: The caller's tags awaiting approval
+      responses:
+        "200":
+          description: Pending tags of the current user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PostTag"
+
+  /tags/{tagId}:
+    patch:
+      operationId: updateTagStatus
+      tags: [postTags]
+      summary: Approve or hide a tag of yourself
+      parameters:
+        - name: tagId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TagStatusUpdateInput"
+      responses:
+        "200":
+          description: Updated tag
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostTag"
+        "403":
+          description: Not the tagged person
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    delete:
+      operationId: deleteTag
+      tags: [postTags]
+      summary: Remove a tag (allowed for the tagged person or the tagger)
+      parameters:
+        - name: tagId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Removed
+        "403":
+          description: Not allowed
           content:
             application/json:
               schema:
@@ -3413,6 +3623,17 @@ components:
           type: boolean
         showMatureContent:
           type: boolean
+        tagPrivacy:
+          type: string
+          enum: [everyone, friends, none]
+          description: Who may tag this user in posts.
+        mentionPrivacy:
+          type: string
+          enum: [everyone, friends, none]
+          description: Who may @mention this user.
+        tagApprovalRequired:
+          type: boolean
+          description: When true, tags of this user need their approval before showing on their profile.
         isAdmin:
           type: boolean
         demoMode:
@@ -3565,6 +3786,14 @@ components:
         allowReposts:
           type: boolean
         showMatureContent:
+          type: boolean
+        tagPrivacy:
+          type: string
+          enum: [everyone, friends, none]
+        mentionPrivacy:
+          type: string
+          enum: [everyone, friends, none]
+        tagApprovalRequired:
           type: boolean
 
     FavoriteThing:
@@ -4860,10 +5089,58 @@ components:
           oneOf:
             - type: "null"
             - $ref: "#/components/schemas/Poll"
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/PostTag"
+          description: People/businesses tagged in this post (approved + hidden; pending tags are never shown).
         isMature:
           type: boolean
         createdAt:
           type: string
+
+    PostTag:
+      type: object
+      required: [id, postId, taggedByUserId, status, createdAt]
+      properties:
+        id:
+          type: integer
+        postId:
+          type: integer
+        taggedUserId:
+          type: ["integer", "null"]
+        taggedBusinessId:
+          type: ["integer", "null"]
+        taggedByUserId:
+          type: integer
+        status:
+          type: string
+          enum: [pending, approved, hidden]
+        taggedUser:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/TaggedUser"
+        taggedBusiness:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/PostBusiness"
+        createdAt:
+          type: string
+
+    TaggedUser:
+      type: object
+      required: [id, username]
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        displayName:
+          type: ["string", "null"]
+        avatarUrl:
+          type: ["string", "null"]
+        isBusiness:
+          type: boolean
 
     Poll:
       type: object
@@ -5024,6 +5301,16 @@ components:
         businessId:
           type: ["integer", "null"]
           description: Which of your approved businesses to post as. Defaults to your first approved business when omitted.
+        taggedUserIds:
+          type: array
+          items:
+            type: integer
+          description: Users to tag in this post. Each target's tag privacy and approval settings are enforced server-side.
+        taggedBusinessIds:
+          type: array
+          items:
+            type: integer
+          description: Approved businesses to tag in this post.
 
     PostUpdateInput:
       type: object
@@ -5388,6 +5675,9 @@ components:
           type: ["string", "null"]
         boatId:
           type: ["integer", "null"]
+        albumId:
+          type: ["integer", "null"]
+          description: Album this item belongs to, or null for the general gallery.
         isMature:
           type: boolean
         createdAt:
@@ -5407,6 +5697,62 @@ components:
         boatId:
           type: ["integer", "null"]
           description: Optional boat from the uploader's fleet this memory belongs to
+        albumId:
+          type: ["integer", "null"]
+          description: Optional album (must be owned by the uploader) to file this item into
+
+    GalleryItemUpdateInput:
+      type: object
+      properties:
+        albumId:
+          type: ["integer", "null"]
+          description: Move the item into one of your albums, or null to remove it from all albums.
+        caption:
+          type: ["string", "null"]
+
+    Album:
+      type: object
+      required: [id, userId, name, itemCount, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        name:
+          type: string
+        coverUrl:
+          type: ["string", "null"]
+          description: Explicit cover if set, otherwise the newest item's media URL.
+        itemCount:
+          type: integer
+        createdAt:
+          type: string
+
+    AlbumInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          maxLength: 60
+
+    AlbumUpdateInput:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 60
+        coverUrl:
+          type: ["string", "null"]
+          description: Must be the media URL of an item in this album, or null to reset to newest.
+
+    TagStatusUpdateInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [approved, hidden]
 
     Boat:
       type: object

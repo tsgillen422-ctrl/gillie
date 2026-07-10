@@ -28,6 +28,30 @@ export interface Rank {
   nextNeeded?: number | null;
 }
 
+/**
+ * Who may tag this user in posts.
+ */
+export type UserTagPrivacy = typeof UserTagPrivacy[keyof typeof UserTagPrivacy];
+
+
+export const UserTagPrivacy = {
+  everyone: 'everyone',
+  friends: 'friends',
+  none: 'none',
+} as const;
+
+/**
+ * Who may @mention this user.
+ */
+export type UserMentionPrivacy = typeof UserMentionPrivacy[keyof typeof UserMentionPrivacy];
+
+
+export const UserMentionPrivacy = {
+  everyone: 'everyone',
+  friends: 'friends',
+  none: 'none',
+} as const;
+
 export type UserFriendStatus = typeof UserFriendStatus[keyof typeof UserFriendStatus];
 
 
@@ -156,6 +180,12 @@ export interface User {
   followerSendMessages?: boolean;
   allowReposts?: boolean;
   showMatureContent?: boolean;
+  /** Who may tag this user in posts. */
+  tagPrivacy?: UserTagPrivacy;
+  /** Who may @mention this user. */
+  mentionPrivacy?: UserMentionPrivacy;
+  /** When true, tags of this user need their approval before showing on their profile. */
+  tagApprovalRequired?: boolean;
   isAdmin?: boolean;
   demoMode?: boolean;
   isSuspended?: boolean;
@@ -205,6 +235,24 @@ export interface WaiverAcceptanceRecord {
   user: WaiverAcceptanceRecordUser;
 }
 
+export type UserUpdateTagPrivacy = typeof UserUpdateTagPrivacy[keyof typeof UserUpdateTagPrivacy];
+
+
+export const UserUpdateTagPrivacy = {
+  everyone: 'everyone',
+  friends: 'friends',
+  none: 'none',
+} as const;
+
+export type UserUpdateMentionPrivacy = typeof UserUpdateMentionPrivacy[keyof typeof UserUpdateMentionPrivacy];
+
+
+export const UserUpdateMentionPrivacy = {
+  everyone: 'everyone',
+  friends: 'friends',
+  none: 'none',
+} as const;
+
 export interface UserUpdate {
   displayName?: string;
   bio?: string;
@@ -253,6 +301,9 @@ export interface UserUpdate {
   followerSendMessages?: boolean;
   allowReposts?: boolean;
   showMatureContent?: boolean;
+  tagPrivacy?: UserUpdateTagPrivacy;
+  mentionPrivacy?: UserUpdateMentionPrivacy;
+  tagApprovalRequired?: boolean;
 }
 
 export interface LocationUpdate {
@@ -1267,6 +1318,39 @@ export interface Poll {
   myVote?: number | null;
 }
 
+export type PostTagStatus = typeof PostTagStatus[keyof typeof PostTagStatus];
+
+
+export const PostTagStatus = {
+  pending: 'pending',
+  approved: 'approved',
+  hidden: 'hidden',
+} as const;
+
+export interface TaggedUser {
+  id: number;
+  username: string;
+  /** @nullable */
+  displayName?: string | null;
+  /** @nullable */
+  avatarUrl?: string | null;
+  isBusiness?: boolean;
+}
+
+export interface PostTag {
+  id: number;
+  postId: number;
+  /** @nullable */
+  taggedUserId?: number | null;
+  /** @nullable */
+  taggedBusinessId?: number | null;
+  taggedByUserId: number;
+  status: PostTagStatus;
+  taggedUser?: null | TaggedUser;
+  taggedBusiness?: null | PostBusiness;
+  createdAt: string;
+}
+
 export interface Post {
   id: number;
   userId: number;
@@ -1331,6 +1415,8 @@ export interface Post {
   business?: null | PostBusiness;
   visibility?: PostVisibility;
   poll?: null | Poll;
+  /** People/businesses tagged in this post (approved + hidden; pending tags are never shown). */
+  tags?: PostTag[];
   isMature?: boolean;
   createdAt: string;
 }
@@ -1436,6 +1522,10 @@ export interface PostInput {
      * @nullable
      */
   businessId?: number | null;
+  /** Users to tag in this post. Each target's tag privacy and approval settings are enforced server-side. */
+  taggedUserIds?: number[];
+  /** Approved businesses to tag in this post. */
+  taggedBusinessIds?: number[];
 }
 
 export type PostUpdateInputVisibility = typeof PostUpdateInputVisibility[keyof typeof PostUpdateInputVisibility];
@@ -1743,6 +1833,11 @@ export interface GalleryItem {
   caption?: string | null;
   /** @nullable */
   boatId?: number | null;
+  /**
+     * Album this item belongs to, or null for the general gallery.
+     * @nullable
+     */
+  albumId?: number | null;
   isMature?: boolean;
   createdAt: string;
 }
@@ -1764,6 +1859,61 @@ export interface GalleryItemInput {
      * @nullable
      */
   boatId?: number | null;
+  /**
+     * Optional album (must be owned by the uploader) to file this item into
+     * @nullable
+     */
+  albumId?: number | null;
+}
+
+export interface GalleryItemUpdateInput {
+  /**
+     * Move the item into one of your albums, or null to remove it from all albums.
+     * @nullable
+     */
+  albumId?: number | null;
+  /** @nullable */
+  caption?: string | null;
+}
+
+export interface Album {
+  id: number;
+  userId: number;
+  name: string;
+  /**
+     * Explicit cover if set, otherwise the newest item's media URL.
+     * @nullable
+     */
+  coverUrl?: string | null;
+  itemCount: number;
+  createdAt: string;
+}
+
+export interface AlbumInput {
+  /** @maxLength 60 */
+  name: string;
+}
+
+export interface AlbumUpdateInput {
+  /** @maxLength 60 */
+  name?: string;
+  /**
+     * Must be the media URL of an item in this album, or null to reset to newest.
+     * @nullable
+     */
+  coverUrl?: string | null;
+}
+
+export type TagStatusUpdateInputStatus = typeof TagStatusUpdateInputStatus[keyof typeof TagStatusUpdateInputStatus];
+
+
+export const TagStatusUpdateInputStatus = {
+  approved: 'approved',
+  hidden: 'hidden',
+} as const;
+
+export interface TagStatusUpdateInput {
+  status: TagStatusUpdateInputStatus;
 }
 
 export interface BoatInput {
@@ -2224,6 +2374,13 @@ lakeId?: number;
 export type GetGalleryParams = {
 /**
  * When set, returns the given user's gallery. Defaults to the current user.
+ */
+profileUserId?: number;
+};
+
+export type GetAlbumsParams = {
+/**
+ * When set, returns the given user's albums. Defaults to the current user.
  */
 profileUserId?: number;
 };

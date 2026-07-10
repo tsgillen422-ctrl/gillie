@@ -18,6 +18,11 @@ export interface GalleryItem {
   caption?: string | null;
   /** @nullable */
   boatId?: number | null;
+  /**
+     * Album this item belongs to, or null for the general gallery.
+     * @nullable
+     */
+  albumId?: number | null;
   isMature?: boolean;
   createdAt: string;
 }

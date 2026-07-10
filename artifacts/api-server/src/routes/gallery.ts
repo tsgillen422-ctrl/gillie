@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { usersTable, galleryItemsTable, boatsTable } from "@workspace/db";
-import { eq, desc } from "drizzle-orm";
+import { usersTable, galleryItemsTable, boatsTable, albumsTable } from "@workspace/db";
+import { eq, desc, and } from "drizzle-orm";
 import { currentUserId } from "../middlewares/auth";
 import { moderateContent } from "../lib/moderation";
 import { getHiddenDemoUserIds } from "../lib/demoData";
@@ -43,6 +43,7 @@ async function formatItem(
     caption: g.caption,
     // Boat tags are part of the fleet, which the owner can hide (showBoat).
     boatId: opts.redactBoatId ? null : g.boatId,
+    albumId: g.albumId ?? null,
     isMature: g.isMature,
     createdAt: g.createdAt.toISOString(),
   };
@@ -71,9 +72,21 @@ router.get("/", async (req, res) => {
 });
 
 router.post("/", async (req, res) => {
-  const { mediaUrl, mediaType, caption, boatId } = req.body;
+  const { mediaUrl, mediaType, caption, boatId, albumId } = req.body;
   if (!mediaUrl || !String(mediaUrl).trim()) {
     return res.status(400).json({ error: "mediaUrl is required" });
+  }
+  // Optional: file the item directly into one of the uploader's own albums.
+  let targetAlbumId: number | null = null;
+  if (albumId !== undefined && albumId !== null) {
+    if (typeof albumId !== "number" || !Number.isInteger(albumId)) {
+      return res.status(400).json({ error: "albumId must be an integer" });
+    }
+    const album = await db.query.albumsTable.findFirst({ where: eq(albumsTable.id, albumId) });
+    if (!album || album.userId !== currentUserId(req)) {
+      return res.status(404).json({ error: "Album not found" });
+    }
+    targetAlbumId = albumId;
   }
   // A memory may be tagged to one of the uploader's own boats.
   let taggedBoatId: number | null = null;
@@ -101,10 +114,50 @@ router.post("/", async (req, res) => {
       mediaType: type,
       caption: caption ?? null,
       boatId: taggedBoatId,
+      albumId: targetAlbumId,
       isMature,
     })
     .returning();
   res.status(201).json(await formatItem(row));
+});
+
+// Move an item into an album (or out of all albums with albumId: null).
+router.patch("/:itemId", async (req, res) => {
+  const itemId = parseInt(req.params.itemId);
+  const row = await db.query.galleryItemsTable.findFirst({ where: eq(galleryItemsTable.id, itemId) });
+  if (!row) return res.status(404).json({ error: "Item not found" });
+  if (row.userId !== currentUserId(req)) {
+    return res.status(403).json({ error: "You can only edit your own gallery items" });
+  }
+  const updates: Partial<typeof galleryItemsTable.$inferInsert> = {};
+  if (req.body?.albumId !== undefined) {
+    const albumId = req.body.albumId;
+    if (albumId === null) {
+      updates.albumId = null;
+    } else {
+      if (typeof albumId !== "number" || !Number.isInteger(albumId)) {
+        return res.status(400).json({ error: "albumId must be an integer or null" });
+      }
+      const album = await db.query.albumsTable.findFirst({ where: eq(albumsTable.id, albumId) });
+      if (!album || album.userId !== currentUserId(req)) {
+        return res.status(404).json({ error: "Album not found" });
+      }
+      updates.albumId = albumId;
+    }
+  }
+  if (req.body?.caption !== undefined) {
+    if (req.body.caption !== null && typeof req.body.caption !== "string") {
+      return res.status(400).json({ error: "caption must be a string or null" });
+    }
+    updates.caption = req.body.caption || null;
+  }
+  if (!Object.keys(updates).length) return res.json(await formatItem(row));
+  const [updated] = await db
+    .update(galleryItemsTable)
+    .set(updates)
+    .where(eq(galleryItemsTable.id, itemId))
+    .returning();
+  res.json(await formatItem(updated));
 });
 
 router.delete("/:itemId", async (req, res) => {

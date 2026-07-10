@@ -374,6 +374,9 @@ function formatUser(u: typeof usersTable.$inferSelect, opts: { includeLiveLocati
     followerSendMessages: u.followerSendMessages,
     allowReposts: u.allowReposts,
     showMatureContent: u.showMatureContent,
+    tagPrivacy: u.tagPrivacy,
+    mentionPrivacy: u.mentionPrivacy,
+    tagApprovalRequired: u.tagApprovalRequired,
     isAdmin: u.isAdmin,
     demoMode: u.demoMode,
     isSuspended: u.isSuspended,
@@ -642,6 +645,27 @@ router.patch("/me", async (req, res) => {
       return res.status(400).json({ error: "showMatureContent must be a boolean" });
     }
     updates.showMatureContent = req.body.showMatureContent;
+  }
+  // Tagging & Mentions privacy: who may tag/mention me, and whether tags of me
+  // need my approval before showing on my profile.
+  const AUDIENCE_LEVELS = ["everyone", "friends", "none"];
+  if (req.body.tagPrivacy !== undefined) {
+    if (!AUDIENCE_LEVELS.includes(req.body.tagPrivacy)) {
+      return res.status(400).json({ error: "tagPrivacy must be 'everyone', 'friends', or 'none'" });
+    }
+    updates.tagPrivacy = req.body.tagPrivacy;
+  }
+  if (req.body.mentionPrivacy !== undefined) {
+    if (!AUDIENCE_LEVELS.includes(req.body.mentionPrivacy)) {
+      return res.status(400).json({ error: "mentionPrivacy must be 'everyone', 'friends', or 'none'" });
+    }
+    updates.mentionPrivacy = req.body.mentionPrivacy;
+  }
+  if (req.body.tagApprovalRequired !== undefined) {
+    if (typeof req.body.tagApprovalRequired !== "boolean") {
+      return res.status(400).json({ error: "tagApprovalRequired must be a boolean" });
+    }
+    updates.tagApprovalRequired = req.body.tagApprovalRequired;
   }
   const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, uid)).returning();
   res.json(formatUser(updated, { includeLiveLocation: true }));

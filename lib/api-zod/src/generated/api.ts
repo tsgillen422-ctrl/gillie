@@ -90,6 +90,9 @@ export const GetMeResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -162,7 +165,10 @@ export const UpdateMeBody = zod.object({
   "followerSeePosts": zod.boolean().optional(),
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
-  "showMatureContent": zod.boolean().optional()
+  "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional(),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional(),
+  "tagApprovalRequired": zod.boolean().optional()
 })
 
 export const UpdateMeResponse = zod.object({
@@ -236,6 +242,9 @@ export const UpdateMeResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -348,6 +357,9 @@ export const UpdateMyLocationResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -463,6 +475,9 @@ export const CheckInLocationResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -569,6 +584,9 @@ export const CheckOutLocationResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -827,6 +845,9 @@ export const GetAdminsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -959,6 +980,9 @@ export const SetUserAdminResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -1065,6 +1089,9 @@ export const GetSuspendedUsersResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -1180,6 +1207,9 @@ export const SetUserSuspensionResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -1315,6 +1345,9 @@ export const SearchUsersResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -1426,6 +1459,9 @@ export const GetUserResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -1540,6 +1576,9 @@ export const GetFriendsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -1685,6 +1724,9 @@ export const GetFriendRequestsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -1786,6 +1828,9 @@ export const GetFriendRequestsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -1925,6 +1970,9 @@ export const FollowUserResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -2026,6 +2074,9 @@ export const FollowUserResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -2142,6 +2193,9 @@ export const GetBlockedUsersResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -2253,6 +2307,9 @@ export const GetFollowersResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -2364,6 +2421,9 @@ export const GetFollowingResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -2475,6 +2535,9 @@ export const GetUserFriendsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -2588,6 +2651,9 @@ export const GetMutualFriendsResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -2720,6 +2786,9 @@ export const AcceptFriendRequestResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -2821,6 +2890,9 @@ export const AcceptFriendRequestResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -2933,6 +3005,9 @@ export const GetConversationsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -3038,6 +3113,9 @@ export const GetConversationsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -3179,6 +3257,9 @@ export const GetConversationMessagesResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -3852,6 +3933,9 @@ export const SetLakeStatusResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -4012,6 +4096,9 @@ export const GetPinsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -4164,6 +4251,9 @@ export const GetPinResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -4304,6 +4394,9 @@ export const LikePinResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -4432,6 +4525,9 @@ export const GetFavoritePinsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -4565,6 +4661,9 @@ export const ToggleFavoritePinResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -4693,6 +4792,9 @@ export const GetPendingPinsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -4826,6 +4928,9 @@ export const ApprovePinResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -5885,6 +5990,9 @@ export const GetBusinessPostsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -5972,6 +6080,29 @@ export const GetBusinessPostsResponseItem = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "tags": zod.array(zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "taggedUserId": zod.number().nullish(),
+  "taggedBusinessId": zod.number().nullish(),
+  "taggedByUserId": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'hidden']),
+  "taggedUser": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "isBusiness": zod.boolean().optional()
+})]).optional(),
+  "taggedBusiness": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
+  "createdAt": zod.string()
+})).optional().describe('People\/businesses tagged in this post (approved + hidden; pending tags are never shown).'),
   "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
@@ -6179,6 +6310,9 @@ export const GetPostsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -6266,6 +6400,29 @@ export const GetPostsResponseItem = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "tags": zod.array(zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "taggedUserId": zod.number().nullish(),
+  "taggedBusinessId": zod.number().nullish(),
+  "taggedByUserId": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'hidden']),
+  "taggedUser": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "isBusiness": zod.boolean().optional()
+})]).optional(),
+  "taggedBusiness": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
+  "createdAt": zod.string()
+})).optional().describe('People\/businesses tagged in this post (approved + hidden; pending tags are never shown).'),
   "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
@@ -6303,7 +6460,9 @@ export const CreatePostBody = zod.object({
   "pollOptions": zod.array(zod.string()).optional().describe('2-10 poll choices. When present, the post includes a poll.'),
   "lakeId": zod.number().nullish().describe('Which lake community the post belongs to (defaults to the default lake community)'),
   "asBusiness": zod.boolean().optional().describe('Post as your approved business. Business-only post types (announcement, deal, new_arrival, check_in) imply this.'),
-  "businessId": zod.number().nullish().describe('Which of your approved businesses to post as. Defaults to your first approved business when omitted.')
+  "businessId": zod.number().nullish().describe('Which of your approved businesses to post as. Defaults to your first approved business when omitted.'),
+  "taggedUserIds": zod.array(zod.number()).optional().describe('Users to tag in this post. Each target\'s tag privacy and approval settings are enforced server-side.'),
+  "taggedBusinessIds": zod.array(zod.number()).optional().describe('Approved businesses to tag in this post.')
 })
 
 
@@ -6401,6 +6560,9 @@ export const GetPostResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -6488,6 +6650,29 @@ export const GetPostResponse = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "tags": zod.array(zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "taggedUserId": zod.number().nullish(),
+  "taggedBusinessId": zod.number().nullish(),
+  "taggedByUserId": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'hidden']),
+  "taggedUser": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "isBusiness": zod.boolean().optional()
+})]).optional(),
+  "taggedBusiness": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
+  "createdAt": zod.string()
+})).optional().describe('People\/businesses tagged in this post (approved + hidden; pending tags are never shown).'),
   "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
@@ -6585,6 +6770,9 @@ export const UpdatePostResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -6672,6 +6860,29 @@ export const UpdatePostResponse = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "tags": zod.array(zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "taggedUserId": zod.number().nullish(),
+  "taggedBusinessId": zod.number().nullish(),
+  "taggedByUserId": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'hidden']),
+  "taggedUser": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "isBusiness": zod.boolean().optional()
+})]).optional(),
+  "taggedBusiness": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
+  "createdAt": zod.string()
+})).optional().describe('People\/businesses tagged in this post (approved + hidden; pending tags are never shown).'),
   "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
@@ -6770,6 +6981,9 @@ export const ReactToPostResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -6857,6 +7071,29 @@ export const ReactToPostResponse = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "tags": zod.array(zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "taggedUserId": zod.number().nullish(),
+  "taggedBusinessId": zod.number().nullish(),
+  "taggedByUserId": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'hidden']),
+  "taggedUser": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "isBusiness": zod.boolean().optional()
+})]).optional(),
+  "taggedBusiness": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
+  "createdAt": zod.string()
+})).optional().describe('People\/businesses tagged in this post (approved + hidden; pending tags are never shown).'),
   "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
@@ -6947,6 +7184,9 @@ export const VotePollResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -7034,6 +7274,29 @@ export const VotePollResponse = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "tags": zod.array(zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "taggedUserId": zod.number().nullish(),
+  "taggedBusinessId": zod.number().nullish(),
+  "taggedByUserId": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'hidden']),
+  "taggedUser": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "isBusiness": zod.boolean().optional()
+})]).optional(),
+  "taggedBusiness": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
+  "createdAt": zod.string()
+})).optional().describe('People\/businesses tagged in this post (approved + hidden; pending tags are never shown).'),
   "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
@@ -7136,6 +7399,9 @@ export const GetPostLikesResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -7252,6 +7518,9 @@ export const GetPostCommentsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -7415,6 +7684,9 @@ export const ReactToCommentResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -7554,6 +7826,9 @@ export const GetPostsSummaryResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -7641,6 +7916,29 @@ export const GetPostsSummaryResponse = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "tags": zod.array(zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "taggedUserId": zod.number().nullish(),
+  "taggedBusinessId": zod.number().nullish(),
+  "taggedByUserId": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'hidden']),
+  "taggedUser": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "isBusiness": zod.boolean().optional()
+})]).optional(),
+  "taggedBusiness": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
+  "createdAt": zod.string()
+})).optional().describe('People\/businesses tagged in this post (approved + hidden; pending tags are never shown).'),
   "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })).optional(),
@@ -7718,6 +8016,9 @@ export const GetPostsSummaryResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -7879,6 +8180,9 @@ export const ReactToMessageResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -8122,6 +8426,9 @@ export const GetActiveHazardsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -8255,6 +8562,9 @@ export const ToggleRsvpResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -8342,6 +8652,29 @@ export const ToggleRsvpResponse = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "tags": zod.array(zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "taggedUserId": zod.number().nullish(),
+  "taggedBusinessId": zod.number().nullish(),
+  "taggedByUserId": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'hidden']),
+  "taggedUser": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "isBusiness": zod.boolean().optional()
+})]).optional(),
+  "taggedBusiness": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
+  "createdAt": zod.string()
+})).optional().describe('People\/businesses tagged in this post (approved + hidden; pending tags are never shown).'),
   "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
@@ -8427,6 +8760,9 @@ export const GetRsvpsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -8544,6 +8880,9 @@ export const GetCatchesResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -8719,6 +9058,9 @@ export const ReactToCatchResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -8862,6 +9204,9 @@ export const GetCatchCommentsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -9004,6 +9349,9 @@ export const SaveCatchResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -9147,6 +9495,9 @@ export const UnsaveCatchResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -9289,6 +9640,9 @@ export const GetGalleryResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -9323,6 +9677,7 @@ export const GetGalleryResponseItem = zod.object({
   "mediaType": zod.enum(['image', 'video']),
   "caption": zod.string().nullish(),
   "boatId": zod.number().nullish(),
+  "albumId": zod.number().nullish().describe('Album this item belongs to, or null for the general gallery.'),
   "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
@@ -9336,7 +9691,137 @@ export const CreateGalleryItemBody = zod.object({
   "mediaUrl": zod.string(),
   "mediaType": zod.enum(['image', 'video']).optional(),
   "caption": zod.string().optional(),
-  "boatId": zod.number().nullish().describe('Optional boat from the uploader\'s fleet this memory belongs to')
+  "boatId": zod.number().nullish().describe('Optional boat from the uploader\'s fleet this memory belongs to'),
+  "albumId": zod.number().nullish().describe('Optional album (must be owned by the uploader) to file this item into')
+})
+
+
+/**
+ * @summary Update a gallery item (move between albums, edit caption)
+ */
+export const UpdateGalleryItemParams = zod.object({
+  "itemId": zod.coerce.number()
+})
+
+export const UpdateGalleryItemBody = zod.object({
+  "albumId": zod.number().nullish().describe('Move the item into one of your albums, or null to remove it from all albums.'),
+  "caption": zod.string().nullish()
+})
+
+export const UpdateGalleryItemResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "relationshipStatus": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatBrand": zod.string().nullish(),
+  "boatModel": zod.string().nullish(),
+  "boatYear": zod.number().nullish(),
+  "boatPhotoUrl": zod.string().nullish(),
+  "homeMarina": zod.string().nullish(),
+  "showBoat": zod.boolean().optional(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "fleet": zod.array(zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "name": zod.string(),
+  "boatType": zod.string(),
+  "color": zod.string(),
+  "brand": zod.string().nullish(),
+  "model": zod.string().nullish(),
+  "year": zod.number().nullish(),
+  "photoUrl": zod.string().nullish(),
+  "neon": zod.boolean().optional(),
+  "flag": zod.boolean().optional(),
+  "accent": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "horsepower": zod.number().nullish(),
+  "engineInfo": zod.string().nullish(),
+  "lengthFt": zod.number().nullish(),
+  "favoriteMarina": zod.string().nullish(),
+  "favoriteCove": zod.string().nullish(),
+  "favoriteActivity": zod.string().nullish(),
+  "mods": zod.string().nullish(),
+  "isPrimary": zod.boolean(),
+  "createdAt": zod.string()
+})).optional().describe('The user\'s boats\/watercraft (redacted for other viewers when showBoat=false)'),
+  "interests": zod.array(zod.string()).optional(),
+  "favoriteThings": zod.array(zod.object({
+  "label": zod.string(),
+  "value": zod.string()
+})).optional().describe('Pinned favorites shown on the profile (label + value pairs)'),
+  "shareLocation": zod.boolean().optional(),
+  "locationSharingExpiresAt": zod.string().nullish(),
+  "isSharingLocation": zod.boolean().optional(),
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
+  "showFriends": zod.boolean().optional(),
+  "followerSeeLocation": zod.boolean().optional(),
+  "followerSeePosts": zod.boolean().optional(),
+  "followerSendMessages": zod.boolean().optional(),
+  "allowReposts": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
+  "isAdmin": zod.boolean().optional(),
+  "demoMode": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
+  "waiverAcceptedAt": zod.string().nullish(),
+  "waiverVersion": zod.string().nullish(),
+  "termsAcceptedAt": zod.string().nullish(),
+  "termsVersion": zod.string().nullish(),
+  "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
+  "createdAt": zod.string()
+}).optional(),
+  "mediaUrl": zod.string(),
+  "mediaType": zod.enum(['image', 'video']),
+  "caption": zod.string().nullish(),
+  "boatId": zod.number().nullish(),
+  "albumId": zod.number().nullish().describe('Album this item belongs to, or null for the general gallery.'),
+  "isMature": zod.boolean().optional(),
+  "createdAt": zod.string()
 })
 
 
@@ -9345,6 +9830,343 @@ export const CreateGalleryItemBody = zod.object({
  */
 export const DeleteGalleryItemParams = zod.object({
   "itemId": zod.coerce.number()
+})
+
+
+/**
+ * @summary List a user's photo albums
+ */
+export const GetAlbumsQueryParams = zod.object({
+  "profileUserId": zod.coerce.number().optional().describe('When set, returns the given user\'s albums. Defaults to the current user.')
+})
+
+export const GetAlbumsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "name": zod.string(),
+  "coverUrl": zod.string().nullish().describe('Explicit cover if set, otherwise the newest item\'s media URL.'),
+  "itemCount": zod.number(),
+  "createdAt": zod.string()
+})
+export const GetAlbumsResponse = zod.array(GetAlbumsResponseItem)
+
+
+/**
+ * @summary Create a new album
+ */
+export const createAlbumBodyNameMax = 60;
+
+
+
+export const CreateAlbumBody = zod.object({
+  "name": zod.string().max(createAlbumBodyNameMax)
+})
+
+
+/**
+ * @summary Rename an album or change its cover
+ */
+export const UpdateAlbumParams = zod.object({
+  "albumId": zod.coerce.number()
+})
+
+export const updateAlbumBodyNameMax = 60;
+
+
+
+export const UpdateAlbumBody = zod.object({
+  "name": zod.string().max(updateAlbumBodyNameMax).optional(),
+  "coverUrl": zod.string().nullish().describe('Must be the media URL of an item in this album, or null to reset to newest.')
+})
+
+export const UpdateAlbumResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "name": zod.string(),
+  "coverUrl": zod.string().nullish().describe('Explicit cover if set, otherwise the newest item\'s media URL.'),
+  "itemCount": zod.number(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Delete an album (its photos return to the general gallery)
+ */
+export const DeleteAlbumParams = zod.object({
+  "albumId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Posts where a user is tagged (approved tags only)
+ */
+export const GetTaggedPostsParams = zod.object({
+  "userId": zod.coerce.number()
+})
+
+export const GetTaggedPostsResponseItem = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "user": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string(),
+  "avatarUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "bio": zod.string().nullish(),
+  "location": zod.string().nullish(),
+  "hometown": zod.string().nullish(),
+  "birthday": zod.string().nullish(),
+  "relationshipStatus": zod.string().nullish(),
+  "gender": zod.string().nullish(),
+  "work": zod.string().nullish(),
+  "isOnline": zod.boolean().optional(),
+  "isBusiness": zod.boolean().optional(),
+  "currentLat": zod.number().nullish(),
+  "currentLng": zod.number().nullish(),
+  "lastSeen": zod.string().nullish(),
+  "lakeStatus": zod.string().nullish(),
+  "boatName": zod.string().nullish(),
+  "boatColor": zod.string().nullish(),
+  "boatType": zod.string().nullish(),
+  "boatBrand": zod.string().nullish(),
+  "boatModel": zod.string().nullish(),
+  "boatYear": zod.number().nullish(),
+  "boatPhotoUrl": zod.string().nullish(),
+  "homeMarina": zod.string().nullish(),
+  "showBoat": zod.boolean().optional(),
+  "boatNeon": zod.boolean().nullish(),
+  "boatFlag": zod.boolean().nullish(),
+  "boatAccent": zod.string().nullish(),
+  "fleet": zod.array(zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "name": zod.string(),
+  "boatType": zod.string(),
+  "color": zod.string(),
+  "brand": zod.string().nullish(),
+  "model": zod.string().nullish(),
+  "year": zod.number().nullish(),
+  "photoUrl": zod.string().nullish(),
+  "neon": zod.boolean().optional(),
+  "flag": zod.boolean().optional(),
+  "accent": zod.string().nullish(),
+  "notes": zod.string().nullish(),
+  "horsepower": zod.number().nullish(),
+  "engineInfo": zod.string().nullish(),
+  "lengthFt": zod.number().nullish(),
+  "favoriteMarina": zod.string().nullish(),
+  "favoriteCove": zod.string().nullish(),
+  "favoriteActivity": zod.string().nullish(),
+  "mods": zod.string().nullish(),
+  "isPrimary": zod.boolean(),
+  "createdAt": zod.string()
+})).optional().describe('The user\'s boats\/watercraft (redacted for other viewers when showBoat=false)'),
+  "interests": zod.array(zod.string()).optional(),
+  "favoriteThings": zod.array(zod.object({
+  "label": zod.string(),
+  "value": zod.string()
+})).optional().describe('Pinned favorites shown on the profile (label + value pairs)'),
+  "shareLocation": zod.boolean().optional(),
+  "locationSharingExpiresAt": zod.string().nullish(),
+  "isSharingLocation": zod.boolean().optional(),
+  "requireFollowApproval": zod.boolean().optional(),
+  "showFollowers": zod.boolean().optional(),
+  "showFriends": zod.boolean().optional(),
+  "followerSeeLocation": zod.boolean().optional(),
+  "followerSeePosts": zod.boolean().optional(),
+  "followerSendMessages": zod.boolean().optional(),
+  "allowReposts": zod.boolean().optional(),
+  "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
+  "isAdmin": zod.boolean().optional(),
+  "demoMode": zod.boolean().optional(),
+  "isSuspended": zod.boolean().optional(),
+  "warningCount": zod.number().optional(),
+  "waiverAcceptedAt": zod.string().nullish(),
+  "waiverVersion": zod.string().nullish(),
+  "termsAcceptedAt": zod.string().nullish(),
+  "termsVersion": zod.string().nullish(),
+  "friendStatus": zod.enum(['none', 'self', 'accepted', 'pending_out', 'pending_in', 'blocked', 'blocked_by']).optional(),
+  "followerCount": zod.number().optional(),
+  "followingCount": zod.number().optional(),
+  "badges": zod.array(zod.object({
+  "key": zod.string(),
+  "label": zod.string(),
+  "description": zod.string(),
+  "earned": zod.boolean()
+})).optional(),
+  "rank": zod.object({
+  "key": zod.string(),
+  "title": zod.string(),
+  "tier": zod.number(),
+  "earnedCount": zod.number(),
+  "totalCount": zod.number(),
+  "nextTitle": zod.string().nullish(),
+  "nextNeeded": zod.number().nullish()
+}).optional(),
+  "primaryLakeId": zod.number().optional().describe('The user\'s home lake (from the static lakes catalog)'),
+  "currentLakeId": zod.number().nullish().describe('The lake of the user\'s most recent check-in'),
+  "createdAt": zod.string()
+}).optional(),
+  "lakeId": zod.number().optional(),
+  "title": zod.string(),
+  "content": zod.string(),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase', 'announcement', 'deal', 'new_arrival', 'check_in']),
+  "eventDate": zod.string().nullish(),
+  "imageUrl": zod.string().nullish(),
+  "videoUrl": zod.string().nullish(),
+  "photos": zod.array(zod.string()).nullish().describe('Gallery photo URLs (used by boat showcases).'),
+  "media": zod.array(zod.object({
+  "type": zod.enum(['image', 'video']),
+  "url": zod.string(),
+  "trimStart": zod.number().optional().describe('Video trim start offset in seconds (videos only).'),
+  "trimEnd": zod.number().optional().describe('Video trim end offset in seconds (videos only).')
+})).nullish().describe('Ordered mixed media (images and videos). Preferred over imageUrl\/videoUrl\/photos when present.'),
+  "engineSetup": zod.string().nullish().describe('Engine setup description (boat showcase).'),
+  "horsepower": zod.number().nullish().describe('Engine horsepower (boat showcase).'),
+  "topSpeed": zod.number().nullish().describe('Top speed in mph (boat showcase).'),
+  "mods": zod.string().nullish().describe('Modifications list (boat showcase).'),
+  "pinLat": zod.number().nullish(),
+  "pinLng": zod.number().nullish(),
+  "likeCount": zod.number().optional(),
+  "likedByMe": zod.boolean().optional(),
+  "myReaction": zod.union([zod.literal('thumbsup'),zod.literal('thumbsdown'),zod.literal('heart'),zod.literal('laugh'),zod.literal('sad'),zod.literal('angry'),zod.literal('fire'),zod.literal('heart_eyes'),zod.literal('wow'),zod.literal(null)]).nullish(),
+  "reactionCounts": zod.object({
+  "thumbsup": zod.number().optional(),
+  "thumbsdown": zod.number().optional(),
+  "heart": zod.number().optional(),
+  "laugh": zod.number().optional(),
+  "sad": zod.number().optional(),
+  "angry": zod.number().optional(),
+  "fire": zod.number().optional(),
+  "heart_eyes": zod.number().optional(),
+  "wow": zod.number().optional()
+}).optional(),
+  "rsvpCount": zod.number().optional(),
+  "rsvpByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
+  "sharedPostId": zod.number().nullish(),
+  "sharedPost": zod.union([zod.null(),zod.unknown()]).optional(),
+  "businessId": zod.number().nullish(),
+  "business": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
+  "visibility": zod.enum(['community', 'friends']).optional(),
+  "poll": zod.union([zod.null(),zod.object({
+  "options": zod.array(zod.object({
+  "id": zod.number(),
+  "text": zod.string(),
+  "voteCount": zod.number()
+})),
+  "totalVotes": zod.number(),
+  "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
+})]).optional(),
+  "tags": zod.array(zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "taggedUserId": zod.number().nullish(),
+  "taggedBusinessId": zod.number().nullish(),
+  "taggedByUserId": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'hidden']),
+  "taggedUser": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "isBusiness": zod.boolean().optional()
+})]).optional(),
+  "taggedBusiness": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
+  "createdAt": zod.string()
+})).optional().describe('People\/businesses tagged in this post (approved + hidden; pending tags are never shown).'),
+  "isMature": zod.boolean().optional(),
+  "createdAt": zod.string()
+})
+export const GetTaggedPostsResponse = zod.array(GetTaggedPostsResponseItem)
+
+
+/**
+ * @summary The caller's tags awaiting approval
+ */
+export const GetPendingTagsResponseItem = zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "taggedUserId": zod.number().nullish(),
+  "taggedBusinessId": zod.number().nullish(),
+  "taggedByUserId": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'hidden']),
+  "taggedUser": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "isBusiness": zod.boolean().optional()
+})]).optional(),
+  "taggedBusiness": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
+  "createdAt": zod.string()
+})
+export const GetPendingTagsResponse = zod.array(GetPendingTagsResponseItem)
+
+
+/**
+ * @summary Approve or hide a tag of yourself
+ */
+export const UpdateTagStatusParams = zod.object({
+  "tagId": zod.coerce.number()
+})
+
+export const UpdateTagStatusBody = zod.object({
+  "status": zod.enum(['approved', 'hidden'])
+})
+
+export const UpdateTagStatusResponse = zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "taggedUserId": zod.number().nullish(),
+  "taggedBusinessId": zod.number().nullish(),
+  "taggedByUserId": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'hidden']),
+  "taggedUser": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "isBusiness": zod.boolean().optional()
+})]).optional(),
+  "taggedBusiness": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
+  "createdAt": zod.string()
+})
+
+
+/**
+ * @summary Remove a tag (allowed for the tagged person or the tagger)
+ */
+export const DeleteTagParams = zod.object({
+  "tagId": zod.coerce.number()
 })
 
 
@@ -9428,6 +10250,9 @@ export const SearchResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -9577,6 +10402,9 @@ export const AcceptWaiverResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -9687,6 +10515,9 @@ export const AcceptTermsResponse = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -9873,6 +10704,9 @@ export const GetSavedPostsResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),
@@ -9960,6 +10794,29 @@ export const GetSavedPostsResponseItem = zod.object({
   "totalVotes": zod.number(),
   "myVote": zod.number().nullish().describe('The option id the viewer voted for, or null.')
 })]).optional(),
+  "tags": zod.array(zod.object({
+  "id": zod.number(),
+  "postId": zod.number(),
+  "taggedUserId": zod.number().nullish(),
+  "taggedBusinessId": zod.number().nullish(),
+  "taggedByUserId": zod.number(),
+  "status": zod.enum(['pending', 'approved', 'hidden']),
+  "taggedUser": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish(),
+  "isBusiness": zod.boolean().optional()
+})]).optional(),
+  "taggedBusiness": zod.union([zod.null(),zod.object({
+  "id": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "logoUrl": zod.string().nullish(),
+  "verified": zod.boolean()
+})]).optional(),
+  "createdAt": zod.string()
+})).optional().describe('People\/businesses tagged in this post (approved + hidden; pending tags are never shown).'),
   "isMature": zod.boolean().optional(),
   "createdAt": zod.string()
 })
@@ -10056,6 +10913,9 @@ export const GetMutedUsersResponseItem = zod.object({
   "followerSendMessages": zod.boolean().optional(),
   "allowReposts": zod.boolean().optional(),
   "showMatureContent": zod.boolean().optional(),
+  "tagPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may tag this user in posts.'),
+  "mentionPrivacy": zod.enum(['everyone', 'friends', 'none']).optional().describe('Who may @mention this user.'),
+  "tagApprovalRequired": zod.boolean().optional().describe('When true, tags of this user need their approval before showing on their profile.'),
   "isAdmin": zod.boolean().optional(),
   "demoMode": zod.boolean().optional(),
   "isSuspended": zod.boolean().optional(),

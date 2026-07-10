@@ -1,6 +1,6 @@
 import React from "react";
 import { useGetPosts, useGetSavedPosts, useReactToPost, useGetMe, useDeletePost, useCreatePost, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useBlockUser, useShareToProfile, useVotePoll, useUpdatePost, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetBlockedUsersQueryKey, useGetConditions, getGetConditionsQueryKey, useGetCatches, getGetCatchesQueryKey, useGetMyBusinesses, getGetMyBusinessesQueryKey } from "@workspace/api-client-react";
-import { PostInputPostType, PostInputVisibility } from "@workspace/api-client-react/src/generated/api.schemas";
+import { PostInputPostType, PostInputVisibility } from "@workspace/api-client-react";
 import { GifPickerDialog } from "@/components/GifPickerDialog";
 import { UserAvatar } from "@/components/UserAvatar";
 import { HazardBanner } from "@/components/HazardBanner";
@@ -41,6 +41,8 @@ import { useUpload } from "@workspace/object-storage-web";
 import { compressImage } from "@/lib/compress";
 import { MediaStrip } from "@/components/composer/MediaStrip";
 import { MediaEditor, type ComposerMediaItem } from "@/components/composer/MediaEditor";
+import { MentionTextarea } from "@/components/composer/MentionTextarea";
+import { TagPeopleDialog, type TagSelection } from "@/components/composer/TagPeopleDialog";
 import { resolveImageSrc } from "@/lib/assets";
 import { ClickableImage } from "@/components/ClickableImage";
 import { MatureGate } from "@/components/MatureGate";
@@ -376,6 +378,8 @@ export function FeedPage() {
   const [locationOpen, setLocationOpen] = React.useState(false);
   const [locationDraft, setLocationDraft] = React.useState("");
   const [gifOpen, setGifOpen] = React.useState(false);
+  const [newTags, setNewTags] = React.useState<TagSelection>({ users: [], businesses: [] });
+  const [tagPeopleOpen, setTagPeopleOpen] = React.useState(false);
   const pollActive = pollOptions.length > 0;
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const videoInputRef = React.useRef<HTMLInputElement>(null);
@@ -434,6 +438,7 @@ export function FeedPage() {
     setNewLocation("");
     setNewGifUrl(null);
     setPollOptions([]);
+    setNewTags({ users: [], businesses: [] });
     setNewVisibility("community");
     setTopicDraft("");
     setLocationDraft("");
@@ -569,6 +574,8 @@ export function FeedPage() {
           mods: isBoat && newMods.trim() ? newMods.trim() : undefined,
           visibility: newVisibility as PostInputVisibility,
           pollOptions: validPollOptions.length >= 2 ? validPollOptions : undefined,
+          taggedUserIds: newTags.users.length ? newTags.users.map((u) => u.id) : undefined,
+          taggedBusinessIds: newTags.businesses.length ? newTags.businesses.map((b) => b.id) : undefined,
           lakeId,
         },
       },
@@ -1021,9 +1028,9 @@ export function FeedPage() {
               </div>
             )}
 
-            <Textarea
+            <MentionTextarea
               value={newContent}
-              onChange={(e) => setNewContent(e.target.value)}
+              onChange={setNewContent}
               placeholder={newType === "boat_showcase" ? "Tell the story behind your build…" : newType === "tie_up" ? "Drop the spot where everyone's tying up…" : "What's on your mind?"}
               rows={newType === "boat_showcase" ? 3 : 4}
               className="resize-none border-0 px-0 text-lg shadow-none placeholder:text-muted-foreground/70 focus-visible:ring-0"
@@ -1181,6 +1188,38 @@ export function FeedPage() {
                   </span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </button>
+
+                <button type="button" onClick={() => setTagPeopleOpen(true)} data-testid="button-tag-people" className="flex w-full items-center gap-3 rounded-xl border border-border px-3.5 py-3 text-left transition hover-elevate active:scale-[0.99]">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-500/10">
+                    <Users className="h-4 w-4 text-teal-500" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">Tag people</span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {newTags.users.length || newTags.businesses.length
+                        ? `with ${[...newTags.users.map((u) => u.displayName), ...newTags.businesses.map((b) => b.name)].join(", ")}`
+                        : "Tag friends and businesses"}
+                    </span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
+
+                {(newTags.users.length > 0 || newTags.businesses.length > 0) && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {newTags.users.map((u) => (
+                      <span key={`tu-${u.id}`} className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                        {u.displayName}
+                        <button type="button" onClick={() => setNewTags((prev) => ({ ...prev, users: prev.users.filter((x) => x.id !== u.id) }))} className="ml-0.5"><X className="h-3 w-3" /></button>
+                      </span>
+                    ))}
+                    {newTags.businesses.map((b) => (
+                      <span key={`tb-${b.id}`} className="inline-flex items-center gap-1 rounded-full bg-teal-500/10 px-2.5 py-1 text-xs font-medium text-teal-600 dark:text-teal-400">
+                        <Store className="h-3 w-3" /> {b.name}
+                        <button type="button" onClick={() => setNewTags((prev) => ({ ...prev, businesses: prev.businesses.filter((x) => x.id !== b.id) }))} className="ml-0.5"><X className="h-3 w-3" /></button>
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 <div className="flex w-full items-center gap-3 rounded-xl border border-border px-3.5 py-2.5">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-500/10">
@@ -1341,6 +1380,13 @@ export function FeedPage() {
       </Dialog>
 
       <GifPickerDialog open={gifOpen} onOpenChange={setGifOpen} onSelect={handleSelectGif} />
+
+      <TagPeopleDialog
+        open={tagPeopleOpen}
+        onOpenChange={setTagPeopleOpen}
+        value={newTags}
+        onConfirm={setNewTags}
+      />
 
       {editingMediaIdx != null && newMedia[editingMediaIdx] && (
         <MediaEditor

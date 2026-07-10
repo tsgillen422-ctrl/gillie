@@ -33,6 +33,10 @@ import {
   Trash2,
   Loader2,
   Repeat2,
+  AtSign,
+  Globe2,
+  Users2,
+  UserX,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -500,6 +504,142 @@ function DeleteAccountPage() {
   );
 }
 
+/* -------------------------- Tagging & Mentions --------------------------- */
+
+type AudienceValue = "everyone" | "friends" | "none";
+
+const AUDIENCE_OPTIONS: { value: AudienceValue; label: string; icon: LucideIcon }[] = [
+  { value: "everyone", label: "Everyone", icon: Globe2 },
+  { value: "friends", label: "Friends only", icon: Users2 },
+  { value: "none", label: "No one", icon: UserX },
+];
+
+function AudienceChoiceGroup({
+  title,
+  footer,
+  value,
+  onChange,
+  disabled,
+  testIdPrefix,
+}: {
+  title: string;
+  footer?: string;
+  value: AudienceValue;
+  onChange: (v: AudienceValue) => void;
+  disabled?: boolean;
+  testIdPrefix: string;
+}) {
+  return (
+    <SettingsGroup title={title} footer={footer}>
+      <div className="divide-y divide-border">
+        {AUDIENCE_OPTIONS.map((opt) => {
+          const Icon = opt.icon;
+          const active = value === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onChange(opt.value)}
+              disabled={disabled}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/60 active:bg-muted transition-colors disabled:opacity-60"
+              data-testid={`row-${testIdPrefix}-${opt.value}`}
+            >
+              <Icon className="w-5 h-5 shrink-0 text-primary" />
+              <span className="flex-1 min-w-0 text-[15px] font-medium truncate">{opt.label}</span>
+              {active && <Check className="w-5 h-5 shrink-0 text-primary" />}
+            </button>
+          );
+        })}
+      </div>
+    </SettingsGroup>
+  );
+}
+
+function TaggingMentionsPage() {
+  const { data: me, isLoading } = useGetMe();
+  const updateMe = useUpdateMe();
+  const { toast } = useToast();
+
+  const [tagPrivacy, setTagPrivacy] = React.useState<AudienceValue>("everyone");
+  const [mentionPrivacy, setMentionPrivacy] = React.useState<AudienceValue>("everyone");
+  const [tagApprovalRequired, setTagApprovalRequired] = React.useState(false);
+
+  React.useEffect(() => {
+    if (me) {
+      setTagPrivacy(((me as any).tagPrivacy as AudienceValue) ?? "everyone");
+      setMentionPrivacy(((me as any).mentionPrivacy as AudienceValue) ?? "everyone");
+      setTagApprovalRequired((me as any).tagApprovalRequired ?? false);
+    }
+  }, [me]);
+
+  const save = (field: string, next: any, rollback: () => void) => {
+    updateMe.mutate(
+      { data: { [field]: next } as any },
+      {
+        onSuccess: () => toast({ title: "Saved", description: "Your preference has been updated." }),
+        onError: () => {
+          rollback();
+          toast({ title: "Error", description: "Failed to update setting.", variant: "destructive" });
+        },
+      },
+    );
+  };
+
+  const handleTagPrivacy = (v: AudienceValue) => {
+    const prev = tagPrivacy;
+    setTagPrivacy(v);
+    save("tagPrivacy", v, () => setTagPrivacy(prev));
+  };
+
+  const handleMentionPrivacy = (v: AudienceValue) => {
+    const prev = mentionPrivacy;
+    setMentionPrivacy(v);
+    save("mentionPrivacy", v, () => setMentionPrivacy(prev));
+  };
+
+  const handleApproval = (next: boolean) => {
+    setTagApprovalRequired(next);
+    save("tagApprovalRequired", next, () => setTagApprovalRequired(!next));
+  };
+
+  return (
+    <SettingsShell title="Tagging & Mentions">
+      {isLoading ? (
+        <p className="text-center text-muted-foreground py-8">Loading...</p>
+      ) : (
+        <>
+          <AudienceChoiceGroup
+            title="Who can tag me"
+            footer="Choose who can tag you in their posts and photos."
+            value={tagPrivacy}
+            onChange={handleTagPrivacy}
+            disabled={updateMe.isPending}
+            testIdPrefix="tag-privacy"
+          />
+          <AudienceChoiceGroup
+            title="Who can @mention me"
+            footer="Choose who can mention you in posts and comments."
+            value={mentionPrivacy}
+            onChange={handleMentionPrivacy}
+            disabled={updateMe.isPending}
+            testIdPrefix="mention-privacy"
+          />
+          <SettingsGroup footer="When on, tags need your approval before they appear on your profile. Pending tags show up under Alerts where you can approve, hide, or remove them.">
+            <SettingsSwitchRow
+              icon={AtSign}
+              label="Approve tags first"
+              description="Review tags before they appear on your profile"
+              checked={tagApprovalRequired}
+              onCheckedChange={handleApproval}
+              disabled={updateMe.isPending}
+            />
+          </SettingsGroup>
+        </>
+      )}
+    </SettingsShell>
+  );
+}
+
 /* ------------------------------- Dispatcher ------------------------------ */
 
 export function SettingsDetailPage() {
@@ -513,6 +653,7 @@ export function SettingsDetailPage() {
   if (section === "hidden-posts") return <HiddenPostsPage />;
   if (section === "waiver") return <WaiverPage />;
   if (section === "home-lake") return <HomeLakePage />;
+  if (section === "tagging") return <TaggingMentionsPage />;
 
   const toggle = section ? TOGGLE_CONFIGS[section] : undefined;
   if (toggle) return <ToggleSettingPage config={toggle} />;

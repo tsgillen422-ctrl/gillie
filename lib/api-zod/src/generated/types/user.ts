@@ -10,6 +10,8 @@ import type { Boat } from './boat';
 import type { FavoriteThing } from './favoriteThing';
 import type { Rank } from './rank';
 import type { UserFriendStatus } from './userFriendStatus';
+import type { UserMentionPrivacy } from './userMentionPrivacy';
+import type { UserTagPrivacy } from './userTagPrivacy';
 
 export interface User {
   id: number;
@@ -83,6 +85,12 @@ export interface User {
   followerSendMessages?: boolean;
   allowReposts?: boolean;
   showMatureContent?: boolean;
+  /** Who may tag this user in posts. */
+  tagPrivacy?: UserTagPrivacy;
+  /** Who may @mention this user. */
+  mentionPrivacy?: UserMentionPrivacy;
+  /** When true, tags of this user need their approval before showing on their profile. */
+  tagApprovalRequired?: boolean;
   isAdmin?: boolean;
   demoMode?: boolean;
   isSuspended?: boolean;

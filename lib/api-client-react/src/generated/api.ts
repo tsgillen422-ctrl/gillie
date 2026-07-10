@@ -20,6 +20,9 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  Album,
+  AlbumInput,
+  AlbumUpdateInput,
   Boat,
   BoatInput,
   BoatUpdate,
@@ -50,7 +53,9 @@ import type {
   FriendRequest,
   GalleryItem,
   GalleryItemInput,
+  GalleryItemUpdateInput,
   GetActiveHazardsParams,
+  GetAlbumsParams,
   GetBusinessesParams,
   GetCatchesParams,
   GetConditionsParams,
@@ -93,6 +98,7 @@ import type {
   Post,
   PostInput,
   PostLikeUser,
+  PostTag,
   PostUpdateInput,
   PostsSummary,
   PushSubscriptionInput,
@@ -119,6 +125,7 @@ import type {
   StoryPollVoteInput,
   StoryReactionInput,
   SuggestedUser,
+  TagStatusUpdateInput,
   TermsAccept,
   UploadUrlRequest,
   UploadUrlResponse,
@@ -10848,6 +10855,78 @@ export const useCreateGalleryItem = <TError = ErrorType<ErrorEnvelope>,
       return useMutation(getCreateGalleryItemMutationOptions(options));
     }
 
+export const getUpdateGalleryItemUrl = (itemId: number,) => {
+
+
+
+
+  return `/api/gallery/${itemId}`
+}
+
+/**
+ * @summary Update a gallery item (move between albums, edit caption)
+ */
+export const updateGalleryItem = async (itemId: number,
+    galleryItemUpdateInput: GalleryItemUpdateInput, options?: RequestInit): Promise<GalleryItem> => {
+
+  return customFetch<GalleryItem>(getUpdateGalleryItemUrl(itemId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      galleryItemUpdateInput,)
+  }
+);}
+
+
+
+
+export const getUpdateGalleryItemMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateGalleryItem>>, TError,{itemId: number;data: BodyType<GalleryItemUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateGalleryItem>>, TError,{itemId: number;data: BodyType<GalleryItemUpdateInput>}, TContext> => {
+
+const mutationKey = ['updateGalleryItem'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateGalleryItem>>, {itemId: number;data: BodyType<GalleryItemUpdateInput>}> = (props) => {
+          const {itemId,data} = props ?? {};
+
+          return  updateGalleryItem(itemId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateGalleryItemMutationResult = NonNullable<Awaited<ReturnType<typeof updateGalleryItem>>>
+    export type UpdateGalleryItemMutationBody = BodyType<GalleryItemUpdateInput>
+    export type UpdateGalleryItemMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Update a gallery item (move between albums, edit caption)
+ */
+export const useUpdateGalleryItem = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateGalleryItem>>, TError,{itemId: number;data: BodyType<GalleryItemUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateGalleryItem>>,
+        TError,
+        {itemId: number;data: BodyType<GalleryItemUpdateInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateGalleryItemMutationOptions(options));
+    }
+
 export const getDeleteGalleryItemUrl = (itemId: number,) => {
 
 
@@ -10916,6 +10995,599 @@ export const useDeleteGalleryItem = <TError = ErrorType<ErrorEnvelope>,
         TContext
       > => {
       return useMutation(getDeleteGalleryItemMutationOptions(options));
+    }
+
+export const getGetAlbumsUrl = (params?: GetAlbumsParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/albums?${stringifiedParams}` : `/api/albums`
+}
+
+/**
+ * @summary List a user's photo albums
+ */
+export const getAlbums = async (params?: GetAlbumsParams, options?: RequestInit): Promise<Album[]> => {
+
+  return customFetch<Album[]>(getGetAlbumsUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetAlbumsQueryKey = (params?: GetAlbumsParams,) => {
+    return [
+    `/api/albums`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetAlbumsQueryOptions = <TData = Awaited<ReturnType<typeof getAlbums>>, TError = ErrorType<unknown>>(params?: GetAlbumsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAlbums>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetAlbumsQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getAlbums>>> = ({ signal }) => getAlbums(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getAlbums>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetAlbumsQueryResult = NonNullable<Awaited<ReturnType<typeof getAlbums>>>
+export type GetAlbumsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List a user's photo albums
+ */
+
+export function useGetAlbums<TData = Awaited<ReturnType<typeof getAlbums>>, TError = ErrorType<unknown>>(
+ params?: GetAlbumsParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getAlbums>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetAlbumsQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getCreateAlbumUrl = () => {
+
+
+
+
+  return `/api/albums`
+}
+
+/**
+ * @summary Create a new album
+ */
+export const createAlbum = async (albumInput: AlbumInput, options?: RequestInit): Promise<Album> => {
+
+  return customFetch<Album>(getCreateAlbumUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      albumInput,)
+  }
+);}
+
+
+
+
+export const getCreateAlbumMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAlbum>>, TError,{data: BodyType<AlbumInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAlbum>>, TError,{data: BodyType<AlbumInput>}, TContext> => {
+
+const mutationKey = ['createAlbum'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAlbum>>, {data: BodyType<AlbumInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createAlbum(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAlbumMutationResult = NonNullable<Awaited<ReturnType<typeof createAlbum>>>
+    export type CreateAlbumMutationBody = BodyType<AlbumInput>
+    export type CreateAlbumMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Create a new album
+ */
+export const useCreateAlbum = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAlbum>>, TError,{data: BodyType<AlbumInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAlbum>>,
+        TError,
+        {data: BodyType<AlbumInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAlbumMutationOptions(options));
+    }
+
+export const getUpdateAlbumUrl = (albumId: number,) => {
+
+
+
+
+  return `/api/albums/${albumId}`
+}
+
+/**
+ * @summary Rename an album or change its cover
+ */
+export const updateAlbum = async (albumId: number,
+    albumUpdateInput: AlbumUpdateInput, options?: RequestInit): Promise<Album> => {
+
+  return customFetch<Album>(getUpdateAlbumUrl(albumId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      albumUpdateInput,)
+  }
+);}
+
+
+
+
+export const getUpdateAlbumMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAlbum>>, TError,{albumId: number;data: BodyType<AlbumUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateAlbum>>, TError,{albumId: number;data: BodyType<AlbumUpdateInput>}, TContext> => {
+
+const mutationKey = ['updateAlbum'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateAlbum>>, {albumId: number;data: BodyType<AlbumUpdateInput>}> = (props) => {
+          const {albumId,data} = props ?? {};
+
+          return  updateAlbum(albumId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateAlbumMutationResult = NonNullable<Awaited<ReturnType<typeof updateAlbum>>>
+    export type UpdateAlbumMutationBody = BodyType<AlbumUpdateInput>
+    export type UpdateAlbumMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Rename an album or change its cover
+ */
+export const useUpdateAlbum = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateAlbum>>, TError,{albumId: number;data: BodyType<AlbumUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateAlbum>>,
+        TError,
+        {albumId: number;data: BodyType<AlbumUpdateInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateAlbumMutationOptions(options));
+    }
+
+export const getDeleteAlbumUrl = (albumId: number,) => {
+
+
+
+
+  return `/api/albums/${albumId}`
+}
+
+/**
+ * @summary Delete an album (its photos return to the general gallery)
+ */
+export const deleteAlbum = async (albumId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAlbumUrl(albumId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteAlbumMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAlbum>>, TError,{albumId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAlbum>>, TError,{albumId: number}, TContext> => {
+
+const mutationKey = ['deleteAlbum'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAlbum>>, {albumId: number}> = (props) => {
+          const {albumId} = props ?? {};
+
+          return  deleteAlbum(albumId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAlbumMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAlbum>>>
+
+    export type DeleteAlbumMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Delete an album (its photos return to the general gallery)
+ */
+export const useDeleteAlbum = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAlbum>>, TError,{albumId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAlbum>>,
+        TError,
+        {albumId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAlbumMutationOptions(options));
+    }
+
+export const getGetTaggedPostsUrl = (userId: number,) => {
+
+
+
+
+  return `/api/tags/user/${userId}`
+}
+
+/**
+ * @summary Posts where a user is tagged (approved tags only)
+ */
+export const getTaggedPosts = async (userId: number, options?: RequestInit): Promise<Post[]> => {
+
+  return customFetch<Post[]>(getGetTaggedPostsUrl(userId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetTaggedPostsQueryKey = (userId: number,) => {
+    return [
+    `/api/tags/user/${userId}`
+    ] as const;
+    }
+
+
+export const getGetTaggedPostsQueryOptions = <TData = Awaited<ReturnType<typeof getTaggedPosts>>, TError = ErrorType<unknown>>(userId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTaggedPosts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetTaggedPostsQueryKey(userId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getTaggedPosts>>> = ({ signal }) => getTaggedPosts(userId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: !!(userId), ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getTaggedPosts>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetTaggedPostsQueryResult = NonNullable<Awaited<ReturnType<typeof getTaggedPosts>>>
+export type GetTaggedPostsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary Posts where a user is tagged (approved tags only)
+ */
+
+export function useGetTaggedPosts<TData = Awaited<ReturnType<typeof getTaggedPosts>>, TError = ErrorType<unknown>>(
+ userId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getTaggedPosts>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetTaggedPostsQueryOptions(userId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getGetPendingTagsUrl = () => {
+
+
+
+
+  return `/api/tags/pending`
+}
+
+/**
+ * @summary The caller's tags awaiting approval
+ */
+export const getPendingTags = async ( options?: RequestInit): Promise<PostTag[]> => {
+
+  return customFetch<PostTag[]>(getGetPendingTagsUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetPendingTagsQueryKey = () => {
+    return [
+    `/api/tags/pending`
+    ] as const;
+    }
+
+
+export const getGetPendingTagsQueryOptions = <TData = Awaited<ReturnType<typeof getPendingTags>>, TError = ErrorType<unknown>>( options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPendingTags>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetPendingTagsQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getPendingTags>>> = ({ signal }) => getPendingTags({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getPendingTags>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetPendingTagsQueryResult = NonNullable<Awaited<ReturnType<typeof getPendingTags>>>
+export type GetPendingTagsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary The caller's tags awaiting approval
+ */
+
+export function useGetPendingTags<TData = Awaited<ReturnType<typeof getPendingTags>>, TError = ErrorType<unknown>>(
+  options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getPendingTags>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetPendingTagsQueryOptions(options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+
+
+
+
+
+
+export const getUpdateTagStatusUrl = (tagId: number,) => {
+
+
+
+
+  return `/api/tags/${tagId}`
+}
+
+/**
+ * @summary Approve or hide a tag of yourself
+ */
+export const updateTagStatus = async (tagId: number,
+    tagStatusUpdateInput: TagStatusUpdateInput, options?: RequestInit): Promise<PostTag> => {
+
+  return customFetch<PostTag>(getUpdateTagStatusUrl(tagId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      tagStatusUpdateInput,)
+  }
+);}
+
+
+
+
+export const getUpdateTagStatusMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTagStatus>>, TError,{tagId: number;data: BodyType<TagStatusUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateTagStatus>>, TError,{tagId: number;data: BodyType<TagStatusUpdateInput>}, TContext> => {
+
+const mutationKey = ['updateTagStatus'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateTagStatus>>, {tagId: number;data: BodyType<TagStatusUpdateInput>}> = (props) => {
+          const {tagId,data} = props ?? {};
+
+          return  updateTagStatus(tagId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateTagStatusMutationResult = NonNullable<Awaited<ReturnType<typeof updateTagStatus>>>
+    export type UpdateTagStatusMutationBody = BodyType<TagStatusUpdateInput>
+    export type UpdateTagStatusMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Approve or hide a tag of yourself
+ */
+export const useUpdateTagStatus = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTagStatus>>, TError,{tagId: number;data: BodyType<TagStatusUpdateInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateTagStatus>>,
+        TError,
+        {tagId: number;data: BodyType<TagStatusUpdateInput>},
+        TContext
+      > => {
+      return useMutation(getUpdateTagStatusMutationOptions(options));
+    }
+
+export const getDeleteTagUrl = (tagId: number,) => {
+
+
+
+
+  return `/api/tags/${tagId}`
+}
+
+/**
+ * @summary Remove a tag (allowed for the tagged person or the tagger)
+ */
+export const deleteTag = async (tagId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteTagUrl(tagId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+export const getDeleteTagMutationOptions = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTag>>, TError,{tagId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteTag>>, TError,{tagId: number}, TContext> => {
+
+const mutationKey = ['deleteTag'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTag>>, {tagId: number}> = (props) => {
+          const {tagId} = props ?? {};
+
+          return  deleteTag(tagId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteTagMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTag>>>
+
+    export type DeleteTagMutationError = ErrorType<ErrorEnvelope>
+
+    /**
+ * @summary Remove a tag (allowed for the tagged person or the tagger)
+ */
+export const useDeleteTag = <TError = ErrorType<ErrorEnvelope>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTag>>, TError,{tagId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteTag>>,
+        TError,
+        {tagId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteTagMutationOptions(options));
     }
 
 export const getSearchUrl = (params: SearchParams,) => {

@@ -43,4 +43,8 @@ export interface PostInput {
      * @nullable
      */
   businessId?: number | null;
+  /** Users to tag in this post. Each target's tag privacy and approval settings are enforced server-side. */
+  taggedUserIds?: number[];
+  /** Approved businesses to tag in this post. */
+  taggedBusinessIds?: number[];
 }
