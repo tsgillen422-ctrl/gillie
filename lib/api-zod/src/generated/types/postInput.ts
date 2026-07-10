@@ -30,4 +30,6 @@ export interface PostInput {
      * @nullable
      */
   lakeId?: number | null;
+  /** Post as your approved business. Business-only post types (announcement, deal, new_arrival, check_in) imply this. */
+  asBusiness?: boolean;
 }

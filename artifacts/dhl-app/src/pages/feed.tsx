@@ -1,5 +1,5 @@
 import React from "react";
-import { useGetPosts, useGetSavedPosts, useReactToPost, useGetMe, useDeletePost, useCreatePost, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useBlockUser, useShareToProfile, useVotePoll, useUpdatePost, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetBlockedUsersQueryKey, useGetConditions, getGetConditionsQueryKey, useGetCatches, getGetCatchesQueryKey } from "@workspace/api-client-react";
+import { useGetPosts, useGetSavedPosts, useReactToPost, useGetMe, useDeletePost, useCreatePost, useToggleRsvp, useSavePost, useUnsavePost, useMuteUser, useBlockUser, useShareToProfile, useVotePoll, useUpdatePost, getGetPostsQueryKey, getGetSavedPostsQueryKey, getGetPostsSummaryQueryKey, getGetBlockedUsersQueryKey, useGetConditions, getGetConditionsQueryKey, useGetCatches, getGetCatchesQueryKey, useGetMyBusiness, getGetMyBusinessQueryKey } from "@workspace/api-client-react";
 import { PostInputPostType, PostInputVisibility } from "@workspace/api-client-react/src/generated/api.schemas";
 import { GifPickerDialog } from "@/components/GifPickerDialog";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -353,7 +353,7 @@ export function FeedPage() {
   const openPost = openPostId != null ? posts?.find((p) => p.id === openPostId) ?? null : null;
   const [newTitle, setNewTitle] = React.useState("");
   const [newContent, setNewContent] = React.useState("");
-  const [newType, setNewType] = React.useState<"post" | "event" | "business" | "tie_up" | "boat_showcase">("post");
+  const [newType, setNewType] = React.useState<"post" | "event" | "business" | "tie_up" | "boat_showcase" | "announcement" | "biz_event" | "deal" | "new_arrival" | "check_in">("post");
   const [newEventDate, setNewEventDate] = React.useState("");
   const [newImageUrl, setNewImageUrl] = React.useState<string | null>(null);
   const [newVideoUrl, setNewVideoUrl] = React.useState<string | null>(null);
@@ -379,6 +379,15 @@ export function FeedPage() {
   const videoInputRef = React.useRef<HTMLInputElement>(null);
   const boatPhotosInputRef = React.useRef<HTMLInputElement>(null);
   const { uploadFile, isUploading } = useUpload();
+
+  // Business owners post through this same composer with extra business-only
+  // post types; those posts carry the business identity automatically.
+  const { data: myBusiness } = useGetMyBusiness({
+    query: { queryKey: getGetMyBusinessQueryKey(), retry: false },
+  });
+  const hasApprovedBusiness = myBusiness?.status === "approved";
+  const BIZ_TYPES = ["announcement", "biz_event", "deal", "new_arrival", "check_in"] as const;
+  const isBizType = (BIZ_TYPES as readonly string[]).includes(newType);
 
   const refreshPosts = () => {
     queryClient.invalidateQueries({ queryKey: getGetPostsQueryKey() });
@@ -518,7 +527,7 @@ export function FeedPage() {
       toast.error("Add something to your post.");
       return;
     }
-    if (newType === "event" && !newEventDate) {
+    if ((newType === "event" || newType === "biz_event") && !newEventDate) {
       toast.error("Pick a date for your event.");
       return;
     }
@@ -542,10 +551,11 @@ export function FeedPage() {
     createPost.mutate(
       {
         data: {
-          title: newTitle.trim() || (newType === "event" ? "Event" : newType === "tie_up" ? "Tie-up" : isBoat ? "Boat Showcase" : "Post"),
+          title: newTitle.trim() || ({ event: "Event", biz_event: "Event", tie_up: "Tie-up", announcement: "Announcement", deal: "Deal", new_arrival: "New Arrival", check_in: "Check-In" }[newType as string] ?? (isBoat ? "Boat Showcase" : "Post")),
           content: composedContent || (isBoat ? "Check out this boat!" : ""),
-          postType: newType as PostInputPostType,
-          eventDate: (newType === "event" || newType === "tie_up") && newEventDate ? new Date(newEventDate).toISOString() : undefined,
+          postType: (newType === "biz_event" ? "event" : newType) as PostInputPostType,
+          asBusiness: isBizType ? true : undefined,
+          eventDate: (newType === "event" || newType === "biz_event" || newType === "tie_up") && newEventDate ? new Date(newEventDate).toISOString() : undefined,
           imageUrl: newGifUrl ?? (newImageUrl ? `/api/storage${newImageUrl}` : undefined),
           videoUrl: newVideoUrl ? `/api/storage${newVideoUrl}` : undefined,
           photos: isBoat && newPhotos.length ? newPhotos : undefined,
@@ -607,7 +617,7 @@ export function FeedPage() {
     if (params.get("compose") === "1") {
       setComposerOpen(true);
       const type = params.get("type");
-      if (type === "event" || type === "tie_up" || type === "boat_showcase" || type === "business") {
+      if (type === "event" || type === "tie_up" || type === "boat_showcase" || type === "business" || type === "announcement" || type === "biz_event" || type === "deal" || type === "new_arrival" || type === "check_in") {
         setNewType(type);
       }
       params.delete("compose");
@@ -949,6 +959,15 @@ export function FeedPage() {
                     <SelectItem value="tie_up">Tie-up</SelectItem>
                     <SelectItem value="business">Local</SelectItem>
                     <SelectItem value="boat_showcase">🚤 Boat Showcase</SelectItem>
+                    {hasApprovedBusiness && (
+                      <>
+                        <SelectItem value="announcement">🏪 Announcement</SelectItem>
+                        <SelectItem value="biz_event">🏪 Business Event</SelectItem>
+                        <SelectItem value="deal">🏪 Deal / Special</SelectItem>
+                        <SelectItem value="new_arrival">🏪 New Arrival</SelectItem>
+                        <SelectItem value="check_in">🏪 Check-In</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -1098,7 +1117,7 @@ export function FeedPage() {
               <Input maxLength={100} value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder={newType === "boat_showcase" ? "e.g. Reel Therapy — 24' Sea Ray" : "Give your post a title"} />
             </div>
 
-            {(newType === "event" || newType === "tie_up") && (
+            {(newType === "event" || newType === "biz_event" || newType === "tie_up") && (
               <div className="space-y-1.5">
                 <Label>{newType === "tie_up" ? "When (optional)" : "Event date"}</Label>
                 <Input type="datetime-local" value={newEventDate} onChange={(e) => setNewEventDate(e.target.value)} />

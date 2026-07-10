@@ -230,7 +230,13 @@ router.get("/", async (req, res) => {
   if (rawLakeId !== undefined) {
     conditions.push(eq(postsTable.lakeId, isValidLakeId(rawLakeId) ? rawLakeId : DEFAULT_LAKE_ID));
   }
-  if (type) conditions.push(eq(postsTable.postType, type));
+  if (type === "business") {
+    // "Local" tab: community posts about local businesses/services PLUS
+    // official posts published by business profiles (any type).
+    conditions.push(or(eq(postsTable.postType, "business"), sql`${postsTable.businessId} is not null`));
+  } else if (type) {
+    conditions.push(eq(postsTable.postType, type));
+  }
   if (audience === "friends") {
     // Include the viewer's own posts so their friends-visibility shares show up
     // too, plus business posts from businesses the viewer follows.
@@ -263,9 +269,25 @@ router.get("/saved", async (req, res) => {
   res.json(await Promise.all(posts.map((p) => formatPost(p, uid))));
 });
 
+// Post types only an approved business may use; they always post as the business.
+const BUSINESS_ONLY_POST_TYPES = new Set(["announcement", "deal", "new_arrival", "check_in"]);
+const VALID_POST_TYPES = new Set(["post", "event", "business", "tie_up", "boat_showcase", ...BUSINESS_ONLY_POST_TYPES]);
+
 router.post("/", async (req, res) => {
   const uid = currentUserId(req);
-  const { title, content, postType, eventDate, imageUrl, videoUrl, photos, engineSetup, horsepower, topSpeed, mods, pinLat, pinLng, visibility, pollOptions, lakeId } = req.body;
+  const { title, content, postType, eventDate, imageUrl, videoUrl, photos, engineSetup, horsepower, topSpeed, mods, pinLat, pinLng, visibility, pollOptions, lakeId, asBusiness } = req.body;
+  const type = typeof postType === "string" && VALID_POST_TYPES.has(postType) ? postType : "post";
+  // Business posting: business-only types imply asBusiness; both require an
+  // approved business owned by the poster. Business posts are always
+  // community-visible so followers and the Local tab can see them.
+  let businessId: number | null = null;
+  if (asBusiness === true || BUSINESS_ONLY_POST_TYPES.has(type)) {
+    const biz = await db.query.businessProfilesTable.findFirst({
+      where: and(eq(businessProfilesTable.userId, uid), eq(businessProfilesTable.status, "approved")),
+    });
+    if (!biz) return res.status(403).json({ error: "You need an approved business to post as a business" });
+    businessId = biz.id;
+  }
   const photoList = Array.isArray(photos) ? photos.filter((p: unknown) => typeof p === "string") : null;
   const pollChoices = Array.isArray(pollOptions)
     ? pollOptions.map((p: unknown) => (typeof p === "string" ? p.trim() : "")).filter((p) => p.length > 0).slice(0, 10)
@@ -281,7 +303,7 @@ router.post("/", async (req, res) => {
       lakeId: isValidLakeId(lakeId) ? lakeId : DEFAULT_LAKE_ID,
       title,
       content,
-      postType: postType || "post",
+      postType: type,
       eventDate: eventDate ? new Date(eventDate) : null,
       imageUrl: imageUrl ?? (photoList && photoList.length ? photoList[0] : null),
       videoUrl,
@@ -292,7 +314,8 @@ router.post("/", async (req, res) => {
       mods: typeof mods === "string" ? mods : null,
       pinLat,
       pinLng,
-      visibility: visibility === "friends" ? "friends" : "community",
+      businessId,
+      visibility: businessId != null ? "community" : visibility === "friends" ? "friends" : "community",
       isMature,
     })
     .returning();

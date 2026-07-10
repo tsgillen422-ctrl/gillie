@@ -1937,7 +1937,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [post, event, business, tie_up, boat_showcase]
+            enum: [post, event, business, tie_up, boat_showcase, announcement, deal, new_arrival, check_in]
         - name: audience
           in: query
           required: false
@@ -4507,7 +4507,7 @@ components:
           type: string
         postType:
           type: string
-          enum: [post, event, business, tie_up, boat_showcase]
+          enum: [post, event, business, tie_up, boat_showcase, announcement, deal, new_arrival, check_in]
         eventDate:
           type: ["string", "null"]
         imageUrl:
@@ -4671,7 +4671,7 @@ components:
           type: string
         postType:
           type: string
-          enum: [post, event, business, tie_up, boat_showcase]
+          enum: [post, event, business, tie_up, boat_showcase, announcement, deal, new_arrival, check_in]
         eventDate:
           type: string
         imageUrl:
@@ -4705,6 +4705,9 @@ components:
         lakeId:
           type: ["integer", "null"]
           description: Which lake community the post belongs to (defaults to the default lake community)
+        asBusiness:
+          type: boolean
+          description: Post as your approved business. Business-only post types (announcement, deal, new_arrival, check_in) imply this.
 
     PostUpdateInput:
       type: object

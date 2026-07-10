@@ -416,6 +416,20 @@ export function PostCard({
             {post.business && (
               <span className="text-xs font-semibold text-muted-foreground">{post.business.businessType}</span>
             )}
+            {post.business && (
+              <span
+                data-testid={`badge-business-post-${post.id}`}
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+                  post.postType === "deal"
+                    ? "bg-amber-100 text-amber-700"
+                    : post.postType === "event"
+                      ? "bg-violet-100 text-violet-700"
+                      : "bg-teal-100 text-teal-700"
+                }`}
+              >
+                {{ deal: "Deal", event: "Event", new_arrival: "New Arrival", check_in: "Check-In" }[post.postType as string] ?? "Official Business"}
+              </span>
+            )}
             {!post.business && post.user?.boatName && (
               <>
                 <span className="text-muted-foreground/50 text-[10px]">•</span>

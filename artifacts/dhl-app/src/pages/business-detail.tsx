@@ -19,8 +19,6 @@ import {
   Calendar,
   Plus,
   Trash2,
-  Camera,
-  X,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -33,14 +31,12 @@ import {
   useUpsertBusinessReview,
   useDeleteBusinessReview,
   useGetBusinessPosts,
-  useCreateBusinessPost,
   getGetBusinessQueryKey,
   getGetBusinessReviewsQueryKey,
   getGetBusinessPostsQueryKey,
 } from "@workspace/api-client-react";
 import type { BusinessReview, Post } from "@workspace/api-client-react";
 import { formatDistanceToNow, format } from "date-fns";
-import { useUpload } from "@workspace/object-storage-web";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -128,6 +124,12 @@ function BusinessPostCard({ post }: { post: Post }) {
             <Calendar className="w-3 h-3 mr-1" />
             {post.eventDate ? format(new Date(post.eventDate), "MMM d, h:mm a") : "Event"}
           </Badge>
+        ) : post.postType === "deal" ? (
+          <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100">Deal</Badge>
+        ) : post.postType === "new_arrival" ? (
+          <Badge variant="secondary" className="bg-teal-100 text-teal-700 hover:bg-teal-100">New Arrival</Badge>
+        ) : post.postType === "check_in" ? (
+          <Badge variant="secondary" className="bg-teal-100 text-teal-700 hover:bg-teal-100">Check-In</Badge>
         ) : null}
         <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
       </div>
@@ -172,8 +174,6 @@ export default function BusinessDetailPage() {
   const unfollow = useUnfollowBusiness();
   const upsertReview = useUpsertBusinessReview();
   const deleteReview = useDeleteBusinessReview();
-  const createPost = useCreateBusinessPost();
-  const { uploadFile, isUploading } = useUpload();
 
   const [reportOpen, setReportOpen] = React.useState(false);
   const [reason, setReason] = React.useState<string>("");
@@ -182,14 +182,6 @@ export default function BusinessDetailPage() {
   const [reviewOpen, setReviewOpen] = React.useState(false);
   const [rating, setRating] = React.useState(0);
   const [reviewText, setReviewText] = React.useState("");
-
-  const [composeOpen, setComposeOpen] = React.useState(false);
-  const [postTitle, setPostTitle] = React.useState("");
-  const [postContent, setPostContent] = React.useState("");
-  const [postType, setPostType] = React.useState<"post" | "event">("post");
-  const [eventDate, setEventDate] = React.useState("");
-  const [postPhotos, setPostPhotos] = React.useState<string[]>([]);
-  const photoInputRef = React.useRef<HTMLInputElement>(null);
 
   const isOwner = me != null && business != null && business.userId === me.id;
   const myReview = React.useMemo(
@@ -268,57 +260,6 @@ export default function BusinessDetailPage() {
           toast({ title: "Review removed" });
         },
         onError: () => toast({ title: "Could not remove review", variant: "destructive" }),
-      },
-    );
-  };
-
-  const handlePostPhotoPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    e.target.value = "";
-    for (const file of files) {
-      if (!file.type.startsWith("image/")) continue;
-      if (postPhotos.length >= 6) break;
-      const res = await uploadFile(file);
-      if (res?.objectPath) {
-        const url = res.objectPath.startsWith("/api/storage") ? res.objectPath : `/api/storage${res.objectPath}`;
-        setPostPhotos((prev) => (prev.length >= 6 ? prev : [...prev, url]));
-      } else {
-        toast({ title: "Upload failed", variant: "destructive" });
-      }
-    }
-  };
-
-  const publishPost = () => {
-    if (!postContent.trim()) {
-      toast({ title: "Write something first", variant: "destructive" });
-      return;
-    }
-    if (postType === "event" && !eventDate) {
-      toast({ title: "Events need a date", variant: "destructive" });
-      return;
-    }
-    createPost.mutate(
-      {
-        data: {
-          title: postTitle.trim() || undefined,
-          content: postContent.trim(),
-          postType,
-          eventDate: postType === "event" ? new Date(eventDate).toISOString() : null,
-          photos: postPhotos,
-        },
-      },
-      {
-        onSuccess: () => {
-          setComposeOpen(false);
-          setPostTitle("");
-          setPostContent("");
-          setPostType("post");
-          setEventDate("");
-          setPostPhotos([]);
-          qc.invalidateQueries({ queryKey: getGetBusinessPostsQueryKey(businessId) });
-          toast({ title: "Posted", description: "Your update is live and will appear in followers' feeds." });
-        },
-        onError: () => toast({ title: "Could not post", variant: "destructive" }),
       },
     );
   };
@@ -483,7 +424,7 @@ export default function BusinessDetailPage() {
           </div>
 
           {isOwner && business.status === "approved" && (
-            <Button className="w-full" onClick={() => setComposeOpen(true)} data-testid="button-business-compose">
+            <Button className="w-full" onClick={() => navigate("/feed?compose=1&type=announcement")} data-testid="button-business-compose">
               <Plus className="w-4 h-4 mr-2" /> Post an update or event
             </Button>
           )}
@@ -627,99 +568,6 @@ export default function BusinessDetailPage() {
             <Button variant="outline" onClick={() => setReviewOpen(false)}>Cancel</Button>
             <Button onClick={saveReview} disabled={upsertReview.isPending} data-testid="button-save-review">
               {upsertReview.isPending ? "Saving…" : "Post review"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Business post composer */}
-      <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader>
-            <DialogTitle>Post as {business.businessName}</DialogTitle>
-            <DialogDescription>Updates go to everyone following your business.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <Button
-                type="button"
-                variant={postType === "post" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setPostType("post")}
-                data-testid="button-post-type-update"
-              >
-                Update
-              </Button>
-              <Button
-                type="button"
-                variant={postType === "event" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setPostType("event")}
-                data-testid="button-post-type-event"
-              >
-                <Calendar className="w-4 h-4 mr-1.5" /> Event
-              </Button>
-            </div>
-            <Input
-              value={postTitle}
-              onChange={(e) => setPostTitle(e.target.value)}
-              placeholder={postType === "event" ? "Event name" : "Title (optional)"}
-              maxLength={120}
-              data-testid="input-business-post-title"
-            />
-            {postType === "event" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="biz-event-date">Date & time</Label>
-                <Input
-                  id="biz-event-date"
-                  type="datetime-local"
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                  data-testid="input-business-event-date"
-                />
-              </div>
-            )}
-            <Textarea
-              value={postContent}
-              onChange={(e) => setPostContent(e.target.value)}
-              placeholder={postType === "event" ? "What's happening? Details, pricing, how to join…" : "What's new at your business?"}
-              rows={4}
-              maxLength={5000}
-              data-testid="input-business-post-content"
-            />
-            <div className="flex flex-wrap gap-2">
-              {postPhotos.map((p, i) => (
-                <div key={i} className="relative">
-                  <img src={p} alt="" className="w-16 h-16 rounded-xl object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => setPostPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                    className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-background"
-                    aria-label="Remove photo"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-              {postPhotos.length < 6 && (
-                <button
-                  type="button"
-                  onClick={() => photoInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="flex h-16 w-16 flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-                  data-testid="button-business-post-photo"
-                >
-                  <Camera className="w-4 h-4" />
-                  <span className="text-[9px]">{isUploading ? "…" : "Add"}</span>
-                </button>
-              )}
-              <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePostPhotoPick} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setComposeOpen(false)}>Cancel</Button>
-            <Button onClick={publishPost} disabled={createPost.isPending || isUploading} data-testid="button-publish-business-post">
-              {createPost.isPending ? "Posting…" : "Post"}
             </Button>
           </DialogFooter>
         </DialogContent>

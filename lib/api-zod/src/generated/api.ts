@@ -5327,7 +5327,7 @@ export const GetBusinessPostsResponseItem = zod.object({
   "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase', 'announcement', 'deal', 'new_arrival', 'check_in']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
@@ -5458,7 +5458,7 @@ export const HidePlaceBody = zod.object({
  * @summary Get community feed posts and events
  */
 export const GetPostsQueryParams = zod.object({
-  "type": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']).optional(),
+  "type": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase', 'announcement', 'deal', 'new_arrival', 'check_in']).optional(),
   "audience": zod.enum(['friends', 'community']).optional().describe('Filter by author relationship. \"friends\" shows posts from your friends; \"community\" shows posts from people you are not friends with.'),
   "lakeId": zod.coerce.number().optional().describe('Only include posts for this lake community')
 })
@@ -5570,7 +5570,7 @@ export const GetPostsResponseItem = zod.object({
   "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase', 'announcement', 'deal', 'new_arrival', 'check_in']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
@@ -5630,7 +5630,7 @@ export const GetPostsResponse = zod.array(GetPostsResponseItem)
 export const CreatePostBody = zod.object({
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase', 'announcement', 'deal', 'new_arrival', 'check_in']),
   "eventDate": zod.string().optional(),
   "imageUrl": zod.string().optional(),
   "videoUrl": zod.string().optional(),
@@ -5643,7 +5643,8 @@ export const CreatePostBody = zod.object({
   "pinLng": zod.number().optional(),
   "visibility": zod.enum(['community', 'friends']).optional(),
   "pollOptions": zod.array(zod.string()).optional().describe('2-10 poll choices. When present, the post includes a poll.'),
-  "lakeId": zod.number().nullish().describe('Which lake community the post belongs to (defaults to the default lake community)')
+  "lakeId": zod.number().nullish().describe('Which lake community the post belongs to (defaults to the default lake community)'),
+  "asBusiness": zod.boolean().optional().describe('Post as your approved business. Business-only post types (announcement, deal, new_arrival, check_in) imply this.')
 })
 
 
@@ -5774,7 +5775,7 @@ export const GetPostResponse = zod.object({
   "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase', 'announcement', 'deal', 'new_arrival', 'check_in']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
@@ -5952,7 +5953,7 @@ export const UpdatePostResponse = zod.object({
   "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase', 'announcement', 'deal', 'new_arrival', 'check_in']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
@@ -6131,7 +6132,7 @@ export const ReactToPostResponse = zod.object({
   "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase', 'announcement', 'deal', 'new_arrival', 'check_in']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
@@ -6302,7 +6303,7 @@ export const VotePollResponse = zod.object({
   "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase', 'announcement', 'deal', 'new_arrival', 'check_in']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
@@ -6903,7 +6904,7 @@ export const GetPostsSummaryResponse = zod.object({
   "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase', 'announcement', 'deal', 'new_arrival', 'check_in']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
@@ -7598,7 +7599,7 @@ export const ToggleRsvpResponse = zod.object({
   "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase', 'announcement', 'deal', 'new_arrival', 'check_in']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),
@@ -9210,7 +9211,7 @@ export const GetSavedPostsResponseItem = zod.object({
   "lakeId": zod.number().optional(),
   "title": zod.string(),
   "content": zod.string(),
-  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase']),
+  "postType": zod.enum(['post', 'event', 'business', 'tie_up', 'boat_showcase', 'announcement', 'deal', 'new_arrival', 'check_in']),
   "eventDate": zod.string().nullish(),
   "imageUrl": zod.string().nullish(),
   "videoUrl": zod.string().nullish(),

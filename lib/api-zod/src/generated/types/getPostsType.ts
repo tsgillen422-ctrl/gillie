@@ -15,4 +15,8 @@ export const GetPostsType = {
   business: 'business',
   tie_up: 'tie_up',
   boat_showcase: 'boat_showcase',
+  announcement: 'announcement',
+  deal: 'deal',
+  new_arrival: 'new_arrival',
+  check_in: 'check_in',
 } as const;

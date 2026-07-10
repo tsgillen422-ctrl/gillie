@@ -1118,6 +1118,10 @@ export const PostPostType = {
   business: 'business',
   tie_up: 'tie_up',
   boat_showcase: 'boat_showcase',
+  announcement: 'announcement',
+  deal: 'deal',
+  new_arrival: 'new_arrival',
+  check_in: 'check_in',
 } as const;
 
 /**
@@ -1290,6 +1294,10 @@ export const PostInputPostType = {
   business: 'business',
   tie_up: 'tie_up',
   boat_showcase: 'boat_showcase',
+  announcement: 'announcement',
+  deal: 'deal',
+  new_arrival: 'new_arrival',
+  check_in: 'check_in',
 } as const;
 
 export type PostInputVisibility = typeof PostInputVisibility[keyof typeof PostInputVisibility];
@@ -1322,6 +1330,8 @@ export interface PostInput {
      * @nullable
      */
   lakeId?: number | null;
+  /** Post as your approved business. Business-only post types (announcement, deal, new_arrival, check_in) imply this. */
+  asBusiness?: boolean;
 }
 
 export type PostUpdateInputVisibility = typeof PostUpdateInputVisibility[keyof typeof PostUpdateInputVisibility];
@@ -2053,6 +2063,10 @@ export const GetPostsType = {
   business: 'business',
   tie_up: 'tie_up',
   boat_showcase: 'boat_showcase',
+  announcement: 'announcement',
+  deal: 'deal',
+  new_arrival: 'new_arrival',
+  check_in: 'check_in',
 } as const;
 
 export type GetPostsAudience = typeof GetPostsAudience[keyof typeof GetPostsAudience];
