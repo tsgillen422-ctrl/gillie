@@ -46,10 +46,13 @@ const REASON_LABELS: Record<string, string> = {
   incorrect_location: "Incorrect location",
   duplicate: "Duplicate pin",
   unsafe_information: "Unsafe information",
+  hate_speech: "Hate speech",
+  fake_listing: "Fake or fraudulent listing",
+  incorrect_information: "Incorrect information",
   other: "Other",
 };
 
-const TARGET_LABELS: Record<string, string> = { post: "Post", user: "User", pin: "Pin", catch: "Catch", business: "Business" };
+const TARGET_LABELS: Record<string, string> = { post: "Post", user: "User", pin: "Pin", catch: "Catch", business: "Business", review: "Review" };
 
 function StatusBadge({ status, action }: { status: string; action?: string | null }) {
   if (status === "pending") return <Badge variant="secondary">Pending</Badge>;

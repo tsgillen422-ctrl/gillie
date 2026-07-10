@@ -1931,6 +1931,7 @@ export const ReportInputTargetType = {
   pin: 'pin',
   catch: 'catch',
   business: 'business',
+  review: 'review',
 } as const;
 
 export interface ReportInput {
@@ -1971,6 +1972,7 @@ export const ReportTargetType = {
   pin: 'pin',
   catch: 'catch',
   business: 'business',
+  review: 'review',
 } as const;
 
 export type ReportStatus = typeof ReportStatus[keyof typeof ReportStatus];

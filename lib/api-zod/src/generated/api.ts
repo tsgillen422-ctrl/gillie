@@ -9665,7 +9665,7 @@ export const AcceptTermsResponse = zod.object({
  * @summary Submit a report about a post, user, or pin
  */
 export const CreateReportBody = zod.object({
-  "targetType": zod.enum(['post', 'user', 'pin', 'catch', 'business']),
+  "targetType": zod.enum(['post', 'user', 'pin', 'catch', 'business', 'review']),
   "targetId": zod.number(),
   "reason": zod.string(),
   "details": zod.string().optional()
@@ -9682,7 +9682,7 @@ export const GetReportsQueryParams = zod.object({
 export const GetReportsResponseItem = zod.object({
   "id": zod.number(),
   "reporterId": zod.number(),
-  "targetType": zod.enum(['post', 'user', 'pin', 'catch', 'business']),
+  "targetType": zod.enum(['post', 'user', 'pin', 'catch', 'business', 'review']),
   "targetId": zod.number(),
   "reason": zod.string(),
   "details": zod.string().nullish(),
@@ -9727,7 +9727,7 @@ export const ResolveReportBody = zod.object({
 export const ResolveReportResponse = zod.object({
   "id": zod.number(),
   "reporterId": zod.number(),
-  "targetType": zod.enum(['post', 'user', 'pin', 'catch', 'business']),
+  "targetType": zod.enum(['post', 'user', 'pin', 'catch', 'business', 'review']),
   "targetId": zod.number(),
   "reason": zod.string(),
   "details": zod.string().nullish(),

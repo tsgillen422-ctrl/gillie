@@ -22,7 +22,8 @@ import {
   Heart,
   Bookmark,
   BookmarkCheck,
-  Palette
+  Palette,
+  MoreHorizontal
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -58,6 +59,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ClickableImage } from "@/components/ClickableImage";
@@ -220,6 +227,10 @@ export default function BusinessDetailPage() {
   const [reason, setReason] = React.useState<string>("");
   const [details, setDetails] = React.useState("");
 
+  const [reportReviewId, setReportReviewId] = React.useState<number | null>(null);
+  const [reviewReason, setReviewReason] = React.useState<string>("");
+  const [reviewDetails, setReviewDetails] = React.useState("");
+
   const [reviewOpen, setReviewOpen] = React.useState(false);
   const [rating, setRating] = React.useState(0);
   const [reviewText, setReviewText] = React.useState("");
@@ -342,6 +353,22 @@ export default function BusinessDetailPage() {
           setReportOpen(false);
           setReason("");
           setDetails("");
+          toast({ title: "Report submitted", description: "Thanks — our moderators will take a look." });
+        },
+        onError: () => toast({ title: "Could not submit report", variant: "destructive" }),
+      },
+    );
+  };
+
+  const handleReportReview = () => {
+    if (reportReviewId == null || !reviewReason) return;
+    submitReport.mutate(
+      { data: { targetType: "review" as any, targetId: reportReviewId, reason: reviewReason as any, details: reviewDetails.trim() || undefined } },
+      {
+        onSuccess: () => {
+          setReportReviewId(null);
+          setReviewReason("");
+          setReviewDetails("");
           toast({ title: "Report submitted", description: "Thanks — our moderators will take a look." });
         },
         onError: () => toast({ title: "Could not submit report", variant: "destructive" }),
@@ -729,6 +756,27 @@ export default function BusinessDetailPage() {
                         </p>
                       </div>
                       <StarRow value={r.rating} />
+                      {me && r.userId !== me.id && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="w-8 h-8 shrink-0 text-muted-foreground" data-testid={`button-review-menu-${r.id}`}>
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setReviewReason("");
+                                setReviewDetails("");
+                                setReportReviewId(r.id);
+                              }}
+                              data-testid={`menu-report-review-${r.id}`}
+                            >
+                              <Flag className="w-4 h-4 mr-2" /> Report Review
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                     {r.content && <p className="text-sm whitespace-pre-wrap leading-relaxed mt-2 text-foreground/90">{r.content}</p>}
                   </div>
@@ -886,6 +934,43 @@ export default function BusinessDetailPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setReportOpen(false)}>Cancel</Button>
             <Button onClick={handleReport} disabled={submitReport.isPending || !reason}>Submit</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Report review dialog */}
+      <Dialog open={reportReviewId != null} onOpenChange={(open) => { if (!open) setReportReviewId(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Report Review</DialogTitle>
+            <DialogDescription>The review stays visible while our moderators take a look.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid gap-2">
+              <Label>Reason</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                value={reviewReason}
+                onChange={(e) => setReviewReason(e.target.value)}
+                data-testid="select-review-report-reason"
+              >
+                <option value="" disabled>Select a reason...</option>
+                <option value="spam">Spam</option>
+                <option value="harassment">Harassment</option>
+                <option value="false_information">False information</option>
+                <option value="hate_speech">Hate speech</option>
+                <option value="inappropriate">Inappropriate content</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Details (optional)</Label>
+              <Textarea value={reviewDetails} onChange={(e) => setReviewDetails(e.target.value)} rows={3} data-testid="input-review-report-details" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReportReviewId(null)}>Cancel</Button>
+            <Button onClick={handleReportReview} disabled={submitReport.isPending || !reviewReason} data-testid="button-submit-review-report">Submit</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

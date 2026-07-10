@@ -5693,7 +5693,7 @@ components:
       properties:
         targetType:
           type: string
-          enum: [post, user, pin, catch, business]
+          enum: [post, user, pin, catch, business, review]
         targetId:
           type: integer
         reason:
@@ -5733,7 +5733,7 @@ components:
           type: integer
         targetType:
           type: string
-          enum: [post, user, pin, catch, business]
+          enum: [post, user, pin, catch, business, review]
         targetId:
           type: integer
         reason:

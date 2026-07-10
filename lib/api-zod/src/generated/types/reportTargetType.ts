@@ -15,4 +15,5 @@ export const ReportTargetType = {
   pin: 'pin',
   catch: 'catch',
   business: 'business',
+  review: 'review',
 } as const;

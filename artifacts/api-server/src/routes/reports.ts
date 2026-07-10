@@ -31,6 +31,7 @@ const USER_REASONS = ["spam", "harassment", "inappropriate", "impersonation", "o
 const PIN_REASONS = ["incorrect_location", "duplicate", "unsafe_information", "inappropriate"];
 const CATCH_REASONS = ["spam", "harassment", "inappropriate", "false_information", "illegal", "other"];
 const BUSINESS_REASONS = ["fake_listing", "incorrect_information", "inappropriate", "spam", "other"];
+const REVIEW_REASONS = ["spam", "harassment", "false_information", "hate_speech", "inappropriate", "other"];
 
 function reasonsFor(targetType: string): string[] | null {
   if (targetType === "post") return POST_REASONS;
@@ -38,6 +39,7 @@ function reasonsFor(targetType: string): string[] | null {
   if (targetType === "pin") return PIN_REASONS;
   if (targetType === "catch") return CATCH_REASONS;
   if (targetType === "business") return BUSINESS_REASONS;
+  if (targetType === "review") return REVIEW_REASONS;
   return null;
 }
 
@@ -92,6 +94,10 @@ async function resolveTargetOwner(targetType: string, targetId: number): Promise
     const b = await db.query.businessProfilesTable.findFirst({ where: eq(businessProfilesTable.id, targetId) });
     return b?.userId ?? null;
   }
+  if (targetType === "review") {
+    const r = await db.query.businessReviewsTable.findFirst({ where: eq(businessReviewsTable.id, targetId) });
+    return r?.userId ?? null;
+  }
   return null;
 }
 
@@ -121,6 +127,9 @@ router.post("/", async (req, res) => {
   } else if (targetType === "business") {
     const target = await db.query.businessProfilesTable.findFirst({ where: eq(businessProfilesTable.id, targetId) });
     if (!target) return res.status(404).json({ error: "Business not found" });
+  } else if (targetType === "review") {
+    const target = await db.query.businessReviewsTable.findFirst({ where: eq(businessReviewsTable.id, targetId) });
+    if (!target) return res.status(404).json({ error: "Review not found" });
   }
   const [report] = await db
     .insert(reportsTable)
@@ -163,6 +172,10 @@ router.get("/", async (req, res) => {
       } else if (r.targetType === "user") {
         targetExists = !!owner;
         targetSummary = owner ? `@${owner.username}` : null;
+      } else if (r.targetType === "review") {
+        const review = await db.query.businessReviewsTable.findFirst({ where: eq(businessReviewsTable.id, r.targetId) });
+        targetExists = !!review;
+        targetSummary = review ? `${"★".repeat(review.rating)} ${review.content?.slice(0, 120) || "(no text)"}` : null;
       }
       return {
         ...serializeReport(r),
@@ -215,6 +228,8 @@ router.patch("/:id", async (req, res) => {
       if (ownerId) {
         await db.update(usersTable).set({ isBusiness: false }).where(eq(usersTable.id, ownerId));
       }
+    } else if (report.targetType === "review") {
+      await db.delete(businessReviewsTable).where(eq(businessReviewsTable.id, report.targetId));
     } else if (report.targetType === "user" && ownerId) {
       // Removing a reported user = suspend their account.
       await db.update(usersTable).set({ isSuspended: true }).where(eq(usersTable.id, ownerId));
