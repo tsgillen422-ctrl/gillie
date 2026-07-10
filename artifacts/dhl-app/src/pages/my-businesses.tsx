@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowLeft, Store, Plus, ChevronRight, BadgeCheck, Pencil, Megaphone } from "lucide-react";
+import { ArrowLeft, Store, Plus, ChevronRight, BadgeCheck, Pencil, Megaphone, Palette } from "lucide-react";
 import { useGetMyBusinesses } from "@workspace/api-client-react";
 import type { Business } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
@@ -61,7 +61,7 @@ export default function MyBusinessesPage() {
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                 </Link>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     size="sm"
                     variant="outline"
@@ -71,10 +71,19 @@ export default function MyBusinessesPage() {
                   >
                     <Pencil className="w-3.5 h-3.5 mr-1.5" /> Edit
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => navigate(`/businesses/customize?id=${b.id}`)}
+                    data-testid={`button-customize-business-${b.id}`}
+                  >
+                    <Palette className="w-3.5 h-3.5 mr-1.5" /> Customize
+                  </Button>
                   {b.status === "approved" && (
                     <Button
                       size="sm"
-                      className="flex-1"
+                      className="w-full"
                       onClick={() => navigate(`/feed?compose=1&type=announcement&businessId=${b.id}`)}
                       data-testid={`button-post-as-business-${b.id}`}
                     >

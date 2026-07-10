@@ -68,3 +68,4 @@
 - [wouter param decoding](wouter-param-decoding.md) — wouter v3 params come pre-decoded (never decodeURIComponent again); maplibre Map() throws w/o WebGL, wrap in try/catch + fallback.
 - [Multi-lake model](multi-lake-model.md) — lakeId OPTIONAL everywhere (old iOS builds), default lake 1; gate Dale Hollow-only data (LAKE_PLACES/CWMS) on lakeId===1; invalidate with no-arg query keys.
 - [Lake community scoping](lake-community-scoping.md) — each lake is its own community; ONLY Friends/Saved cross lakes (w/ 📍 badge); no lake picker in composer.
+- [Business customization](business-customization.md) — amenity keys server-authoritative (client meta must match); themeColor hex→HSL triplet for --primary; removeBusiness must clear ALL child tables.

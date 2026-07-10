@@ -5,6 +5,9 @@
  * Gillie - Lake Community API
  * OpenAPI spec version: 0.1.0
  */
+import type { BusinessFeatured } from './businessFeatured';
+import type { BusinessHighlight } from './businessHighlight';
+import type { BusinessHoursStructured } from './businessHoursStructured';
 import type { BusinessOwner } from './businessOwner';
 import type { BusinessStatus } from './businessStatus';
 
@@ -21,6 +24,7 @@ export interface Business {
   avgRating?: number;
   reviewCount?: number;
   followedByMe?: boolean;
+  savedByMe?: boolean;
   verified?: boolean;
   photos: string[];
   phone?: string | null;
@@ -29,6 +33,16 @@ export interface Business {
   lat?: number | null;
   lng?: number | null;
   serviceArea?: string | null;
+  /**
+     * Hex accent color for the profile page (e.g. "#0d9488")
+     * @nullable
+     */
+  themeColor?: string | null;
+  amenities?: string[];
+  highlights?: BusinessHighlight[];
+  featured?: null | BusinessFeatured;
+  products?: string[];
+  hoursStructured?: null | BusinessHoursStructured;
   status: BusinessStatus;
   createdAt: string;
   updatedAt: string;

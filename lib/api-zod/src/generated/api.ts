@@ -4938,6 +4938,7 @@ export const GetBusinessesResponseItem = zod.object({
   "avgRating": zod.number().optional(),
   "reviewCount": zod.number().optional(),
   "followedByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
   "verified": zod.boolean().optional(),
   "photos": zod.array(zod.string()),
   "phone": zod.string().nullish(),
@@ -4946,6 +4947,50 @@ export const GetBusinessesResponseItem = zod.object({
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish(),
   "serviceArea": zod.string().nullish(),
+  "themeColor": zod.string().nullish().describe('Hex accent color for the profile page (e.g. \"#0d9488\")'),
+  "amenities": zod.array(zod.string()).optional(),
+  "highlights": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "icon": zod.string().describe('One of the curated highlight icon keys (food, dock, live_music, fishing, fuel, events, campground, store, boats, sunset, drinks, swimming, specials, rentals, photos, team)'),
+  "imageUrl": zod.string().nullish()
+})).optional(),
+  "featured": zod.union([zod.null(),zod.object({
+  "title": zod.string(),
+  "text": zod.string().nullish(),
+  "type": zod.enum(['announcement', 'event', 'special', 'grand_opening', 'live_music', 'tournament'])
+})]).optional(),
+  "products": zod.array(zod.string()).optional(),
+  "hoursStructured": zod.union([zod.null(),zod.object({
+  "mon": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "tue": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "wed": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "thu": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "fri": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sat": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sun": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional()
+}).describe('Weekly hours; a null day means closed that day.')]).optional(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -4995,6 +5040,7 @@ export const GetMyBusinessesResponseItem = zod.object({
   "avgRating": zod.number().optional(),
   "reviewCount": zod.number().optional(),
   "followedByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
   "verified": zod.boolean().optional(),
   "photos": zod.array(zod.string()),
   "phone": zod.string().nullish(),
@@ -5003,6 +5049,50 @@ export const GetMyBusinessesResponseItem = zod.object({
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish(),
   "serviceArea": zod.string().nullish(),
+  "themeColor": zod.string().nullish().describe('Hex accent color for the profile page (e.g. \"#0d9488\")'),
+  "amenities": zod.array(zod.string()).optional(),
+  "highlights": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "icon": zod.string().describe('One of the curated highlight icon keys (food, dock, live_music, fishing, fuel, events, campground, store, boats, sunset, drinks, swimming, specials, rentals, photos, team)'),
+  "imageUrl": zod.string().nullish()
+})).optional(),
+  "featured": zod.union([zod.null(),zod.object({
+  "title": zod.string(),
+  "text": zod.string().nullish(),
+  "type": zod.enum(['announcement', 'event', 'special', 'grand_opening', 'live_music', 'tournament'])
+})]).optional(),
+  "products": zod.array(zod.string()).optional(),
+  "hoursStructured": zod.union([zod.null(),zod.object({
+  "mon": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "tue": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "wed": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "thu": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "fri": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sat": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sun": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional()
+}).describe('Weekly hours; a null day means closed that day.')]).optional(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -5024,6 +5114,13 @@ export const GetBusinessTypesResponse = zod.array(GetBusinessTypesResponseItem)
 
 
 /**
+ * @summary Allowed amenity chip keys for business profiles
+ */
+export const GetBusinessAmenityKeysResponseItem = zod.string()
+export const GetBusinessAmenityKeysResponse = zod.array(GetBusinessAmenityKeysResponseItem)
+
+
+/**
  * @summary Get the caller's own business profile (any status)
  */
 export const GetMyBusinessResponse = zod.object({
@@ -5039,6 +5136,7 @@ export const GetMyBusinessResponse = zod.object({
   "avgRating": zod.number().optional(),
   "reviewCount": zod.number().optional(),
   "followedByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
   "verified": zod.boolean().optional(),
   "photos": zod.array(zod.string()),
   "phone": zod.string().nullish(),
@@ -5047,6 +5145,50 @@ export const GetMyBusinessResponse = zod.object({
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish(),
   "serviceArea": zod.string().nullish(),
+  "themeColor": zod.string().nullish().describe('Hex accent color for the profile page (e.g. \"#0d9488\")'),
+  "amenities": zod.array(zod.string()).optional(),
+  "highlights": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "icon": zod.string().describe('One of the curated highlight icon keys (food, dock, live_music, fishing, fuel, events, campground, store, boats, sunset, drinks, swimming, specials, rentals, photos, team)'),
+  "imageUrl": zod.string().nullish()
+})).optional(),
+  "featured": zod.union([zod.null(),zod.object({
+  "title": zod.string(),
+  "text": zod.string().nullish(),
+  "type": zod.enum(['announcement', 'event', 'special', 'grand_opening', 'live_music', 'tournament'])
+})]).optional(),
+  "products": zod.array(zod.string()).optional(),
+  "hoursStructured": zod.union([zod.null(),zod.object({
+  "mon": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "tue": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "wed": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "thu": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "fri": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sat": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sun": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional()
+}).describe('Weekly hours; a null day means closed that day.')]).optional(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -5091,6 +5233,7 @@ export const UpsertMyBusinessResponse = zod.object({
   "avgRating": zod.number().optional(),
   "reviewCount": zod.number().optional(),
   "followedByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
   "verified": zod.boolean().optional(),
   "photos": zod.array(zod.string()),
   "phone": zod.string().nullish(),
@@ -5099,6 +5242,50 @@ export const UpsertMyBusinessResponse = zod.object({
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish(),
   "serviceArea": zod.string().nullish(),
+  "themeColor": zod.string().nullish().describe('Hex accent color for the profile page (e.g. \"#0d9488\")'),
+  "amenities": zod.array(zod.string()).optional(),
+  "highlights": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "icon": zod.string().describe('One of the curated highlight icon keys (food, dock, live_music, fishing, fuel, events, campground, store, boats, sunset, drinks, swimming, specials, rentals, photos, team)'),
+  "imageUrl": zod.string().nullish()
+})).optional(),
+  "featured": zod.union([zod.null(),zod.object({
+  "title": zod.string(),
+  "text": zod.string().nullish(),
+  "type": zod.enum(['announcement', 'event', 'special', 'grand_opening', 'live_music', 'tournament'])
+})]).optional(),
+  "products": zod.array(zod.string()).optional(),
+  "hoursStructured": zod.union([zod.null(),zod.object({
+  "mon": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "tue": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "wed": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "thu": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "fri": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sat": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sun": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional()
+}).describe('Weekly hours; a null day means closed that day.')]).optional(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -5127,6 +5314,7 @@ export const GetPendingBusinessesResponseItem = zod.object({
   "avgRating": zod.number().optional(),
   "reviewCount": zod.number().optional(),
   "followedByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
   "verified": zod.boolean().optional(),
   "photos": zod.array(zod.string()),
   "phone": zod.string().nullish(),
@@ -5135,6 +5323,50 @@ export const GetPendingBusinessesResponseItem = zod.object({
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish(),
   "serviceArea": zod.string().nullish(),
+  "themeColor": zod.string().nullish().describe('Hex accent color for the profile page (e.g. \"#0d9488\")'),
+  "amenities": zod.array(zod.string()).optional(),
+  "highlights": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "icon": zod.string().describe('One of the curated highlight icon keys (food, dock, live_music, fishing, fuel, events, campground, store, boats, sunset, drinks, swimming, specials, rentals, photos, team)'),
+  "imageUrl": zod.string().nullish()
+})).optional(),
+  "featured": zod.union([zod.null(),zod.object({
+  "title": zod.string(),
+  "text": zod.string().nullish(),
+  "type": zod.enum(['announcement', 'event', 'special', 'grand_opening', 'live_music', 'tournament'])
+})]).optional(),
+  "products": zod.array(zod.string()).optional(),
+  "hoursStructured": zod.union([zod.null(),zod.object({
+  "mon": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "tue": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "wed": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "thu": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "fri": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sat": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sun": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional()
+}).describe('Weekly hours; a null day means closed that day.')]).optional(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -5168,6 +5400,7 @@ export const GetBusinessResponse = zod.object({
   "avgRating": zod.number().optional(),
   "reviewCount": zod.number().optional(),
   "followedByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
   "verified": zod.boolean().optional(),
   "photos": zod.array(zod.string()),
   "phone": zod.string().nullish(),
@@ -5176,6 +5409,50 @@ export const GetBusinessResponse = zod.object({
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish(),
   "serviceArea": zod.string().nullish(),
+  "themeColor": zod.string().nullish().describe('Hex accent color for the profile page (e.g. \"#0d9488\")'),
+  "amenities": zod.array(zod.string()).optional(),
+  "highlights": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "icon": zod.string().describe('One of the curated highlight icon keys (food, dock, live_music, fishing, fuel, events, campground, store, boats, sunset, drinks, swimming, specials, rentals, photos, team)'),
+  "imageUrl": zod.string().nullish()
+})).optional(),
+  "featured": zod.union([zod.null(),zod.object({
+  "title": zod.string(),
+  "text": zod.string().nullish(),
+  "type": zod.enum(['announcement', 'event', 'special', 'grand_opening', 'live_music', 'tournament'])
+})]).optional(),
+  "products": zod.array(zod.string()).optional(),
+  "hoursStructured": zod.union([zod.null(),zod.object({
+  "mon": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "tue": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "wed": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "thu": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "fri": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sat": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sun": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional()
+}).describe('Weekly hours; a null day means closed that day.')]).optional(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -5224,6 +5501,7 @@ export const UpdateBusinessResponse = zod.object({
   "avgRating": zod.number().optional(),
   "reviewCount": zod.number().optional(),
   "followedByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
   "verified": zod.boolean().optional(),
   "photos": zod.array(zod.string()),
   "phone": zod.string().nullish(),
@@ -5232,6 +5510,50 @@ export const UpdateBusinessResponse = zod.object({
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish(),
   "serviceArea": zod.string().nullish(),
+  "themeColor": zod.string().nullish().describe('Hex accent color for the profile page (e.g. \"#0d9488\")'),
+  "amenities": zod.array(zod.string()).optional(),
+  "highlights": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "icon": zod.string().describe('One of the curated highlight icon keys (food, dock, live_music, fishing, fuel, events, campground, store, boats, sunset, drinks, swimming, specials, rentals, photos, team)'),
+  "imageUrl": zod.string().nullish()
+})).optional(),
+  "featured": zod.union([zod.null(),zod.object({
+  "title": zod.string(),
+  "text": zod.string().nullish(),
+  "type": zod.enum(['announcement', 'event', 'special', 'grand_opening', 'live_music', 'tournament'])
+})]).optional(),
+  "products": zod.array(zod.string()).optional(),
+  "hoursStructured": zod.union([zod.null(),zod.object({
+  "mon": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "tue": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "wed": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "thu": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "fri": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sat": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sun": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional()
+}).describe('Weekly hours; a null day means closed that day.')]).optional(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),
@@ -5248,6 +5570,154 @@ export const UpdateBusinessResponse = zod.object({
  * @summary Delete a business you own
  */
 export const DeleteBusinessParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Update social-profile customization for a business you own (does not reset approval)
+ */
+export const CustomizeBusinessParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+export const CustomizeBusinessBody = zod.object({
+  "themeColor": zod.string().nullish(),
+  "amenities": zod.array(zod.string()).optional(),
+  "highlights": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "icon": zod.string().describe('One of the curated highlight icon keys (food, dock, live_music, fishing, fuel, events, campground, store, boats, sunset, drinks, swimming, specials, rentals, photos, team)'),
+  "imageUrl": zod.string().nullish()
+})).optional(),
+  "featured": zod.union([zod.null(),zod.object({
+  "title": zod.string(),
+  "text": zod.string().nullish(),
+  "type": zod.enum(['announcement', 'event', 'special', 'grand_opening', 'live_music', 'tournament'])
+})]).optional(),
+  "products": zod.array(zod.string()).optional(),
+  "hoursStructured": zod.union([zod.null(),zod.object({
+  "mon": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "tue": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "wed": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "thu": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "fri": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sat": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sun": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional()
+}).describe('Weekly hours; a null day means closed that day.')]).optional()
+}).describe('Partial update — only fields present are changed; approval status is NOT reset.')
+
+export const CustomizeBusinessResponse = zod.object({
+  "id": zod.number(),
+  "userId": zod.number(),
+  "lakeId": zod.number(),
+  "businessName": zod.string(),
+  "businessType": zod.string(),
+  "description": zod.string().nullish(),
+  "logoUrl": zod.string().nullish(),
+  "coverUrl": zod.string().nullish(),
+  "followerCount": zod.number().optional(),
+  "avgRating": zod.number().optional(),
+  "reviewCount": zod.number().optional(),
+  "followedByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
+  "verified": zod.boolean().optional(),
+  "photos": zod.array(zod.string()),
+  "phone": zod.string().nullish(),
+  "website": zod.string().nullish(),
+  "hours": zod.string().nullish(),
+  "lat": zod.number().nullish(),
+  "lng": zod.number().nullish(),
+  "serviceArea": zod.string().nullish(),
+  "themeColor": zod.string().nullish().describe('Hex accent color for the profile page (e.g. \"#0d9488\")'),
+  "amenities": zod.array(zod.string()).optional(),
+  "highlights": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "icon": zod.string().describe('One of the curated highlight icon keys (food, dock, live_music, fishing, fuel, events, campground, store, boats, sunset, drinks, swimming, specials, rentals, photos, team)'),
+  "imageUrl": zod.string().nullish()
+})).optional(),
+  "featured": zod.union([zod.null(),zod.object({
+  "title": zod.string(),
+  "text": zod.string().nullish(),
+  "type": zod.enum(['announcement', 'event', 'special', 'grand_opening', 'live_music', 'tournament'])
+})]).optional(),
+  "products": zod.array(zod.string()).optional(),
+  "hoursStructured": zod.union([zod.null(),zod.object({
+  "mon": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "tue": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "wed": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "thu": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "fri": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sat": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sun": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional()
+}).describe('Weekly hours; a null day means closed that day.')]).optional(),
+  "status": zod.enum(['pending', 'approved', 'rejected']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string(),
+  "owner": zod.object({
+  "id": zod.number(),
+  "username": zod.string(),
+  "displayName": zod.string().nullish(),
+  "avatarUrl": zod.string().nullish()
+}).nullish()
+})
+
+
+/**
+ * @summary Save (heart) a business
+ */
+export const SaveBusinessParams = zod.object({
+  "businessId": zod.coerce.number()
+})
+
+
+/**
+ * @summary Remove a business from saved
+ */
+export const UnsaveBusinessParams = zod.object({
   "businessId": zod.coerce.number()
 })
 
@@ -5538,6 +6008,7 @@ export const SetBusinessStatusResponse = zod.object({
   "avgRating": zod.number().optional(),
   "reviewCount": zod.number().optional(),
   "followedByMe": zod.boolean().optional(),
+  "savedByMe": zod.boolean().optional(),
   "verified": zod.boolean().optional(),
   "photos": zod.array(zod.string()),
   "phone": zod.string().nullish(),
@@ -5546,6 +6017,50 @@ export const SetBusinessStatusResponse = zod.object({
   "lat": zod.number().nullish(),
   "lng": zod.number().nullish(),
   "serviceArea": zod.string().nullish(),
+  "themeColor": zod.string().nullish().describe('Hex accent color for the profile page (e.g. \"#0d9488\")'),
+  "amenities": zod.array(zod.string()).optional(),
+  "highlights": zod.array(zod.object({
+  "id": zod.string(),
+  "label": zod.string(),
+  "icon": zod.string().describe('One of the curated highlight icon keys (food, dock, live_music, fishing, fuel, events, campground, store, boats, sunset, drinks, swimming, specials, rentals, photos, team)'),
+  "imageUrl": zod.string().nullish()
+})).optional(),
+  "featured": zod.union([zod.null(),zod.object({
+  "title": zod.string(),
+  "text": zod.string().nullish(),
+  "type": zod.enum(['announcement', 'event', 'special', 'grand_opening', 'live_music', 'tournament'])
+})]).optional(),
+  "products": zod.array(zod.string()).optional(),
+  "hoursStructured": zod.union([zod.null(),zod.object({
+  "mon": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "tue": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "wed": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "thu": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "fri": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sat": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional(),
+  "sun": zod.union([zod.null(),zod.object({
+  "open": zod.string().describe('24h \"HH:MM\"'),
+  "close": zod.string().describe('24h \"HH:MM\"')
+})]).optional()
+}).describe('Weekly hours; a null day means closed that day.')]).optional(),
   "status": zod.enum(['pending', 'approved', 'rejected']),
   "createdAt": zod.string(),
   "updatedAt": zod.string(),

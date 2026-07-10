@@ -1597,6 +1597,21 @@ paths:
                 items:
                   type: string
 
+  /businesses/amenities:
+    get:
+      operationId: getBusinessAmenityKeys
+      tags: [businesses]
+      summary: Allowed amenity chip keys for business profiles
+      responses:
+        "200":
+          description: Amenity keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
   /businesses/me:
     get:
       operationId: getMyBusiness
@@ -1757,6 +1772,77 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+
+  /businesses/{businessId}/customize:
+    patch:
+      operationId: customizeBusiness
+      tags: [businesses]
+      summary: Update social-profile customization for a business you own (does not reset approval)
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessCustomizeInput"
+      responses:
+        "200":
+          description: Business updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "400":
+          description: Invalid input or moderation flagged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Business not found or not yours
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /businesses/{businessId}/save:
+    post:
+      operationId: saveBusiness
+      tags: [businesses]
+      summary: Save (heart) a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Saved
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    delete:
+      operationId: unsaveBusiness
+      tags: [businesses]
+      summary: Remove a business from saved
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Removed
 
   /businesses/{businessId}/follow:
     post:
@@ -4156,6 +4242,8 @@ components:
           type: integer
         followedByMe:
           type: boolean
+        savedByMe:
+          type: boolean
         verified:
           type: boolean
         photos:
@@ -4180,6 +4268,29 @@ components:
         serviceArea:
           type: string
           nullable: true
+        themeColor:
+          type: ["string", "null"]
+          description: Hex accent color for the profile page (e.g. "#0d9488")
+        amenities:
+          type: array
+          items:
+            type: string
+        highlights:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessHighlight"
+        featured:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/BusinessFeatured"
+        products:
+          type: array
+          items:
+            type: string
+        hoursStructured:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/BusinessHoursStructured"
         status:
           type: string
           enum: [pending, approved, rejected]
@@ -4190,6 +4301,89 @@ components:
         owner:
           $ref: "#/components/schemas/BusinessOwner"
           nullable: true
+
+    BusinessHighlight:
+      type: object
+      required: [id, label, icon]
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        icon:
+          type: string
+          description: One of the curated highlight icon keys (food, dock, live_music, fishing, fuel, events, campground, store, boats, sunset, drinks, swimming, specials, rentals, photos, team)
+        imageUrl:
+          type: ["string", "null"]
+
+    BusinessFeatured:
+      type: object
+      required: [title, type]
+      properties:
+        title:
+          type: string
+        text:
+          type: ["string", "null"]
+        type:
+          type: string
+          enum: [announcement, event, special, grand_opening, live_music, tournament]
+
+    BusinessDayHours:
+      type: object
+      required: [open, close]
+      properties:
+        open:
+          type: string
+          description: 24h "HH:MM"
+        close:
+          type: string
+          description: 24h "HH:MM"
+
+    BusinessHoursStructured:
+      type: object
+      description: Weekly hours; a null day means closed that day.
+      properties:
+        mon:
+          oneOf: [{ type: "null" }, { $ref: "#/components/schemas/BusinessDayHours" }]
+        tue:
+          oneOf: [{ type: "null" }, { $ref: "#/components/schemas/BusinessDayHours" }]
+        wed:
+          oneOf: [{ type: "null" }, { $ref: "#/components/schemas/BusinessDayHours" }]
+        thu:
+          oneOf: [{ type: "null" }, { $ref: "#/components/schemas/BusinessDayHours" }]
+        fri:
+          oneOf: [{ type: "null" }, { $ref: "#/components/schemas/BusinessDayHours" }]
+        sat:
+          oneOf: [{ type: "null" }, { $ref: "#/components/schemas/BusinessDayHours" }]
+        sun:
+          oneOf: [{ type: "null" }, { $ref: "#/components/schemas/BusinessDayHours" }]
+
+    BusinessCustomizeInput:
+      type: object
+      description: Partial update — only fields present are changed; approval status is NOT reset.
+      properties:
+        themeColor:
+          type: ["string", "null"]
+        amenities:
+          type: array
+          items:
+            type: string
+        highlights:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessHighlight"
+        featured:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/BusinessFeatured"
+        products:
+          type: array
+          items:
+            type: string
+        hoursStructured:
+          oneOf:
+            - type: "null"
+            - $ref: "#/components/schemas/BusinessHoursStructured"
 
     BusinessStatusInput:
       type: object

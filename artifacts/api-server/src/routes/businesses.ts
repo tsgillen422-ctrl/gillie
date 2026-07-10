@@ -5,6 +5,7 @@ import {
   businessProfilesTable,
   businessFollowsTable,
   businessReviewsTable,
+  businessSavesTable,
   postsTable,
   blocksTable,
 } from "@workspace/db";
@@ -43,12 +44,17 @@ export const BUSINESS_TYPE_SUGGESTIONS = [
   "Boat Charter",
 ];
 
-// Follower/review aggregates + viewer follow state for a set of businesses.
+// Follower/review aggregates + viewer follow/save state for a set of businesses.
 async function businessSocialStats(bizIds: number[], viewerId: number) {
   if (!bizIds.length) {
-    return { followers: new Map<number, number>(), ratings: new Map<number, { avg: number; count: number }>(), followedByMe: new Set<number>() };
+    return {
+      followers: new Map<number, number>(),
+      ratings: new Map<number, { avg: number; count: number }>(),
+      followedByMe: new Set<number>(),
+      savedByMe: new Set<number>(),
+    };
   }
-  const [followerRows, ratingRows, myFollows] = await Promise.all([
+  const [followerRows, ratingRows, myFollows, mySaves] = await Promise.all([
     db
       .select({ businessId: businessFollowsTable.businessId, value: count() })
       .from(businessFollowsTable)
@@ -62,13 +68,17 @@ async function businessSocialStats(bizIds: number[], viewerId: number) {
     db.query.businessFollowsTable.findMany({
       where: and(eq(businessFollowsTable.userId, viewerId), inArray(businessFollowsTable.businessId, bizIds)),
     }),
+    db.query.businessSavesTable.findMany({
+      where: and(eq(businessSavesTable.userId, viewerId), inArray(businessSavesTable.businessId, bizIds)),
+    }),
   ]);
   const followers = new Map(followerRows.map((r) => [r.businessId, r.value]));
   const ratings = new Map(
     ratingRows.map((r) => [r.businessId, { avg: r.avgRating ? Math.round(Number(r.avgRating) * 10) / 10 : 0, count: r.value }]),
   );
   const followedByMe = new Set(myFollows.map((r) => r.businessId));
-  return { followers, ratings, followedByMe };
+  const savedByMe = new Set(mySaves.map((r) => r.businessId));
+  return { followers, ratings, followedByMe, savedByMe };
 }
 
 type BizStats = Awaited<ReturnType<typeof businessSocialStats>>;
@@ -87,6 +97,7 @@ function formatBusiness(b: typeof businessProfilesTable.$inferSelect, stats?: Bi
     avgRating: stats?.ratings.get(b.id)?.avg ?? 0,
     reviewCount: stats?.ratings.get(b.id)?.count ?? 0,
     followedByMe: stats?.followedByMe.has(b.id) ?? false,
+    savedByMe: stats?.savedByMe.has(b.id) ?? false,
     // Approved businesses are the "verified" ones in the UI.
     verified: b.status === "approved",
     photos: Array.isArray(b.photos) ? b.photos : [],
@@ -96,6 +107,12 @@ function formatBusiness(b: typeof businessProfilesTable.$inferSelect, stats?: Bi
     lat: b.lat ?? null,
     lng: b.lng ?? null,
     serviceArea: b.serviceArea ?? null,
+    themeColor: b.themeColor ?? null,
+    amenities: Array.isArray(b.amenities) ? b.amenities : [],
+    highlights: Array.isArray(b.highlights) ? b.highlights : [],
+    featured: b.featured ?? null,
+    products: Array.isArray(b.products) ? b.products : [],
+    hoursStructured: b.hoursStructured ?? null,
     status: b.status,
     createdAt: b.createdAt.toISOString(),
     updatedAt: b.updatedAt.toISOString(),
@@ -122,6 +139,117 @@ function sanitizeInput(body: any) {
   return { businessName, businessType, description, phone, website, hours, serviceArea, lat, lng, photos, logoUrl, coverUrl };
 }
 
+// Curated amenity keys businesses can show as info chips. Kept server-side so
+// clients can't invent arbitrary chips; labels/icons live in the web client.
+export const BUSINESS_AMENITY_KEYS = [
+  "fuel",
+  "restaurant",
+  "bar",
+  "boat_ramp",
+  "dock_slips",
+  "campground",
+  "rentals",
+  "bait_shop",
+  "store",
+  "live_music",
+  "swimming",
+  "fishing",
+  "wifi",
+  "showers",
+  "pump_out",
+  "boat_service",
+  "lodging",
+  "events",
+] as const;
+
+const HIGHLIGHT_ICONS = new Set([
+  "food", "dock", "live_music", "fishing", "fuel", "events", "campground", "store",
+  "boats", "sunset", "drinks", "swimming", "specials", "rentals", "photos", "team",
+]);
+
+const FEATURED_TYPES = new Set(["announcement", "event", "special", "grand_opening", "live_music", "tournament"]);
+
+const HHMM = /^([01]\d|2[0-3]):[0-5]\d$/;
+const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+
+// Sanitize the social-customization fields. Each returns `undefined` when the
+// field wasn't present in the body (so PATCH can skip it) and a cleaned value
+// (possibly null/[]) when it was.
+function sanitizeCustomization(body: any) {
+  const out: {
+    themeColor?: string | null;
+    amenities?: string[];
+    highlights?: { id: string; label: string; icon: string; imageUrl?: string | null }[];
+    featured?: { title: string; text?: string | null; type: string } | null;
+    products?: string[];
+    hoursStructured?: Record<string, { open: string; close: string } | null> | null;
+  } = {};
+  if ("themeColor" in (body ?? {})) {
+    out.themeColor =
+      typeof body.themeColor === "string" && /^#[0-9a-fA-F]{6}$/.test(body.themeColor.trim())
+        ? body.themeColor.trim().toLowerCase()
+        : null;
+  }
+  if ("amenities" in (body ?? {})) {
+    const allowed = new Set<string>(BUSINESS_AMENITY_KEYS);
+    out.amenities = Array.isArray(body.amenities)
+      ? [...new Set(body.amenities.filter((a: unknown) => typeof a === "string" && allowed.has(a)))].slice(0, 18) as string[]
+      : [];
+  }
+  if ("highlights" in (body ?? {})) {
+    out.highlights = Array.isArray(body.highlights)
+      ? body.highlights
+          .filter((h: any) => h && typeof h.label === "string" && h.label.trim())
+          .slice(0, 10)
+          .map((h: any, i: number) => ({
+            id: typeof h.id === "string" && h.id ? h.id.slice(0, 40) : `h${Date.now()}${i}`,
+            label: h.label.trim().slice(0, 24),
+            icon: typeof h.icon === "string" && HIGHLIGHT_ICONS.has(h.icon) ? h.icon : "photos",
+            imageUrl: typeof h.imageUrl === "string" && h.imageUrl.length < 500 ? h.imageUrl : null,
+          }))
+      : [];
+  }
+  if ("featured" in (body ?? {})) {
+    const f = body.featured;
+    out.featured =
+      f && typeof f.title === "string" && f.title.trim()
+        ? {
+            title: f.title.trim().slice(0, 80),
+            text: typeof f.text === "string" && f.text.trim() ? f.text.trim().slice(0, 300) : null,
+            type: typeof f.type === "string" && FEATURED_TYPES.has(f.type) ? f.type : "announcement",
+          }
+        : null;
+  }
+  if ("products" in (body ?? {})) {
+    out.products = Array.isArray(body.products)
+      ? body.products
+          .filter((p: unknown) => typeof p === "string" && (p as string).trim())
+          .map((p: string) => p.trim().slice(0, 80))
+          .slice(0, 12)
+      : [];
+  }
+  if ("hoursStructured" in (body ?? {})) {
+    const h = body.hoursStructured;
+    if (h && typeof h === "object") {
+      const cleaned: Record<string, { open: string; close: string } | null> = {};
+      let any = false;
+      for (const day of DAY_KEYS) {
+        const v = (h as any)[day];
+        if (v && typeof v.open === "string" && typeof v.close === "string" && HHMM.test(v.open) && HHMM.test(v.close)) {
+          cleaned[day] = { open: v.open, close: v.close };
+          any = true;
+        } else {
+          cleaned[day] = null;
+        }
+      }
+      out.hoursStructured = any ? cleaned : null;
+    } else {
+      out.hoursStructured = null;
+    }
+  }
+  return out;
+}
+
 // Blocks are symmetric: a blocked viewer must not reach a business owned by
 // the other party (and vice versa) on any business surface.
 async function isBlockedBetween(viewerId: number, ownerId: number): Promise<boolean> {
@@ -144,6 +272,12 @@ router.get("/types", async (_req, res) => {
   const inUse = rows.map((r) => r.businessType).filter(Boolean);
   const merged = Array.from(new Set([...BUSINESS_TYPE_SUGGESTIONS, ...inUse]));
   res.json(merged);
+});
+
+// GET /businesses/amenities — the allowed amenity chip keys.
+// Must be registered before /:businessId or it would be shadowed.
+router.get("/amenities", async (_req, res) => {
+  res.json([...BUSINESS_AMENITY_KEYS]);
 });
 
 // A user may own multiple businesses, but keep a sane cap.
@@ -265,6 +399,7 @@ router.put("/me", async (req, res) => {
 async function removeBusiness(biz: typeof businessProfilesTable.$inferSelect) {
   await db.delete(businessFollowsTable).where(eq(businessFollowsTable.businessId, biz.id));
   await db.delete(businessReviewsTable).where(eq(businessReviewsTable.businessId, biz.id));
+  await db.delete(businessSavesTable).where(eq(businessSavesTable.businessId, biz.id));
   await db.update(postsTable).set({ businessId: null }).where(eq(postsTable.businessId, biz.id));
   await db.delete(businessProfilesTable).where(eq(businessProfilesTable.id, biz.id));
   const remaining = await db.query.businessProfilesTable.findFirst({
@@ -414,6 +549,69 @@ router.delete("/:businessId", async (req, res) => {
     return res.status(404).json({ error: "Business not found" });
   }
   await removeBusiness(existing);
+  res.json({ ok: true });
+});
+
+// PATCH /businesses/:businessId/customize — update social-profile
+// customization (theme, amenities, highlights, featured banner, products,
+// structured hours) WITHOUT resetting approval status. Only fields present in
+// the body are changed. Text in highlights/featured/products is moderated.
+router.patch("/:businessId/customize", async (req, res) => {
+  const uid = currentUserId(req);
+  const id = parseInt(req.params.businessId, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid business id" });
+  const existing = await db.query.businessProfilesTable.findFirst({
+    where: eq(businessProfilesTable.id, id),
+  });
+  if (!existing || existing.userId !== uid) {
+    return res.status(404).json({ error: "Business not found" });
+  }
+  const patch = sanitizeCustomization(req.body);
+  if (Object.keys(patch).length === 0) {
+    return res.status(400).json({ error: "No customization fields provided" });
+  }
+  const texts: string[] = [
+    ...(patch.highlights ?? []).map((h) => h.label),
+    ...(patch.featured ? [patch.featured.title, patch.featured.text ?? ""] : []),
+    ...(patch.products ?? []),
+  ].filter(Boolean);
+  if (texts.length && (await moderateContent({ texts }))) {
+    return res.status(400).json({ error: "Some text was flagged by moderation. Please rephrase." });
+  }
+  const [row] = await db
+    .update(businessProfilesTable)
+    .set({ ...patch, updatedAt: new Date() })
+    .where(eq(businessProfilesTable.id, id))
+    .returning();
+  const stats = await businessSocialStats([row.id], uid);
+  res.json(formatBusiness(row, stats));
+});
+
+// POST /businesses/:businessId/save — heart/save a business for quick access.
+router.post("/:businessId/save", async (req, res) => {
+  const uid = currentUserId(req);
+  const id = parseInt(req.params.businessId, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid business id" });
+  const row = await db.query.businessProfilesTable.findFirst({ where: eq(businessProfilesTable.id, id) });
+  if (!row || row.status !== "approved") return res.status(404).json({ error: "Business not found" });
+  if (await isBlockedBetween(uid, row.userId)) {
+    return res.status(404).json({ error: "Business not found" });
+  }
+  await db
+    .insert(businessSavesTable)
+    .values({ businessId: id, userId: uid })
+    .onConflictDoNothing();
+  res.status(201).json({ ok: true });
+});
+
+// DELETE /businesses/:businessId/save — remove from saved.
+router.delete("/:businessId/save", async (req, res) => {
+  const uid = currentUserId(req);
+  const id = parseInt(req.params.businessId, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid business id" });
+  await db
+    .delete(businessSavesTable)
+    .where(and(eq(businessSavesTable.businessId, id), eq(businessSavesTable.userId, uid)));
   res.json({ ok: true });
 });
 

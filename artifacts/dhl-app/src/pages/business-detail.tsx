@@ -19,6 +19,10 @@ import {
   Calendar,
   Plus,
   Trash2,
+  Heart,
+  Bookmark,
+  BookmarkCheck,
+  Palette
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -27,10 +31,14 @@ import {
   useCreateReport,
   useFollowBusiness,
   useUnfollowBusiness,
+  useSaveBusiness,
+  useUnsaveBusiness,
   useGetBusinessReviews,
   useUpsertBusinessReview,
   useDeleteBusinessReview,
   useGetBusinessPosts,
+  useReactToPost,
+  useDeletePost,
   getGetBusinessQueryKey,
   getGetBusinessReviewsQueryKey,
   getGetBusinessPostsQueryKey,
@@ -50,22 +58,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserAvatar } from "@/components/UserAvatar";
 import { ClickableImage } from "@/components/ClickableImage";
 import { MatureGate } from "@/components/MatureGate";
+import { ImageLightbox } from "@/components/ImageLightbox";
 import { useToast } from "@/hooks/use-toast";
+import { PostCard } from "@/components/feed/PostCard";
+import { ConditionsWidget } from "@/components/ConditionsWidget";
+import { getAmenityIcon, getAmenityLabel, getHighlightIcon } from "@/lib/business-meta";
 
 const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 
-const REPORT_REASONS = [
-  { value: "fake_listing", label: "Fake or fraudulent listing" },
-  { value: "incorrect_information", label: "Incorrect information" },
-  { value: "inappropriate", label: "Inappropriate content" },
-  { value: "spam", label: "Spam" },
-  { value: "other", label: "Other" },
-];
+const PROFILE_TAB =
+  "shrink-0 inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card px-4 py-2 text-sm font-semibold text-muted-foreground shadow-soft data-[state=active]:border-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-soft";
+
+function WaveDivider({ className = "" }: { className?: string }) {
+  return (
+    <div className={`-mx-4 text-primary/15 ${className}`} aria-hidden="true">
+      <svg viewBox="0 0 1440 48" preserveAspectRatio="none" className="w-full h-4">
+        <path
+          fill="currentColor"
+          d="M0,24 C180,46 360,4 540,18 C720,32 900,48 1080,30 C1260,14 1350,20 1440,28 L1440,48 L0,48 Z"
+        />
+      </svg>
+    </div>
+  );
+}
 
 function StarRow({ value, onChange, size = "w-4 h-4" }: { value: number; onChange?: (v: number) => void; size?: string }) {
   return (
@@ -115,40 +134,48 @@ function MiniMap({ lat, lng }: { lat: number; lng: number }) {
   return <div ref={ref} className="h-40 w-full rounded-2xl overflow-hidden border border-border" data-testid="business-mini-map" />;
 }
 
-function BusinessPostCard({ post }: { post: Post }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4 space-y-2" data-testid={`business-post-${post.id}`}>
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        {post.postType === "event" ? (
-          <Badge variant="secondary" className="bg-violet-100 text-violet-700 hover:bg-violet-100">
-            <Calendar className="w-3 h-3 mr-1" />
-            {post.eventDate ? format(new Date(post.eventDate), "MMM d, h:mm a") : "Event"}
-          </Badge>
-        ) : post.postType === "deal" ? (
-          <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-100">Deal</Badge>
-        ) : post.postType === "new_arrival" ? (
-          <Badge variant="secondary" className="bg-teal-100 text-teal-700 hover:bg-teal-100">New Arrival</Badge>
-        ) : post.postType === "check_in" ? (
-          <Badge variant="secondary" className="bg-teal-100 text-teal-700 hover:bg-teal-100">Check-In</Badge>
-        ) : null}
-        <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
-      </div>
-      <MatureGate isMature={post.isMature}>
-        {post.title && <h3 className="font-semibold text-sm">{post.title}</h3>}
-        <p className="text-sm whitespace-pre-wrap leading-relaxed">{post.content}</p>
-        {(post.photos ?? []).length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pt-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {(post.photos ?? []).map((p, i) => (
-              <ClickableImage key={i} src={p} alt="" className="h-36 rounded-xl object-cover shrink-0" />
-            ))}
-          </div>
-        )}
-        {post.imageUrl && !(post.photos ?? []).length && (
-          <ClickableImage src={post.imageUrl} alt="" className="max-h-72 w-full rounded-xl object-cover" />
-        )}
-      </MatureGate>
-    </div>
-  );
+const WEEK_DAYS = [
+  { key: "mon", label: "Monday" },
+  { key: "tue", label: "Tuesday" },
+  { key: "wed", label: "Wednesday" },
+  { key: "thu", label: "Thursday" },
+  { key: "fri", label: "Friday" },
+  { key: "sat", label: "Saturday" },
+  { key: "sun", label: "Sunday" },
+] as const;
+
+/** "14:30" -> "2:30 PM" */
+function formatTime(t: string): string {
+  const m = /^(\d{2}):(\d{2})$/.exec(t);
+  if (!m) return t;
+  let h = parseInt(m[1], 10);
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return `${h}:${m[2]} ${ampm}`;
+}
+
+/** Convert "#rgb" / "#rrggbb" to an HSL triplet string ("H S% L%") for the --primary CSS var. */
+function hexToHslTriplet(hex: string): string | null {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  let s = m[1];
+  if (s.length === 3) s = s.split("").map((c) => c + c).join("");
+  const r = parseInt(s.slice(0, 2), 16) / 255;
+  const g = parseInt(s.slice(2, 4), 16) / 255;
+  const b = parseInt(s.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let h = 0;
+  let sat = 0;
+  if (max !== min) {
+    const d = max - min;
+    sat = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+    else if (max === g) h = ((b - r) / d + 2) / 6;
+    else h = ((r - g) / d + 4) / 6;
+  }
+  return `${Math.round(h * 360)} ${Math.round(sat * 100)}% ${Math.round(l * 100)}%`;
 }
 
 export default function BusinessDetailPage() {
@@ -172,6 +199,8 @@ export default function BusinessDetailPage() {
   const submitReport = useCreateReport();
   const follow = useFollowBusiness();
   const unfollow = useUnfollowBusiness();
+  const saveAction = useSaveBusiness();
+  const unsaveAction = useUnsaveBusiness();
   const upsertReview = useUpsertBusinessReview();
   const deleteReview = useDeleteBusinessReview();
 
@@ -183,15 +212,23 @@ export default function BusinessDetailPage() {
   const [rating, setRating] = React.useState(0);
   const [reviewText, setReviewText] = React.useState("");
 
+  const [lightboxOpen, setLightboxOpen] = React.useState<{ src: string; alt: string } | null>(null);
+
   const isOwner = me != null && business != null && business.userId === me.id;
   const myReview = React.useMemo(
     () => (me ? reviews.find((r: BusinessReview) => r.userId === me.id) : undefined),
     [reviews, me],
   );
 
+  const reactPost = useReactToPost();
+  const deletePost = useDeletePost();
+
   const invalidateBusiness = () => {
     qc.invalidateQueries({ queryKey: getGetBusinessQueryKey(businessId) });
-    qc.invalidateQueries({ queryKey: ["business", businessId] });
+  };
+
+  const refreshPosts = () => {
+    qc.invalidateQueries({ queryKey: getGetBusinessPostsQueryKey(businessId) });
   };
 
   if (isLoading) {
@@ -209,6 +246,7 @@ export default function BusinessDetailPage() {
   }
 
   const followedByMe = business.followedByMe ?? false;
+  const savedByMe = business.savedByMe ?? false;
   const followerCount = business.followerCount ?? 0;
   const avgRating = business.avgRating ?? 0;
   const reviewCount = business.reviewCount ?? reviews.length;
@@ -220,6 +258,20 @@ export default function BusinessDetailPage() {
       {
         onSuccess: () => invalidateBusiness(),
         onError: () => toast({ title: followedByMe ? "Could not unfollow" : "Could not follow", variant: "destructive" }),
+      },
+    );
+  };
+
+  const toggleSave = () => {
+    const m = savedByMe ? unsaveAction : saveAction;
+    m.mutate(
+      { businessId: business.id },
+      {
+        onSuccess: () => {
+          invalidateBusiness();
+          toast({ title: savedByMe ? "Removed from saved" : "Saved to your list" });
+        },
+        onError: () => toast({ title: "Could not save", variant: "destructive" }),
       },
     );
   };
@@ -286,43 +338,80 @@ export default function BusinessDetailPage() {
       : `https://${business.website}`
     : null;
 
+  const themeTriplet = business.themeColor ? hexToHslTriplet(business.themeColor) : null;
+  const themeStyle = themeTriplet ? ({ "--primary": themeTriplet } as React.CSSProperties) : undefined;
+
+  let openStatus = "Unknown";
+  let openStatusColor = "text-muted-foreground";
+  if (business.hoursStructured) {
+    const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+    const now = new Date();
+    const today = days[now.getDay()];
+    const hours = (business.hoursStructured as any)[today];
+    if (hours === null) {
+      openStatus = "Closed Today";
+      openStatusColor = "text-red-500";
+    } else if (hours?.open && hours?.close) {
+      const timeStr = now.toTimeString().slice(0, 5); // HH:MM
+      if (timeStr >= hours.open && timeStr <= hours.close) {
+        openStatus = `Open · Closes at ${hours.close}`;
+        openStatusColor = "text-emerald-500";
+      } else {
+        openStatus = `Closed · Opens at ${hours.open}`;
+        openStatusColor = "text-red-500";
+      }
+    }
+  } else if (business.hours) {
+    openStatus = business.hours;
+  }
+
+  const events = posts.filter((p: Post) => p.postType === "event");
+
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="h-full overflow-y-auto" style={themeStyle}>
       <div className="mx-auto w-full max-w-2xl pb-24">
         {/* Cover */}
         <div className="relative">
-          <div className="h-40 w-full bg-gradient-to-br from-primary/25 via-primary/10 to-primary/5">
+          <div className="h-56 w-full bg-gradient-to-br from-primary/25 via-primary/10 to-primary/5">
             {business.coverUrl && <img src={business.coverUrl} alt="" className="h-full w-full object-cover" />}
           </div>
           <button
             type="button"
             onClick={() => (window.history.length > 1 ? window.history.back() : navigate("/businesses"))}
-            className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm"
+            className="absolute left-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm shadow-sm"
             data-testid="button-back"
             aria-label="Back"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          {isOwner && (
-            <div className="absolute right-3 top-3">
-              <Button size="sm" variant="secondary" className="backdrop-blur-sm" asChild>
-                <Link href="/businesses/me/edit"><Pencil className="w-4 h-4 mr-1.5" />Edit</Link>
+          <div className="absolute right-3 top-3 flex items-center gap-2">
+            {isOwner && (
+              <Button size="sm" variant="secondary" className="backdrop-blur-sm rounded-full bg-white/90 shadow-sm" asChild>
+                <Link href={`/businesses/customize?id=${business.id}`}><Palette className="w-4 h-4 mr-1.5" />Customize</Link>
               </Button>
-            </div>
-          )}
+            )}
+            <Button
+              size="icon"
+              variant="secondary"
+              className="rounded-full bg-white/90 backdrop-blur-sm shadow-sm"
+              onClick={toggleSave}
+            >
+              {savedByMe ? <Heart className="w-5 h-5 fill-rose-500 text-rose-500" /> : <Heart className="w-5 h-5 text-foreground" />}
+            </Button>
+          </div>
           {/* Logo */}
-          <div className="absolute -bottom-9 left-4">
+          <div className="absolute -bottom-12 left-4">
             {business.logoUrl ? (
-              <img src={business.logoUrl} alt="" className="h-20 w-20 rounded-2xl object-cover border-4 border-background shadow-md" data-testid="business-logo" />
+              <img src={business.logoUrl} alt="" className="h-24 w-24 rounded-full object-cover border-4 border-background shadow-md bg-card" data-testid="business-logo" />
             ) : (
-              <div className="h-20 w-20 rounded-2xl bg-primary/10 text-primary flex items-center justify-center border-4 border-background shadow-md">
-                <Store className="w-8 h-8" />
+              <div className="h-24 w-24 rounded-full bg-primary/10 text-primary flex items-center justify-center border-4 border-background shadow-md">
+                <Store className="w-10 h-10" />
               </div>
             )}
           </div>
         </div>
 
-        <div className="px-4 pt-11 space-y-4">
+        <div className="px-4 pt-14 space-y-5">
           {business.status !== "approved" && (
             <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               {business.status === "pending"
@@ -331,11 +420,11 @@ export default function BusinessDetailPage() {
             </div>
           )}
 
-          {/* Name + stats + follow */}
-          <div className="space-y-2">
+          {/* Name + stats */}
+          <div>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h1 className="text-xl font-bold leading-tight flex items-center gap-1.5" data-testid="business-name">
+                <h1 className="text-2xl font-bold font-display leading-tight flex items-center gap-1.5" data-testid="business-name">
                   <span className="truncate">{business.businessName}</span>
                   {business.verified && <BadgeCheck className="w-5 h-5 text-primary shrink-0" data-testid="badge-verified" />}
                 </h1>
@@ -347,20 +436,23 @@ export default function BusinessDetailPage() {
                   variant={followedByMe ? "outline" : "default"}
                   onClick={toggleFollow}
                   disabled={follow.isPending || unfollow.isPending}
+                  className="rounded-full shadow-sm"
                   data-testid="button-follow-business"
                 >
                   {followedByMe ? "Following" : <><Plus className="w-4 h-4 mr-1" />Follow</>}
                 </Button>
               )}
             </div>
-            <div className="flex items-center gap-4 text-sm">
-              <span className="flex items-center gap-1.5 text-muted-foreground" data-testid="business-followers">
-                <Users className="w-4 h-4" />
-                <span className="font-semibold text-foreground">{followerCount}</span>
-                {followerCount === 1 ? "follower" : "followers"}
+            
+            <div className="mt-3 flex items-center flex-wrap gap-x-4 gap-y-2 text-sm">
+              <span className={`font-medium flex items-center gap-1 ${openStatusColor}`}>
+                <Clock className="w-4 h-4" /> {openStatus}
+              </span>
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <Users className="w-4 h-4" /> <span className="font-semibold text-foreground">{followerCount}</span> followers
               </span>
               {reviewCount > 0 && (
-                <span className="flex items-center gap-1 text-muted-foreground" data-testid="business-rating">
+                <span className="flex items-center gap-1 text-muted-foreground cursor-pointer hover:text-foreground">
                   <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                   <span className="font-semibold text-foreground">{avgRating.toFixed(1)}</span>
                   ({reviewCount})
@@ -369,16 +461,59 @@ export default function BusinessDetailPage() {
             </div>
           </div>
 
-          {/* Quick actions */}
+          {/* Featured Banner */}
+          {business.featured && (
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 rounded-bl-xl font-bold text-[10px] uppercase tracking-wider">
+                {business.featured.type.replace(/_/g, " ")}
+              </div>
+              <h3 className="font-bold text-lg text-primary pr-20">{business.featured.title}</h3>
+              {business.featured.text && <p className="text-sm text-foreground/80 mt-1">{business.featured.text}</p>}
+            </div>
+          )}
+
+          {/* Highlights Row */}
+          {business.highlights && business.highlights.length > 0 && (
+            <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 snap-x">
+              {business.highlights.map((h: any) => {
+                const Icon = getHighlightIcon(h.icon);
+                return (
+                  <button
+                    key={h.id}
+                    type="button"
+                    className="flex flex-col items-center gap-1.5 shrink-0 snap-center w-[72px]"
+                    onClick={() => {
+                      if (h.imageUrl) setLightboxOpen({ src: h.imageUrl, alt: h.label });
+                    }}
+                  >
+                    <div className="w-[68px] h-[68px] rounded-full p-[2px] bg-gradient-to-tr from-primary to-primary/40">
+                      <div className="w-full h-full rounded-full bg-background border-2 border-background overflow-hidden flex items-center justify-center">
+                        {h.imageUrl ? (
+                          <img src={h.imageUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-muted flex items-center justify-center text-primary/70">
+                            <Icon className="w-7 h-7" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-medium text-center truncate w-full">{h.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Action Row */}
           <div className="grid grid-cols-4 gap-2">
             {business.phone ? (
-              <a href={`tel:${business.phone}`} className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-2.5 hover:bg-muted/50 transition-colors" data-testid="action-call">
-                <Phone className="w-4 h-4 text-primary" />
+              <a href={`tel:${business.phone}`} className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card py-3 hover:bg-muted/50 transition-colors shadow-sm" data-testid="action-call">
+                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center"><Phone className="w-4 h-4" /></div>
                 <span className="text-[11px] font-medium">Call</span>
               </a>
             ) : (
-              <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-2.5 opacity-40">
-                <Phone className="w-4 h-4" />
+              <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card py-3 opacity-40">
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><Phone className="w-4 h-4" /></div>
                 <span className="text-[11px] font-medium">Call</span>
               </div>
             )}
@@ -387,147 +522,237 @@ export default function BusinessDetailPage() {
                 href={`https://www.google.com/maps/dir/?api=1&destination=${business.lat},${business.lng}`}
                 target="_blank"
                 rel="noreferrer"
-                className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-2.5 hover:bg-muted/50 transition-colors"
+                className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card py-3 hover:bg-muted/50 transition-colors shadow-sm"
                 data-testid="action-directions"
               >
-                <Navigation className="w-4 h-4 text-primary" />
+                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center"><Navigation className="w-4 h-4" /></div>
                 <span className="text-[11px] font-medium">Directions</span>
               </a>
             ) : (
-              <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-2.5 opacity-40">
-                <Navigation className="w-4 h-4" />
+              <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card py-3 opacity-40">
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><Navigation className="w-4 h-4" /></div>
                 <span className="text-[11px] font-medium">Directions</span>
               </div>
             )}
             {website ? (
-              <a href={website} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-2.5 hover:bg-muted/50 transition-colors" data-testid="action-website">
-                <Globe className="w-4 h-4 text-primary" />
+              <a href={website} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card py-3 hover:bg-muted/50 transition-colors shadow-sm" data-testid="action-website">
+                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center"><Globe className="w-4 h-4" /></div>
                 <span className="text-[11px] font-medium">Website</span>
               </a>
             ) : (
-              <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-2.5 opacity-40">
-                <Globe className="w-4 h-4" />
+              <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card py-3 opacity-40">
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center"><Globe className="w-4 h-4" /></div>
                 <span className="text-[11px] font-medium">Website</span>
               </div>
             )}
-            {!isOwner ? (
-              <Link href={`/messages?user=${business.userId}`} className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-2.5 hover:bg-muted/50 transition-colors" data-testid="action-message">
-                <MessageSquare className="w-4 h-4 text-primary" />
-                <span className="text-[11px] font-medium">Message</span>
-              </Link>
-            ) : (
-              <div className="flex flex-col items-center gap-1 rounded-xl border border-border bg-card py-2.5 opacity-40">
-                <MessageSquare className="w-4 h-4" />
-                <span className="text-[11px] font-medium">Message</span>
-              </div>
-            )}
+            <button onClick={openReview} className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card py-3 hover:bg-muted/50 transition-colors shadow-sm" data-testid="action-review">
+              <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center"><Star className="w-4 h-4" /></div>
+              <span className="text-[11px] font-medium">Review</span>
+            </button>
           </div>
 
-          {isOwner && business.status === "approved" && (
-            <Button className="w-full" onClick={() => navigate(`/feed?compose=1&type=announcement&businessId=${business.id}`)} data-testid="button-business-compose">
-              <Plus className="w-4 h-4 mr-2" /> Post an update or event
-            </Button>
-          )}
+          <WaveDivider className="my-6" />
 
           {/* Tabs */}
-          <Tabs defaultValue="posts">
-            <TabsList className="w-full grid grid-cols-4">
-              <TabsTrigger value="posts" data-testid="tab-posts">Posts</TabsTrigger>
-              <TabsTrigger value="gallery" data-testid="tab-gallery">Gallery</TabsTrigger>
-              <TabsTrigger value="reviews" data-testid="tab-reviews">Reviews</TabsTrigger>
-              <TabsTrigger value="about" data-testid="tab-about">About</TabsTrigger>
-            </TabsList>
+          <Tabs defaultValue="updates">
+            <div className="overflow-x-auto pb-4 -mx-4 px-4 no-scrollbar">
+              <TabsList className="flex w-max gap-2 bg-transparent p-0">
+                <TabsTrigger value="updates" className={PROFILE_TAB}>Updates</TabsTrigger>
+                <TabsTrigger value="events" className={PROFILE_TAB}>Events</TabsTrigger>
+                <TabsTrigger value="photos" className={PROFILE_TAB}>Photos</TabsTrigger>
+                <TabsTrigger value="amenities" className={PROFILE_TAB}>Amenities</TabsTrigger>
+                <TabsTrigger value="reviews" className={PROFILE_TAB}>Reviews</TabsTrigger>
+                <TabsTrigger value="about" className={PROFILE_TAB}>About</TabsTrigger>
+              </TabsList>
+            </div>
 
-            <TabsContent value="posts" className="space-y-3 pt-3">
+            <TabsContent value="updates" className="space-y-4 pt-2">
               {posts.length === 0 ? (
-                <p className="py-10 text-center text-sm text-muted-foreground">
+                <div className="py-12 text-center text-muted-foreground bg-muted/20 rounded-3xl border border-border shadow-soft">
                   {isOwner ? "Share your first update — followers will see it in their feed." : "No updates yet."}
-                </p>
+                </div>
               ) : (
-                posts.map((p: Post) => <BusinessPostCard key={p.id} post={p} />)
+                posts.map((p: Post) => (
+                  <PostCard
+                    key={p.id}
+                    post={p}
+                    currentUserId={me?.id}
+                    canDelete={isOwner}
+                    onReact={(reaction: any) => reactPost.mutate({ postId: p.id, data: { reaction } }, { onSuccess: refreshPosts })}
+                    onDelete={() => deletePost.mutate({ postId: p.id }, { onSuccess: refreshPosts })}
+                  />
+                ))
               )}
             </TabsContent>
 
-            <TabsContent value="gallery" className="pt-3">
-              {business.photos.length === 0 ? (
-                <p className="py-10 text-center text-sm text-muted-foreground">No photos yet.</p>
+            <TabsContent value="events" className="space-y-4 pt-2">
+              {events.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground bg-muted/20 rounded-3xl border border-border shadow-soft">
+                  No upcoming events.
+                </div>
               ) : (
-                <div className="grid grid-cols-3 gap-1.5">
+                events.map((p: Post) => (
+                  <PostCard
+                    key={p.id}
+                    post={p}
+                    currentUserId={me?.id}
+                    canDelete={isOwner}
+                    onReact={(reaction: any) => reactPost.mutate({ postId: p.id, data: { reaction } }, { onSuccess: refreshPosts })}
+                    onDelete={() => deletePost.mutate({ postId: p.id }, { onSuccess: refreshPosts })}
+                  />
+                ))
+              )}
+            </TabsContent>
+
+            <TabsContent value="photos" className="pt-2">
+              {business.photos.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground bg-muted/20 rounded-3xl border border-border shadow-soft">
+                  No photos yet.
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
                   {business.photos.map((p, i) => (
-                    <ClickableImage key={i} src={p} alt="" className="aspect-square w-full rounded-lg object-cover" />
+                    <button key={i} onClick={() => setLightboxOpen({ src: p, alt: "Gallery photo" })} className="aspect-square w-full rounded-2xl overflow-hidden shadow-sm">
+                      <img src={p} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                    </button>
                   ))}
                 </div>
               )}
             </TabsContent>
 
-            <TabsContent value="reviews" className="space-y-3 pt-3">
+            <TabsContent value="amenities" className="space-y-6 pt-2">
+              {business.amenities && business.amenities.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {business.amenities.map(k => {
+                    const Icon = getAmenityIcon(k);
+                    return (
+                      <div key={k} className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-card shadow-soft">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <span className="font-medium text-sm">{getAmenityLabel(k)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="py-12 text-center text-muted-foreground bg-muted/20 rounded-3xl border border-border shadow-soft">No amenities listed.</p>
+              )}
+              {business.products && business.products.length > 0 && (
+                <div>
+                  <h3 className="font-bold text-lg mb-3">Products & Services</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {business.products.map((p, i) => (
+                      <span key={i} className="inline-flex px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground text-sm font-medium shadow-soft">
+                        {p}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="reviews" className="space-y-4 pt-2">
               {!isOwner && (
-                <Button variant="outline" className="w-full" onClick={openReview} data-testid="button-write-review">
-                  <Star className="w-4 h-4 mr-2" />
+                <Button className="w-full rounded-2xl shadow-soft" onClick={openReview} data-testid="button-write-review">
+                  <Star className="w-4 h-4 mr-2 fill-current" />
                   {myReview ? "Edit your review" : "Write a review"}
                 </Button>
               )}
               {reviews.length === 0 ? (
-                <p className="py-10 text-center text-sm text-muted-foreground">No reviews yet.</p>
+                <div className="py-12 text-center text-muted-foreground bg-muted/20 rounded-3xl border border-border shadow-soft">No reviews yet.</div>
               ) : (
                 reviews.map((r: BusinessReview) => (
-                  <div key={r.id} className="rounded-2xl border border-border bg-card p-4 space-y-1.5" data-testid={`review-${r.id}`}>
-                    <div className="flex items-center gap-2">
+                  <div key={r.id} className="rounded-3xl border border-border bg-card p-5 space-y-2 shadow-soft" data-testid={`review-${r.id}`}>
+                    <div className="flex items-center gap-3">
                       <UserAvatar
                         name={r.user?.displayName || "User"}
                         username={r.user?.username || ""}
                         avatarUrl={r.user?.avatarUrl}
-                        className="w-8 h-8"
+                        className="w-10 h-10"
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold truncate">{r.user?.displayName || "Lake member"}</p>
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-sm font-bold truncate">{r.user?.displayName || "Lake member"}</p>
+                        <p className="text-xs text-muted-foreground">
                           {formatDistanceToNow(new Date(r.createdAt), { addSuffix: true })}
                         </p>
                       </div>
                       <StarRow value={r.rating} />
                     </div>
-                    {r.content && <p className="text-sm whitespace-pre-wrap leading-relaxed">{r.content}</p>}
+                    {r.content && <p className="text-sm whitespace-pre-wrap leading-relaxed mt-2 text-foreground/90">{r.content}</p>}
                   </div>
                 ))
               )}
             </TabsContent>
 
-            <TabsContent value="about" className="space-y-4 pt-3">
+            <TabsContent value="about" className="space-y-6 pt-2">
               {business.description && (
-                <p className="text-sm whitespace-pre-wrap leading-relaxed">{business.description}</p>
+                <div className="rounded-3xl border border-border bg-card p-5 shadow-soft">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed text-foreground/90">{business.description}</p>
+                </div>
               )}
-              <div className="rounded-2xl border border-border divide-y divide-border overflow-hidden">
+              
+              <div className="rounded-3xl border border-border bg-card shadow-soft overflow-hidden divide-y divide-border">
                 {business.phone && (
-                  <a href={`tel:${business.phone}`} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50">
-                    <Phone className="w-4 h-4 text-primary shrink-0" />
+                  <a href={`tel:${business.phone}`} className="flex items-center gap-4 px-5 py-4 hover:bg-muted/50 transition-colors">
+                    <Phone className="w-5 h-5 text-primary shrink-0" />
                     <span className="text-sm font-medium">{business.phone}</span>
                   </a>
                 )}
                 {website && (
-                  <a href={website} target="_blank" rel="noreferrer" className="flex items-center gap-3 px-4 py-3 hover:bg-muted/50">
-                    <Globe className="w-4 h-4 text-primary shrink-0" />
+                  <a href={website} target="_blank" rel="noreferrer" className="flex items-center gap-4 px-5 py-4 hover:bg-muted/50 transition-colors">
+                    <Globe className="w-5 h-5 text-primary shrink-0" />
                     <span className="text-sm font-medium truncate">{business.website}</span>
                   </a>
                 )}
-                {business.hours && (
-                  <div className="flex items-start gap-3 px-4 py-3">
-                    <Clock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    <span className="text-sm whitespace-pre-wrap">{business.hours}</span>
-                  </div>
-                )}
                 {business.serviceArea && (
-                  <div className="flex items-start gap-3 px-4 py-3">
-                    <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-4 px-5 py-4">
+                    <MapPin className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                     <span className="text-sm">Service area: {business.serviceArea}</span>
                   </div>
                 )}
               </div>
-              {business.lat != null && business.lng != null && <MiniMap lat={business.lat} lng={business.lng} />}
+
+              {(business.hoursStructured || business.hours) && (
+                <div className="rounded-3xl border border-border bg-card shadow-soft p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Clock className="w-5 h-5 text-primary" />
+                    <h3 className="font-bold text-lg">Hours</h3>
+                  </div>
+                  {business.hoursStructured ? (
+                    <div className="space-y-1.5">
+                      {WEEK_DAYS.map(({ key, label }) => {
+                        const h = (business.hoursStructured as any)[key];
+                        return (
+                          <div key={key} className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">{label}</span>
+                            <span className="font-medium">
+                              {h ? `${formatTime(h.open)} – ${formatTime(h.close)}` : "Closed"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap text-foreground/90">{business.hours}</p>
+                  )}
+                </div>
+              )}
+
+              {business.lat != null && business.lng != null && (
+                <div className="rounded-3xl border border-border bg-card shadow-soft p-1.5">
+                  <MiniMap lat={business.lat} lng={business.lng} />
+                </div>
+              )}
+              
+              <div className="rounded-3xl border border-border bg-card shadow-soft p-5">
+                <ConditionsWidget lakeId={business.lakeId} />
+              </div>
+
               {!isOwner && (
                 <Button
                   variant="ghost"
-                  className="w-full text-muted-foreground"
+                  className="w-full text-muted-foreground rounded-2xl"
                   onClick={() => setReportOpen(true)}
                   data-testid="button-report-business"
                 >
@@ -539,83 +764,77 @@ export default function BusinessDetailPage() {
         </div>
       </div>
 
+      <ImageLightbox
+        src={lightboxOpen?.src || null}
+        alt={lightboxOpen?.alt || ""}
+        open={!!lightboxOpen}
+        onClose={() => setLightboxOpen(null)}
+      />
+
       {/* Review dialog */}
       <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>{myReview ? "Edit your review" : "Review " + business.businessName}</DialogTitle>
-            <DialogDescription>Share your experience with other lake members.</DialogDescription>
+            <DialogTitle>Review {business.businessName}</DialogTitle>
+            <DialogDescription>Share your experience with the community.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="flex justify-center py-1">
+          <div className="space-y-4 py-4">
+            <div className="flex flex-col items-center justify-center gap-2">
               <StarRow value={rating} onChange={setRating} size="w-8 h-8" />
+              <span className="text-sm font-medium text-muted-foreground">Tap to rate</span>
             </div>
-            <Textarea
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-              placeholder="What was your experience like? (optional)"
-              rows={4}
-              maxLength={2000}
-              data-testid="input-review-text"
-            />
+            <div className="space-y-2">
+              <Label>Review (optional)</Label>
+              <Textarea
+                placeholder="What did you think?"
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                rows={4}
+              />
+            </div>
           </div>
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 sm:gap-0">
             {myReview && (
-              <Button variant="ghost" className="text-destructive hover:text-destructive mr-auto" onClick={removeReview} disabled={deleteReview.isPending}>
-                <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+              <Button type="button" variant="destructive" onClick={removeReview} disabled={deleteReview.isPending} className="sm:mr-auto">
+                Delete Review
               </Button>
             )}
-            <Button variant="outline" onClick={() => setReviewOpen(false)}>Cancel</Button>
-            <Button onClick={saveReview} disabled={upsertReview.isPending} data-testid="button-save-review">
-              {upsertReview.isPending ? "Saving…" : "Post review"}
-            </Button>
+            <Button type="button" variant="outline" onClick={() => setReviewOpen(false)}>Cancel</Button>
+            <Button type="button" onClick={saveReview} disabled={upsertReview.isPending}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Report dialog */}
       <Dialog open={reportOpen} onOpenChange={setReportOpen}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Report Business</DialogTitle>
-            <DialogDescription>
-              Report a fake, incorrect, or inappropriate listing. Our moderators will review it.
-            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1.5">
+          <div className="space-y-4 py-4">
+            <div className="grid gap-2">
               <Label>Reason</Label>
-              <Select value={reason} onValueChange={setReason}>
-                <SelectTrigger data-testid="select-report-reason">
-                  <SelectValue placeholder="Choose a reason" />
-                </SelectTrigger>
-                <SelectContent>
-                  {REPORT_REASONS.map((r) => (
-                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              >
+                <option value="" disabled>Select a reason...</option>
+                <option value="fake_listing">Fake or fraudulent listing</option>
+                <option value="incorrect_information">Incorrect information</option>
+                <option value="inappropriate">Inappropriate content</option>
+                <option value="spam">Spam</option>
+                <option value="other">Other</option>
+              </select>
             </div>
-            <div className="space-y-1.5">
+            <div className="grid gap-2">
               <Label>Details (optional)</Label>
-              <Textarea
-                value={details}
-                onChange={(e) => setDetails(e.target.value)}
-                placeholder="Anything else moderators should know…"
-                rows={3}
-              />
+              <Textarea value={details} onChange={(e) => setDetails(e.target.value)} rows={3} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setReportOpen(false)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              disabled={!reason || submitReport.isPending}
-              onClick={handleReport}
-              data-testid="button-submit-report"
-            >
-              Submit report
-            </Button>
+            <Button onClick={handleReport} disabled={submitReport.isPending || !reason}>Submit</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

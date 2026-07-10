@@ -831,6 +831,54 @@ export const BusinessStatus = {
   rejected: 'rejected',
 } as const;
 
+export interface BusinessHighlight {
+  id: string;
+  label: string;
+  /** One of the curated highlight icon keys (food, dock, live_music, fishing, fuel, events, campground, store, boats, sunset, drinks, swimming, specials, rentals, photos, team) */
+  icon: string;
+  /** @nullable */
+  imageUrl?: string | null;
+}
+
+export type BusinessFeaturedType = typeof BusinessFeaturedType[keyof typeof BusinessFeaturedType];
+
+
+export const BusinessFeaturedType = {
+  announcement: 'announcement',
+  event: 'event',
+  special: 'special',
+  grand_opening: 'grand_opening',
+  live_music: 'live_music',
+  tournament: 'tournament',
+} as const;
+
+export interface BusinessFeatured {
+  title: string;
+  /** @nullable */
+  text?: string | null;
+  type: BusinessFeaturedType;
+}
+
+export interface BusinessDayHours {
+  /** 24h "HH:MM" */
+  open: string;
+  /** 24h "HH:MM" */
+  close: string;
+}
+
+/**
+ * Weekly hours; a null day means closed that day.
+ */
+export interface BusinessHoursStructured {
+  mon?: null | BusinessDayHours;
+  tue?: null | BusinessDayHours;
+  wed?: null | BusinessDayHours;
+  thu?: null | BusinessDayHours;
+  fri?: null | BusinessDayHours;
+  sat?: null | BusinessDayHours;
+  sun?: null | BusinessDayHours;
+}
+
 export interface Business {
   id: number;
   userId: number;
@@ -844,6 +892,7 @@ export interface Business {
   avgRating?: number;
   reviewCount?: number;
   followedByMe?: boolean;
+  savedByMe?: boolean;
   verified?: boolean;
   photos: string[];
   phone?: string | null;
@@ -852,10 +901,33 @@ export interface Business {
   lat?: number | null;
   lng?: number | null;
   serviceArea?: string | null;
+  /**
+     * Hex accent color for the profile page (e.g. "#0d9488")
+     * @nullable
+     */
+  themeColor?: string | null;
+  amenities?: string[];
+  highlights?: BusinessHighlight[];
+  featured?: null | BusinessFeatured;
+  products?: string[];
+  hoursStructured?: null | BusinessHoursStructured;
   status: BusinessStatus;
   createdAt: string;
   updatedAt: string;
   owner?: BusinessOwner | null;
+}
+
+/**
+ * Partial update — only fields present are changed; approval status is NOT reset.
+ */
+export interface BusinessCustomizeInput {
+  /** @nullable */
+  themeColor?: string | null;
+  amenities?: string[];
+  highlights?: BusinessHighlight[];
+  featured?: null | BusinessFeatured;
+  products?: string[];
+  hoursStructured?: null | BusinessHoursStructured;
 }
 
 export type BusinessStatusInputStatus = typeof BusinessStatusInputStatus[keyof typeof BusinessStatusInputStatus];
