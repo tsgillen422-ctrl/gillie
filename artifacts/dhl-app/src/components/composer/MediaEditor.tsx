@@ -354,7 +354,10 @@ export function MediaEditor({
   const aspect = ASPECTS.find((a) => a.id === aspectId)?.value ?? null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[120] flex flex-col bg-black" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+    // pointer-events-auto is REQUIRED: the composer Radix Dialog is open under
+    // this portal and sets pointer-events:none on <body>, which we'd inherit —
+    // making every tab/filter/slider in here dead on touch devices.
+    <div className="pointer-events-auto fixed inset-0 z-[120] flex flex-col bg-black" style={{ paddingTop: "env(safe-area-inset-top)", paddingBottom: "env(safe-area-inset-bottom)" }}>
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2">
         <Button type="button" variant="ghost" size="icon" className="text-white" onClick={onClose} disabled={saving} data-testid="button-editor-close">

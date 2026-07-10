@@ -933,7 +933,20 @@ export function FeedPage() {
       </Dialog>
 
       <Dialog open={composerOpen} onOpenChange={(open) => { setComposerOpen(open); if (!open) resetComposer(); }}>
-        <DialogContent className="max-w-md gap-0 overflow-hidden p-0 [&>button]:hidden">
+        <DialogContent
+          className="max-w-md gap-0 overflow-hidden p-0 [&>button]:hidden"
+          // While the full-screen media editor (portaled to <body>) is open,
+          // taps inside it land "outside" this DialogContent — without these
+          // guards Radix dismisses the composer (and unmounts the editor).
+          onPointerDownOutside={(e) => { if (editingMediaIdx != null) e.preventDefault(); }}
+          onInteractOutside={(e) => { if (editingMediaIdx != null) e.preventDefault(); }}
+          onEscapeKeyDown={(e) => {
+            if (editingMediaIdx != null) {
+              e.preventDefault();
+              setEditingMediaIdx(null);
+            }
+          }}
+        >
           <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
             <DialogClose asChild>
               <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-full">
