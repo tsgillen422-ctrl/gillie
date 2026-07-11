@@ -48,6 +48,16 @@ There are now TWO isolation models in play; do not conflate them.
   (counts + upcomingEvents) and users `/search` + `/:userId`. Rule: any endpoint
   returning a user/profile or accepting a `:userId` is a potential demo leak —
   gate it.
+- **Businesses are demo-seedable and their many subroutes ALL leak by owner.**
+  Demo businesses (`DEMO_BUSINESSES` in demoData.ts) are `approved` + PUBLIC, so
+  they must be gated by owner id via `getHiddenDemoUserIds`. Beyond list `/` +
+  detail `/:id`, the leaky surfaces are: search.ts businesses query, and the
+  ID-based subroutes POST save, POST follow, GET/PUT reviews, GET posts (use the
+  `isDemoHiddenBusiness(viewer, ownerId)` helper). Owner-scoped writes
+  (PUT/DELETE/customize) already 404 non-owners; admin `/status` and self-keyed
+  DELETE save/follow/reviews are fine. clearDemoData must delete business child
+  rows (saves/follows/reviews/posts/profile) BEFORE deleteUserAndData — that
+  helper does NOT touch business tables, so leftover FKs would fail the tx.
 - clearDemoData reuses `deleteUserAndData` (exported from routes/users.ts) inside
   a tx — there is no FK cascade, so that helper is the canonical cleanup path.
 - Benign import cycle auth → demoData → users → auth; safe because refs are all

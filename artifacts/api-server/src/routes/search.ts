@@ -57,20 +57,22 @@ router.get("/", async (req, res) => {
     )
     .limit(10);
 
+  const businessMatch = and(
+    eq(businessProfilesTable.status, "approved"),
+    eq(businessProfilesTable.lakeId, lakeId),
+    or(
+      ilike(businessProfilesTable.businessName, term),
+      ilike(businessProfilesTable.businessType, term),
+      ilike(businessProfilesTable.description, term),
+      ilike(businessProfilesTable.serviceArea, term),
+    ),
+  );
   const businesses = await db
     .select()
     .from(businessProfilesTable)
     .where(
-      and(
-        eq(businessProfilesTable.status, "approved"),
-        eq(businessProfilesTable.lakeId, lakeId),
-        or(
-          ilike(businessProfilesTable.businessName, term),
-          ilike(businessProfilesTable.businessType, term),
-          ilike(businessProfilesTable.description, term),
-          ilike(businessProfilesTable.serviceArea, term),
-        ),
-      ),
+      // Hide demo-owned listings from non-reviewers (matches the businesses route).
+      hidden.length ? and(businessMatch, notInArray(businessProfilesTable.userId, hidden)) : businessMatch,
     )
     .limit(10);
 

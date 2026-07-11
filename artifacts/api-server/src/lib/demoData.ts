@@ -22,6 +22,10 @@ import {
   storyViewsTable,
   storyReactionsTable,
   storyPollVotesTable,
+  businessProfilesTable,
+  businessSavesTable,
+  businessFollowsTable,
+  businessReviewsTable,
 } from "@workspace/db";
 import { and, count, eq, gt, inArray, isNull } from "drizzle-orm";
 import { deleteUserAndData } from "../routes/users";
@@ -448,6 +452,104 @@ const DEMO_GALLERY: GallerySeed[] = [
   { username: "captainjoe", image: SEED("lake-sunset.png"), caption: "Another perfect dusk" },
 ];
 
+type BusinessSeed = {
+  // Demo owner (must be a DEMO_USERS username).
+  username: string;
+  businessName: string;
+  businessType: string;
+  description: string;
+  phone: string;
+  website: string;
+  hours: string;
+  amenities: string[];
+  themeColor?: string;
+  lat: number;
+  lng: number;
+};
+
+// Approved business listings so a reviewer sees the "dock sign" (🏪) markers on
+// the map and populated Businesses tab / profile pages. Owned by demo users and
+// hidden from non-reviewers by getHiddenDemoUserIds (businesses route), matching
+// the friends-only isolation of the rest of the demo world. Coordinates sit on
+// the Dale Hollow water near each owner so the markers land on the lake.
+const DEMO_BUSINESSES: BusinessSeed[] = [
+  {
+    username: "wakerider_tn",
+    businessName: "Sunset Marina & Resort",
+    businessType: "Marina",
+    description: "Full-service marina with fuel, ship store, and lakeside dining. Slips, rentals, and the best sunset views on Dale Hollow.",
+    phone: "(931) 555-0142",
+    website: "https://example.com/sunset-marina",
+    hours: "Mon–Sun 7am–8pm",
+    amenities: ["fuel", "restaurant", "dock_slips", "store", "rentals"],
+    themeColor: "#0d9488",
+    lat: 36.5384,
+    lng: -85.4352,
+  },
+  {
+    username: "baitandbrews",
+    businessName: "Horse Creek Bait & Tackle",
+    businessType: "Bait & Tackle Shop",
+    description: "Live bait, tackle, cold drinks, and local know-how. Ask us where they're biting before you launch.",
+    phone: "(931) 555-0188",
+    website: "https://example.com/horse-creek-tackle",
+    hours: "Daily 5am–7pm",
+    amenities: ["bait_shop", "store", "fuel"],
+    lat: 36.595,
+    lng: -85.367,
+  },
+  {
+    username: "lakelifelauren",
+    businessName: "Willow Grove Resort",
+    businessType: "Campground",
+    description: "Lakeside campground and cabins with a boat ramp, swim area, and camp store. Family-friendly weekends all summer.",
+    phone: "(931) 555-0119",
+    website: "https://example.com/willow-grove",
+    hours: "Office 8am–6pm",
+    amenities: ["campground", "lodging", "boat_ramp", "swimming", "store"],
+    themeColor: "#f59e0b",
+    lat: 36.624,
+    lng: -85.2962,
+  },
+  {
+    username: "striperking",
+    businessName: "Cedar Hill Fishing Guides",
+    businessType: "Fishing Guide",
+    description: "Guided striper and bass trips with gear included. Half-day and full-day charters, beginners welcome.",
+    phone: "(931) 555-0173",
+    website: "https://example.com/cedar-hill-guides",
+    hours: "By appointment",
+    amenities: ["fishing", "rentals"],
+    lat: 36.6118,
+    lng: -85.3178,
+  },
+  {
+    username: "captainjoe",
+    businessName: "Star Point Marina",
+    businessType: "Marina",
+    description: "Covered slips, pump-out, and on-site boat service. Fuel dock and ship store open seven days a week.",
+    phone: "(931) 555-0155",
+    website: "https://example.com/star-point-marina",
+    hours: "Mon–Sun 7am–7pm",
+    amenities: ["fuel", "dock_slips", "pump_out", "boat_service", "store"],
+    themeColor: "#7c3aed",
+    lat: 36.5643,
+    lng: -85.3915,
+  },
+  {
+    username: "anglerabe",
+    businessName: "East Port Boat Rentals",
+    businessType: "Boat Rental",
+    description: "Pontoons, ski boats, and kayaks by the hour or day. Launch right from our ramp and hit the water fast.",
+    phone: "(931) 555-0126",
+    website: "https://example.com/east-port-rentals",
+    hours: "Daily 8am–6pm",
+    amenities: ["rentals", "fuel", "boat_ramp"],
+    lat: 36.5754,
+    lng: -85.2445,
+  },
+];
+
 export async function countDemoUsers(): Promise<number> {
   const [row] = await db.select({ value: count() }).from(usersTable).where(eq(usersTable.isDemo, true));
   return row?.value ?? 0;
@@ -474,6 +576,7 @@ export async function reconcileDemoUsers(): Promise<void> {
         .where(and(eq(usersTable.username, u.username), eq(usersTable.isDemo, true)));
     }
     await ensureDemoFleets();
+    await ensureDemoBusinesses();
     logger.info("Reconciled demo user boat catalog fields");
   } catch (err) {
     logger.error({ err }, "reconcileDemoUsers failed");
@@ -521,6 +624,51 @@ async function ensureDemoFleets(): Promise<void> {
         isPrimary: false,
       });
     }
+  }
+}
+
+/**
+ * Make sure each demo owner's approved business listing exists so the reviewer
+ * sees the map's "dock sign" (🏪) markers and a populated Businesses tab.
+ * Idempotent (keyed by owner + business name). No-op without demo users; skips
+ * seeds whose owner username isn't present.
+ */
+async function ensureDemoBusinesses(): Promise<void> {
+  const demos = await db
+    .select({ id: usersTable.id, username: usersTable.username })
+    .from(usersTable)
+    .where(eq(usersTable.isDemo, true));
+  if (!demos.length) return;
+  const idByName = new Map(demos.map((d) => [d.username, d.id]));
+  for (const biz of DEMO_BUSINESSES) {
+    const ownerId = idByName.get(biz.username);
+    if (!ownerId) continue;
+    const [existing] = await db
+      .select({ id: businessProfilesTable.id })
+      .from(businessProfilesTable)
+      .where(
+        and(
+          eq(businessProfilesTable.userId, ownerId),
+          eq(businessProfilesTable.businessName, biz.businessName),
+        ),
+      )
+      .limit(1);
+    if (existing) continue;
+    await db.insert(businessProfilesTable).values({
+      userId: ownerId,
+      lakeId: 1,
+      businessName: biz.businessName,
+      businessType: biz.businessType,
+      description: biz.description,
+      phone: biz.phone,
+      website: biz.website,
+      hours: biz.hours,
+      amenities: biz.amenities,
+      themeColor: biz.themeColor ?? null,
+      lat: biz.lat,
+      lng: biz.lng,
+      status: "approved",
+    });
   }
 }
 
@@ -738,6 +886,7 @@ export async function seedDemoData(): Promise<{ created: number; message: string
   // (24h TTL — kept fresh afterwards by the presence refresher tick).
   await ensureDemoFleets();
   await ensureDemoStories();
+  await ensureDemoBusinesses();
 
   logger.info({ demoUsers: ids.length, posts: postIdByIndex.length }, "Seeded demo data");
   return { created: ids.length, message: `Created ${ids.length} demo users and a populated feed.` };
@@ -830,7 +979,24 @@ async function ensureDemoStoriesInner(): Promise<void> {
 export async function clearDemoData(): Promise<{ removed: number }> {
   const demos = await db.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.isDemo, true));
   if (!demos.length) return { removed: 0 };
+  const demoIds = demos.map((d) => d.id);
   await db.transaction(async (tx) => {
+    // Businesses aren't handled by deleteUserAndData and have no FK cascade, so
+    // drop each demo owner's business listings (+ their save/follow/review child
+    // rows) first or the user delete below would fail the FK constraint.
+    const bizIds = (
+      await tx
+        .select({ id: businessProfilesTable.id })
+        .from(businessProfilesTable)
+        .where(inArray(businessProfilesTable.userId, demoIds))
+    ).map((b) => b.id);
+    if (bizIds.length) {
+      await tx.delete(businessSavesTable).where(inArray(businessSavesTable.businessId, bizIds));
+      await tx.delete(businessFollowsTable).where(inArray(businessFollowsTable.businessId, bizIds));
+      await tx.delete(businessReviewsTable).where(inArray(businessReviewsTable.businessId, bizIds));
+      await tx.delete(businessProfilesTable).where(inArray(businessProfilesTable.id, bizIds));
+    }
+
     for (const d of demos) await deleteUserAndData(tx, d.id);
 
     // Removing a demo host leaves the welcome conversation it created with a real

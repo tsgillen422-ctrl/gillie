@@ -12,6 +12,7 @@ import {
 import { eq, and, or, desc, count, avg, inArray } from "drizzle-orm";
 import { moderateContent } from "../lib/moderation";
 import { currentUserId } from "../middlewares/auth";
+import { getHiddenDemoUserIds } from "../lib/demoData";
 import { isValidLakeId, DEFAULT_LAKE_ID } from "@workspace/lake-config";
 
 const router = Router();
@@ -250,6 +251,15 @@ function sanitizeCustomization(body: any) {
   return out;
 }
 
+// True when the business owner is a demo account hidden from this viewer (i.e.
+// the viewer is not the reviewer/Demo Mode). Keeps demo listings invisible on
+// every ID-based subroute, matching the list/detail/search gates.
+async function isDemoHiddenBusiness(viewerId: number, ownerId: number): Promise<boolean> {
+  if (viewerId === ownerId) return false;
+  const hidden = await getHiddenDemoUserIds(viewerId);
+  return hidden.includes(ownerId);
+}
+
 // Blocks are symmetric: a blocked viewer must not reach a business owned by
 // the other party (and vice versa) on any business surface.
 async function isBlockedBetween(viewerId: number, ownerId: number): Promise<boolean> {
@@ -436,14 +446,18 @@ router.get("/", async (req, res) => {
     where: and(...conditions),
     orderBy: desc(businessProfilesTable.updatedAt),
   });
+  // Hide demo-owned listings from everyone except the reviewer (Demo Mode),
+  // matching the friends-only isolation of the rest of the demo world.
+  const hidden = new Set(await getHiddenDemoUserIds(currentUserId(req)));
+  const visible = hidden.size ? rows.filter((b) => !hidden.has(b.userId)) : rows;
   const q = typeof req.query.q === "string" ? req.query.q.trim().toLowerCase() : "";
   const filtered = q
-    ? rows.filter((b) =>
+    ? visible.filter((b) =>
         [b.businessName, b.businessType, b.description, b.serviceArea]
           .filter(Boolean)
           .some((f) => (f as string).toLowerCase().includes(q)),
       )
-    : rows;
+    : visible;
   const stats = await businessSocialStats(filtered.map((b) => b.id), currentUserId(req));
   res.json(filtered.map((b) => formatBusiness(b, stats)));
 });
@@ -483,6 +497,13 @@ router.get("/:businessId", async (req, res) => {
   if (!row) return res.status(404).json({ error: "Business not found" });
   if (row.status !== "approved" && row.userId !== uid && !(await isAdmin(uid))) {
     return res.status(404).json({ error: "Business not found" });
+  }
+  // Demo-owned listings 404 for non-reviewers (matches the list gate).
+  if (row.userId !== uid) {
+    const hidden = await getHiddenDemoUserIds(uid);
+    if (hidden.includes(row.userId)) {
+      return res.status(404).json({ error: "Business not found" });
+    }
   }
   if (await isBlockedBetween(uid, row.userId)) {
     return res.status(404).json({ error: "Business not found" });
@@ -594,6 +615,9 @@ router.post("/:businessId/save", async (req, res) => {
   if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid business id" });
   const row = await db.query.businessProfilesTable.findFirst({ where: eq(businessProfilesTable.id, id) });
   if (!row || row.status !== "approved") return res.status(404).json({ error: "Business not found" });
+  if (await isDemoHiddenBusiness(uid, row.userId)) {
+    return res.status(404).json({ error: "Business not found" });
+  }
   if (await isBlockedBetween(uid, row.userId)) {
     return res.status(404).json({ error: "Business not found" });
   }
@@ -623,6 +647,9 @@ router.post("/:businessId/follow", async (req, res) => {
   const row = await db.query.businessProfilesTable.findFirst({ where: eq(businessProfilesTable.id, id) });
   if (!row || row.status !== "approved") return res.status(404).json({ error: "Business not found" });
   if (row.userId === uid) return res.status(400).json({ error: "You can't follow your own business" });
+  if (await isDemoHiddenBusiness(uid, row.userId)) {
+    return res.status(404).json({ error: "Business not found" });
+  }
   if (await isBlockedBetween(uid, row.userId)) {
     return res.status(404).json({ error: "Business not found" });
   }
@@ -651,6 +678,9 @@ router.get("/:businessId/reviews", async (req, res) => {
   if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid business id" });
   const row = await db.query.businessProfilesTable.findFirst({ where: eq(businessProfilesTable.id, id) });
   if (!row || (row.status !== "approved" && row.userId !== uid && !(await isAdmin(uid)))) {
+    return res.status(404).json({ error: "Business not found" });
+  }
+  if (await isDemoHiddenBusiness(uid, row.userId)) {
     return res.status(404).json({ error: "Business not found" });
   }
   if (await isBlockedBetween(uid, row.userId)) {
@@ -690,6 +720,9 @@ router.put("/:businessId/reviews", async (req, res) => {
   const row = await db.query.businessProfilesTable.findFirst({ where: eq(businessProfilesTable.id, id) });
   if (!row || row.status !== "approved") return res.status(404).json({ error: "Business not found" });
   if (row.userId === uid) return res.status(400).json({ error: "You can't review your own business" });
+  if (await isDemoHiddenBusiness(uid, row.userId)) {
+    return res.status(404).json({ error: "Business not found" });
+  }
   if (await isBlockedBetween(uid, row.userId)) {
     return res.status(404).json({ error: "Business not found" });
   }
@@ -752,6 +785,9 @@ router.get("/:businessId/posts", async (req, res) => {
   if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid business id" });
   const row = await db.query.businessProfilesTable.findFirst({ where: eq(businessProfilesTable.id, id) });
   if (!row || (row.status !== "approved" && row.userId !== uid && !(await isAdmin(uid)))) {
+    return res.status(404).json({ error: "Business not found" });
+  }
+  if (await isDemoHiddenBusiness(uid, row.userId)) {
     return res.status(404).json({ error: "Business not found" });
   }
   if (await isBlockedBetween(uid, row.userId)) {
