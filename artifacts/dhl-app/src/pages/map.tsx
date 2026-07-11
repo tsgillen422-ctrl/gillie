@@ -1716,16 +1716,21 @@ export function MapPage() {
     businessMarkers.current = [];
     (businesses ?? []).forEach((b: any) => {
       if (b.lat == null || b.lng == null) return;
-      const root = el("div", "business-marker") as HTMLDivElement;
-      root.style.cssText = "display:flex;flex-direction:column;align-items:center;cursor:pointer;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;";
+      const root = el("div", "business-marker lake-pin") as HTMLDivElement;
+      root.style.cssText = "cursor:pointer;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;";
+      // Scale wrapper so the business marker shrinks/grows with zoom exactly like
+      // the lake pins (registered in scaleEls below); without it the marker stays
+      // full-size when zoomed out and dominates the map.
+      const scale = el("div", "lake-pin-scale") as HTMLDivElement;
       const bubble = el("div");
       bubble.style.cssText = "width:34px;height:34px;border-radius:12px;background:#0d9488;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid #fff;";
       bubble.textContent = "🏪";
       const pill = el("div");
       pill.style.cssText = "margin-top:2px;background:rgba(255,255,255,0.92);border-radius:8px;padding:1px 6px;font-size:10px;font-weight:600;color:#134e4a;box-shadow:0 1px 3px rgba(0,0,0,0.25);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
       pill.textContent = b.businessName;
-      root.appendChild(bubble);
-      root.appendChild(pill);
+      scale.appendChild(bubble);
+      scale.appendChild(pill);
+      root.appendChild(scale);
       root.addEventListener("click", (e) => {
         e.stopPropagation();
         setSelected({ kind: "business", data: b });
@@ -1734,9 +1739,15 @@ export function MapPage() {
         .setLngLat([b.lng, b.lat])
         .addTo(map);
       businessMarkers.current.push(marker);
+      scale.style.transform = `scale(${scaleForZoom(map.getZoom())})`;
+      scaleEls.current.add(scale);
     });
     return () => {
-      businessMarkers.current.forEach((m) => m.remove());
+      businessMarkers.current.forEach((m) => {
+        const s = m.getElement().querySelector(".lake-pin-scale") as HTMLDivElement | null;
+        if (s) scaleEls.current.delete(s);
+        m.remove();
+      });
       businessMarkers.current = [];
     };
   }, [businesses, styleReady]);
