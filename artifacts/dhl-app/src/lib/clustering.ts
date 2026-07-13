@@ -49,6 +49,74 @@ export function createPinIndex(): Supercluster {
   });
 }
 
+// --- Business markers -------------------------------------------------------
+// Approved businesses cluster like low-priority pins so a busy shoreline of
+// shops doesn't overlap into an unreadable pile when zoomed out.
+export const BUSINESS_CLUSTER_RADIUS = 60;
+export const BUSINESS_CLUSTER_MAXZOOM = 16;
+
+// Business name pills only appear at/above this zoom (or when the business is
+// selected); below it markers are icon-only so browsing stays uncluttered.
+export const BUSINESS_LABEL_ZOOM = 13.5;
+
+// Build the supercluster index used to group approved businesses on the map.
+export function createBusinessIndex(): Supercluster {
+  return new Supercluster({
+    radius: BUSINESS_CLUSTER_RADIUS,
+    maxZoom: BUSINESS_CLUSTER_MAXZOOM,
+  });
+}
+
+// Map a free-text business type to a category emoji so users can identify a
+// business without a text label. businessType is free text (the app only
+// offers autocomplete suggestions), so this keyword-matches. Order matters:
+// e.g. "Fuel Dock" must hit fuel before dock, "Vacation Rental" must hit
+// vacation before rental, "Grocery / Lake Delivery" grocery before delivery.
+export function businessEmoji(type: string | null | undefined): string {
+  const t = (type ?? "").toLowerCase();
+  if (t.includes("marina")) return "⚓";
+  if (t.includes("camp")) return "🏕️";
+  if (t.includes("fuel") || t.includes("gas")) return "⛽";
+  if (t.includes("bait") || t.includes("tackle")) return "🪱";
+  if (t.includes("grocery")) return "🛒";
+  if (
+    t.includes("restaurant") || t.includes("food") || t.includes("grill") ||
+    t.includes("cafe") || t.includes("café") || t.includes("bar") ||
+    t.includes("pizza") || t.includes("doordash") || t.includes("delivery")
+  ) return "🍔";
+  if (t.includes("vacation") || t.includes("lodg") || t.includes("cabin") || t.includes("resort")) return "🏡";
+  if (t.includes("guide") || t.includes("charter") || t.includes("fishing")) return "🎣";
+  if (t.includes("rental")) return "🛥️";
+  if (t.includes("mechanic") || t.includes("repair") || t.includes("engine")) return "🔧";
+  if (t.includes("detail") || t.includes("clean")) return "🧽";
+  if (t.includes("dive") || t.includes("underwater") || t.includes("recovery")) return "🤿";
+  if (t.includes("watersport") || t.includes("lesson") || t.includes("ski") ||
+      t.includes("wake") || t.includes("paddle")) return "🏄";
+  if (t.includes("storage")) return "📦";
+  if (t.includes("dock")) return "🔨";
+  return "🏪";
+}
+
+// Most common category emoji among a business cluster's members, so the
+// cluster bubble still hints at what's inside (falls back to the generic
+// storefront when empty).
+export function dominantBusinessEmoji(businesses: Array<{ businessType?: string | null }>): string {
+  const counts: Record<string, number> = {};
+  for (const b of businesses) {
+    const e = businessEmoji(b.businessType);
+    counts[e] = (counts[e] || 0) + 1;
+  }
+  let best = "🏪";
+  let bestN = 0;
+  for (const [e, n] of Object.entries(counts)) {
+    if (n > bestN) {
+      bestN = n;
+      best = e;
+    }
+  }
+  return best;
+}
+
 // --- Pin priority tiers ---------------------------------------------------
 // Pin priority tiers control visual weight and clustering behavior.
 // High-priority places (marinas, campsites, hazards) are always visible,

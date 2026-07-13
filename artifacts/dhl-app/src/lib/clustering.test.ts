@@ -17,6 +17,12 @@ import {
   SAME_BOAT_METERS,
   haversineMeters,
   groupByProximity,
+  BUSINESS_CLUSTER_RADIUS,
+  BUSINESS_CLUSTER_MAXZOOM,
+  BUSINESS_LABEL_ZOOM,
+  createBusinessIndex,
+  businessEmoji,
+  dominantBusinessEmoji,
 } from "./clustering.ts";
 
 // Offset a lng/lat by a given number of metres (north/east) for building
@@ -286,4 +292,84 @@ test("dominantClusterType returns '' for an unknown cluster id instead of throwi
   // A made-up cluster id supercluster doesn't know about: helper swallows the
   // error and returns "" so renderPins can fall back gracefully.
   assert.equal(dominantClusterType(index, 999_999), "");
+});
+
+// --- Business marker clustering + category icons ---------------------------
+
+test("business cluster config matches pin-style settings and index uses them", () => {
+  const idx = createBusinessIndex() as any;
+  assert.equal(BUSINESS_CLUSTER_RADIUS, 60);
+  assert.equal(BUSINESS_CLUSTER_MAXZOOM, 16);
+  assert.equal(idx.options.radius, BUSINESS_CLUSTER_RADIUS);
+  assert.equal(idx.options.maxZoom, BUSINESS_CLUSTER_MAXZOOM);
+});
+
+test("nearby businesses collapse into one cluster far out and split when zoomed in", () => {
+  // Five businesses jittered within a few hundred metres of the same cove.
+  const centerLng = -85.3;
+  const centerLat = 36.55;
+  const points = Array.from({ length: 5 }, (_, i) => ({
+    type: "Feature" as const,
+    properties: { business: { id: i + 1, businessType: "Marina" } },
+    geometry: {
+      type: "Point" as const,
+      coordinates: [
+        centerLng + Math.cos((i / 5) * Math.PI * 2) * 0.0012,
+        centerLat + Math.sin((i / 5) * Math.PI * 2) * 0.0012,
+      ],
+    },
+  }));
+  const index = createBusinessIndex();
+  index.load(points as any);
+
+  // Default (far) zoom: one cluster bubble instead of five overlapping icons.
+  const far = index.getClusters(WORLD, Math.floor(DEFAULT_ZOOM)) as any[];
+  assert.equal(far.length, 1);
+  assert.equal(far[0].properties.cluster, true);
+  assert.equal(far[0].properties.point_count, 5);
+
+  // Past the cluster max zoom every business stands alone.
+  const closeIn = index.getClusters(WORLD, BUSINESS_CLUSTER_MAXZOOM + 1) as any[];
+  assert.equal(closeIn.length, 5);
+  assert.ok(closeIn.every((c) => !c.properties.cluster));
+});
+
+test("business name labels only appear at the close zoom tier", () => {
+  const showLabels = (zoom: number) => zoom >= BUSINESS_LABEL_ZOOM;
+  assert.equal(showLabels(DEFAULT_ZOOM), false, "default browse view is icon-only");
+  assert.equal(showLabels(13.4), false);
+  assert.equal(showLabels(BUSINESS_LABEL_ZOOM), true);
+  assert.equal(showLabels(15), true);
+});
+
+test("businessEmoji maps free-text types to distinct category icons", () => {
+  assert.equal(businessEmoji("Marina"), "⚓");
+  assert.equal(businessEmoji("Campground"), "🏕️");
+  assert.equal(businessEmoji("Restaurant"), "🍔");
+  assert.equal(businessEmoji("Fuel Dock"), "⛽", "fuel wins over dock");
+  assert.equal(businessEmoji("Bait & Tackle Shop"), "🪱");
+  assert.equal(businessEmoji("Fishing Guide"), "🎣");
+  assert.equal(businessEmoji("Boat Rental"), "🛥️");
+  assert.equal(businessEmoji("Vacation Rental"), "🏡", "vacation wins over rental");
+  assert.equal(businessEmoji("Grocery / Lake Delivery"), "🛒", "grocery wins over delivery");
+  assert.equal(businessEmoji("Boat Mechanic"), "🔧");
+  assert.equal(businessEmoji("Marine Detailing"), "🧽");
+  assert.equal(businessEmoji("Underwater Recovery"), "🤿");
+  assert.equal(businessEmoji("Watersports Lessons"), "🏄");
+  assert.equal(businessEmoji("Boat Storage"), "📦");
+  assert.equal(businessEmoji("Dock Builder"), "🔨");
+  assert.equal(businessEmoji("Something Unusual"), "🏪", "unknown types fall back to the storefront");
+  assert.equal(businessEmoji(null), "🏪");
+});
+
+test("dominantBusinessEmoji picks the plurality category with a storefront fallback", () => {
+  assert.equal(
+    dominantBusinessEmoji([
+      { businessType: "Marina" },
+      { businessType: "Marina" },
+      { businessType: "Restaurant" },
+    ]),
+    "⚓",
+  );
+  assert.equal(dominantBusinessEmoji([]), "🏪");
 });

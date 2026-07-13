@@ -12,6 +12,10 @@ import {
   createPinIndex,
   pinTier,
   dominantClusterType,
+  createBusinessIndex,
+  businessEmoji,
+  dominantBusinessEmoji,
+  BUSINESS_LABEL_ZOOM,
   SAME_BOAT_METERS,
   groupByProximity,
   haversineMeters,
@@ -263,6 +267,7 @@ type Selected =
   | { kind: "pinCluster"; data: { pins: any[]; lng: number; lat: number; expansionZoom: number } }
   | { kind: "dockLabel"; data: any }
   | { kind: "business"; data: any }
+  | { kind: "businessCluster"; data: { businesses: any[]; lng: number; lat: number; expansionZoom: number } }
   | null;
 
 const el = (tag: string, className?: string) => {
@@ -612,6 +617,27 @@ function buildClusterEl(count: number, emoji: string, label?: string, kind: "pin
   return { root, scale };
 }
 
+// --- Business marker element ---
+// Icon-only bubble with a per-category emoji; the name pill is added only when
+// highly zoomed in or the business is selected so browsing stays uncluttered.
+function buildBusinessEl(b: any, showLabel: boolean): { root: HTMLDivElement; scale: HTMLDivElement } {
+  const root = el("div", "business-marker lake-pin") as HTMLDivElement;
+  root.style.cssText = "cursor:pointer;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;";
+  const scale = el("div", "lake-pin-scale") as HTMLDivElement;
+  const bubble = el("div");
+  bubble.style.cssText = "width:34px;height:34px;border-radius:12px;background:#0d9488;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid #fff;";
+  bubble.textContent = businessEmoji(b.businessType);
+  scale.appendChild(bubble);
+  if (showLabel) {
+    const pill = el("div");
+    pill.style.cssText = "margin-top:2px;background:rgba(255,255,255,0.92);border-radius:8px;padding:1px 6px;font-size:10px;font-weight:600;color:#134e4a;box-shadow:0 1px 3px rgba(0,0,0,0.25);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+    pill.textContent = b.businessName;
+    scale.appendChild(pill);
+  }
+  root.appendChild(scale);
+  return { root, scale };
+}
+
 export function MapPage() {
   const { data: me } = useGetMe();
   const { lakeId, lake } = useLake();
@@ -676,8 +702,12 @@ export function MapPage() {
   const pinMarkers = useRef<maplibregl.Marker[]>([]);
   // Admin dock-sign markers (rebuilt when the dock-label set changes).
   const dockLabelMarkers = useRef<maplibregl.Marker[]>([]);
-  // Approved business markers (rebuilt when the business set changes).
+  // Approved business markers (rebuilt when the business set or view changes).
   const businessMarkers = useRef<maplibregl.Marker[]>([]);
+  const businessClusterIndex = useRef<Supercluster | null>(null);
+  // Currently-selected business id — its marker keeps the name pill even when
+  // the zoom level would otherwise hide labels.
+  const selectedBusinessIdRef = useRef<number | null>(null);
   const meMarker = useRef<maplibregl.Marker | null>(null);
   const placeMarker = useRef<maplibregl.Marker | null>(null);
   // Water fill layer ids, used to detect whether a marker sits on water or land.
@@ -1637,6 +1667,80 @@ export function MapPage() {
     renderPins();
   }, [pins, styleReady, renderPins]);
 
+  // --- Approved business markers: clustered, icon-only while browsing ---
+  // Nearby businesses collapse into count bubbles when zoomed out; individual
+  // markers show just the category icon, revealing the name pill only when
+  // highly zoomed in (BUSINESS_LABEL_ZOOM) or when that business is selected.
+  const renderBusinesses = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || !styleReady) return;
+
+    businessMarkers.current.forEach((m) => {
+      const s = m.getElement().querySelector(".lake-pin-scale") as HTMLDivElement | null;
+      if (s) scaleEls.current.delete(s);
+      m.remove();
+    });
+    businessMarkers.current = [];
+
+    const index = businessClusterIndex.current;
+    if (!index) return;
+
+    const zoom = map.getZoom();
+    const bnds = map.getBounds();
+    const bbox: [number, number, number, number] = [
+      bnds.getWest(),
+      bnds.getSouth(),
+      bnds.getEast(),
+      bnds.getNorth(),
+    ];
+    const showLabels = zoom >= BUSINESS_LABEL_ZOOM;
+
+    const clusters = index.getClusters(bbox, Math.floor(zoom));
+    clusters.forEach((c: any) => {
+      const [lng, lat] = c.geometry.coordinates;
+      if (c.properties.cluster) {
+        const count = c.properties.point_count as number;
+        let group: any[] = [];
+        try {
+          const leaves = index.getLeaves(c.properties.cluster_id, Infinity) as any[];
+          group = leaves.map((l) => l.properties.business).filter(Boolean);
+        } catch {
+          group = [];
+        }
+        const label = `${count} businesses`;
+        const { root, scale } = buildClusterEl(count, dominantBusinessEmoji(group), label, "pin");
+        root.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          let expZoom = 18;
+          try {
+            expZoom = Math.min(index.getClusterExpansionZoom(c.properties.cluster_id), 18);
+          } catch {}
+          setSelected({ kind: "businessCluster", data: { businesses: group, lng, lat, expansionZoom: expZoom } });
+        });
+        const marker = new maplibregl.Marker({ element: root, anchor: "center" })
+          .setLngLat([lng, lat])
+          .addTo(map);
+        businessMarkers.current.push(marker);
+        scaleEls.current.add(scale);
+      } else {
+        const b = c.properties.business;
+        if (!b) return;
+        const { root, scale } = buildBusinessEl(b, showLabels || selectedBusinessIdRef.current === b.id);
+        root.addEventListener("click", (e) => {
+          e.stopPropagation();
+          setSelected({ kind: "business", data: b });
+        });
+        const marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
+          .setLngLat([b.lng, b.lat])
+          .addTo(map);
+        businessMarkers.current.push(marker);
+        scaleEls.current.add(scale);
+      }
+    });
+
+    applyZoomScale(zoom);
+  }, [styleReady, applyZoomScale]);
+
   // Re-cluster on view changes.
   useEffect(() => {
     const map = mapRef.current;
@@ -1644,13 +1748,14 @@ export function MapPage() {
     const onMoveEnd = () => {
       renderPins();
       renderBoats();
+      renderBusinesses();
       updateLandStates();
     };
     map.on("moveend", onMoveEnd);
     return () => {
       map.off("moveend", onMoveEnd);
     };
-  }, [styleReady, renderPins, renderBoats, updateLandStates]);
+  }, [styleReady, renderPins, renderBoats, renderBusinesses, updateLandStates]);
 
   // Drive the dock-label zoom tiers (far icon → medium pill → close wooden sign),
   // smooth scaling, and label priority. When several signs would collide at
@@ -1708,40 +1813,23 @@ export function MapPage() {
     };
   }, [dockLabels, styleReady, updateDockLabels]);
 
-  // --- Approved business markers: (re)build whenever the business set changes ---
+  // Build the business supercluster index whenever the set changes, then render.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !styleReady) return;
-    businessMarkers.current.forEach((m) => m.remove());
-    businessMarkers.current = [];
-    (businesses ?? []).forEach((b: any) => {
-      if (b.lat == null || b.lng == null) return;
-      const root = el("div", "business-marker lake-pin") as HTMLDivElement;
-      root.style.cssText = "cursor:pointer;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;";
-      // Scale wrapper so the business marker shrinks/grows with zoom exactly like
-      // the lake pins (registered in scaleEls below); without it the marker stays
-      // full-size when zoomed out and dominates the map.
-      const scale = el("div", "lake-pin-scale") as HTMLDivElement;
-      const bubble = el("div");
-      bubble.style.cssText = "width:34px;height:34px;border-radius:12px;background:#0d9488;color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 2px 8px rgba(0,0,0,0.3);border:2px solid #fff;";
-      bubble.textContent = "🏪";
-      const pill = el("div");
-      pill.style.cssText = "margin-top:2px;background:rgba(255,255,255,0.92);border-radius:8px;padding:1px 6px;font-size:10px;font-weight:600;color:#134e4a;box-shadow:0 1px 3px rgba(0,0,0,0.25);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
-      pill.textContent = b.businessName;
-      scale.appendChild(bubble);
-      scale.appendChild(pill);
-      root.appendChild(scale);
-      root.addEventListener("click", (e) => {
-        e.stopPropagation();
-        setSelected({ kind: "business", data: b });
-      });
-      const marker = new maplibregl.Marker({ element: root, anchor: "bottom" })
-        .setLngLat([b.lng, b.lat])
-        .addTo(map);
-      businessMarkers.current.push(marker);
-      scale.style.transform = `scale(${scaleForZoom(map.getZoom())})`;
-      scaleEls.current.add(scale);
-    });
+
+    const points = (businesses ?? [])
+      .filter((b: any) => b.lat != null && b.lng != null)
+      .map((b: any) => ({
+        type: "Feature" as const,
+        properties: { business: b },
+        geometry: { type: "Point" as const, coordinates: [b.lng, b.lat] },
+      }));
+    const index = createBusinessIndex();
+    index.load(points as any);
+    businessClusterIndex.current = index;
+
+    renderBusinesses();
     return () => {
       businessMarkers.current.forEach((m) => {
         const s = m.getElement().querySelector(".lake-pin-scale") as HTMLDivElement | null;
@@ -1750,7 +1838,16 @@ export function MapPage() {
       });
       businessMarkers.current = [];
     };
-  }, [businesses, styleReady]);
+  }, [businesses, styleReady, renderBusinesses]);
+
+  // Keep the selected business's name pill visible even below the label zoom:
+  // track the selection and re-render business markers when it changes.
+  useEffect(() => {
+    const nextId = selected?.kind === "business" ? (selected.data?.id ?? null) : null;
+    if (selectedBusinessIdRef.current === nextId) return;
+    selectedBusinessIdRef.current = nextId;
+    renderBusinesses();
+  }, [selected, renderBusinesses]);
 
   // Re-evaluate dock-label tiers/scale/priority as the user zooms.
   useEffect(() => {
@@ -2893,13 +2990,36 @@ function DetailCard({
 
   if (selected.kind === "business") {
     const b = selected.data;
+    // Open/closed status mirrors the business detail page logic.
+    let openStatus: string | null = null;
+    let openColor = "text-muted-foreground";
+    if (b.hoursStructured) {
+      const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+      const now = new Date();
+      const hours = (b.hoursStructured as any)[days[now.getDay()]];
+      if (hours === null) {
+        openStatus = "Closed today";
+        openColor = "text-red-500";
+      } else if (hours?.open && hours?.close) {
+        const timeStr = now.toTimeString().slice(0, 5); // HH:MM
+        if (timeStr >= hours.open && timeStr <= hours.close) {
+          openStatus = `Open · Closes ${hours.close}`;
+          openColor = "text-emerald-500";
+        } else {
+          openStatus = `Closed · Opens ${hours.open}`;
+          openColor = "text-red-500";
+        }
+      }
+    } else if (b.hours) {
+      openStatus = b.hours;
+    }
     return (
       <div className="mx-auto w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
         <div className="flex items-center gap-3 p-4">
           {b.photos?.length > 0 ? (
             <img src={b.photos[0]} alt="" className="w-12 h-12 rounded-2xl object-cover shrink-0" />
           ) : (
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl shrink-0">🏪</div>
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl shrink-0">{businessEmoji(b.businessType)}</div>
           )}
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-lg leading-tight truncate">{b.businessName}</h3>
@@ -2909,8 +3029,25 @@ function DetailCard({
             <X className="w-4 h-4" />
           </Button>
         </div>
+        <div className="flex items-center gap-2 px-4 -mt-2 pb-1 text-xs">
+          {(b.reviewCount ?? 0) > 0 ? (
+            <span className="flex items-center gap-1 font-semibold">
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              {(b.avgRating ?? 0).toFixed(1)}
+              <span className="font-normal text-muted-foreground">({b.reviewCount})</span>
+            </span>
+          ) : (
+            <span className="text-muted-foreground">No reviews yet</span>
+          )}
+          {openStatus && (
+            <>
+              <span className="text-muted-foreground">·</span>
+              <span className={`truncate font-medium ${openColor}`}>{openStatus}</span>
+            </>
+          )}
+        </div>
         {b.description && (
-          <p className="px-4 -mt-1 text-sm text-muted-foreground line-clamp-2">{b.description}</p>
+          <p className="px-4 pt-1 text-sm text-muted-foreground line-clamp-2">{b.description}</p>
         )}
         <div className="flex items-center gap-2 p-4 pt-3">
           {b.phone && (
@@ -2920,6 +3057,56 @@ function DetailCard({
           )}
           <Button className="flex-1" asChild>
             <Link href={`/businesses/${b.id}`}>View details</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (selected.kind === "businessCluster") {
+    const { businesses, lng, lat, expansionZoom } = selected.data;
+    return (
+      <div className="mx-auto w-full max-w-md rounded-3xl bg-card border border-border shadow-2xl overflow-hidden">
+        <div className="flex items-center gap-3 p-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-2xl shrink-0">🏪</div>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-lg leading-tight truncate">{businesses.length} businesses here</h3>
+            <p className="text-xs text-muted-foreground">Tap one to see details</p>
+          </div>
+          <Button size="icon" variant="ghost" className="h-8 w-8 -mr-1 -mt-1" onClick={onClose}>
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <div className="max-h-64 overflow-y-auto px-2">
+          {businesses.map((b: any) => (
+            <button
+              key={b.id}
+              onClick={() => onSelect?.({ kind: "business", data: b })}
+              className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted text-left transition-colors"
+            >
+              {b.photos?.length > 0 ? (
+                <img src={b.photos[0]} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-xl shrink-0">
+                  {businessEmoji(b.businessType)}
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold truncate">{b.businessName}</p>
+                <p className="text-xs text-muted-foreground truncate">{b.businessType}</p>
+              </div>
+              {(b.reviewCount ?? 0) > 0 && (
+                <span className="flex items-center gap-1 text-xs font-semibold shrink-0">
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  {(b.avgRating ?? 0).toFixed(1)}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 p-4 pt-3">
+          <Button variant="outline" className="flex-1" onClick={() => onZoom?.(lng, lat, expansionZoom)}>
+            <Plus className="w-4 h-4 mr-2" /> Zoom in
           </Button>
         </div>
       </div>
