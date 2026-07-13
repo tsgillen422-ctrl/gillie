@@ -1,4 +1,4 @@
-export const PRIVACY_POLICY_UPDATED = "July 9, 2026";
+export const PRIVACY_POLICY_UPDATED = "July 13, 2026";
 export const COMMUNITY_GUIDELINES_UPDATED = "June 11, 2026";
 export const TERMS_OF_SERVICE_UPDATED = "June 27, 2026";
 
@@ -6,10 +6,10 @@ export const TERMS_OF_SERVICE_UPDATED = "June 27, 2026";
 // Guidelines change in a way that requires renewed consent. Any user whose
 // stored termsVersion differs from this value (including new users with none)
 // is re-prompted by TermsGate before they can use the app.
-// 1.1 (Jul 9, 2026): location sharing changed from expiring manual check-ins to
-// persistent opt-in sharing with "last seen" + 24h auto-ghost — a material
-// privacy change, so all users must re-accept.
-export const TERMS_VERSION = "1.1";
+// 1.2 (Jul 13, 2026): privacy policy updated to reflect check-in-only location
+// model — removed Ghost Mode, "last seen", background updates, and 24h auto-ghost
+// language; location is now intentional check-in only.
+export const TERMS_VERSION = "1.2";
 
 export function PrivacyPolicyBody() {
   return (
@@ -34,12 +34,10 @@ export function PrivacyPolicyBody() {
             comments, and messages you choose to share.
           </li>
           <li>
-            <strong>Location:</strong> your boat's location on the lake, only if you
-            choose to turn on location sharing. After you opt in, your position
-            updates while the app is open; when you close the app, approved friends
-            see your last location with a "last seen" time. If you don't open the
-            app for 24 hours, your location is removed from the map automatically,
-            and you can hide instantly at any time with Ghost Mode.
+            <strong>Location:</strong> Your location is only shared when you
+            intentionally check in. Check-ins are temporary, expire automatically
+            after a limited time, and can be ended at any time. Only approved
+            friends can see your checked-in location.
           </li>
           <li>
             <strong>Usage data:</strong> basic technical information needed to keep
@@ -61,7 +59,7 @@ export function PrivacyPolicyBody() {
       <section className="space-y-1.5">
         <h3 className="text-base font-bold text-foreground">Your Choices &amp; Controls</h3>
         <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-          <li>Location sharing is off until you explicitly turn it on, and only approved friends can ever see you. Turn on Ghost Mode at any time to hide instantly — sharing stays off until you choose to share again.</li>
+          <li>Location sharing is off by default. Your location is only shared after you choose to check in. You can end your check-in at any time, and only approved friends can see your checked-in location.</li>
           <li>Control who can see your location, followers, and friends list.</li>
           <li>Block or report other users and content.</li>
           <li>Edit your profile and content at any time.</li>
@@ -228,12 +226,10 @@ export function TermsOfServiceBody() {
       <section className="space-y-1.5">
         <h3 className="text-base font-bold text-foreground">Location Features</h3>
         <p className="text-muted-foreground">
-          Gillie only shares your location if you explicitly turn on location
-          sharing, and only with friends you've approved. Your position updates
-          while the app is open; your last location remains visible with a "last
-          seen" time and is removed automatically after 24 hours without app
-          activity. You can hide instantly at any time with Ghost Mode. You are
-          responsible for deciding when to share your location.
+          Gillie only shares your location when you intentionally check in, and
+          only with friends you've approved. Check-ins are temporary and expire
+          automatically after a limited time. You can end your check-in at any
+          time. You are responsible for deciding when to check in.
         </p>
       </section>
 
