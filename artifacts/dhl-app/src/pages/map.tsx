@@ -630,7 +630,9 @@ function buildBusinessEl(b: any, showLabel: boolean): { root: HTMLDivElement; sc
   scale.appendChild(bubble);
   if (showLabel) {
     const pill = el("div");
-    pill.style.cssText = "margin-top:2px;background:rgba(255,255,255,0.92);border-radius:8px;padding:1px 6px;font-size:10px;font-weight:600;color:#134e4a;box-shadow:0 1px 3px rgba(0,0,0,0.25);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
+    // Compact single-line pill: small type, tight padding, capped width with an
+    // ellipsis (e.g. "East Port Boat Ren…") so labels never clutter the map.
+    pill.style.cssText = "margin-top:1px;background:rgba(255,255,255,0.9);border-radius:6px;padding:0px 4px;font-size:8.5px;line-height:13px;font-weight:600;color:#134e4a;box-shadow:0 1px 2px rgba(0,0,0,0.2);max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;";
     pill.textContent = b.businessName;
     scale.appendChild(pill);
   }
