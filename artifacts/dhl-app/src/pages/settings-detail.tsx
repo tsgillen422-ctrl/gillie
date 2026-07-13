@@ -234,10 +234,10 @@ function LocationCheckInPage() {
     <SettingsShell title="Location Sharing">
       <div className="rounded-2xl bg-card border border-border p-5">
         <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-          Your live location is shared only while you're actively using Gillie.
-          If you stop opening the app, your pin changes to "Last seen" and
-          automatically disappears after 24 hours. Only approved friends can see
-          you, and you can Go Ghost anytime to hide instantly.
+          Location sharing is off by default. Only approved friends can see your
+          boat on the map, and only after you turn sharing on below. You can stop
+          at any time by turning Location Sharing off, or use Ghost Mode to hide
+          your boat from the map instantly.
         </p>
         <CheckInControl variant="card" />
       </div>

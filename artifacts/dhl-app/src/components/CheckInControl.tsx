@@ -192,7 +192,7 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "map-g
           </li>
           <li className="flex gap-2.5">
             <Eye className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-            <span>Your position updates only while the app is open. When you close it, friends see your last location with a "last seen" time.</span>
+            <span>Your position updates while the app is open. When you close it, friends see your last location with a "last seen" time.</span>
           </li>
           <li className="flex gap-2.5">
             <Clock className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
@@ -200,7 +200,7 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "map-g
           </li>
           <li className="flex gap-2.5">
             <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
-            <span>You can turn on Ghost Mode anytime to hide instantly. Sharing stays off until you choose to share again.</span>
+            <span>Stop sharing any time by turning Location Sharing off in Settings, or use Ghost Mode to immediately remove your boat from the map.</span>
           </li>
         </ul>
         {fleet.length > 1 && (
@@ -339,10 +339,9 @@ export function CheckInControl({ variant = "card" }: { variant?: "card" | "map-g
         )}
 
         <p className="text-xs text-muted-foreground">
-          Sharing is optional and only visible to friends you've approved. Your position updates
-          while the app is open; after you close it, friends see your last spot with a "last seen"
-          time. If you don't open the app for {SHARE_WINDOW_HOURS} hours, you drop off the map
-          automatically — or hide instantly anytime with Ghost Mode.
+          Sharing is optional and only visible to approved friends. Stop sharing any time by
+          turning Location Sharing off, or use Ghost Mode to immediately remove your boat from
+          the map.
         </p>
       </div>
       {confirmDialog}

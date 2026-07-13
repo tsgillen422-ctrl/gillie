@@ -26,7 +26,7 @@ const SLIDES = [
     icon: Users,
     emoji: "🛥️",
     title: "See who's on the lake",
-    body: "Your live location is shared only while you're actively using Gillie. If you stop opening the app, your pin changes to 'Last seen' and automatically disappears after 24 hours. Sharing is off until you turn it on, only approved friends can see you, and you can Go Ghost anytime.",
+    body: "Location sharing is off by default — enable it in Settings after consenting. Only approved friends can see your boat on the map. Stop sharing any time by turning it off, or use Ghost Mode to hide your boat from the map instantly.",
   },
   {
     icon: Newspaper,

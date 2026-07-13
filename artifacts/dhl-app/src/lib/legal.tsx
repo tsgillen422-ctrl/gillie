@@ -6,9 +6,9 @@ export const TERMS_OF_SERVICE_UPDATED = "June 27, 2026";
 // Guidelines change in a way that requires renewed consent. Any user whose
 // stored termsVersion differs from this value (including new users with none)
 // is re-prompted by TermsGate before they can use the app.
-// 1.2 (Jul 13, 2026): privacy policy updated to reflect check-in-only location
-// model — removed Ghost Mode, "last seen", background updates, and 24h auto-ghost
-// language; location is now intentional check-in only.
+// 1.2 (Jul 13, 2026): privacy policy updated — location sharing is off by
+// default, enabled in Settings after consent, stop any time via Location
+// Sharing toggle or Ghost Mode (immediately removes boat from map).
 export const TERMS_VERSION = "1.2";
 
 export function PrivacyPolicyBody() {
@@ -34,10 +34,12 @@ export function PrivacyPolicyBody() {
             comments, and messages you choose to share.
           </li>
           <li>
-            <strong>Location:</strong> Your location is only shared when you
-            intentionally check in. Check-ins are temporary, expire automatically
-            after a limited time, and can be ended at any time. Only approved
-            friends can see your checked-in location.
+            <strong>Location:</strong> Your location is never shared automatically.
+            Location sharing is off by default and can only be enabled in Settings
+            after you consent. While sharing is on, your position updates while the
+            app is open. You can stop sharing at any time by turning Location Sharing
+            off in Settings, or by using Ghost Mode, which immediately removes your
+            boat from the map. Only approved friends can ever see your location.
           </li>
           <li>
             <strong>Usage data:</strong> basic technical information needed to keep
@@ -59,7 +61,7 @@ export function PrivacyPolicyBody() {
       <section className="space-y-1.5">
         <h3 className="text-base font-bold text-foreground">Your Choices &amp; Controls</h3>
         <ul className="list-disc space-y-1 pl-5 text-muted-foreground">
-          <li>Location sharing is off by default. Your location is only shared after you choose to check in. You can end your check-in at any time, and only approved friends can see your checked-in location.</li>
+          <li>Location sharing is off by default. You can enable it in Settings after consenting, and only approved friends can see your location. Stop sharing at any time by turning Location Sharing off, or use Ghost Mode to hide your boat from the map instantly.</li>
           <li>Control who can see your location, followers, and friends list.</li>
           <li>Block or report other users and content.</li>
           <li>Edit your profile and content at any time.</li>
@@ -226,10 +228,11 @@ export function TermsOfServiceBody() {
       <section className="space-y-1.5">
         <h3 className="text-base font-bold text-foreground">Location Features</h3>
         <p className="text-muted-foreground">
-          Gillie only shares your location when you intentionally check in, and
-          only with friends you've approved. Check-ins are temporary and expire
-          automatically after a limited time. You can end your check-in at any
-          time. You are responsible for deciding when to check in.
+          Gillie only shares your location if you explicitly enable location sharing
+          in Settings, and only with friends you've approved. Sharing is off by
+          default. You can stop at any time by turning Location Sharing off in
+          Settings, or by using Ghost Mode, which immediately removes your boat
+          from the map. You are responsible for deciding when to share your location.
         </p>
       </section>
 

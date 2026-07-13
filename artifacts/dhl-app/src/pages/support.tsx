@@ -82,13 +82,11 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     a: (
       <>
         Your location is <strong>never shared automatically</strong> — sharing is
-        off until you turn it on. Tap <strong>Share My Location</strong> on the
-        map and confirm to appear to approved friends. Your position updates
-        while the app is open; when you close the app, friends see your last
-        spot with a <strong>"last seen"</strong> time. If you don't open the app
-        for 24 hours, you disappear from the map automatically. You can also tap{" "}
-        <strong>Go Ghost</strong> at any time to hide instantly. Manage all of
-        this from the map or in <strong>Settings</strong>.
+        off by default and can only be enabled in <strong>Settings</strong> after
+        you consent. Only approved friends can see your boat on the map. You can
+        stop sharing at any time by turning Location Sharing off in Settings, or
+        tap <strong>Ghost Mode</strong> at any time to immediately remove your
+        boat from the map.
       </>
     ),
   },
