@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, real, timestamp, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, serial, integer, text, real, boolean, timestamp, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./users";
@@ -48,6 +48,12 @@ export const businessProfilesTable = pgTable("business_profiles", {
     .default(null),
   // pending | approved | rejected
   status: text("status").notNull().default("pending"),
+  // Admin moderation flags — both hide the business from public listings/map
+  // while preserving all data. isSuspended = admin enforcement action (owner
+  // sees a "suspended" notice); isHidden = quietly removed from search/map
+  // without a visible penalty (e.g. duplicate listing, spam prevention).
+  isSuspended: boolean("is_suspended").notNull().default(false),
+  isHidden: boolean("is_hidden").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

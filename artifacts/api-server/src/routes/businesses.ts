@@ -115,6 +115,8 @@ function formatBusiness(b: typeof businessProfilesTable.$inferSelect, stats?: Bi
     products: Array.isArray(b.products) ? b.products : [],
     hoursStructured: b.hoursStructured ?? null,
     status: b.status,
+    isSuspended: b.isSuspended ?? false,
+    isHidden: b.isHidden ?? false,
     createdAt: b.createdAt.toISOString(),
     updatedAt: b.updatedAt.toISOString(),
   };
@@ -446,10 +448,12 @@ router.get("/", async (req, res) => {
     where: and(...conditions),
     orderBy: desc(businessProfilesTable.updatedAt),
   });
+  // Filter out admin-suspended or admin-hidden listings from the public feed.
+  const notModerated = rows.filter((b) => !b.isSuspended && !b.isHidden);
   // Hide demo-owned listings from everyone except the reviewer (Demo Mode),
   // matching the friends-only isolation of the rest of the demo world.
   const hidden = new Set(await getHiddenDemoUserIds(currentUserId(req)));
-  const visible = hidden.size ? rows.filter((b) => !hidden.has(b.userId)) : rows;
+  const visible = hidden.size ? notModerated.filter((b) => !hidden.has(b.userId)) : notModerated;
   const q = typeof req.query.q === "string" ? req.query.q.trim().toLowerCase() : "";
   const filtered = q
     ? visible.filter((b) =>
@@ -469,6 +473,29 @@ router.get("/pending", async (req, res) => {
   }
   const rows = await db.query.businessProfilesTable.findMany({
     where: eq(businessProfilesTable.status, "pending"),
+    orderBy: desc(businessProfilesTable.updatedAt),
+  });
+  const enriched = await Promise.all(
+    rows.map(async (b) => {
+      const owner = await db.query.usersTable.findFirst({ where: eq(usersTable.id, b.userId) });
+      return {
+        ...formatBusiness(b),
+        owner: owner
+          ? { id: owner.id, username: owner.username, displayName: owner.displayName, avatarUrl: owner.avatarUrl }
+          : null,
+      };
+    }),
+  );
+  res.json(enriched);
+});
+
+// GET /businesses/admin/all — admin: full business list with owner + moderation state.
+// Must be registered BEFORE /:businessId so Express doesn't swallow it.
+router.get("/admin/all", async (req, res) => {
+  if (!(await isAdmin(currentUserId(req)))) {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+  const rows = await db.query.businessProfilesTable.findMany({
     orderBy: desc(businessProfilesTable.updatedAt),
   });
   const enriched = await Promise.all(
@@ -558,7 +585,8 @@ router.put("/:businessId", async (req, res) => {
   res.json(formatBusiness(row));
 });
 
-// DELETE /businesses/:businessId — delete a business you own.
+// DELETE /businesses/:businessId — delete a business you own, or any business
+// if the caller is an admin.
 router.delete("/:businessId", async (req, res) => {
   const uid = currentUserId(req);
   const id = parseInt(req.params.businessId, 10);
@@ -566,11 +594,50 @@ router.delete("/:businessId", async (req, res) => {
   const existing = await db.query.businessProfilesTable.findFirst({
     where: eq(businessProfilesTable.id, id),
   });
-  if (!existing || existing.userId !== uid) {
+  const admin = await isAdmin(uid);
+  if (!existing || (existing.userId !== uid && !admin)) {
     return res.status(404).json({ error: "Business not found" });
   }
   await removeBusiness(existing);
   res.json({ ok: true });
+});
+
+// PATCH /businesses/:businessId/admin-action — admin: suspend, unsuspend, hide,
+// unhide, or remove verification (reset to pending) without touching owner data.
+router.patch("/:businessId/admin-action", async (req, res) => {
+  if (!(await isAdmin(currentUserId(req)))) {
+    return res.status(403).json({ error: "Admin access required" });
+  }
+  const id = parseInt(req.params.businessId, 10);
+  if (!Number.isFinite(id)) return res.status(400).json({ error: "Invalid business id" });
+  const existing = await db.query.businessProfilesTable.findFirst({
+    where: eq(businessProfilesTable.id, id),
+  });
+  if (!existing) return res.status(404).json({ error: "Business not found" });
+
+  const action = req.body?.action as string | undefined;
+  let update: Record<string, unknown> = { updatedAt: new Date() };
+
+  if (action === "suspend") {
+    update.isSuspended = true;
+  } else if (action === "unsuspend") {
+    update.isSuspended = false;
+  } else if (action === "hide") {
+    update.isHidden = true;
+  } else if (action === "unhide") {
+    update.isHidden = false;
+  } else if (action === "remove_verification") {
+    update.status = "pending";
+  } else {
+    return res.status(400).json({ error: "Invalid action. Must be suspend|unsuspend|hide|unhide|remove_verification" });
+  }
+
+  const [row] = await db
+    .update(businessProfilesTable)
+    .set(update as any)
+    .where(eq(businessProfilesTable.id, id))
+    .returning();
+  res.json(formatBusiness(row));
 });
 
 // PATCH /businesses/:businessId/customize — update social-profile

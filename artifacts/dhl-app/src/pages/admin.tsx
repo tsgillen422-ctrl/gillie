@@ -30,11 +30,32 @@ import { Input } from "@/components/ui/input";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from "@/components/ui/empty";
-import { ShieldCheck, ShieldAlert, Flag, Trash2, Ban, AlertTriangle, Check, Search, ShieldPlus, ShieldMinus, Crown, FileSignature, RotateCcw } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ShieldCheck, ShieldAlert, Flag, Trash2, Ban, AlertTriangle, Check, Search, ShieldPlus, ShieldMinus, Crown, FileSignature, RotateCcw, Eye, EyeOff, Store, ShieldOff, BadgeCheck, Pencil, ExternalLink } from "lucide-react";
 import { Link } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
+
+const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
+
+async function adminFetch(path: string, opts?: RequestInit) {
+  const res = await fetch(`${BASE}${path}`, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    ...opts,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.error ?? `Request failed (${res.status})`);
+  }
+  return res.json();
+}
+
+const ADMIN_ALL_BIZ_KEY = ["admin-businesses-all"];
 
 const REASON_LABELS: Record<string, string> = {
   spam: "Spam",
@@ -580,6 +601,276 @@ function BusinessApprovalManager({ enabled }: { enabled: boolean }) {
   );
 }
 
+function bizStatusBadge(b: any) {
+  if (b.isSuspended) return <Badge variant="secondary" className="bg-red-100 text-red-700 shrink-0">Suspended</Badge>;
+  if (b.isHidden) return <Badge variant="secondary" className="bg-gray-100 text-gray-600 shrink-0">Hidden</Badge>;
+  if (b.status === "pending") return <Badge variant="secondary" className="shrink-0">Pending</Badge>;
+  if (b.status === "rejected") return <Badge variant="secondary" className="bg-red-100 text-red-700 shrink-0">Rejected</Badge>;
+  return <Badge className="bg-emerald-600 text-white hover:bg-emerald-600 shrink-0"><BadgeCheck className="w-3 h-3 mr-1" />Approved</Badge>;
+}
+
+type BizDeleteTarget = { id: number; name: string } | null;
+
+function AdminBusinessCard({ b, onAction, onDelete }: { b: any; onAction: (id: number, action: string) => void; onDelete: (b: { id: number; name: string }) => void }) {
+  return (
+    <Card className="border-border/60">
+      <CardHeader className="p-3 pb-2">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2.5 min-w-0 flex-1">
+            {b.logoUrl ? (
+              <img src={b.logoUrl} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+            ) : (
+              <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Store className="w-5 h-5" />
+              </div>
+            )}
+            <div className="min-w-0">
+              <p className="font-semibold text-sm truncate">{b.businessName}</p>
+              <p className="text-xs text-muted-foreground">{b.businessType}</p>
+              {b.owner && (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  by{" "}
+                  <Link href={`/profile/${b.owner.id}`} className="hover:underline font-medium">
+                    {b.owner.displayName}
+                  </Link>{" "}
+                  (@{b.owner.username})
+                </p>
+              )}
+            </div>
+          </div>
+          {bizStatusBadge(b)}
+        </div>
+      </CardHeader>
+      <CardContent className="p-3 pt-0 space-y-2">
+        {b.description && <p className="text-xs text-muted-foreground line-clamp-2">{b.description}</p>}
+        <div className="flex flex-wrap gap-1.5">
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" asChild>
+            <Link href={`/businesses/${b.id}`}><ExternalLink className="w-3 h-3 mr-1" />View</Link>
+          </Button>
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" asChild>
+            <Link href={`/businesses/me/edit?id=${b.id}`}><Pencil className="w-3 h-3 mr-1" />Edit</Link>
+          </Button>
+          {b.isSuspended ? (
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => onAction(b.id, "unsuspend")}>
+              <ShieldCheck className="w-3 h-3 mr-1" />Unsuspend
+            </Button>
+          ) : (
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-amber-700 hover:text-amber-700" onClick={() => onAction(b.id, "suspend")}>
+              <ShieldOff className="w-3 h-3 mr-1" />Suspend
+            </Button>
+          )}
+          {b.isHidden ? (
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => onAction(b.id, "unhide")}>
+              <Eye className="w-3 h-3 mr-1" />Unhide
+            </Button>
+          ) : (
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => onAction(b.id, "hide")}>
+              <EyeOff className="w-3 h-3 mr-1" />Hide
+            </Button>
+          )}
+          {b.status === "approved" && (
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => onAction(b.id, "remove_verification")}>
+              <Ban className="w-3 h-3 mr-1" />Remove Verification
+            </Button>
+          )}
+          <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-destructive hover:text-destructive" onClick={() => onDelete({ id: b.id, name: b.businessName })}>
+            <Trash2 className="w-3 h-3 mr-1" />Delete
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AdminBusinessManager({ enabled }: { enabled: boolean }) {
+  const queryClient = useQueryClient();
+  const [bizTab, setBizTab] = React.useState<"pending" | "all">("pending");
+  const [deleteTarget, setDeleteTarget] = React.useState<BizDeleteTarget>(null);
+
+  const { data: pending = [], isLoading: pendingLoading } = useGetPendingBusinesses({
+    query: { enabled: enabled && bizTab === "pending", queryKey: getGetPendingBusinessesQueryKey() },
+  });
+
+  const { data: allBiz = [], isLoading: allLoading } = useQuery({
+    queryKey: ADMIN_ALL_BIZ_KEY,
+    queryFn: () => adminFetch("/api/businesses/admin/all"),
+    enabled: enabled && bizTab === "all",
+  });
+
+  const setStatus = useSetBusinessStatus();
+
+  const adminAction = useMutation({
+    mutationFn: ({ id, action }: { id: number; action: string }) =>
+      adminFetch(`/api/businesses/${id}/admin-action`, { method: "PATCH", body: JSON.stringify({ action }) }),
+    onSuccess: (_, { action }) => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_ALL_BIZ_KEY });
+      queryClient.invalidateQueries({ queryKey: getGetBusinessesQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetPendingBusinessesQueryKey() });
+      const msgs: Record<string, string> = {
+        suspend: "Business suspended.",
+        unsuspend: "Business unsuspended.",
+        hide: "Business hidden.",
+        unhide: "Business unhidden.",
+        remove_verification: "Verification removed — business is now pending review.",
+      };
+      toast.success(msgs[action] ?? "Done.");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't apply that action."),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) =>
+      adminFetch(`/api/businesses/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ADMIN_ALL_BIZ_KEY });
+      queryClient.invalidateQueries({ queryKey: getGetBusinessesQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetPendingBusinessesQueryKey() });
+      toast.success("Business permanently deleted.");
+      setDeleteTarget(null);
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't delete that business."),
+  });
+
+  const approveReject = (businessId: number, status: "approved" | "rejected") => {
+    setStatus.mutate(
+      { businessId, data: { status } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetPendingBusinessesQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetBusinessesQueryKey() });
+          toast.success(status === "approved" ? "Business approved." : "Business rejected.");
+        },
+        onError: () => toast.error("Couldn't update that business."),
+      },
+    );
+  };
+
+  return (
+    <>
+      <Tabs value={bizTab} onValueChange={(v) => setBizTab(v as any)}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="pending">Pending Approval</TabsTrigger>
+          <TabsTrigger value="all">All Businesses</TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {bizTab === "pending" ? (
+        pendingLoading ? (
+          <div className="space-y-3">{[0, 1].map((i) => <Skeleton key={i} className="h-32 w-full rounded-lg" />)}</div>
+        ) : pending.length === 0 ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon"><Check /></EmptyMedia>
+              <EmptyTitle>No businesses waiting</EmptyTitle>
+              <EmptyDescription>New business listings will show up here for approval.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <div className="space-y-3">
+            {pending.map((b: any) => (
+              <Card key={b.id} className="border-border/60" data-testid={`card-pending-business-${b.id}`}>
+                <CardHeader className="p-4 pb-2">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-sm truncate">{b.businessName}</h3>
+                      <p className="text-xs text-muted-foreground">{b.businessType}</p>
+                      {b.owner && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          by{" "}
+                          <Link href={`/profile/${b.owner.id}`} className="hover:underline font-medium">
+                            {b.owner.displayName}
+                          </Link>{" "}
+                          (@{b.owner.username})
+                        </p>
+                      )}
+                    </div>
+                    <Badge variant="secondary" className="shrink-0">Pending</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-1 space-y-3">
+                  {b.description && <p className="text-sm whitespace-pre-wrap line-clamp-4">{b.description}</p>}
+                  {b.photos?.length > 0 && (
+                    <div className="flex gap-2 overflow-x-auto">
+                      {b.photos.map((p: string, i: number) => (
+                        <img key={i} src={p} alt="" className="h-20 w-20 rounded-lg object-cover shrink-0" />
+                      ))}
+                    </div>
+                  )}
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    {b.phone && <p>Phone: {b.phone}</p>}
+                    {b.website && <p>Website: {b.website}</p>}
+                    {b.hours && <p>Hours: {b.hours}</p>}
+                    {b.serviceArea && <p>Service area: {b.serviceArea}</p>}
+                    {b.lat != null && b.lng != null && <p>Pin: {Number(b.lat).toFixed(4)}, {Number(b.lng).toFixed(4)}</p>}
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button size="sm" onClick={() => approveReject(b.id, "approved")} disabled={setStatus.isPending} data-testid={`button-approve-business-${b.id}`}>
+                      <Check className="w-4 h-4 mr-1.5" /> Approve
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => approveReject(b.id, "rejected")} disabled={setStatus.isPending} data-testid={`button-reject-business-${b.id}`}>
+                      <Ban className="w-4 h-4 mr-1.5" /> Reject
+                    </Button>
+                    <Button size="sm" variant="ghost" asChild>
+                      <Link href={`/businesses/${b.id}`}>View</Link>
+                    </Button>
+                    <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => setDeleteTarget({ id: b.id, name: b.businessName })}>
+                      <Trash2 className="w-4 h-4 mr-1.5" /> Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )
+      ) : (
+        allLoading ? (
+          <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-28 w-full rounded-lg" />)}</div>
+        ) : allBiz.length === 0 ? (
+          <Empty>
+            <EmptyHeader>
+              <EmptyMedia variant="icon"><Store /></EmptyMedia>
+              <EmptyTitle>No businesses yet</EmptyTitle>
+              <EmptyDescription>Business profiles will appear here once created.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <div className="space-y-3">
+            {allBiz.map((b: any) => (
+              <AdminBusinessCard
+                key={b.id}
+                b={b}
+                onAction={(id, action) => adminAction.mutate({ id, action })}
+                onDelete={setDeleteTarget}
+              />
+            ))}
+          </div>
+        )
+      )}
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && !deleteMutation.isPending && setDeleteTarget(null)}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Business Profile?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{deleteTarget?.name}</strong>'s business page, reviews, followers, and all associated data will be permanently deleted. The owner's personal Gillie account will not be affected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting…" : "Delete Business"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
 export function AdminPage() {
   const { data: me, isLoading: meLoading } = useGetMe();
   const [view, setView] = React.useState<"reports" | "businesses" | "members" | "waivers" | "demo">("reports");
@@ -629,7 +920,7 @@ export function AdminPage() {
       </Tabs>
 
       {view === "businesses" ? (
-        <BusinessApprovalManager enabled={!!me?.isAdmin} />
+        <AdminBusinessManager enabled={!!me?.isAdmin} />
       ) : view === "members" ? (
         <div className="space-y-5">
           <MembersManager enabled={!!me?.isAdmin} myId={me?.id} />
