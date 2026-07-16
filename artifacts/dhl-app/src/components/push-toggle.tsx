@@ -8,6 +8,7 @@ import {
   enablePush,
   disablePush,
 } from "@/lib/push";
+import { isNativePlatform } from "@/lib/native-push";
 
 export function PushToggle() {
   const [supported, setSupported] = React.useState(false);
@@ -35,9 +36,20 @@ export function PushToggle() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "";
       if (msg === "denied") {
-        toast.error("Notifications are blocked. Enable them in your browser settings.");
+        if (isNativePlatform()) {
+          toast.error(
+            "Notifications are blocked. Go to Settings → Notifications → Gillie and tap Allow.",
+          );
+        } else {
+          toast.error("Notifications are blocked. Enable them in your browser settings.");
+        }
+      } else if (msg.startsWith("timeout:")) {
+        toast.error(
+          "Notification setup timed out. Please try again — if it keeps failing, restart the app.",
+        );
       } else {
-        toast.error("Couldn't enable push alerts.");
+        console.error("[push-toggle] enablePush error:", err);
+        toast.error("Couldn't enable push alerts. Please try again.");
       }
     } finally {
       setBusy(false);
@@ -88,7 +100,7 @@ export function PushToggle() {
         </Button>
       ) : (
         <Button size="sm" disabled={busy} onClick={handleEnable} className="shrink-0">
-          Enable
+          {busy ? "Setting up…" : "Enable"}
         </Button>
       )}
     </div>
